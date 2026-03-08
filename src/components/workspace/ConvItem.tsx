@@ -65,7 +65,6 @@ export default function ConvItem({
   const isEditing = editingConvId === conv.id
   const hasContextMenu = contextMenuId === conv.id
   const isChecked = selectedIds.has(conv.id)
-  const checkboxVisible = selectMode || isHovered
 
   if (isConfirming) {
     return (
@@ -79,7 +78,7 @@ export default function ConvItem({
 
   return (
     <div
-      className={`ci${indented ? ' ci--indented' : ''}${isActive ? ' ci--active' : ''}`}
+      className={`ci${indented ? ' ci--indented' : ''}${isActive ? ' ci--active' : ''}${selectMode ? ' ci--select-mode' : ''}`}
       onClick={() => {
         if (selectMode) { onToggleSelect(conv.id); return }
         if (!isEditing) { onSelectConv(conv.id) }
@@ -95,7 +94,6 @@ export default function ConvItem({
         className="ci-checkbox"
         checked={isChecked}
         draggable={false}
-        style={{ opacity: checkboxVisible ? 1 : 0, pointerEvents: selectMode ? 'auto' : 'none' }}
         onMouseDown={(e) => e.stopPropagation()}
         onChange={() => onToggleSelect(conv.id)}
         onClick={(e) => e.stopPropagation()}

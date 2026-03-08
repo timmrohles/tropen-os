@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
   Brain, ChartBar, Cpu, Sliders,
-  CaretLeft, CaretRight, CaretDown, Plus,
+  CaretLeft, CaretRight, CaretDown,
 } from '@phosphor-icons/react'
 import type { ChatMessage } from '@/hooks/useWorkspaceState'
 
@@ -99,7 +99,7 @@ function Divider() {
 // Main Component
 // ─────────────────────────────────────────────────────────
 
-export default function SessionPanel({ conversationId: _convId, messages, routing, onNewConversation }: SessionPanelProps) {
+export default function SessionPanel({ conversationId: _convId, messages, routing, onNewConversation: _onNewConversation }: SessionPanelProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
 
@@ -326,18 +326,6 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         </div>
       </div>
 
-      <Divider />
-
-      {/* ── Sektion: Neuer Chat ── */}
-      <div className="sp-section">
-        <button className="sp-new-chat-btn" onClick={onNewConversation}>
-          <Plus size={14} weight="bold" />
-          Neuer Chat
-        </button>
-        <p className="sp-new-chat-note">
-          Toro vergisst das bisherige Gespräch und startet frisch.
-        </p>
-      </div>
 
     </div>
   )

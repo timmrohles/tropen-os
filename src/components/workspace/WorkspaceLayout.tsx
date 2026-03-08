@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { PencilSimple, FolderSimple, CaretRight, Trash } from '@phosphor-icons/react'
+import { PencilSimple, FolderSimple, CaretRight, Trash, CheckSquare } from '@phosphor-icons/react'
 import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
 import { JungleModal } from './modals/JungleModal'
@@ -264,6 +264,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           onOpenJungleModal={openJungleModal}
           onSetSelectMode={(fn) => setSelectMode(fn)}
           onSetSelectedIds={(ids) => setSelectedIds(ids)}
+          selectedArr={selectedArr}
+          onClearSelection={() => { setSelectMode(false); setSelectedIds(new Set()) }}
+          onOpenMergeModal={openMergeModal}
+          onBulkSoftDelete={bulkSoftDelete}
           onSetActiveConvId={setActiveConvId}
           onSetHoveredId={setHoveredId}
           onSetConfirmDeleteId={setConfirmDeleteId}
@@ -333,6 +337,17 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
                 Aus Projekt entfernen
               </button>
             )}
+            <button className="wl-ctx-item" onMouseDown={(e) => {
+              e.stopPropagation()
+              toggleSelect(menuConv.id)
+              setSelectMode(true)
+              setContextMenuId(null)
+              setMenuAnchor(null)
+              setContextMenuSubmenu(false)
+            }}>
+              <CheckSquare size={15} className="wl-ctx-icon" />
+              Mehrere auswählen
+            </button>
             <div className="wl-ctx-divider" />
             <button className="wl-ctx-item wl-ctx-item--danger" onMouseDown={(e) => {
               e.stopPropagation()
@@ -357,16 +372,11 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         routing={routing}
         messagesEndRef={messagesEndRef as unknown as React.RefObject<HTMLDivElement>}
         userInitial={userInitial}
-        selectMode={selectMode}
-        selectedArr={selectedArr}
         projects={projects}
         onNewConversation={newConversation}
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
-        onOpenMergeModal={openMergeModal}
-        onBulkSoftDelete={bulkSoftDelete}
         onAssignToProject={assignToProject}
-        onClearSelection={() => { setSelectMode(false); setSelectedIds(new Set()) }}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

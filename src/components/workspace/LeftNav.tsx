@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Folders, ChartBar, Robot, CurrencyEur, ClipboardText,
-  Users, TreePalm, SignOut, Gear, CaretDown,
+  Users, TreePalm, SignOut, Gear, CaretDown, Plus,
+  ArrowsMerge, FolderSimple, Trash, X,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
 import Papierkorb from './Papierkorb'
-import type { WorkspaceState } from '@/hooks/useWorkspaceState'
 
 function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   const pathname = usePathname()
@@ -38,6 +38,12 @@ type LeftNavProps = {
   onToggleTrash: () => void
   onRestoreConv: (id: string) => void
   onHardDeleteConv: (id: string) => void
+  // Multi-select action bar
+  selectMode: boolean
+  selectedArr: string[]
+  onClearSelection: () => void
+  onOpenMergeModal: () => void
+  onBulkSoftDelete: () => void
 } & React.ComponentProps<typeof ProjectSidebar>
 
 export default function LeftNav({
@@ -46,7 +52,7 @@ export default function LeftNav({
   userFullName,
   userEmail,
   handleLogout,
-  onNewConversation: _onNewConversation,
+  onNewConversation,
   onNewProject: _onNewProject,
   trashCount,
   trashOpen,
@@ -56,10 +62,16 @@ export default function LeftNav({
   onRestoreConv,
   onHardDeleteConv,
   workspaceName: _workspaceName,
+  selectMode,
+  selectedArr,
+  onClearSelection,
+  onOpenMergeModal,
+  onBulkSoftDelete,
   ...projectSidebarProps
 }: LeftNavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [wsOpen, setWsOpen] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -105,8 +117,61 @@ export default function LeftNav({
 
       {/* Chats */}
       <div className="lnav-conv-list sidebar-scroll">
-        <span className="lnav-section-label" style={{ padding: '10px 10px 6px' }}>Chats</span>
-        <ProjectSidebar {...projectSidebarProps} />
+        <div className="lnav-chats-header">
+          <span className="lnav-section-label" style={{ padding: '10px 10px 6px' }}>Chats</span>
+          <button className="lnav-new-chat-btn" onClick={onNewConversation} title="Neuer Chat">
+            <Plus size={15} weight="bold" />
+            Neuer Chat
+          </button>
+        </div>
+
+        {selectMode && selectedArr.length > 0 && (
+          <div className="lnav-sel-bar">
+            <div className="lnav-sel-header">
+              <span className="lnav-sel-count">{selectedArr.length} ausgewählt</span>
+              <button className="lnav-sel-close" onClick={() => { onClearSelection(); setConfirmBulkDelete(false) }}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="lnav-sel-actions">
+              <button
+                className="lnav-sel-btn lnav-sel-btn--merge"
+                disabled={selectedArr.length < 2}
+                onClick={onOpenMergeModal}
+              >
+                <ArrowsMerge size={13} />
+                Zusammenführen
+              </button>
+              <button
+                className="lnav-sel-btn lnav-sel-btn--move"
+                onClick={() => {}}
+                title="Verschieben (via Kontextmenü)"
+              >
+                <FolderSimple size={13} />
+                Verschieben
+              </button>
+              {confirmBulkDelete ? (
+                <button
+                  className="lnav-sel-btn lnav-sel-btn--delete"
+                  onClick={() => { onBulkSoftDelete(); setConfirmBulkDelete(false) }}
+                >
+                  <Trash size={13} />
+                  Sicher?
+                </button>
+              ) : (
+                <button
+                  className="lnav-sel-btn lnav-sel-btn--delete"
+                  onClick={() => setConfirmBulkDelete(true)}
+                >
+                  <Trash size={13} />
+                  Löschen
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <ProjectSidebar {...projectSidebarProps} selectMode={selectMode} />
         <Papierkorb
           trashCount={trashCount}
           trashOpen={trashOpen}

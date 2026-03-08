@@ -741,7 +741,10 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
         role: 'assistant',
         content,
         pending: false,
-        created_at: new Date().toISOString(),
+        model_used: null,
+        cost_eur: null,
+        tokens_input: null,
+        tokens_output: null,
       }])
       setSelectMode(false)
       setSelectedIds(new Set())
@@ -763,7 +766,6 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
       next.add(id)
     }
     setSelectedIds(next)
-    setSelectMode(next.size > 0)
   }
 
   async function bulkSoftDelete() {
