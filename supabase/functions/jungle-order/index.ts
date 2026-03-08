@@ -15,7 +15,7 @@ async function callDify(prompt: string, apiKey: string): Promise<string> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: { prompt },
+      inputs: { text: prompt },
       response_mode: 'blocking',
       user: 'jungle-order',
     }),
