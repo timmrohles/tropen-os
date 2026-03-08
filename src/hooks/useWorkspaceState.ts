@@ -688,7 +688,10 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
       const { data, error: fnErr } = await supabase.functions.invoke('jungle-order', {
         body: { action: 'merge', conversation_ids: [...selectedIds] },
       })
-      if (fnErr) throw fnErr
+      if (fnErr) {
+        const body = await (fnErr as { context?: Response }).context?.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? fnErr.message)
+      }
       setMergeTitle(data.title ?? '')
       setMergeContent(data.content ?? '')
       setMergeReady(true)
