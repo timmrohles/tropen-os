@@ -751,7 +751,13 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
       }
       setConversations((prev) => [newConv as Conversation, ...prev])
       setActiveConvId((newConv as Conversation).id)
-      setMessages([])
+      setMessages([{
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: mergeContent,
+        pending: false,
+        created_at: new Date().toISOString(),
+      }])
       setSelectMode(false)
       setSelectedIds(new Set())
       setMergeModal(false)
