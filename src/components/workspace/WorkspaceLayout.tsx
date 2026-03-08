@@ -346,6 +346,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         error={error}
         routing={routing}
         messagesEndRef={messagesEndRef as unknown as React.RefObject<HTMLDivElement>}
+        userInitial={userInitial}
         onNewConversation={newConversation}
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}

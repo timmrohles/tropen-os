@@ -14,6 +14,7 @@ interface ChatAreaProps {
   error: string
   routing: { task_type: string; agent: string; model_class: string; model: string } | null
   messagesEndRef: React.RefObject<HTMLDivElement>
+  userInitial: string
   onNewConversation: () => void
   onSetInput: (v: string) => void
   onSendMessage: (e: React.FormEvent) => void
@@ -27,6 +28,7 @@ export default function ChatArea({
   error,
   routing,
   messagesEndRef,
+  userInitial,
   onNewConversation,
   onSetInput,
   onSendMessage,
@@ -45,7 +47,7 @@ export default function ChatArea({
         <>
           <div className="carea-messages">
             {messages.map((msg, i) => (
-              <ChatMessage key={msg.id ?? i} msg={msg} />
+              <ChatMessage key={msg.id ?? i} msg={msg} userInitial={userInitial} />
             ))}
             {error && <div className="carea-error">{error}</div>}
             <div ref={messagesEndRef} />

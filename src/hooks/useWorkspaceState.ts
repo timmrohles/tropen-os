@@ -918,7 +918,9 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
 
   // ── Computed ───────────────────────────────────────────
 
-  const userInitial = (userFullName || userEmail).charAt(0).toUpperCase()
+  const userInitial = userFullName
+    ? userFullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : (userEmail[0] || '?').toUpperCase()
 
   const ungroupedCount = conversations.filter((c) => !c.project_id && !c.deleted_at).length
   const jungleActive = ungroupedCount >= 5

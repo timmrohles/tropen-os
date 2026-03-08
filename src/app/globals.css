@@ -75,7 +75,7 @@ body {
 /* ─────────────────────────────────────────────────────────────────────────
    ConvItem
    ───────────────────────────────────────────────────────────────────────── */
-.ci { padding: 7px 10px 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; border-radius: 6px; margin: 1px 6px; transition: background 0.1s; position: relative; }
+.ci { padding: 7px 10px 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; border-radius: 6px; margin: 1px 6px; transition: background 0.1s; position: relative; user-select: none; }
 .ci:hover { background: rgba(255,255,255,0.06); }
 .ci--indented { padding-left: 24px; }
 .ci--active { background: rgba(255,255,255,0.12) !important; border-left: 3px solid var(--accent); padding-left: 11px; }
@@ -102,12 +102,22 @@ body {
 /* ─────────────────────────────────────────────────────────────────────────
    ChatMessage
    ───────────────────────────────────────────────────────────────────────── */
-.cmsg { padding: 12px 20px; }
-.cmsg--user { max-width: 70%; align-self: flex-end; background: var(--bubble-user); color: var(--bubble-user-text); border-radius: 18px 18px 4px 18px; }
-.cmsg--assistant { max-width: 85%; align-self: flex-start; background: var(--bubble-toro); color: var(--bubble-toro-text); border-radius: 18px 18px 18px 4px; }
+/* Message row (wraps avatar + bubble) */
+.cmsg { display: flex; align-items: flex-start; gap: 12px; }
+.cmsg--user { justify-content: flex-end; }
+.cmsg--assistant { justify-content: flex-start; }
+
+/* Avatars */
+.cmsg-avatar-toro { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #134e3a; border: 2px solid #a3b554; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; }
+.cmsg-avatar-user { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #a3b554; display: flex; align-items: center; justify-content: center; color: #1a2e1a; font-weight: 700; font-size: 13px; line-height: 1; }
+
+/* Bubbles */
+.cmsg-bubble { padding: 12px 18px; }
+.cmsg-bubble--assistant { max-width: 85%; background: #1a1a1a; color: #ffffff; border-radius: 18px 18px 18px 4px; }
+.cmsg-bubble--user { max-width: 70%; background: #ffffff; color: #000000; border-radius: 18px 18px 4px 18px; }
 .cmsg-content { font-size: 16px; line-height: 1.6; }
 .cmsg-inline-code { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; color: var(--accent); }
-.cmsg-meta { font-size: 13px; color: var(--text-on-green-muted); margin-top: 6px; }
+.cmsg-meta { font-size: 12px; color: #5a8a6a; margin-top: 8px; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    ChatArea

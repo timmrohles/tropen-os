@@ -91,9 +91,10 @@ export default function ConvItem({
         <div
           className={`ci-checkbox${selectedIds.has(conv.id) ? ' ci-checkbox--checked' : ''}`}
           onMouseDown={(e) => { e.stopPropagation(); onToggleSelect(conv.id) }}
+          onClick={(e) => e.stopPropagation()}
         >{selectedIds.has(conv.id) ? '✓' : ''}</div>
       ) : (
-        <div className="ci-drag" title="Ziehen zum Verschieben">⠿</div>
+        <div className="ci-drag" title="Ziehen zum Verschieben" onMouseDown={(e) => e.stopPropagation()}>⠿</div>
       )}
       <div className="ci-body">
         {isEditing ? (
