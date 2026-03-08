@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Folder, ChartBar, Robot, CurrencyEur, ClipboardText,
+  Folders, ChartBar, Robot, CurrencyEur, ClipboardText,
   Users, TreePalm, SignOut, Gear, CaretDown,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
@@ -84,12 +84,12 @@ export default function LeftNav({
       {/* Navigation */}
       <div className="lnav-section">
         <span className="lnav-section-label">Navigation</span>
-        <NavItem href="/dashboard" icon={<ChartBar size={16} />} label="Dashboard" />
+        <NavItem href="/dashboard" icon={<ChartBar size={22} weight="fill" />} label="Dashboard" />
 
         {/* Workspaces Dropdown */}
         <button className="lnav-item" onClick={() => setWsOpen(v => !v)}>
           <span className="lnav-item-inner">
-            <Folder size={16} />
+            <Folders size={22} weight={wsOpen ? 'fill' : 'regular'} />
             Workspaces
           </span>
           <CaretDown size={12} className={`lnav-item-expand${wsOpen ? ' lnav-item-expand--open' : ''}`} />
