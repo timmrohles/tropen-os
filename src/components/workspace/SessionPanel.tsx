@@ -42,13 +42,6 @@ const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
   detailed: 'Ausführlich',
 }
 
-// Dynamic colors – cannot be CSS classes (computed from routing/warnings)
-const CLASS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  fast: { bg: '#0d2a1a', color: '#22c55e', border: '#1a4a2a' },
-  deep: { bg: '#0d1a2a', color: '#3b82f6', border: '#1a2a4a' },
-  safe: { bg: '#1a0d2a', color: '#a855f7', border: '#2a1a4a' },
-}
-
 const WARN_COLORS = {
   amber: { bg: '#1a1400', border: '#3a2a00', color: '#fbbf24' },
   orange: { bg: '#1a0e00', border: '#3a1e00', color: '#f97316' },
@@ -167,10 +160,6 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   else if (sessionCost > 0.10)
     warnings.push({ level: 'orange', text: `Session kostet bereits €${sessionCost.toFixed(4)}` })
 
-  const classColor = routing?.model_class
-    ? (CLASS_COLORS[routing.model_class] ?? CLASS_COLORS.fast)
-    : CLASS_COLORS.fast
-
   // ── Collapsed State ─────────────────────────────────────
 
   if (collapsed) {
@@ -208,13 +197,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
             <Row label="Modell" value={routing.model} />
             <div className="sp-row">
               <span className="sp-row-label">Klasse</span>
-              {/* Dynamic colors from routing – inline required */}
-              <span
-                className="sp-class-badge"
-                style={{ background: classColor.bg, color: classColor.color, border: `1px solid ${classColor.border}` }}
-              >
-                {routing.model_class}
-              </span>
+              <span className="sp-class-badge">{routing.model_class}</span>
             </div>
           </>
         ) : (
@@ -322,7 +305,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
           Neuer Chat
         </button>
         <p className="sp-new-chat-note">
-          Löscht den Dify-Kontext und startet eine neue conversation_id
+          Toro vergisst das bisherige Gespräch und startet frisch.
         </p>
       </div>
 
