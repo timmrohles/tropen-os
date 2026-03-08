@@ -5,17 +5,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// ── Dify Workflow aufrufen (blocking) ────────────────────────────────────────
+// ── Dify Chat aufrufen (blocking) ────────────────────────────────────────────
 async function callDify(prompt: string, apiKey: string): Promise<string> {
   const difyUrl = Deno.env.get('DIFY_API_URL') ?? 'https://api.dify.ai/v1'
-  const res = await fetch(`${difyUrl}/workflows/run`, {
+  const res = await fetch(`${difyUrl}/chat-messages`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: { prompt },
+      inputs: {},
+      query: prompt,
       response_mode: 'blocking',
       user: 'jungle-order',
     }),
@@ -25,10 +26,8 @@ async function callDify(prompt: string, apiKey: string): Promise<string> {
     throw new Error(`Dify error ${res.status}: ${err}`)
   }
   const data = await res.json()
-  // Dify Workflow gibt Outputs als data.data.outputs zurück
-  const outputs = data?.data?.outputs
-  const text = outputs?.text ?? outputs?.result
-  if (!text) throw new Error(`Dify: kein text/result in outputs. Raw: ${JSON.stringify(data).slice(0, 500)}`)
+  const text = data?.answer
+  if (!text) throw new Error(`Dify: kein answer in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
   return text
 }
 
