@@ -269,30 +269,10 @@ Falls du das nicht warst, ignoriere diese Mail.
 - **Chat-Button**: `sendMessage` in `useWorkspaceState.ts` auto-erstellt Conversation wenn keine aktiv (`!activeConvId` → `newConversation()` aufrufen, dann senden)
 - `newConversation()` gibt jetzt `Promise<string | null>` zurück (vorher `Promise<void>`)
 
-### 🔴 Kritischer Bug: Edge Function speichert nichts nach Chat
+### ✅ Bug behoben: Edge Function `workflow_finished`
 
-**Symptom**: User sieht KI-Antworten im Chat, aber:
-- Keine `role: 'assistant'` Einträge in `messages`
-- Keine Einträge in `usage_logs`
-- `dify_conversation_id` bleibt `null` → kein Gesprächsgedächtnis
-
-**Root Cause (gefunden, noch nicht gefixt)**:
-Die Dify-App ist ein **Workflow-Typ**, kein Chatflow. Workflow-Apps senden `workflow_finished` statt `message_end` am Ende des Streams. Die Edge Function (`supabase/functions/ai-chat/index.ts`) wartet auf `parsed.event === "message_end"` — dieser Event kommt bei Workflow-Apps nie.
-
-**Nächster Schritt**: In `ai-chat/index.ts` den `message_end`-Block durch `workflow_finished` ersetzen. Token-Nutzung bei Workflow-Apps liegt in `data.total_tokens` statt `metadata.usage.prompt_tokens`.
-
-Dify `workflow_finished` Struktur:
-```json
-{
-  "event": "workflow_finished",
-  "data": {
-    "outputs": {},
-    "status": "succeeded",
-    "elapsed_time": 1.5,
-    "total_tokens": 150
-  }
-}
-```
+`ai-chat/index.ts` behandelt beide Events: `message_end || workflow_finished` (Zeile 333).
+Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgelesen.
 
 ### Komponenten über 300 Zeilen (zur Beobachtung)
 | Datei | Zeilen | Status |
