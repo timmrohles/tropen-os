@@ -320,8 +320,9 @@ export default function ProjectSidebar({
               }}
               onDrop={(e) => {
                 e.preventDefault()
-                if (dragConvId) onAssignToProject(dragConvId, project.id)
-                else onSetDragOverId(null)
+                const convId = e.dataTransfer.getData('text/plain') || dragConvId
+                if (convId) onAssignToProject(convId, project.id)
+                onSetDragOverId(null)
               }}
             >
               <div
@@ -398,8 +399,9 @@ export default function ProjectSidebar({
                   onDragLeave={() => onSetDragOverId(null)}
                   onDrop={(e) => {
                     e.preventDefault()
-                    if (dragConvId) onAssignToProject(dragConvId, null)
-                    else onSetDragOverId(null)
+                    const convId = e.dataTransfer.getData('text/plain') || dragConvId
+                    if (convId) onAssignToProject(convId, null)
+                    onSetDragOverId(null)
                   }}
                 >Ohne Projekt</div>
               )}
