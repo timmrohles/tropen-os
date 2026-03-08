@@ -94,7 +94,8 @@ export default function ConvItem({
         type="checkbox"
         className="ci-checkbox"
         checked={isChecked}
-        style={{ opacity: checkboxVisible ? 1 : 0, pointerEvents: checkboxVisible ? 'auto' : 'none' }}
+        draggable={false}
+        style={{ opacity: checkboxVisible ? 1 : 0, pointerEvents: selectMode ? 'auto' : 'none' }}
         onMouseDown={(e) => e.stopPropagation()}
         onChange={() => onToggleSelect(conv.id)}
         onClick={(e) => e.stopPropagation()}
