@@ -184,8 +184,14 @@ body {
 .es { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 0 48px; text-align: center; }
 .es-title { font-size: 56px; font-weight: 800; color: #fff; letter-spacing: -2px; margin: 0; line-height: 1; }
 .es-sub { font-size: 18px; color: #71717a; margin: 0; }
-.es-chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
-.es-chip { background: var(--accent); border: none; color: #000; border-radius: 8px; padding: 9px 20px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.es-options { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 760px; margin-top: 4px; }
+.es-option { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; background: #0d1f16; border: 1px solid #1f6b4a; border-radius: 12px; cursor: pointer; text-align: left; width: 220px; transition: background 0.15s, border-color 0.15s; }
+.es-option:hover { background: #134e3a; border-color: #2d7a50; }
+.es-option-icon { color: #a3b554; display: flex; align-items: center; }
+.es-option-title { font-size: 14px; font-weight: 700; color: #ffffff; line-height: 1.3; }
+.es-option-desc { font-size: 12px; color: #89c4a8; line-height: 1.4; }
+.es-option-hint { font-size: 11px; color: #556b5a; margin-top: 2px; }
+.es-footer { font-size: 12px; color: #4a6352; max-width: 520px; line-height: 1.5; }
 .es-input-wrap { width: 100%; max-width: 680px; }
 
 /* ─────────────────────────────────────────────────────────────────────────
