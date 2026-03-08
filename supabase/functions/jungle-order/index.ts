@@ -27,14 +27,20 @@ async function callDify(prompt: string, apiKey: string): Promise<string> {
   const data = await res.json()
   // Dify Workflow gibt Outputs als data.data.outputs zurück
   const outputs = data?.data?.outputs
-  return outputs?.text ?? outputs?.result ?? JSON.stringify(outputs)
+  const text = outputs?.text ?? outputs?.result
+  if (!text) throw new Error(`Dify: kein text/result in outputs. Raw: ${JSON.stringify(data).slice(0, 500)}`)
+  return text
 }
 
 // ── JSON sicher aus LLM-Antwort extrahieren ─────────────────────────────────
 function extractJson(text: string): unknown {
   const match = text.match(/```json\s*([\s\S]*?)```/) ?? text.match(/(\{[\s\S]*\})/)
-  const raw = match ? match[1] ?? match[0] : text
-  return JSON.parse(raw.trim())
+  const raw = match ? (match[1] ?? match[0]) : text
+  try {
+    return JSON.parse(raw.trim())
+  } catch {
+    throw new Error(`Dify-Antwort ist kein JSON. Antwort: "${text.slice(0, 300)}"`)
+  }
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────
