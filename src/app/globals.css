@@ -118,6 +118,17 @@ body {
 .cmsg-content { font-size: 16px; line-height: 1.6; }
 .cmsg-inline-code { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; color: var(--accent); }
 .cmsg-meta { font-size: 12px; color: #5a8a6a; margin-top: 8px; }
+/* Icon lines (emoji markers replaced by Phosphor icons) */
+.cmsg-icon-line { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; line-height: 1.5; }
+.cmsg-icon-line span { flex: 1; }
+.cmsg-icon { flex-shrink: 0; margin-top: 2px; }
+.cmsg-icon--check { color: #a3b554; }
+.cmsg-icon--warn { color: #f59e0b; }
+.cmsg-icon--tip { color: #fde047; }
+.cmsg-icon--eco { color: #a3b554; }
+.cmsg-icon--data { color: #60a5fa; }
+.cmsg-icon--tech { color: #a1a1aa; }
+.cmsg-icon--arrow { color: #a3b554; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    ChatArea
