@@ -49,8 +49,15 @@ export default function ChatArea({
   onClearSelection,
 }: ChatAreaProps) {
   const [moveDropOpen, setMoveDropOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const showSelBar = selectMode && selectedArr.length > 0
+
+  function handleClose() {
+    onClearSelection()
+    setMoveDropOpen(false)
+    setConfirmDelete(false)
+  }
 
   return (
     <div className="carea">
@@ -84,45 +91,62 @@ export default function ChatArea({
           )}
           {showSelBar ? (
             <div className="carea-sel-bar">
-              <span className="carea-sel-count">
-                {selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} ausgewählt
-              </span>
+              {confirmDelete ? (
+                <>
+                  <span className="carea-sel-count">
+                    {selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} löschen?
+                  </span>
+                  <button className="carea-sel-btn carea-sel-btn--secondary" onClick={() => setConfirmDelete(false)}>
+                    Abbrechen
+                  </button>
+                  <button className="carea-sel-btn carea-sel-btn--danger" onClick={() => { onBulkSoftDelete(); setConfirmDelete(false) }}>
+                    <Trash size={16} />
+                    Endgültig löschen
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="carea-sel-count">
+                    {selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} ausgewählt
+                  </span>
 
-              {selectedArr.length >= 2 && (
-                <button className="carea-sel-btn carea-sel-btn--merge" onClick={onOpenMergeModal}>
-                  <ArrowsMerge size={15} weight="bold" />
-                  Zusammenführen
-                </button>
-              )}
+                  {selectedArr.length >= 2 && (
+                    <button className="carea-sel-btn carea-sel-btn--merge" onClick={onOpenMergeModal}>
+                      <ArrowsMerge size={16} />
+                      Zusammenführen
+                    </button>
+                  )}
 
-              <div className="carea-sel-dropdown-wrap">
-                <button className="carea-sel-btn carea-sel-btn--move" onClick={() => setMoveDropOpen((v) => !v)}>
-                  <FolderSimple size={15} />
-                  Verschieben
-                </button>
-                {moveDropOpen && (
-                  <div className="carea-sel-dropdown">
-                    {projects.length === 0 ? (
-                      <div className="carea-sel-dropdown-item carea-sel-dropdown-item--disabled">Keine Projekte</div>
-                    ) : projects.map((p) => (
-                      <button key={p.id} className="carea-sel-dropdown-item" onClick={() => {
-                        selectedArr.forEach((id) => onAssignToProject(id, p.id))
-                        onClearSelection()
-                        setMoveDropOpen(false)
-                      }}>{p.name}</button>
-                    ))}
+                  <div className="carea-sel-dropdown-wrap">
+                    <button className="carea-sel-btn carea-sel-btn--secondary" onClick={() => setMoveDropOpen((v) => !v)}>
+                      <FolderSimple size={16} />
+                      Verschieben
+                    </button>
+                    {moveDropOpen && (
+                      <div className="carea-sel-dropdown">
+                        {projects.length === 0 ? (
+                          <div className="carea-sel-dropdown-item carea-sel-dropdown-item--disabled">Keine Projekte</div>
+                        ) : projects.map((p) => (
+                          <button key={p.id} className="carea-sel-dropdown-item" onClick={() => {
+                            selectedArr.forEach((id) => onAssignToProject(id, p.id))
+                            onClearSelection()
+                            setMoveDropOpen(false)
+                          }}>{p.name}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <button className="carea-sel-btn carea-sel-btn--delete" onClick={() => { onBulkSoftDelete(); setMoveDropOpen(false) }}>
-                <Trash size={15} />
-                Löschen
-              </button>
+                  <button className="carea-sel-btn carea-sel-btn--secondary" onClick={() => { setConfirmDelete(true); setMoveDropOpen(false) }}>
+                    <Trash size={16} />
+                    Löschen
+                  </button>
 
-              <button className="carea-sel-close" onClick={() => { onClearSelection(); setMoveDropOpen(false) }}>
-                <X size={18} />
-              </button>
+                  <button className="carea-sel-close" onClick={handleClose}>
+                    <X size={18} />
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="carea-input-wrap">
