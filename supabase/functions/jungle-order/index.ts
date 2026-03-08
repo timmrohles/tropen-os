@@ -5,31 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// ── Anthropic API direkt aufrufen ────────────────────────────────────────────
+// ── Dify Chat aufrufen (Haupt-App, blocking) ─────────────────────────────────
 async function callLLM(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY nicht konfiguriert')
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const apiKey = Deno.env.get('DIFY_API_KEY')
+  if (!apiKey) throw new Error('DIFY_API_KEY nicht konfiguriert')
+  const difyUrl = Deno.env.get('DIFY_API_URL') ?? 'https://api.dify.ai/v1'
+  const res = await fetch(`${difyUrl}/chat-messages`, {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      system: 'Du bist Toro, ein KI-Assistent für Workspace-Organisation. Antworte ausschließlich mit validem JSON – kein Text davor oder danach, kein Markdown.',
-      messages: [{ role: 'user', content: prompt }],
+      inputs: {},
+      query: prompt,
+      response_mode: 'blocking',
+      user: 'jungle-order',
     }),
   })
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Anthropic error ${res.status}: ${err}`)
+    throw new Error(`Dify error ${res.status}: ${err}`)
   }
   const data = await res.json()
-  const text = data?.content?.[0]?.text
-  if (!text) throw new Error(`Anthropic: kein text in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
+  const text = data?.answer
+  if (!text) throw new Error(`Dify: kein answer in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
   return text
 }
 
