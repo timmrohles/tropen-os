@@ -100,6 +100,9 @@ export default function ConvItem({
         onChange={() => onToggleSelect(conv.id)}
         onClick={(e) => e.stopPropagation()}
       />
+      {!selectMode && (
+        <div className="ci-drag" onMouseDown={(e) => e.stopPropagation()}>⠿</div>
+      )}
       <div className="ci-body">
         {isEditing ? (
           <input

@@ -79,6 +79,8 @@ body {
 .ci:hover { background: rgba(255,255,255,0.06); }
 .ci--indented { padding-left: 24px; }
 .ci--active { background: rgba(255,255,255,0.12) !important; border-left: 3px solid var(--accent); padding-left: 11px; }
+.ci-drag { font-size: 11px; color: var(--text-on-green-muted); cursor: grab; flex-shrink: 0; line-height: 1; padding: 0 1px; user-select: none; opacity: 0; transition: opacity 0.15s; }
+.ci:hover .ci-drag { opacity: 0.35; }
 .ci-body { flex: 1; min-width: 0; }
 .ci-title-row { display: flex; align-items: center; gap: 4px; overflow: hidden; }
 .ci-title { font-size: 15px; font-weight: 500; color: #ffffff; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; letter-spacing: -0.01em; }
