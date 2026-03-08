@@ -766,12 +766,14 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
   }
 
   function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    const next = new Set(selectedIds)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    setSelectedIds(next)
+    setSelectMode(next.size > 0)
   }
 
   async function bulkSoftDelete() {

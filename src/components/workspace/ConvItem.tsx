@@ -87,15 +87,11 @@ export default function ConvItem({
       onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData('text/plain', conv.id); e.dataTransfer.effectAllowed = 'move'; onDragStart(conv.id) }}
       onDragEnd={() => onDragEnd()}
     >
-      {selectMode ? (
-        <div
-          className={`ci-checkbox${selectedIds.has(conv.id) ? ' ci-checkbox--checked' : ''}`}
-          onMouseDown={(e) => { e.stopPropagation(); onToggleSelect(conv.id) }}
-          onClick={(e) => e.stopPropagation()}
-        >{selectedIds.has(conv.id) ? '✓' : ''}</div>
-      ) : (
-        <div className="ci-drag" title="Ziehen zum Verschieben" onMouseDown={(e) => e.stopPropagation()}>⠿</div>
-      )}
+      <div
+        className={`ci-checkbox${selectedIds.has(conv.id) ? ' ci-checkbox--checked' : ''}${(!selectMode && !isHovered) ? ' ci-checkbox--hidden' : ''}`}
+        onMouseDown={(e) => { e.stopPropagation(); onToggleSelect(conv.id) }}
+        onClick={(e) => e.stopPropagation()}
+      />
       <div className="ci-body">
         {isEditing ? (
           <input
