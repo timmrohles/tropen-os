@@ -31,3 +31,4 @@ npm-debug.log*
 # ── IDE ───────────────────────────────────────────────────
 .vscode/settings.json
 .idea/
+tsconfig.tsbuildinfo
