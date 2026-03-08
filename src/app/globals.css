@@ -225,7 +225,6 @@ body {
 .es-pill { padding: 6px 14px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; color: #fff; font-size: 13px; cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; white-space: nowrap; }
 .es-pill:hover { border-color: var(--accent); background: rgba(163,181,84,0.08); color: var(--accent); }
 .es-pill--active { border-color: var(--accent); background: rgba(163,181,84,0.12); color: var(--accent); }
-.es-pill-desc { margin: 8px 0 0; font-size: 13px; color: #fff; opacity: 0.75; line-height: 1.5; text-align: left; }
 .es-footer { font-size: 12px; color: rgba(255,255,255,0.45); max-width: 520px; line-height: 1.6; }
 
 /* ─────────────────────────────────────────────────────────────────────────

@@ -76,15 +76,15 @@ function fmtTokens(n: number): string {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="sp-row">
-      <span className="sp-row-label">{label}</span>
-      <span className="sp-row-value">{value}</span>
+      <span className="sp-row-label t-dezent">{label}</span>
+      <span className="sp-row-value t-primary">{value}</span>
     </div>
   )
 }
 
 function SectionLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="sp-section-label">
+    <div className="sp-section-label t-dezent">
       {icon}
       <span>{children}</span>
     </div>
@@ -198,7 +198,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       {/* Header */}
       <div className="sp-header">
-        <span className="sp-header-label">SESSION</span>
+        <span className="sp-header-label t-dezent">SESSION</span>
         <button className="sp-header-btn" onClick={() => setCollapsed(true)} title="Panel einklappen">
           <CaretLeft size={14} />
         </button>
@@ -212,7 +212,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
           <>
             <Row label="Modell" value={routing.model} />
             <div className="sp-row">
-              <span className="sp-row-label">Klasse</span>
+              <span className="sp-row-label t-dezent">Klasse</span>
               <span className={`sp-class-badge sp-class-badge--${routing.model_class ?? 'fast'}`}>{routing.model_class}</span>
             </div>
           </>
@@ -263,8 +263,8 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         {/* Gedächtnis-Slider */}
         <div className="sp-field">
           <div className="sp-slider-row">
-            <label className="sp-slider-label">Gesprächsgedächtnis</label>
-            <span className="sp-slider-value">{prefs.memory_window}</span>
+            <label className="sp-slider-label t-dezent">Gesprächsgedächtnis</label>
+            <span className="sp-slider-value t-primary">{prefs.memory_window}</span>
           </div>
           <input
             type="range"
@@ -280,14 +280,14 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
         {/* Antwort-Stil */}
         <div className="sp-field">
-          <label className="sp-select-label">Antwort-Stil</label>
+          <label className="sp-select-label t-dezent">Antwort-Stil</label>
           <div className="sp-select-wrap" ref={styleDropRef}>
             <button
               className="sp-select-trigger"
               onClick={() => setStyleDropOpen((v) => !v)}
             >
               {STYLE_LABELS[prefs.chat_style]}
-              <CaretDown size={14} style={{ color: '#89c4a8', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+              <CaretDown size={14} style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
             </button>
             {styleDropOpen && (
               <div className="sp-select-menu">
@@ -297,8 +297,8 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
                     className={`sp-select-option${prefs.chat_style === opt.value ? ' sp-select-option--active' : ''}`}
                     onClick={() => { updatePref('chat_style', opt.value); setStyleDropOpen(false) }}
                   >
-                    <span className="sp-select-opt-label">{opt.label}</span>
-                    <span className="sp-select-opt-desc">{opt.desc}</span>
+                    <span className="sp-select-opt-label t-primary">{opt.label}</span>
+                    <span className="sp-select-opt-desc t-secondary">{opt.desc}</span>
                   </button>
                 ))}
               </div>

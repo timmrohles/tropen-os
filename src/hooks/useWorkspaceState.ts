@@ -231,7 +231,7 @@ export interface WorkspaceState {
   userInitial: string
 
   // Handlers
-  newConversation: () => Promise<void>
+  newConversation: () => Promise<string | null>
   deleteConversation: (id: string) => Promise<void>
   createProject: () => Promise<void>
   deleteProject: (id: string) => Promise<void>
@@ -489,9 +489,9 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
 
   // ── Handlers ───────────────────────────────────────────
 
-  async function newConversation() {
+  async function newConversation(): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) return null
     const now = new Date().toISOString()
     const tempId = `temp-${now}`
     const optimistic: Conversation = {
@@ -515,10 +515,12 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
         prev.map((c) => (c.id === tempId ? data as Conversation : c))
       )
       setActiveConvId((data as Conversation).id)
+      return (data as Conversation).id
     } else {
       setConversations((prev) => prev.filter((c) => c.id !== tempId))
       setActiveConvId(null)
       if (convErr) setError(`Fehler beim Erstellen: ${convErr.message}`)
+      return null
     }
   }
 
@@ -783,10 +785,14 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
-    if (!input.trim() || !activeConvId || sending) return
+    if (!input.trim() || sending) return
 
     const currentInput = input.trim()
-    const convId = activeConvId
+    let convId = activeConvId
+    if (!convId) {
+      convId = await newConversation()
+      if (!convId) return
+    }
     sendingRef.current = true
 
     setMessages((prev) => [

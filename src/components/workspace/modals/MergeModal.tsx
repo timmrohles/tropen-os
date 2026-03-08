@@ -75,7 +75,7 @@ export function MergeModal({
                   const msgCount = 0 // Nachrichten-Anzahl wäre ein weiterer DB-Call
                   return (
                     <div key={id} className="mm-source-item">
-                      <CheckSquare size={11} style={{ color: '#14b8a6' }} />
+                      <CheckSquare size={11} style={{ color: 'rgba(255,255,255,0.7)' }} />
                       <span className="mm-source-title">{conv.title ?? 'Unterhaltung'}</span>
                       {msgCount > 0 && <span className="mm-source-meta">({msgCount} Nachrichten)</span>}
                     </div>

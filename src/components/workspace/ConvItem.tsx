@@ -120,7 +120,7 @@ export default function ConvItem({
         ) : (
           <div className="ci-title-row">
             <div
-              className="ci-title"
+              className="ci-title t-primary"
               onDoubleClick={(e) => {
                 e.stopPropagation()
                 onStartEdit(conv.id, conv.title ?? 'Unterhaltung')
@@ -129,7 +129,7 @@ export default function ConvItem({
           </div>
         )}
         <div className="ci-meta">
-          <span className="ci-date">{formatDate(conv.created_at)}</span>
+          <span className="ci-date t-secondary">{formatDate(conv.created_at)}</span>
           {conv.task_type && <span className="ci-badge">{conv.task_type}</span>}
         </div>
       </div>

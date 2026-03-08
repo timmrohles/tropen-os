@@ -230,14 +230,44 @@ Falls du das nicht warst, ignoriere diese Mail.
 
 ---
 
-## Zwischenstand 2026-03-07 — Offene Bugs & nächste Schritte
+## Zwischenstand 2026-03-08 — Offene Bugs & nächste Schritte
 
-### ✅ Erledigt heute
+### ✅ Erledigt 2026-03-07
 - **Workspace-Redesign**: page.tsx (2067 Zeilen) aufgeteilt in 13 Komponenten (useWorkspaceState, WorkspaceLayout, LeftNav, ChatArea, EmptyState, ChatMessage, ChatInput, ProjectSidebar, ConvItem, Papierkorb, JungleModal, MergeModal, ConditionalNavBar)
 - **Phase-2-Redesign**: Kimi-Style 3-Column Layout, 240px LeftNav, Start Screen, Mobile
 - **Bug Fix**: `check_and_reserve_budget` RPC — `FOR UPDATE` mit Aggregat-Funktion ist in PostgreSQL ungültig → Migration 012 deployed
 - **Bug Fix**: `workspace_members`-Eintrag fehlte für neue Org-Owner nach Onboarding → `api/onboarding/complete` ergänzt
 - **Dashboard**: Superadmin sieht jetzt alle Orgs (supabaseAdmin statt RLS-gefilterter Client)
+
+### ✅ Erledigt 2026-03-08
+
+#### Design System
+- **Globale Typografie-Klassen**: `.t-primary { color: #fff !important }`, `.t-secondary { color: rgba(255,255,255,0.7) !important }`, `.t-dezent { color: rgba(255,255,255,0.4) !important }`
+- **Utility-Klassen**: `.chip`, `.chip--active`, `.dropdown`, `.dropdown-item` in globals.css
+- **Türkis komplett entfernt**: `#89c4a8`, `#d4f0e4`, `#556b5a`, `#14b8a6` in Workspace-Komponenten ersetzt durch rgba(255,255,255,x) Hierarchie
+- **CSS-Variable**: `--dropdown-bg: #071510` für dunkle Dropdown-Surfaces
+
+#### Komponenten-Updates
+- **ConvItem**: t-primary für Titel, t-secondary für Datum
+- **SessionPanel**: t-dezent für Labels, t-primary für Werte, CaretDown-Farbe als CSS statt Inline
+- **Papierkorb**: t-secondary für Item-Titel
+- **JungleModal / MergeModal**: `#14b8a6` Icons → `rgba(255,255,255,0.7)`
+
+#### Multi-Select Rebuild (LeftNav)
+- iOS-Style "Bearbeiten" / "Fertig" Pattern im CHATS-Header
+- Kein Context-Menu-Trigger mehr für Multi-Select
+- Kontextsensitive Aktionsleiste: Zusammenführen (≥2 Chats), Verschieben (≥1), Löschen (≥1)
+- Lösch-Bestätigung inline in Aktionsleiste
+
+#### Prompt-Bibliothek Phase 2
+- **`src/lib/prompt-templates.ts`**: 5 Core-Vorlagen mit FieldDef-Discriminated-Union und `assemble()`
+- **`src/components/workspace/TemplateDrawer.tsx`**: Slide-down Drawer mit Live-Vorschau
+- **`src/components/workspace/EmptyState.tsx`**: Pills → Drawer-Integration
+- Vollständig clientseitig, keine DB-Anbindung
+
+#### Bug Fixes
+- **Chat-Button**: `sendMessage` in `useWorkspaceState.ts` auto-erstellt Conversation wenn keine aktiv (`!activeConvId` → `newConversation()` aufrufen, dann senden)
+- `newConversation()` gibt jetzt `Promise<string | null>` zurück (vorher `Promise<void>`)
 
 ### 🔴 Kritischer Bug: Edge Function speichert nichts nach Chat
 
@@ -249,9 +279,7 @@ Falls du das nicht warst, ignoriere diese Mail.
 **Root Cause (gefunden, noch nicht gefixt)**:
 Die Dify-App ist ein **Workflow-Typ**, kein Chatflow. Workflow-Apps senden `workflow_finished` statt `message_end` am Ende des Streams. Die Edge Function (`supabase/functions/ai-chat/index.ts`) wartet auf `parsed.event === "message_end"` — dieser Event kommt bei Workflow-Apps nie.
 
-**Beweis**: Direkter Dify-API-Test gibt zurück: `workflow_started`, `node_started`, `node_finished`, `message` (Chunks), aber kein `message_end`.
-
-**Nächster Schritt**: In `ai-chat/index.ts` den `message_end`-Block durch `workflow_finished` ersetzen (oder ergänzen). Token-Nutzung bei Workflow-Apps liegt in `data.total_tokens` statt `metadata.usage.prompt_tokens`.
+**Nächster Schritt**: In `ai-chat/index.ts` den `message_end`-Block durch `workflow_finished` ersetzen. Token-Nutzung bei Workflow-Apps liegt in `data.total_tokens` statt `metadata.usage.prompt_tokens`.
 
 Dify `workflow_finished` Struktur:
 ```json
@@ -266,4 +294,18 @@ Dify `workflow_finished` Struktur:
 }
 ```
 
-**Ebenfalls zu prüfen**: Neues `workspace_members`-Eintrag für info@coratiert.de wurde per SQL manuell eingefügt — funktioniert für bestehenden User. Onboarding-Route ist jetzt für zukünftige User gefixt.
+### Komponenten über 300 Zeilen (zur Beobachtung)
+| Datei | Zeilen | Status |
+|-------|--------|--------|
+| `src/hooks/useWorkspaceState.ts` | 1060 | OK — Logik-Hook, schwer sinnvoll zu teilen |
+| `src/app/onboarding/page.tsx` | 787 | OK — viele Schritte, inline-s Konvention |
+| `src/app/responsible-ai/page.tsx` | 602 | OK — statischer Content |
+| `src/app/superadmin/clients/page.tsx` | 477 | OK — Admin-Tool |
+| `src/components/workspace/ProjectSidebar.tsx` | 465 | Beobachten |
+| `src/components/workspace/WorkspaceLayout.tsx` | 442 | Beobachten |
+| `src/components/workspace/SessionPanel.tsx` | 332 | OK |
+| `src/components/workspace/LeftNav.tsx` | 309 | OK |
+
+### Nächste Schritte (Priorität)
+1. **🔴 Edge Function `workflow_finished`-Event** — messages werden nicht gespeichert, kein Gesprächsgedächtnis
+2. **Prompt-Bibliothek Phase 3** — DB-Tabelle `prompt_templates`, eigene Vorlagen speichern, Sidebar-Integration

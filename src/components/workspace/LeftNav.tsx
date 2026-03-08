@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation'
 import {
   Folders, ChartBar, Robot, CurrencyEur, ClipboardText,
   Users, TreePalm, SignOut, Gear, CaretDown, Plus,
-  ArrowsMerge, FolderSimple, Trash, X,
+  ArrowsMerge, FolderSimple, Trash,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
 import Papierkorb from './Papierkorb'
+import type { Project } from '@/hooks/useWorkspaceState'
 
 function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   const pathname = usePathname()
@@ -38,13 +39,16 @@ type LeftNavProps = {
   onToggleTrash: () => void
   onRestoreConv: (id: string) => void
   onHardDeleteConv: (id: string) => void
-  // Multi-select action bar
+  // Edit mode
   selectMode: boolean
   selectedArr: string[]
+  onEnterEditMode: () => void
   onClearSelection: () => void
   onOpenMergeModal: () => void
   onBulkSoftDelete: () => void
-} & React.ComponentProps<typeof ProjectSidebar>
+  onBulkAssignToProject: (projectId: string | null) => void
+  projects: Project[]
+} & Omit<React.ComponentProps<typeof ProjectSidebar>, 'projects'>
 
 export default function LeftNav({
   isAdmin,
@@ -64,15 +68,27 @@ export default function LeftNav({
   workspaceName: _workspaceName,
   selectMode,
   selectedArr,
+  onEnterEditMode,
   onClearSelection,
   onOpenMergeModal,
   onBulkSoftDelete,
+  onBulkAssignToProject,
+  projects,
   ...projectSidebarProps
 }: LeftNavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [wsOpen, setWsOpen] = useState(false)
-  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [activeAction, setActiveAction] = useState<'merge' | 'move' | 'delete' | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Reset action state when exiting edit mode
+  useEffect(() => {
+    if (!selectMode) {
+      setActiveAction(null)
+      setDeleteConfirm(false)
+    }
+  }, [selectMode])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -85,6 +101,37 @@ export default function LeftNav({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [menuOpen])
 
+  function handleFertig() {
+    onClearSelection()
+    setActiveAction(null)
+    setDeleteConfirm(false)
+  }
+
+  function handleMergeClick() {
+    setActiveAction('merge')
+    onOpenMergeModal()
+  }
+
+  function handleMoveClick() {
+    setActiveAction(v => v === 'move' ? null : 'move')
+    setDeleteConfirm(false)
+  }
+
+  function handleDeleteClick() {
+    setActiveAction('delete')
+    setDeleteConfirm(false)
+  }
+
+  function handleConfirmDelete() {
+    onBulkSoftDelete()
+    setDeleteConfirm(false)
+    setActiveAction(null)
+    onClearSelection()
+  }
+
+  const canMerge = selectedArr.length >= 2
+  const canAct = selectedArr.length >= 1
+
   return (
     <nav className="lnav">
       {/* Logo */}
@@ -95,7 +142,7 @@ export default function LeftNav({
 
       {/* Navigation */}
       <div className="lnav-section">
-        <span className="lnav-section-label">Navigation</span>
+        <span className="lnav-section-label t-dezent">Navigation</span>
         <NavItem href="/dashboard" icon={<ChartBar size={22} weight="fill" />} label="Dashboard" />
 
         {/* Workspaces Dropdown */}
@@ -115,63 +162,20 @@ export default function LeftNav({
 
       <div className="lnav-divider" />
 
-      {/* Chats */}
+      {/* Chats header – always visible */}
+      <div className="lnav-chats-header">
+        <span className="lnav-section-label t-dezent" style={{ padding: '10px 10px 6px' }}>Chats</span>
+        <button
+          className="lnav-edit-btn"
+          onClick={selectMode ? handleFertig : onEnterEditMode}
+        >
+          {selectMode ? 'Fertig' : 'Bearbeiten'}
+        </button>
+      </div>
+
+      {/* Scrollable conv list */}
       <div className="lnav-conv-list sidebar-scroll">
-        <div className="lnav-chats-header">
-          <span className="lnav-section-label" style={{ padding: '10px 10px 6px' }}>Chats</span>
-          <button className="lnav-new-chat-btn" onClick={onNewConversation} title="Neuer Chat">
-            <Plus size={15} weight="bold" />
-            Neuer Chat
-          </button>
-        </div>
-
-        {selectMode && selectedArr.length > 0 && (
-          <div className="lnav-sel-bar">
-            <div className="lnav-sel-header">
-              <span className="lnav-sel-count">{selectedArr.length} ausgewählt</span>
-              <button className="lnav-sel-close" onClick={() => { onClearSelection(); setConfirmBulkDelete(false) }}>
-                <X size={14} />
-              </button>
-            </div>
-            <div className="lnav-sel-actions">
-              <button
-                className="lnav-sel-btn lnav-sel-btn--merge"
-                disabled={selectedArr.length < 2}
-                onClick={onOpenMergeModal}
-              >
-                <ArrowsMerge size={13} />
-                Zusammenführen
-              </button>
-              <button
-                className="lnav-sel-btn lnav-sel-btn--move"
-                onClick={() => {}}
-                title="Verschieben (via Kontextmenü)"
-              >
-                <FolderSimple size={13} />
-                Verschieben
-              </button>
-              {confirmBulkDelete ? (
-                <button
-                  className="lnav-sel-btn lnav-sel-btn--delete"
-                  onClick={() => { onBulkSoftDelete(); setConfirmBulkDelete(false) }}
-                >
-                  <Trash size={13} />
-                  Sicher?
-                </button>
-              ) : (
-                <button
-                  className="lnav-sel-btn lnav-sel-btn--delete"
-                  onClick={() => setConfirmBulkDelete(true)}
-                >
-                  <Trash size={13} />
-                  Löschen
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        <ProjectSidebar {...projectSidebarProps} selectMode={selectMode} />
+        <ProjectSidebar {...projectSidebarProps} projects={projects} selectMode={selectMode} />
         <Papierkorb
           trashCount={trashCount}
           trashOpen={trashOpen}
@@ -182,6 +186,84 @@ export default function LeftNav({
           onHardDelete={onHardDeleteConv}
         />
       </div>
+
+      {/* Action buttons – only in edit mode */}
+      {selectMode && (
+        <div className="lnav-action-area">
+          {activeAction !== 'delete' && (
+            <button
+              className={`lnav-action-btn${canMerge ? '' : ' lnav-action-btn--disabled'}`}
+              disabled={!canMerge}
+              onClick={handleMergeClick}
+            >
+              <ArrowsMerge size={14} />
+              Zusammenführen
+            </button>
+          )}
+          {activeAction !== 'merge' && activeAction !== 'delete' && (
+            <button
+              className={`lnav-action-btn${activeAction === 'move' ? ' lnav-action-btn--active' : ''}${canAct ? '' : ' lnav-action-btn--disabled'}`}
+              disabled={!canAct}
+              onClick={handleMoveClick}
+            >
+              <FolderSimple size={14} />
+              Verschieben
+            </button>
+          )}
+          {activeAction === 'move' && (
+            <div className="lnav-move-list">
+              <button
+                className="lnav-move-item"
+                onClick={() => { onBulkAssignToProject(null); handleFertig() }}
+              >
+                Kein Projekt
+              </button>
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  className="lnav-move-item"
+                  onClick={() => { onBulkAssignToProject(p.id); handleFertig() }}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {activeAction !== 'merge' && activeAction !== 'move' && (
+            <>
+              {deleteConfirm ? (
+                <div className="lnav-delete-confirm">
+                  <span className="lnav-delete-confirm-label">{selectedArr.length} löschen?</span>
+                  <button className="lnav-delete-confirm-yes" onClick={handleConfirmDelete}>Ja</button>
+                  <button className="lnav-delete-confirm-no" onClick={() => { setDeleteConfirm(false); setActiveAction(null) }}>Nein</button>
+                </div>
+              ) : (
+                <button
+                  className={`lnav-action-btn lnav-action-btn--danger${canAct ? '' : ' lnav-action-btn--disabled'}`}
+                  disabled={!canAct}
+                  onClick={handleDeleteClick}
+                >
+                  <Trash size={14} />
+                  Löschen
+                </button>
+              )}
+            </>
+          )}
+          {activeAction === 'delete' && !deleteConfirm && (
+            <div className="lnav-delete-confirm">
+              <span className="lnav-delete-confirm-label">{selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} löschen?</span>
+              <button className="lnav-delete-confirm-yes" onClick={handleConfirmDelete}>Ja</button>
+              <button className="lnav-delete-confirm-no" onClick={() => setActiveAction(null)}>Nein</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Neuer Chat */}
+      <button className="lnav-new-chat-btn" onClick={onNewConversation}>
+        <Plus size={16} weight="bold" />
+        Neuer Chat
+      </button>
 
       {/* User bar with dropdown */}
       <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>

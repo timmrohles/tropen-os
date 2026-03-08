@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { PencilSimple, FolderSimple, CaretRight, Trash, CheckSquare } from '@phosphor-icons/react'
+import { PencilSimple, FolderSimple, CaretRight, Trash } from '@phosphor-icons/react'
 import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
 import { JungleModal } from './modals/JungleModal'
@@ -265,9 +265,15 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           onSetSelectMode={(fn) => setSelectMode(fn)}
           onSetSelectedIds={(ids) => setSelectedIds(ids)}
           selectedArr={selectedArr}
+          onEnterEditMode={() => setSelectMode(true)}
           onClearSelection={() => { setSelectMode(false); setSelectedIds(new Set()) }}
           onOpenMergeModal={openMergeModal}
           onBulkSoftDelete={bulkSoftDelete}
+          onBulkAssignToProject={async (projectId) => {
+            await Promise.all(selectedArr.map((id) => assignToProject(id, projectId)))
+            setSelectMode(false)
+            setSelectedIds(new Set())
+          }}
           onSetActiveConvId={setActiveConvId}
           onSetHoveredId={setHoveredId}
           onSetConfirmDeleteId={setConfirmDeleteId}
@@ -337,17 +343,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
                 Aus Projekt entfernen
               </button>
             )}
-            <button className="wl-ctx-item" onMouseDown={(e) => {
-              e.stopPropagation()
-              toggleSelect(menuConv.id)
-              setSelectMode(true)
-              setContextMenuId(null)
-              setMenuAnchor(null)
-              setContextMenuSubmenu(false)
-            }}>
-              <CheckSquare size={15} className="wl-ctx-icon" />
-              Mehrere auswählen
-            </button>
             <div className="wl-ctx-divider" />
             <button className="wl-ctx-item wl-ctx-item--danger" onMouseDown={(e) => {
               e.stopPropagation()

@@ -47,7 +47,7 @@ export default function Papierkorb({
               <div className="papierkorb-hint">Wird automatisch nach 30 Tagen geleert</div>
               {trashConvs.map((conv) => (
                 <div key={conv.id} className="papierkorb-item">
-                  <span className="papierkorb-item-title">{conv.title ?? 'Unterhaltung'}</span>
+                  <span className="papierkorb-item-title t-secondary">{conv.title ?? 'Unterhaltung'}</span>
                   <button className="papierkorb-restore" onClick={() => onRestore(conv.id)} title="Wiederherstellen"><ArrowCounterClockwise size={12} /></button>
                   <button className="papierkorb-delete" onClick={() => onHardDelete(conv.id)} title="Endgültig löschen"><X size={12} /></button>
                 </div>
