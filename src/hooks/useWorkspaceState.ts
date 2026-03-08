@@ -703,7 +703,10 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
           body: JSON.stringify({ action: 'merge', conversation_ids: [...selectedIds] }),
         }
       )
-      if (!res.ok) throw new Error('Zusammenführung fehlgeschlagen')
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(errBody.error ?? `HTTP ${res.status}`)
+      }
       const data = await res.json() as { title: string; content: string; source_count: number }
       setMergeTitle(data.title ?? '')
       setMergeContent(data.content ?? '')
