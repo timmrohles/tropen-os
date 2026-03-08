@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { DotsThreeVertical } from '@phosphor-icons/react'
 import { type Conversation, formatDate } from '@/hooks/useWorkspaceState'
 
 interface ConvItemProps {
@@ -63,6 +64,8 @@ export default function ConvItem({
   const isHovered = hoveredId === conv.id
   const isEditing = editingConvId === conv.id
   const hasContextMenu = contextMenuId === conv.id
+  const isChecked = selectedIds.has(conv.id)
+  const checkboxVisible = selectMode || isHovered
 
   if (isConfirming) {
     return (
@@ -87,9 +90,13 @@ export default function ConvItem({
       onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData('text/plain', conv.id); e.dataTransfer.effectAllowed = 'move'; onDragStart(conv.id) }}
       onDragEnd={() => onDragEnd()}
     >
-      <div
-        className={`ci-checkbox${selectedIds.has(conv.id) ? ' ci-checkbox--checked' : ''}${(!selectMode && !isHovered) ? ' ci-checkbox--hidden' : ''}`}
-        onMouseDown={(e) => { e.stopPropagation(); onToggleSelect(conv.id) }}
+      <input
+        type="checkbox"
+        className="ci-checkbox"
+        checked={isChecked}
+        style={{ opacity: checkboxVisible ? 1 : 0, pointerEvents: checkboxVisible ? 'auto' : 'none' }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onChange={() => onToggleSelect(conv.id)}
         onClick={(e) => e.stopPropagation()}
       />
       <div className="ci-body">
@@ -132,9 +139,9 @@ export default function ConvItem({
           {conv.task_type && <span className="ci-badge">{conv.task_type}</span>}
         </div>
       </div>
-      {(isHovered || hasContextMenu) && !isEditing && (
+      {!isEditing && (
         <button
-          className="ci-menu-btn"
+          className={`ci-menu-btn${hasContextMenu ? ' ci-menu-btn--active' : ''}`}
           onMouseDown={(e) => {
             e.stopPropagation()
             if (hasContextMenu) {
@@ -145,7 +152,9 @@ export default function ConvItem({
             }
           }}
           title="Optionen"
-        >⋮</button>
+        >
+          <DotsThreeVertical size={16} weight="bold" />
+        </button>
       )}
     </div>
   )
