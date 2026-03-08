@@ -5,29 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// ── Dify Chat aufrufen (blocking) ────────────────────────────────────────────
-async function callDify(prompt: string, apiKey: string): Promise<string> {
-  const difyUrl = Deno.env.get('DIFY_API_URL') ?? 'https://api.dify.ai/v1'
-  const res = await fetch(`${difyUrl}/chat-messages`, {
+// ── Anthropic API direkt aufrufen ────────────────────────────────────────────
+async function callLLM(prompt: string): Promise<string> {
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY nicht konfiguriert')
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: {},
-      query: prompt,
-      response_mode: 'blocking',
-      user: 'jungle-order',
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
+      system: 'Du bist Toro, ein KI-Assistent für Workspace-Organisation. Antworte ausschließlich mit validem JSON – kein Text davor oder danach, kein Markdown.',
+      messages: [{ role: 'user', content: prompt }],
     }),
   })
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Dify error ${res.status}: ${err}`)
+    throw new Error(`Anthropic error ${res.status}: ${err}`)
   }
   const data = await res.json()
-  const text = data?.answer
-  if (!text) throw new Error(`Dify: kein answer in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
+  const text = data?.content?.[0]?.text
+  if (!text) throw new Error(`Anthropic: kein text in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
   return text
 }
 
@@ -68,8 +70,6 @@ Deno.serve(async (req) => {
       conversation_ids?: string[]
     }
 
-    const apiKey = Deno.env.get('DIFY_JUNGLE_ORDER_KEY')
-    if (!apiKey) throw new Error('DIFY_JUNGLE_ORDER_KEY nicht konfiguriert')
 
     // ── Modus A: structure ───────────────────────────────────────────────────
     if (body.action === 'structure') {
@@ -111,7 +111,7 @@ Antworte NUR mit validem JSON (kein Markdown drumherum):
   "media_hint": false
 }`
 
-      const raw = await callDify(prompt, apiKey)
+      const raw = await callLLM(prompt)
       const result = extractJson(raw)
 
       return new Response(JSON.stringify(result), {
@@ -177,7 +177,7 @@ Antworte NUR mit validem JSON:
   "source_count": ${count}
 }`
 
-      const raw = await callDify(prompt, apiKey)
+      const raw = await callLLM(prompt)
       const result = extractJson(raw)
 
       return new Response(JSON.stringify(result), {
