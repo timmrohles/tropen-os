@@ -183,6 +183,9 @@ body {
 .sp-toggle-note { color: var(--text-on-green-muted); font-size: 10px; line-height: 1.45; }
 .sp-new-chat-btn { width: 100%; background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 9px 0; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .sp-new-chat-note { color: var(--text-on-green-muted); font-size: 10px; margin-top: 6px; text-align: center; line-height: 1.4; }
+/* Field wrapper inside a section (slider, select, toggle) */
+.sp-field { margin-bottom: 14px; }
+.sp-field:last-child { margin-bottom: 0; }
 
 /* ── Scrollbars (linke Sidebar + rechte Sidebar) ── */
 .sidebar-scroll,

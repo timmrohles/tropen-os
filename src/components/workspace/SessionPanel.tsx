@@ -42,6 +42,7 @@ const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
   detailed: 'Ausführlich',
 }
 
+// Dynamic colors – cannot be CSS classes (computed from routing/warnings)
 const CLASS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
   fast: { bg: '#0d2a1a', color: '#22c55e', border: '#1a4a2a' },
   deep: { bg: '#0d1a2a', color: '#3b82f6', border: '#1a2a4a' },
@@ -51,7 +52,7 @@ const CLASS_COLORS: Record<string, { bg: string; color: string; border: string }
 const WARN_COLORS = {
   amber: { bg: '#1a1400', border: '#3a2a00', color: '#fbbf24' },
   orange: { bg: '#1a0e00', border: '#3a1e00', color: '#f97316' },
-  red: { bg: '#1a0000', border: '#3a0000', color: '#ef4444' },
+  red:    { bg: '#1a0000', border: '#3a0000', color: '#ef4444' },
 }
 
 // ─────────────────────────────────────────────────────────
@@ -78,24 +79,16 @@ function fmtTokens(n: number): string {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-      <span style={{ color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500 }}>{label}</span>
-      <span style={{
-        color: 'var(--text-on-green-primary)', fontSize: 15, fontWeight: 500,
-        maxWidth: '55%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        textAlign: 'right',
-      }}>{value}</span>
+    <div className="sp-row">
+      <span className="sp-row-label">{label}</span>
+      <span className="sp-row-value">{value}</span>
     </div>
   )
 }
 
 function SectionLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 5,
-      color: 'var(--text-on-green-muted)', fontSize: 10, fontWeight: 700,
-      letterSpacing: '0.07em', marginBottom: 10, textTransform: 'uppercase',
-    }}>
+    <div className="sp-section-label">
       {icon}
       <span>{children}</span>
     </div>
@@ -103,7 +96,7 @@ function SectionLabel({ icon, children }: { icon: React.ReactNode; children: Rea
 }
 
 function Divider() {
-  return <div style={{ borderTop: '1px solid #1f6b4a' }} />
+  return <div className="sp-divider" />
 }
 
 // ─────────────────────────────────────────────────────────
@@ -182,26 +175,11 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
   if (collapsed) {
     return (
-      <div style={{
-        width: 24, flexShrink: 0, background: '#134e3a',
-        borderLeft: '1px solid #1f6b4a', display: 'flex',
-        flexDirection: 'column', alignItems: 'center',
-      }}>
-        <button
-          onClick={() => setCollapsed(false)}
-          title="Panel öffnen"
-          style={{
-            background: 'none', border: 'none', color: 'var(--text-on-green-muted)',
-            padding: '10px 0', cursor: 'pointer',
-            width: '100%', display: 'flex', justifyContent: 'center',
-          }}
-        >
+      <div className="sp-collapsed">
+        <button className="sp-collapse-btn" onClick={() => setCollapsed(false)} title="Panel öffnen">
           <CaretRight size={13} />
         </button>
-        <div
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          title="Toro ist hier"
-        >
+        <div className="sp-parrot" title="Toro ist hier">
           <span style={{ fontSize: 16 }}>🦜</span>
         </div>
       </div>
@@ -211,49 +189,36 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   // ── Full Panel ──────────────────────────────────────────
 
   return (
-    <div style={{
-      width: 300, flexShrink: 0, background: '#134e3a',
-      borderLeft: '1px solid #1f6b4a', display: 'flex',
-      flexDirection: 'column', overflowY: 'auto',
-    }} className="sidebar-scroll">
+    <div className="sp sidebar-scroll">
 
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 14px', borderBottom: '1px solid #1f6b4a', flexShrink: 0,
-      }}>
-        <span style={{ color: 'var(--text-on-green-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>SESSION</span>
-        <button
-          onClick={() => setCollapsed(true)}
-          title="Panel einklappen"
-          style={{
-            background: 'none', border: 'none', color: 'var(--text-on-green-muted)',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 2px',
-          }}
-        >
+      <div className="sp-header">
+        <span className="sp-header-label">SESSION</span>
+        <button className="sp-header-btn" onClick={() => setCollapsed(true)} title="Panel einklappen">
           <CaretLeft size={14} />
         </button>
       </div>
 
-      {/* ── Sektion 1: Modell & Stil ── */}
-      <div style={{ padding: '12px 14px' }}>
+      {/* ── Sektion: Aktuelle Session ── */}
+      <div className="sp-section">
         <SectionLabel icon={<Cpu size={10} />}>Aktuelle Session</SectionLabel>
 
         {routing ? (
           <>
             <Row label="Modell" value={routing.model} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <span style={{ color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500 }}>Klasse</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700,
-                background: classColor.bg, color: classColor.color,
-                border: `1px solid ${classColor.border}`,
-                padding: '1px 7px', borderRadius: 4,
-              }}>{routing.model_class}</span>
+            <div className="sp-row">
+              <span className="sp-row-label">Klasse</span>
+              {/* Dynamic colors from routing – inline required */}
+              <span
+                className="sp-class-badge"
+                style={{ background: classColor.bg, color: classColor.color, border: `1px solid ${classColor.border}` }}
+              >
+                {routing.model_class}
+              </span>
             </div>
           </>
         ) : (
-          <div style={{ color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500, marginBottom: 7 }}>Noch keine Anfrage</div>
+          <p className="sp-no-request">Noch keine Anfrage</p>
         )}
 
         <Row label="Gedächtnis" value={`${prefs.memory_window} Nachr.`} />
@@ -262,8 +227,8 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       <Divider />
 
-      {/* ── Sektion 1b: Stats ── */}
-      <div style={{ padding: '12px 14px' }}>
+      {/* ── Sektion: Diese Session ── */}
+      <div className="sp-section">
         <SectionLabel icon={<ChartBar size={10} />}>Diese Session</SectionLabel>
         <Row label="Nachrichten" value={msgCount > 0 ? String(msgCount) : '—'} />
         <Row label="Tokens" value={fmtTokens(sessionTokens)} />
@@ -271,19 +236,18 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         <Row label="CO₂ est." value={calcCO2(sessionTokens)} />
       </div>
 
-      {/* ── Sektion 2: Warnungen (dynamisch) ── */}
+      {/* ── Sektion: Warnungen ── */}
       {warnings.length > 0 && (
         <>
           <Divider />
-          <div style={{ padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="sp-warnings">
             {warnings.map((w, i) => (
-              <div key={i} style={{
-                background: WARN_COLORS[w.level].bg,
-                border: `1px solid ${WARN_COLORS[w.level].border}`,
-                borderRadius: 5, padding: '5px 8px',
-                color: WARN_COLORS[w.level].color,
-                fontSize: 13, lineHeight: 1.45,
-              }}>
+              <div
+                key={i}
+                className="sp-warning"
+                /* Dynamic colors from warning level – inline required */
+                style={{ background: WARN_COLORS[w.level].bg, border: `1px solid ${WARN_COLORS[w.level].border}`, color: WARN_COLORS[w.level].color }}
+              >
                 {w.level === 'red' ? '🔴' : w.level === 'orange' ? '🟠' : '⚠️'} {w.text}
               </div>
             ))}
@@ -293,43 +257,35 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       <Divider />
 
-      {/* ── Sektion 3: Einstellungen ── */}
-      <div style={{ padding: '12px 14px' }}>
+      {/* ── Sektion: Anpassen ── */}
+      <div className="sp-section">
         <SectionLabel icon={<Sliders size={10} />}>Anpassen</SectionLabel>
 
         {/* Gedächtnis-Slider */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <label style={{ color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500 }}>Gesprächsgedächtnis</label>
-            <span style={{ color: 'var(--text-on-green-primary)', fontSize: 15, fontWeight: 600 }}>{prefs.memory_window}</span>
+        <div className="sp-field">
+          <div className="sp-slider-row">
+            <label className="sp-slider-label">Gesprächsgedächtnis</label>
+            <span className="sp-slider-value">{prefs.memory_window}</span>
           </div>
           <input
             type="range"
-            min={5}
-            max={50}
-            step={5}
+            min={5} max={50} step={5}
             value={prefs.memory_window}
             onChange={e => updatePref('memory_window', Number(e.target.value))}
-            style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+            className="sp-slider"
           />
           {prefs.memory_window > 30 && (
-            <p style={{ color: '#fbbf24', fontSize: 10, marginTop: 4, lineHeight: 1.4 }}>
-              ⚠️ Erhöht Tokenverbrauch pro Anfrage
-            </p>
+            <p className="sp-slider-warn">⚠️ Erhöht Tokenverbrauch pro Anfrage</p>
           )}
         </div>
 
         {/* Antwort-Stil */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500, display: 'block', marginBottom: 6 }}>Antwort-Stil</label>
+        <div className="sp-field">
+          <label className="sp-select-label">Antwort-Stil</label>
           <select
             value={prefs.chat_style}
             onChange={e => updatePref('chat_style', e.target.value as Prefs['chat_style'])}
-            style={{
-              width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid #1f6b4a',
-              color: 'var(--text-on-green-primary)', fontSize: 15, padding: '7px 8px',
-              borderRadius: 5, cursor: 'pointer', outline: 'none',
-            }}
+            className="sp-select"
           >
             <option value="clear">Klar</option>
             <option value="structured">Strukturiert</option>
@@ -338,30 +294,20 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         </div>
 
         {/* Thinking Mode Toggle */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-on-green-secondary)', fontSize: 15, fontWeight: 500 }}>
+        <div className="sp-field">
+          <div className="sp-toggle-row">
+            <span className="sp-toggle-label">
               <Brain size={15} /> Toro denkt laut nach
             </span>
             <button
+              className={`sp-toggle-btn${prefs.thinking_mode ? ' sp-toggle-btn--on' : ''}`}
               onClick={() => updatePref('thinking_mode', !prefs.thinking_mode)}
               title={prefs.thinking_mode ? 'Deaktivieren' : 'Aktivieren'}
-              style={{
-                width: 36, height: 20, borderRadius: 10,
-                border: 'none', cursor: 'pointer', flexShrink: 0,
-                background: prefs.thinking_mode ? 'var(--accent)' : 'rgba(255,255,255,0.15)',
-                position: 'relative', transition: 'background 0.2s',
-              }}
             >
-              <span style={{
-                position: 'absolute', top: 2, width: 16, height: 16,
-                borderRadius: '50%', background: '#fff',
-                transition: 'left 0.2s',
-                left: prefs.thinking_mode ? 18 : 2,
-              }} />
+              <span className={`sp-toggle-thumb${prefs.thinking_mode ? ' sp-toggle-thumb--on' : ''}`} />
             </button>
           </div>
-          <p style={{ color: 'var(--text-on-green-muted)', fontSize: 10, lineHeight: 1.45 }}>
+          <p className="sp-toggle-note">
             Experimentell – wird in einer der nächsten Versionen aktiviert.
           </p>
         </div>
@@ -369,21 +315,13 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       <Divider />
 
-      {/* ── Sektion 4: Session Reset ── */}
-      <div style={{ padding: '12px 14px' }}>
-        <button
-          onClick={onNewConversation}
-          style={{
-            width: '100%', background: 'var(--accent)', color: '#000',
-            border: 'none', borderRadius: 8, padding: '9px 0',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}
-        >
+      {/* ── Sektion: Neuer Chat ── */}
+      <div className="sp-section">
+        <button className="sp-new-chat-btn" onClick={onNewConversation}>
           <Plus size={14} weight="bold" />
           Neuer Chat
         </button>
-        <p style={{ color: 'var(--text-on-green-muted)', fontSize: 10, marginTop: 6, textAlign: 'center', lineHeight: 1.4 }}>
+        <p className="sp-new-chat-note">
           Löscht den Dify-Kontext und startet eine neue conversation_id
         </p>
       </div>
