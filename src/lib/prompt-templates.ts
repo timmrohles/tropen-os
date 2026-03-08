@@ -1,13 +1,6 @@
-export type FieldType = 'text' | 'textarea' | 'select'
-
-export interface FieldDef {
-  id: string
-  label: string
-  type: FieldType
-  options?: string[]      // required when type === 'select'
-  placeholder?: string
-  optional?: boolean
-}
+export type FieldDef =
+  | { id: string; label: string; type: 'text' | 'textarea'; placeholder?: string; optional?: boolean }
+  | { id: string; label: string; type: 'select'; options: string[]; placeholder?: string; optional?: boolean }
 
 export interface Template {
   id: 'chat' | 'research' | 'create' | 'summarize' | 'extract'
@@ -36,12 +29,12 @@ export const TEMPLATES: Template[] = [
       },
     ],
     assemble: (v) => {
-      const tiefe =
-        v.tiefe === 'Kurz & knapp'
-          ? 'kurz und präzise'
-          : v.tiefe === 'Ausführlich mit Erklärung'
-          ? 'ausführlich mit Erklärungen'
-          : 'mit konkreten Beispielen'
+      const tiefeMap: Record<string, string> = {
+        'Kurz & knapp': 'kurz und präzise',
+        'Ausführlich mit Erklärung': 'ausführlich mit Erklärungen',
+        'Mit konkreten Beispielen': 'mit konkreten Beispielen',
+      }
+      const tiefe = tiefeMap[v.tiefe] ?? 'kurz und präzise'
       return `Beantworte folgende Frage ${tiefe}: ${v.frage}`
     },
   },
