@@ -68,6 +68,10 @@ Deno.serve(async (req) => {
       action: 'structure' | 'merge'
       conversations?: Array<{ id: string; title: string | null; task_type: string | null; project_id: string | null }>
       conversation_ids?: string[]
+      workspace_id?: string
+      merge_title?: string
+      project_id?: string | null
+      after_action?: 'trash' | 'delete' | 'keep'
     }
 
 
@@ -178,9 +182,48 @@ Antworte NUR mit validem JSON:
 }`
 
       const raw = await callLLM(prompt)
-      const result = extractJson(raw)
+      const result = extractJson(raw) as { title?: string; content?: string; source_count?: number }
 
-      return new Response(JSON.stringify(result), {
+      const title = (body.merge_title?.trim() || result.title || 'Zusammengeführt')
+      const content = result.content ?? ''
+
+      // Neue Conversation anlegen
+      const { data: newConv, error: convErr } = await adminClient
+        .from('conversations')
+        .insert({
+          workspace_id: body.workspace_id,
+          user_id: user.id,
+          title,
+          project_id: body.project_id ?? null,
+        })
+        .select('id, title, created_at, project_id, task_type, deleted_at')
+        .single()
+      if (convErr || !newConv) throw new Error(`Conversation konnte nicht erstellt werden: ${convErr?.message}`)
+
+      // Zusammenfassung als Message einfügen
+      await adminClient.from('messages').insert({
+        conversation_id: newConv.id,
+        role: 'assistant',
+        content,
+        model_used: 'jungle-order',
+        cost_eur: 0,
+      })
+
+      // Quell-Chats behandeln
+      const ids = body.conversation_ids!
+      const now = new Date().toISOString()
+      if (body.after_action === 'trash' || !body.after_action) {
+        await adminClient.from('conversations')
+          .update({ deleted_at: now, merged_into: newConv.id })
+          .in('id', ids)
+      } else if (body.after_action === 'delete') {
+        await adminClient.from('messages').delete().in('conversation_id', ids)
+        await adminClient.from('conversations').delete().in('id', ids)
+      } else {
+        await adminClient.from('conversations').update({ merged_into: newConv.id }).in('id', ids)
+      }
+
+      return new Response(JSON.stringify({ conversation: newConv, content, source_count: count }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }

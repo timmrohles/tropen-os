@@ -720,49 +720,33 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
     if (!mergeTitle.trim() || !mergeContent) return
     setMergeLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: newConv } = await supabase
-        .from('conversations')
-        .insert({ workspace_id: workspaceId, user_id: user.id, title: mergeTitle.trim(), project_id: mergeProjectId })
-        .select('id, title, created_at, project_id, task_type, deleted_at')
-        .single()
-      if (!newConv) throw new Error('Chat konnte nicht erstellt werden')
-      await supabase.from('messages').insert({
-        conversation_id: (newConv as Conversation).id,
-        role: 'assistant',
-        content: mergeContent,
-        model_used: 'jungle-order',
-        cost_eur: 0,
-      })
       const ids = [...selectedIds]
-      const now = new Date().toISOString()
-      if (mergeAfterAction === 'trash') {
-        await supabase.from('conversations')
-          .update({ deleted_at: now, merged_into: (newConv as Conversation).id })
-          .in('id', ids)
+      const data = await callJungleOrder({
+        action: 'merge',
+        conversation_ids: ids,
+        workspace_id: workspaceId,
+        merge_title: mergeTitle.trim(),
+        project_id: mergeProjectId,
+        after_action: mergeAfterAction,
+      })
+      const newConv = data.conversation as Conversation
+      const content = (data.content as string) ?? ''
+      if (mergeAfterAction !== 'keep') {
         setConversations((prev) => prev.filter((c) => !selectedIds.has(c.id)))
-      } else if (mergeAfterAction === 'delete') {
-        await supabase.from('messages').delete().in('conversation_id', ids)
-        await supabase.from('conversations').delete().in('id', ids)
-        setConversations((prev) => prev.filter((c) => !selectedIds.has(c.id)))
-      } else {
-        await supabase.from('conversations').update({ merged_into: (newConv as Conversation).id }).in('id', ids)
       }
-      setConversations((prev) => [newConv as Conversation, ...prev])
-      setActiveConvId((newConv as Conversation).id)
+      setConversations((prev) => [newConv, ...prev])
+      setActiveConvId(newConv.id)
       setMessages([{
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: mergeContent,
+        content,
         pending: false,
         created_at: new Date().toISOString(),
       }])
       setSelectMode(false)
       setSelectedIds(new Set())
       setMergeModal(false)
-      const count = ids.length
-      setToastMsg(`🦜 ${count} Chat${count !== 1 ? 's' : ''} erfolgreich zusammengeführt`)
+      setToastMsg(`🦜 ${ids.length} Chat${ids.length !== 1 ? 's' : ''} erfolgreich zusammengeführt`)
       setTimeout(() => setToastMsg(''), 4000)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fehler beim Zusammenführen')
