@@ -617,11 +617,18 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/jungle-order`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ action: 'structure', conversations: ungrouped }),
         }
       )
-      if (!res.ok) throw new Error('Analyse fehlgeschlagen')
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(errBody.error ?? `HTTP ${res.status}`)
+      }
       const data = await res.json() as { projects: JungleProject[]; summary: string }
       setJungleProjects(data.projects ?? [])
       setJungleSummary(data.summary ?? '')
@@ -699,7 +706,11 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/jungle-order`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ action: 'merge', conversation_ids: [...selectedIds] }),
         }
       )
