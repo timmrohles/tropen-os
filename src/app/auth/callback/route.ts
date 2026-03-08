@@ -1,0 +1,18 @@
+import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
+
+// Wird aufgerufen nach Magic-Link-Klick (Einladung, Passwort-Reset)
+// Supabase übergibt ?code=... → wird gegen Session getauscht
+// ?next= bestimmt Zielseite (default: /onboarding für Einladungen)
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/onboarding'
+
+  if (code) {
+    const supabase = await createClient()
+    await supabase.auth.exchangeCodeForSession(code)
+  }
+
+  return NextResponse.redirect(`${origin}${next}`)
+}

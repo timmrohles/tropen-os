@@ -1,0 +1,424 @@
+// supabase/functions/ai-chat/index.ts
+// Tropen OS v2 – AI Chat Edge Function mit Task-Router + Streaming
+//
+// Pipeline: Anfrage → Task-Erkennung → Agent → Policy Check → Modellklasse → Modell → Dify Chatflow SSE → Stream
+// Dify App: tropen-os-chat-v2 (Chatflow, nicht Workflow)
+// Endpoint: /v1/chat-messages
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ─────────────────────────────────────────
+// Typen
+// ─────────────────────────────────────────
+
+type TaskType = "chat" | "summarize" | "extract" | "research" | "create";
+type Agent = "general" | "knowledge" | "content" | "business";
+type ModelClass = "fast" | "deep" | "safe";
+
+interface ChatRequest {
+  workspace_id: string;
+  conversation_id: string;
+  message: string;
+}
+
+interface TaskRouterResult {
+  task_type: TaskType;
+  agent: Agent;
+  model_class: ModelClass;
+}
+
+// ─────────────────────────────────────────
+// Task-Router: Keyword-Matching
+// ─────────────────────────────────────────
+
+function detectTask(message: string): TaskRouterResult {
+  const msg = message.toLowerCase();
+
+  let task_type: TaskType = "chat";
+  if (/zusammenfass|summar|tl;dr|kürz|überblick/i.test(msg))              task_type = "summarize";
+  else if (/extrahier|extract|liste alle|finde alle|zähle|auflist/i.test(msg)) task_type = "extract";
+  else if (/recherchier|research|analysier|vergleich|markt|wettbewerb/i.test(msg)) task_type = "research";
+  else if (/schreib|erstell|generier|entwurf|kreier|verfass|formulier/i.test(msg)) task_type = "create";
+
+  let agent: Agent = "general";
+  if (/dokument|pdf|artikel|text|bericht|protokoll|notiz/i.test(msg))      agent = "knowledge";
+  else if (/email|brief|angebot|präsentation|vorlage|newsletter/i.test(msg)) agent = "content";
+  else if (/rechnung|vertrag|lieferant|kunde|umsatz|kosten|budget|projekt/i.test(msg)) agent = "business";
+
+  let model_class: ModelClass = "fast";
+  if (task_type === "research" || task_type === "create") model_class = "deep";
+  if (/vertraulich|dsgvo|sensitiv|personenbezogen|geheim|confidential/i.test(msg)) model_class = "safe";
+
+  return { task_type, agent, model_class };
+}
+
+// ─────────────────────────────────────────
+// Konstanten
+// ─────────────────────────────────────────
+
+const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const DIFY_API_URL        = (Deno.env.get("DIFY_API_URL") ?? "").trim();
+const DIFY_API_KEY        = (Deno.env.get("DIFY_API_KEY") ?? "").trim();  // Key der Chatflow-App tropen-os-chat-v2
+
+// ─────────────────────────────────────────
+// Hilfsfunktionen
+// ─────────────────────────────────────────
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+function errorResponse(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders(), "Content-Type": "application/json" },
+  });
+}
+
+function calculateCost(
+  tokensInput: number,
+  tokensOutput: number,
+  costPer1kInput: number,
+  costPer1kOutput: number
+): number {
+  return Math.round(
+    ((tokensInput / 1000) * costPer1kInput + (tokensOutput / 1000) * costPer1kOutput) * 10000
+  ) / 10000;
+}
+
+// ─────────────────────────────────────────
+// Hauptlogik
+// ─────────────────────────────────────────
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders() });
+  }
+
+  try {
+    // 1. Auth
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return errorResponse("Nicht autorisiert", 401);
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    const user = authData?.user;
+    if (authError || !user) return errorResponse("Ungültiger Token", 401);
+
+    // 2. Request Body
+    console.log("Step 2: Body parsen");
+    const body: ChatRequest = await req.json();
+    const { workspace_id, conversation_id, message } = body;
+    if (!workspace_id || !conversation_id || !message) {
+      return errorResponse("Fehlende Parameter");
+    }
+
+    // 3. Task-Router
+    console.log("Step 3: Task-Router");
+    const { task_type, agent, model_class } = detectTask(message);
+
+    // 4. User-Profil + Organisation
+    console.log("Step 4: User-Profil laden");
+    const { data: userProfile, error: profileError } = await supabase
+      .from("users")
+      .select("*, organizations(*)")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !userProfile) return errorResponse("User nicht gefunden", 404);
+    if (!userProfile.is_active) return errorResponse("Account deaktiviert", 403);
+
+    const organization = userProfile.organizations as { budget_limit: number | null };
+
+    // 5. User-Präferenzen + Org-Einstellungen laden
+    console.log("Step 5: User-Präferenzen laden");
+    const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
+      supabase
+        .from("user_preferences")
+        .select("chat_style, memory_window")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("organization_settings")
+        .select("ai_guide_name")
+        .eq("organization_id", userProfile.organization_id)
+        .maybeSingle(),
+    ]);
+
+    const chatStyle   = userPrefs?.chat_style   ?? "structured";
+    const memorySize  = userPrefs?.memory_window ?? 20;
+    const aiGuideName = orgSettings?.ai_guide_name ?? "Toro";
+
+    // 6. Workspace-Zugang + Policy Check
+    console.log("Step 6: Workspace-Zugang prüfen");
+    const { data: membership } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", workspace_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!membership || membership.role === "viewer") {
+      return errorResponse("Kein Zugang zu diesem Workspace", 403);
+    }
+
+    const { data: workspace, error: wsError } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("id", workspace_id)
+      .eq("organization_id", userProfile.organization_id)
+      .single();
+
+    if (wsError || !workspace) return errorResponse("Workspace nicht gefunden", 404);
+
+    const allowedClasses: string[] = workspace.allowed_model_classes ?? ["fast"];
+    const effectiveClass: ModelClass = allowedClasses.includes(model_class)
+      ? model_class
+      : (allowedClasses[0] as ModelClass);
+
+    // 7. Günstigstes aktives Modell der Klasse wählen
+    console.log("Step 7: Modell wählen, Klasse:", effectiveClass);
+    const { data: models, error: modelError } = await supabase
+      .from("model_catalog")
+      .select("*")
+      .eq("model_class", effectiveClass)
+      .eq("is_active", true)
+      .order("cost_per_1k_input", { ascending: true })
+      .limit(1);
+
+    if (modelError || !models?.length) {
+      return errorResponse(`Kein aktives Modell für Klasse "${effectiveClass}"`, 400);
+    }
+    const modelData = models[0];
+
+    // 8. Budget-Kontrolle – atomisch via RPC
+    console.log("Step 8: Budget prüfen");
+    const estimatedCost = 0.01;
+    const { data: budgetOk, error: budgetError } = await supabase.rpc(
+      "check_and_reserve_budget",
+      { org_id: userProfile.organization_id, p_workspace_id: workspace_id, estimated_cost: estimatedCost }
+    );
+
+    if (budgetError) {
+      console.error("Budget RPC Fehler:", budgetError);
+      return errorResponse("Budget-Prüfung fehlgeschlagen", 500);
+    }
+    if (!budgetOk) {
+      return errorResponse("Monatliches Budget erreicht. Bitte Admin kontaktieren.", 402);
+    }
+
+    // Budget-Stand für done-Event
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const { data: usageThisMonth } = await supabase
+      .from("usage_logs")
+      .select("cost_eur")
+      .eq("organization_id", userProfile.organization_id)
+      .gte("created_at", startOfMonth.toISOString());
+    const totalSpent = usageThisMonth?.reduce((s, r) => s + (r.cost_eur || 0), 0) ?? 0;
+
+    // 9. dify_conversation_id laden – mit IDOR-Schutz
+    const { data: convData, error: convError } = await supabase
+      .from("conversations")
+      .select("dify_conversation_id")
+      .eq("id", conversation_id)
+      .eq("workspace_id", workspace_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (convError || !convData) return errorResponse("Unterhaltung nicht gefunden", 404);
+
+    const difyConversationId = convData.dify_conversation_id ?? null;
+
+    // 10. User-Nachricht speichern
+    const { error: msgError } = await supabase.from("messages").insert({
+      conversation_id,
+      role: "user",
+      content: message,
+      model_used: modelData.name,
+      task_type,
+      agent,
+      model_class: effectiveClass,
+    });
+
+    if (msgError) return errorResponse("Nachricht konnte nicht gespeichert werden", 500);
+
+    // 11. Dify Chatflow aufrufen – /chat-messages Endpoint
+    // conversation_id NUR mitschicken wenn vorhanden (null = neues Gespräch)
+    const difyBody: Record<string, unknown> = {
+      inputs: {
+        task_type,
+        agent,
+        model_class: effectiveClass,
+        chat_style: chatStyle,
+        memory_size: memorySize,
+        ai_guide_name: aiGuideName,
+      },
+      query: message,
+      response_mode: "streaming",
+      user: user.id,
+    };
+    if (difyConversationId) {
+      difyBody.conversation_id = difyConversationId;
+    }
+
+    console.log("Dify Request:", { conversation_id: difyConversationId, query: message });
+
+    const difyResponse = await fetch(`${DIFY_API_URL}/chat-messages`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${DIFY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(difyBody),
+    });
+
+    if (!difyResponse.ok) {
+      const difyError = await difyResponse.text();
+      console.error("Dify Fehler:", difyError);
+      return errorResponse(`Dify: ${difyError}`, 502);
+    }
+
+    // 12. SSE-Stream aufbauen und an Client weiterleiten
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = difyResponse.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullAnswer = "";
+        let streamEnded = false;
+
+        function send(obj: Record<string, unknown>) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        }
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const raw = line.slice(6).trim();
+              if (!raw) continue;
+
+              let parsed: Record<string, unknown>;
+              try { parsed = JSON.parse(raw); }
+              catch { continue; }
+
+              // Nur Non-Message-Events loggen (kein Spam durch Chunks)
+              if (parsed.event !== "message") {
+                console.log("=== NON-MESSAGE EVENT ===", parsed.event, JSON.stringify(parsed).slice(0, 500));
+              }
+
+              if (parsed.event === "message") {
+                // Chatflow-Chunk an Client streamen
+                const chunk = (parsed.answer as string) ?? "";
+                fullAnswer += chunk;
+                send({ type: "chunk", content: chunk });
+
+              } else if ((parsed.event === "message_end" || parsed.event === "workflow_finished") && !streamEnded) {
+                // Dify Chatflow sendet workflow_finished (mit conversation_id auf Top-Level)
+                // oder message_end – beide werden gleich behandelt
+                streamEnded = true;
+
+                // conversation_id liegt bei workflow_finished auf Top-Level, bei message_end auch
+                const streamDifyConvId = (parsed.conversation_id as string) ?? "";
+
+                // Token-Usage: message_end → metadata.usage, workflow_finished → data.total_tokens
+                const usage = (parsed.metadata as { usage?: { prompt_tokens: number; completion_tokens: number } })?.usage;
+                const data  = parsed.data as { total_tokens?: number; status?: string } | undefined;
+                const tokensInput  = usage?.prompt_tokens    ?? 0;
+                const tokensOutput = usage?.completion_tokens ?? data?.total_tokens ?? 0;
+                const costEur = calculateCost(tokensInput, tokensOutput, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
+
+                console.log("Dify terminal event:", parsed.event, { streamDifyConvId, tokensInput, tokensOutput });
+
+                // dify_conversation_id speichern für Gesprächsgedächtnis
+                if (streamDifyConvId && !difyConversationId) {
+                  console.log("Speichere dify_conversation_id:", streamDifyConvId);
+                  await supabase.from("conversations")
+                    .update({ dify_conversation_id: streamDifyConvId })
+                    .eq("id", conversation_id);
+                }
+
+                // Antwort speichern
+                await supabase.from("messages").insert({
+                  conversation_id,
+                  role: "assistant",
+                  content: fullAnswer,
+                  model_used: modelData.name,
+                  task_type,
+                  agent,
+                  model_class: effectiveClass,
+                  tokens_input: tokensInput,
+                  tokens_output: tokensOutput,
+                  cost_eur: costEur,
+                });
+
+                // Usage-Log
+                await supabase.from("usage_logs").insert({
+                  organization_id: userProfile.organization_id,
+                  workspace_id,
+                  user_id: user.id,
+                  model_id: modelData.id,
+                  task_type,
+                  agent,
+                  model_class: effectiveClass,
+                  tokens_input: tokensInput,
+                  tokens_output: tokensOutput,
+                  cost_eur: costEur,
+                });
+
+                // Abschluss-Event an Client
+                send({
+                  type: "done",
+                  routing: { task_type, agent, model_class: effectiveClass, model: modelData.name },
+                  usage: { tokens_input: tokensInput, tokens_output: tokensOutput, cost_eur: costEur },
+                  budget: {
+                    spent_this_month: Math.round((totalSpent + costEur) * 100) / 100,
+                    limit: organization.budget_limit ?? null,
+                  },
+                });
+
+              } else if (parsed.event === "error") {
+                send({ type: "error", message: (parsed.message as string) ?? "Dify-Fehler" });
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Stream-Fehler:", err);
+          send({ type: "error", message: String(err) });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders(),
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
+
+  } catch (err) {
+    console.error("Unerwarteter Fehler:", err);
+    return errorResponse("Interner Serverfehler", 500);
+  }
+});

@@ -1,0 +1,19 @@
+# Secrets
+.env.local
+.env*.local
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# Supabase
+.supabase/
+
+# OS
+.DS_Store
+Thumbs.db
