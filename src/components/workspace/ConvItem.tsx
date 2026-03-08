@@ -128,14 +128,6 @@ export default function ConvItem({
                 onStartEdit(conv.id, conv.title ?? 'Unterhaltung')
               }}
             >{conv.title ?? 'Unterhaltung'}</div>
-            <button
-              className="ci-rename-btn"
-              onMouseDown={(e) => {
-                e.stopPropagation()
-                onStartEdit(conv.id, conv.title ?? 'Unterhaltung')
-              }}
-              title="Umbenennen"
-            >✏</button>
           </div>
         )}
         <div className="ci-meta">
