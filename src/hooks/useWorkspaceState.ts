@@ -610,26 +610,11 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
   async function openJungleModal() {
     setJungleLoading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
       const ungrouped = conversations.filter((c) => !c.project_id && !c.deleted_at)
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/jungle-order`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: 'structure', conversations: ungrouped }),
-        }
-      )
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(errBody.error ?? `HTTP ${res.status}`)
-      }
-      const data = await res.json() as { projects: JungleProject[]; summary: string }
+      const { data, error: fnErr } = await supabase.functions.invoke('jungle-order', {
+        body: { action: 'structure', conversations: ungrouped },
+      })
+      if (fnErr) throw fnErr
       setJungleProjects(data.projects ?? [])
       setJungleSummary(data.summary ?? '')
       setJungleEditName({})
@@ -700,25 +685,10 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
     setMergeProjectId(null)
     setMergeAfterAction('trash')
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/jungle-order`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: 'merge', conversation_ids: [...selectedIds] }),
-        }
-      )
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(errBody.error ?? `HTTP ${res.status}`)
-      }
-      const data = await res.json() as { title: string; content: string; source_count: number }
+      const { data, error: fnErr } = await supabase.functions.invoke('jungle-order', {
+        body: { action: 'merge', conversation_ids: [...selectedIds] },
+      })
+      if (fnErr) throw fnErr
       setMergeTitle(data.title ?? '')
       setMergeContent(data.content ?? '')
       setMergeReady(true)
