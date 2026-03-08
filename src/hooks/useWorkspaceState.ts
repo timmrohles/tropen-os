@@ -877,8 +877,8 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
             const conv = conversations.find((c) => c.id === convId)
             const isDefaultTitle = conv?.title?.startsWith('Chat · ')
             if (isDefaultTitle) {
-              const words = currentInput.trim().split(/\s+/).slice(0, 4).join(' ')
-              const title = words || currentInput.slice(0, 40)
+              const wordArr = currentInput.trim().split(/\s+/)
+              const title = wordArr.slice(0, 5).join(' ') + (wordArr.length > 5 ? '...' : '')
               await supabase.from('conversations').update({ title }).eq('id', convId)
               setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, title } : c)))
             }

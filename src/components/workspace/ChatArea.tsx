@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
-import type { ChatMessageType } from '@/hooks/useWorkspaceState'
+import React, { useState } from 'react'
+import { ArrowsMerge, FolderSimple, Trash, X } from '@phosphor-icons/react'
+import type { ChatMessageType, Project } from '@/hooks/useWorkspaceState'
 import EmptyState from './EmptyState'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
@@ -15,9 +16,16 @@ interface ChatAreaProps {
   routing: { task_type: string; agent: string; model_class: string; model: string } | null
   messagesEndRef: React.RefObject<HTMLDivElement>
   userInitial: string
+  selectMode: boolean
+  selectedArr: string[]
+  projects: Project[]
   onNewConversation: () => void
   onSetInput: (v: string) => void
   onSendMessage: (e: React.FormEvent) => void
+  onOpenMergeModal: () => void
+  onBulkSoftDelete: () => void
+  onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
+  onClearSelection: () => void
 }
 
 export default function ChatArea({
@@ -29,10 +37,21 @@ export default function ChatArea({
   routing,
   messagesEndRef,
   userInitial,
+  selectMode,
+  selectedArr,
+  projects,
   onNewConversation,
   onSetInput,
   onSendMessage,
+  onOpenMergeModal,
+  onBulkSoftDelete,
+  onAssignToProject,
+  onClearSelection,
 }: ChatAreaProps) {
+  const [moveDropOpen, setMoveDropOpen] = useState(false)
+
+  const showSelBar = selectMode && selectedArr.length > 0
+
   return (
     <div className="carea">
       {!activeConvId ? (
@@ -63,9 +82,53 @@ export default function ChatArea({
               <span>🌱</span>
             </div>
           )}
-          <div className="carea-input-wrap">
-            <ChatInput input={input} setInput={onSetInput} sending={sending} onSubmit={onSendMessage} />
-          </div>
+          {showSelBar ? (
+            <div className="carea-sel-bar">
+              <span className="carea-sel-count">
+                {selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} ausgewählt
+              </span>
+
+              {selectedArr.length >= 2 && (
+                <button className="carea-sel-btn carea-sel-btn--merge" onClick={onOpenMergeModal}>
+                  <ArrowsMerge size={15} weight="bold" />
+                  Zusammenführen
+                </button>
+              )}
+
+              <div className="carea-sel-dropdown-wrap">
+                <button className="carea-sel-btn carea-sel-btn--move" onClick={() => setMoveDropOpen((v) => !v)}>
+                  <FolderSimple size={15} />
+                  Verschieben
+                </button>
+                {moveDropOpen && (
+                  <div className="carea-sel-dropdown">
+                    {projects.length === 0 ? (
+                      <div className="carea-sel-dropdown-item carea-sel-dropdown-item--disabled">Keine Projekte</div>
+                    ) : projects.map((p) => (
+                      <button key={p.id} className="carea-sel-dropdown-item" onClick={() => {
+                        selectedArr.forEach((id) => onAssignToProject(id, p.id))
+                        onClearSelection()
+                        setMoveDropOpen(false)
+                      }}>{p.name}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button className="carea-sel-btn carea-sel-btn--delete" onClick={() => { onBulkSoftDelete(); setMoveDropOpen(false) }}>
+                <Trash size={15} />
+                Löschen
+              </button>
+
+              <button className="carea-sel-close" onClick={() => { onClearSelection(); setMoveDropOpen(false) }}>
+                <X size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="carea-input-wrap">
+              <ChatInput input={input} setInput={onSetInput} sending={sending} onSubmit={onSendMessage} />
+            </div>
+          )}
         </>
       )}
     </div>

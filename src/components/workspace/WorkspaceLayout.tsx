@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Parrot from '@/components/Parrot'
 import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
 import { JungleModal } from './modals/JungleModal'
@@ -81,8 +80,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     selectedIds,
     setSelectedIds,
     jungleLoading,
-    projectAssignOpen,
-    setProjectAssignOpen,
 
     // Jungle modal
     jungleModal,
@@ -347,9 +344,16 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         routing={routing}
         messagesEndRef={messagesEndRef as unknown as React.RefObject<HTMLDivElement>}
         userInitial={userInitial}
+        selectMode={selectMode}
+        selectedArr={selectedArr}
+        projects={projects}
         onNewConversation={newConversation}
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
+        onOpenMergeModal={openMergeModal}
+        onBulkSoftDelete={bulkSoftDelete}
+        onAssignToProject={assignToProject}
+        onClearSelection={() => { setSelectMode(false); setSelectedIds(new Set()) }}
       />
 
       {/* ── Session Panel (Desktop only) ── */}
@@ -365,40 +369,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
       {/* ── Toast ── */}
       {toastMsg && <div className="wl-toast">{toastMsg}</div>}
 
-      {/* ── Multi-Select Aktionsleiste ── */}
-      {selectMode && selectedArr.length >= 2 && (
-        <div className="wl-action-bar">
-          <span className="wl-action-count">{selectedArr.length} ausgewählt</span>
-          <button className="wl-action-btn wl-action-btn--flex" onClick={openMergeModal}>
-            <Parrot size={13} /> Zusammenführen
-          </button>
-          <button className="wl-action-btn wl-action-btn--danger" onClick={bulkSoftDelete}>
-            Löschen
-          </button>
-          <div className="wl-action-dropdown-wrap">
-            <button className="wl-action-btn" onClick={() => setProjectAssignOpen((v) => !v)}>
-              Verschieben ▾
-            </button>
-            {projectAssignOpen && (
-              <div className="wl-action-dropdown">
-                {projects.length === 0 ? (
-                  <div className="wl-action-dropdown-item wl-action-dropdown-item--disabled">
-                    Keine Projekte
-                  </div>
-                ) : projects.map((p) => (
-                  <button key={p.id} className="wl-action-dropdown-item" onClick={() => {
-                    selectedArr.forEach((id) => assignToProject(id, p.id))
-                    setSelectMode(false)
-                    setSelectedIds(new Set())
-                    setProjectAssignOpen(false)
-                  }}>{p.name}</button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button className="wl-action-cancel" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}>×</button>
-        </div>
-      )}
 
       {/* ── JungleModal ── */}
       <JungleModal
