@@ -3,8 +3,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
-  Brain, ChartBar, Cpu, Sliders, ArrowCounterClockwise,
-  CaretLeft, CaretRight, Plus,
+  Brain, ChartBar, Cpu, Sliders,
+  CaretLeft, CaretRight, CaretDown, Plus,
 } from '@phosphor-icons/react'
 import type { ChatMessage } from '@/hooks/useWorkspaceState'
 
@@ -36,10 +36,13 @@ export interface SessionPanelProps {
 // Constants
 // ─────────────────────────────────────────────────────────
 
+const STYLE_OPTIONS: Array<{ value: Prefs['chat_style']; label: string; desc: string }> = [
+  { value: 'clear', label: 'Klar', desc: 'Kurz und direkt' },
+  { value: 'structured', label: 'Strukturiert', desc: 'Mit Überschriften und Listen' },
+  { value: 'detailed', label: 'Ausführlich', desc: 'Detailliert mit Beispielen' },
+]
 const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
-  clear: 'Klar',
-  structured: 'Strukturiert',
-  detailed: 'Ausführlich',
+  clear: 'Klar', structured: 'Strukturiert', detailed: 'Ausführlich',
 }
 
 const WARN_COLORS = {
@@ -103,6 +106,8 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   const [collapsed, setCollapsed] = useState(false)
   const [prefs, setPrefs] = useState<Prefs>({ chat_style: 'structured', memory_window: 20, thinking_mode: false })
   const [userId, setUserId] = useState<string | null>(null)
+  const [styleDropOpen, setStyleDropOpen] = useState(false)
+  const styleDropRef = useRef<HTMLDivElement>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -124,6 +129,17 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!styleDropOpen) return
+    function onDown(e: MouseEvent) {
+      if (styleDropRef.current && !styleDropRef.current.contains(e.target as Node)) {
+        setStyleDropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [styleDropOpen])
 
   const savePrefs = useCallback((partial: Partial<Prefs>) => {
     if (!userId) return
@@ -265,15 +281,29 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         {/* Antwort-Stil */}
         <div className="sp-field">
           <label className="sp-select-label">Antwort-Stil</label>
-          <select
-            value={prefs.chat_style}
-            onChange={e => updatePref('chat_style', e.target.value as Prefs['chat_style'])}
-            className="sp-select"
-          >
-            <option value="clear">Klar</option>
-            <option value="structured">Strukturiert</option>
-            <option value="detailed">Ausführlich</option>
-          </select>
+          <div className="sp-select-wrap" ref={styleDropRef}>
+            <button
+              className="sp-select-trigger"
+              onClick={() => setStyleDropOpen((v) => !v)}
+            >
+              {STYLE_LABELS[prefs.chat_style]}
+              <CaretDown size={14} style={{ color: '#89c4a8', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+            </button>
+            {styleDropOpen && (
+              <div className="sp-select-menu">
+                {STYLE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`sp-select-option${prefs.chat_style === opt.value ? ' sp-select-option--active' : ''}`}
+                    onClick={() => { updatePref('chat_style', opt.value); setStyleDropOpen(false) }}
+                  >
+                    <span className="sp-select-opt-label">{opt.label}</span>
+                    <span className="sp-select-opt-desc">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Thinking Mode Toggle */}

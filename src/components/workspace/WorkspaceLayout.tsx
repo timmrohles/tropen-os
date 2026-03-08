@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { PencilSimple, FolderSimple, CaretRight, Trash } from '@phosphor-icons/react'
 import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
 import { JungleModal } from './modals/JungleModal'
@@ -297,17 +298,22 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
               setMenuAnchor(null)
               setEditingConvId(menuConv.id)
               setEditingTitle(menuConv.title ?? 'Unterhaltung')
-            }}>Umbenennen</button>
+            }}>
+              <PencilSimple size={15} className="wl-ctx-icon" />
+              Umbenennen
+            </button>
             <button className="wl-ctx-item" onMouseDown={(e) => {
               e.stopPropagation()
               setContextMenuSubmenu((v) => !v)
-            }}>Zu Projekt {contextMenuSubmenu ? '▾' : '▸'}</button>
+            }}>
+              <FolderSimple size={15} className="wl-ctx-icon" />
+              Zu Projekt
+              <CaretRight size={13} className="wl-ctx-caret" style={{ transform: contextMenuSubmenu ? 'rotate(90deg)' : undefined, transition: 'transform 0.15s' }} />
+            </button>
             {contextMenuSubmenu && (
               <div className="wl-ctx-submenu">
                 {projects.length === 0 ? (
-                  <div className="wl-ctx-item wl-ctx-item--disabled">
-                    Keine Projekte
-                  </div>
+                  <div className="wl-ctx-item wl-ctx-item--disabled">Keine Projekte</div>
                 ) : projects.map((p) => (
                   <button key={p.id} className="wl-ctx-item" onMouseDown={(e) => {
                     e.stopPropagation()
@@ -322,14 +328,21 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
                 e.stopPropagation()
                 setMenuAnchor(null)
                 assignToProject(menuConv.id, null)
-              }}>Aus Projekt entfernen</button>
+              }}>
+                <FolderSimple size={15} className="wl-ctx-icon" />
+                Aus Projekt entfernen
+              </button>
             )}
+            <div className="wl-ctx-divider" />
             <button className="wl-ctx-item wl-ctx-item--danger" onMouseDown={(e) => {
               e.stopPropagation()
               setContextMenuId(null)
               setMenuAnchor(null)
               setConfirmDeleteId(menuConv.id)
-            }}>Löschen</button>
+            }}>
+              <Trash size={15} />
+              Löschen
+            </button>
           </div>
         )
       })()}
