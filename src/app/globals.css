@@ -299,3 +299,65 @@ body {
 .ps-jungle-btn--disabled { opacity: 0.35; cursor: not-allowed; }
 .ps-select-mode-btn { background: transparent; border: none; border-left: 1px solid rgba(0,0,0,0.2); color: #000; width: 38px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
 .ps-select-mode-btn--active { background: rgba(0,0,0,0.18); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Shared Modal Styles
+   ───────────────────────────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 400; backdrop-filter: blur(4px); }
+.modal { background: #111; border: 1px solid #222; border-radius: 12px; width: 90%; max-width: 560px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.7); overflow: hidden; }
+.modal-header { display: flex; align-items: center; gap: 10px; padding: 18px 20px 14px; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; }
+.modal-title { flex: 1; font-size: 17px; font-weight: 700; color: #e5e5e5; }
+.modal-close { background: none; border: none; color: #444; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 2px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid #1e1e1e; flex-shrink: 0; }
+.modal-btn-primary { background: #14b8a6; color: #000; border: none; padding: 10px 20px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.modal-btn-primary--saving { opacity: 0.6; }
+.modal-btn-primary--invalid { opacity: 0.4; cursor: not-allowed; }
+.modal-btn-secondary { background: none; color: #555; border: 1px solid #2a2a2a; padding: 10px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   JungleModal
+   ───────────────────────────────────────────────────────────────────────── */
+.jm-loading-content { align-items: center; gap: 16px; padding: 48px 40px; }
+.jm-loading-text { font-size: 16px; color: #14b8a6; font-weight: 600; }
+.jm-pulse { width: 120px; height: 3px; border-radius: 2px; background: #0d2926; position: relative; overflow: hidden; }
+.jm-summary { font-size: 13px; color: #888; font-style: italic; padding: 10px 20px 4px; margin: 0; }
+.jm-folder-list { flex: 1; overflow-y: auto; padding: 12px 20px; display: flex; flex-direction: column; gap: 10px; }
+.jm-folder { background: #0e0e0e; border: 1px solid #1e1e1e; border-radius: 8px; padding: 10px 12px; transition: border-color 0.15s; }
+.jm-folder-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.jm-folder-name-input { flex: 1; background: transparent; border: none; border-bottom: 1px solid #2a2a2a; color: #ccc; font-size: 13px; font-weight: 600; outline: none; padding: 0 0 2px; }
+.jm-folder-remove { background: none; border: none; color: #3a3a3a; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; }
+.jm-conv-item { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 5px; cursor: grab; color: #888; font-size: 12px; }
+.jm-conv-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-conv-remove { background: none; border: none; color: #333; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+.jm-add-conv-wrap { position: relative; }
+.jm-add-conv-btn { background: none; border: none; color: #3a3a3a; font-size: 11px; cursor: pointer; padding: 4px 6px; margin-top: 4px; }
+.jm-add-conv-dropdown { position: absolute; top: 100%; left: 0; z-index: 10; background: #161616; border: 1px solid #252525; border-radius: 7px; padding: 4px 0; min-width: 220px; max-height: 180px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.jm-add-conv-item { display: block; width: 100%; background: none; border: none; color: #aaa; font-size: 12px; padding: 6px 14px; text-align: left; cursor: pointer; }
+.jm-add-folder-btn { background: none; border: 1px dashed #2a2a2a; color: #444; border-radius: 7px; padding: 8px 14px; cursor: pointer; font-size: 12px; text-align: left; margin-top: 2px; }
+.jm-media-teaser { margin: 0 20px 4px; padding: 10px 14px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 7px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.jm-media-teaser-title { font-size: 12px; color: #3a3a3a; }
+.jm-media-teaser-sub { font-size: 11px; color: #2a2a2a; margin-top: 2px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MergeModal
+   ───────────────────────────────────────────────────────────────────────── */
+.mm-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.mm-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 0; }
+.mm-loading-text { font-size: 14px; color: #14b8a6; font-weight: 600; }
+.mm-source-list { margin-bottom: 12px; }
+.mm-section-label { font-size: 11px; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.mm-section-label--mt { margin-top: 14px; }
+.mm-source-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.mm-source-title { flex: 1; font-size: 13px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-source-meta { font-size: 11px; color: #444; flex-shrink: 0; }
+.mm-divider { height: 1px; background: #1e1e1e; margin: 12px 0; }
+.mm-name-input { width: 100%; background: #0e0e0e; border: 1px solid #2a2a2a; color: #e5e5e5; padding: 10px 12px; border-radius: 7px; font-size: 14px; outline: none; box-sizing: border-box; }
+.mm-project-wrap { position: relative; }
+.mm-project-btn { background: #0e0e0e; border: 1px solid #2a2a2a; color: #888; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: left; }
+.mm-project-dropdown { position: absolute; top: 100%; left: 0; margin-top: 4px; background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; padding: 4px 0; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 10; }
+.mm-project-dropdown-item { display: block; width: 100%; background: none; border: none; color: #aaa; font-size: 12px; padding: 7px 14px; text-align: left; cursor: pointer; }
+.mm-radio-label { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.mm-radio-dot { font-size: 13px; color: #555; }
+.mm-radio-dot--active { color: #14b8a6; }
+.mm-radio-text { font-size: 13px; color: #666; cursor: pointer; }
+.mm-radio-text--active { color: #ccc; }
