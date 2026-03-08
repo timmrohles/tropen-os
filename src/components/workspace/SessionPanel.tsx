@@ -197,7 +197,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
             <Row label="Modell" value={routing.model} />
             <div className="sp-row">
               <span className="sp-row-label">Klasse</span>
-              <span className="sp-class-badge">{routing.model_class}</span>
+              <span className={`sp-class-badge sp-class-badge--${routing.model_class ?? 'fast'}`}>{routing.model_class}</span>
             </div>
           </>
         ) : (
