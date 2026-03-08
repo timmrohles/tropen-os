@@ -1,19 +1,33 @@
-# Secrets
+# ── Environment & Secrets ─────────────────────────────────
+.env
 .env.local
-.env*.local
+.env.*.local
+.env.production
+.env.staging
 
-# Dependencies
+# ── Dependencies ──────────────────────────────────────────
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
-# Next.js
+# ── Next.js ───────────────────────────────────────────────
 .next/
 out/
+build/
 
-# Supabase
-.supabase/
+# ── Supabase ──────────────────────────────────────────────
+supabase/.branches
+supabase/.temp
 
-# OS
+# ── System ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── IDE ───────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
