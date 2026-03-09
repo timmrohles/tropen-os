@@ -40,7 +40,7 @@
   `ai_act_acknowledged` BOOLEAN, `ai_act_acknowledged_at` TIMESTAMPTZ
 - `organization_settings`: organization_id, organization_display_name, logo_url, primary_color, ai_guide_name
 - `conversations`: id, workspace_id, user_id, title, task_type, project_id, created_at
-- `projects`: id, workspace_id, name, display_order, created_at
+- `projects`: id, workspace_id, name, description, context, tone, language, target_audience, memory, display_order, created_at, updated_at
 - `messages`: id, conversation_id, role, content, model_used, cost_eur, created_at
 
 ## Compliance & AI Act
@@ -227,6 +227,7 @@ Falls du das nicht warst, ignoriere diese Mail.
 | 013_memory_window.sql | memory_window INTEGER in user_preferences |
 | 014_rls_audit.sql | RLS-Audit: messages auf SELECT-only, conversations granulare Policies (SELECT/INSERT/UPDATE/DELETE) |
 | 015_thinking_mode.sql | thinking_mode BOOLEAN in user_preferences (experimentell, noch nicht in Edge Function) |
+| 016_smart_projects.sql | projects um description, context, tone, language, target_audience, memory, updated_at erweitert |
 
 ---
 
@@ -288,7 +289,7 @@ Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgel
 
 ### Nächste Schritte (Priorität)
 1. ~~**🔴 Edge Function `workflow_finished`-Event**~~ → **✅ Behoben 2026-03-09** — `workflow_finished` und `message_end` getrennt behandelt; `dify_conversation_id` wird jetzt korrekt aus `message_end` gespeichert
-2. **🟡 Smarte Projekte Phase 2** — `/projects`-Seite (4 Tabs), erweiterte Projekteigenschaften, Kontext-Textfeld
+2. ~~**Smarte Projekte Phase 2**~~ → **✅ Behoben 2026-03-09** — `/projects`-Seite (4 Tabs), erweitertes Schema, API-Route, LeftNav-Link
 3. **Prompt-Bibliothek Phase 3** — DB-Tabelle `prompt_templates`, eigene Vorlagen speichern, Sidebar-Integration
 4. **Agenten-System Phase 3** — `agents`-Tabelle, User-Agenten, Projekt-Zuweisungen, Community Phase 4
 
