@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
   FolderOpen, Robot, Users, BookOpen, Lock,
@@ -33,30 +33,35 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
 
-  useEffect(() => { loadWorkspace() }, [])
-
-  async function loadWorkspace() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = '/login'; return }
-
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('workspace_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    const wsId = membership?.workspace_id ?? null
-    setWorkspaceId(wsId)
-    if (wsId) await loadProjects(wsId)
-    setLoading(false)
-  }
-
-  async function loadProjects(wsId: string) {
+  const loadProjects = useCallback(async (wsId: string) => {
     const res = await fetch(`/api/projects?workspace_id=${wsId}`)
     if (res.ok) setProjects(await res.json())
-  }
+  }, [])
+
+  const loadWorkspace = useCallback(async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { window.location.href = '/login'; return }
+
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single()
+
+      const wsId = membership?.workspace_id ?? null
+      setWorkspaceId(wsId)
+      if (wsId) await loadProjects(wsId)
+    } catch (err) {
+      console.error('[projects] loadWorkspace error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [loadProjects])
+
+  useEffect(() => { loadWorkspace() }, [loadWorkspace])
 
   function selectProject(p: Project) {
     setSelected(p)
@@ -88,15 +93,19 @@ export default function ProjectsPage() {
   }
 
   async function handleDelete() {
-    if (!selected) return
-    await fetch('/api/projects', {
+    if (!selected || saving) return
+    setSaving(true)
+    const res = await fetch('/api/projects', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: selected.id }),
     })
-    setProjects(ps => ps.filter(p => p.id !== selected.id))
-    setSelected(null)
-    setDeleteConfirm(false)
+    if (res.ok) {
+      setProjects(ps => ps.filter(p => p.id !== selected.id))
+      setSelected(null)
+      setDeleteConfirm(false)
+    }
+    setSaving(false)
   }
 
   async function handleCreate() {
@@ -211,7 +220,7 @@ export default function ProjectsPage() {
               ) : (
                 <div style={s.grid}>
                   {projects.map(p => {
-                    const count = (p.conversations as unknown as { count: number }[] | undefined)?.[0]?.count ?? 0
+                    const count = p.conversations?.[0]?.count ?? 0
                     return (
                       <div key={p.id} style={selected?.id === p.id ? s.cardActive : s.card} onClick={() => selectProject(p)}>
                         <p className="t-primary" style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.name}</p>
