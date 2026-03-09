@@ -43,7 +43,14 @@ export interface Conversation {
 export interface Project {
   id: string
   name: string
+  description?: string | null
+  context?: string | null
+  tone?: string | null
+  language?: string | null
+  target_audience?: string | null
+  memory?: string | null
   display_order: number
+  conversations?: { count: number }[]
 }
 
 export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'> {
