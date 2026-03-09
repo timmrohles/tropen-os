@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   Folders, ChartBar, Robot, CurrencyEur, ClipboardText,
   Users, TreePalm, SignOut, Gear, CaretDown, Plus,
-  ArrowsMerge, FolderSimple, Trash,
+  ArrowsMerge, FolderSimple, FolderOpen, Trash,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
 import Papierkorb from './Papierkorb'
@@ -144,6 +144,7 @@ export default function LeftNav({
       <div className="lnav-section">
         <span className="lnav-section-label t-dezent">Navigation</span>
         <NavItem href="/dashboard" icon={<ChartBar size={22} weight="fill" />} label="Dashboard" />
+        <NavItem href="/projects" icon={<FolderOpen size={22} weight="fill" />} label="Projekte" />
 
         {/* Workspaces Dropdown */}
         <button className="lnav-item" onClick={() => setWsOpen(v => !v)}>
