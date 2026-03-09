@@ -51,6 +51,8 @@ export interface Project {
   memory?: string | null
   display_order: number
   conversations?: { count: number }[]
+  created_at?: string
+  updated_at?: string | null
 }
 
 export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'> {
@@ -459,7 +461,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
           .limit(50),
         supabase
           .from('projects')
-          .select('id, name, display_order')
+          .select('id, name, description, context, tone, language, target_audience, memory, display_order, created_at, updated_at')
           .eq('workspace_id', workspaceId)
           .order('display_order')
       ])

@@ -29,6 +29,7 @@ export default function ProjectsPage() {
 
   const [form, setForm] = useState({ name: '', description: '', context: '', tone: 'casual', language: 'auto', target_audience: 'internal' })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
@@ -79,6 +80,7 @@ export default function ProjectsPage() {
   async function handleSave() {
     if (!selected) return
     setSaving(true)
+    setSaveError(null)
     const res = await fetch('/api/projects', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -88,6 +90,8 @@ export default function ProjectsPage() {
       const updated = await res.json()
       setProjects(ps => ps.map(p => p.id === updated.id ? updated : p))
       setSelected(updated)
+    } else {
+      setSaveError('Speichern fehlgeschlagen. Bitte versuche es erneut.')
     }
     setSaving(false)
   }
@@ -95,6 +99,7 @@ export default function ProjectsPage() {
   async function handleDelete() {
     if (!selected || saving) return
     setSaving(true)
+    setSaveError(null)
     const res = await fetch('/api/projects', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -104,6 +109,8 @@ export default function ProjectsPage() {
       setProjects(ps => ps.filter(p => p.id !== selected.id))
       setSelected(null)
       setDeleteConfirm(false)
+    } else {
+      setSaveError('Löschen fehlgeschlagen. Bitte versuche es erneut.')
     }
     setSaving(false)
   }
@@ -296,6 +303,9 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
+                {saveError && (
+                  <p style={{ margin: '0 0 12px', fontSize: 'var(--text-xs)', color: '#ef4444' }}>{saveError}</p>
+                )}
                 <div style={s.actions}>
                   {deleteConfirm ? (
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
