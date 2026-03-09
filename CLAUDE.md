@@ -287,5 +287,11 @@ Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgel
 | `src/components/workspace/LeftNav.tsx` | 309 | OK |
 
 ### Nächste Schritte (Priorität)
-1. **🔴 Edge Function `workflow_finished`-Event** — messages werden nicht gespeichert, kein Gesprächsgedächtnis
-2. **Prompt-Bibliothek Phase 3** — DB-Tabelle `prompt_templates`, eigene Vorlagen speichern, Sidebar-Integration
+1. ~~**🔴 Edge Function `workflow_finished`-Event**~~ → **✅ Behoben 2026-03-09** — `workflow_finished` und `message_end` getrennt behandelt; `dify_conversation_id` wird jetzt korrekt aus `message_end` gespeichert
+2. **🟡 Smarte Projekte Phase 2** — `/projects`-Seite (4 Tabs), erweiterte Projekteigenschaften, Kontext-Textfeld
+3. **Prompt-Bibliothek Phase 3** — DB-Tabelle `prompt_templates`, eigene Vorlagen speichern, Sidebar-Integration
+4. **Agenten-System Phase 3** — `agents`-Tabelle, User-Agenten, Projekt-Zuweisungen, Community Phase 4
+
+### Projekt-Gedächtnis (Roadmap)
+- **Phase 2**: Manuelles Kontext-Textfeld im Projekt-Detail (Freitext, den Toro bei jedem Chat liest).
+- **Phase 3**: Toro extrahiert automatisch Personen, Deadlines, Entscheidungen und offene Fragen aus dem Chat-Verlauf via eigenem Dify-Workflow und schreibt sie in `projects.memory`.

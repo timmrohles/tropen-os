@@ -296,9 +296,57 @@ serve(async (req) => {
         let buffer = "";
         let fullAnswer = "";
         let streamEnded = false;
+        let wfTokens: number | null = null; // Tokens aus workflow_finished, Fallback für message_end
 
         function send(obj: Record<string, unknown>) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        }
+
+        async function commitSave(difyConvId: string, tokensInput: number, tokensOutput: number) {
+          const costEur = calculateCost(tokensInput, tokensOutput, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
+
+          if (difyConvId && !difyConversationId) {
+            console.log("Speichere dify_conversation_id:", difyConvId);
+            await supabase.from("conversations")
+              .update({ dify_conversation_id: difyConvId })
+              .eq("id", conversation_id);
+          }
+
+          await supabase.from("messages").insert({
+            conversation_id,
+            role: "assistant",
+            content: fullAnswer,
+            model_used: modelData.name,
+            task_type,
+            agent,
+            model_class: effectiveClass,
+            tokens_input: tokensInput,
+            tokens_output: tokensOutput,
+            cost_eur: costEur,
+          });
+
+          await supabase.from("usage_logs").insert({
+            organization_id: userProfile.organization_id,
+            workspace_id,
+            user_id: user.id,
+            model_id: modelData.id,
+            task_type,
+            agent,
+            model_class: effectiveClass,
+            tokens_input: tokensInput,
+            tokens_output: tokensOutput,
+            cost_eur: costEur,
+          });
+
+          send({
+            type: "done",
+            routing: { task_type, agent, model_class: effectiveClass, model: modelData.name },
+            usage: { tokens_input: tokensInput, tokens_output: tokensOutput, cost_eur: costEur },
+            budget: {
+              spent_this_month: Math.round((totalSpent + costEur) * 100) / 100,
+              limit: organization.budget_limit ?? null,
+            },
+          });
         }
 
         try {
@@ -320,79 +368,47 @@ serve(async (req) => {
               catch { continue; }
 
               // Nur Non-Message-Events loggen (kein Spam durch Chunks)
-              if (parsed.event !== "message") {
-                console.log("=== NON-MESSAGE EVENT ===", parsed.event, JSON.stringify(parsed).slice(0, 500));
+              if (parsed.event !== "message" && parsed.event !== "text_chunk") {
+                console.log("=== NON-CHUNK EVENT ===", parsed.event, JSON.stringify(parsed).slice(0, 500));
               }
 
               if (parsed.event === "message") {
-                // Chatflow-Chunk an Client streamen
+                // Basic Chat App: Chunk via message event
                 const chunk = (parsed.answer as string) ?? "";
-                fullAnswer += chunk;
-                send({ type: "chunk", content: chunk });
-
-              } else if ((parsed.event === "message_end" || parsed.event === "workflow_finished") && !streamEnded) {
-                // Dify Chatflow sendet workflow_finished (mit conversation_id auf Top-Level)
-                // oder message_end – beide werden gleich behandelt
-                streamEnded = true;
-
-                // conversation_id liegt bei workflow_finished auf Top-Level, bei message_end auch
-                const streamDifyConvId = (parsed.conversation_id as string) ?? "";
-
-                // Token-Usage: message_end → metadata.usage, workflow_finished → data.total_tokens
-                const usage = (parsed.metadata as { usage?: { prompt_tokens: number; completion_tokens: number } })?.usage;
-                const data  = parsed.data as { total_tokens?: number; status?: string } | undefined;
-                const tokensInput  = usage?.prompt_tokens    ?? 0;
-                const tokensOutput = usage?.completion_tokens ?? data?.total_tokens ?? 0;
-                const costEur = calculateCost(tokensInput, tokensOutput, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
-
-                console.log("Dify terminal event:", parsed.event, { streamDifyConvId, tokensInput, tokensOutput });
-
-                // dify_conversation_id speichern für Gesprächsgedächtnis
-                if (streamDifyConvId && !difyConversationId) {
-                  console.log("Speichere dify_conversation_id:", streamDifyConvId);
-                  await supabase.from("conversations")
-                    .update({ dify_conversation_id: streamDifyConvId })
-                    .eq("id", conversation_id);
+                if (chunk) {
+                  fullAnswer += chunk;
+                  send({ type: "chunk", content: chunk });
                 }
 
-                // Antwort speichern
-                await supabase.from("messages").insert({
-                  conversation_id,
-                  role: "assistant",
-                  content: fullAnswer,
-                  model_used: modelData.name,
-                  task_type,
-                  agent,
-                  model_class: effectiveClass,
-                  tokens_input: tokensInput,
-                  tokens_output: tokensOutput,
-                  cost_eur: costEur,
-                });
+              } else if (parsed.event === "text_chunk") {
+                // Chatflow: Chunk via text_chunk event
+                const chunk = (parsed.data as { text?: string })?.text ?? "";
+                if (chunk) {
+                  fullAnswer += chunk;
+                  send({ type: "chunk", content: chunk });
+                }
 
-                // Usage-Log
-                await supabase.from("usage_logs").insert({
-                  organization_id: userProfile.organization_id,
-                  workspace_id,
-                  user_id: user.id,
-                  model_id: modelData.id,
-                  task_type,
-                  agent,
-                  model_class: effectiveClass,
-                  tokens_input: tokensInput,
-                  tokens_output: tokensOutput,
-                  cost_eur: costEur,
-                });
+              } else if (parsed.event === "workflow_finished") {
+                // Chatflow: Workflow-internes Abschluss-Event
+                // KEIN conversation_id hier – kommt erst in message_end!
+                // Nur Tokens und Fallback-Antwort sammeln, KEIN streamEnded setzen.
+                const data = parsed.data as { total_tokens?: number; outputs?: { answer?: string } } | undefined;
+                wfTokens = data?.total_tokens ?? null;
+                if (!fullAnswer && data?.outputs?.answer) {
+                  fullAnswer = data.outputs.answer;
+                  send({ type: "chunk", content: fullAnswer });
+                }
+                console.log("workflow_finished: tokens =", wfTokens, "| fullAnswer =", fullAnswer.length, "Zeichen");
 
-                // Abschluss-Event an Client
-                send({
-                  type: "done",
-                  routing: { task_type, agent, model_class: effectiveClass, model: modelData.name },
-                  usage: { tokens_input: tokensInput, tokens_output: tokensOutput, cost_eur: costEur },
-                  budget: {
-                    spent_this_month: Math.round((totalSpent + costEur) * 100) / 100,
-                    limit: organization.budget_limit ?? null,
-                  },
-                });
+              } else if (parsed.event === "message_end" && !streamEnded) {
+                // Chatflow-Terminal-Event: enthält conversation_id + usage
+                streamEnded = true;
+                const streamDifyConvId = (parsed.conversation_id as string) ?? "";
+                const usage = (parsed.metadata as { usage?: { prompt_tokens: number; completion_tokens: number } })?.usage;
+                const tokensInput  = usage?.prompt_tokens    ?? 0;
+                const tokensOutput = usage?.completion_tokens ?? wfTokens ?? 0;
+                console.log("message_end (terminal):", { streamDifyConvId, tokensInput, tokensOutput });
+                await commitSave(streamDifyConvId, tokensInput, tokensOutput);
 
               } else if (parsed.event === "error") {
                 send({ type: "error", message: (parsed.message as string) ?? "Dify-Fehler" });
@@ -403,6 +419,11 @@ serve(async (req) => {
           console.error("Stream-Fehler:", err);
           send({ type: "error", message: String(err) });
         } finally {
+          // Fallback: Nur workflow_finished empfangen, kein message_end (z.B. Basic Workflow App)
+          if (!streamEnded && fullAnswer) {
+            console.log("Fallback-Save: kein message_end empfangen, speichere via workflow_finished-Daten");
+            await commitSave("", 0, wfTokens ?? 0);
+          }
           controller.close();
         }
       },
