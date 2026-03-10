@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import Parrot from '@/components/Parrot'
 import { Scales, Buildings, Plant } from '@phosphor-icons/react/dist/ssr'
+import ToroChatWidget from '@/components/ToroChatWidget'
 
 // Features für das Grid
 const features = [
@@ -31,7 +32,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-[calc(100vh-52px)] flex flex-col">
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-20 flex-1">
+      <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-20">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-teal-400 font-medium mb-8 tracking-wide">
           <span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
@@ -79,6 +80,9 @@ export default async function HomePage() {
           </Link>
         )}
       </section>
+
+      {/* ── Toro Public Chat ────────────────────────────── */}
+      <ToroChatWidget />
 
       {/* ── Feature Grid ─────────────────────────────────── */}
       <section className="px-6 pb-20 max-w-4xl mx-auto w-full">
