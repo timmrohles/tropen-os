@@ -26,7 +26,7 @@ const GREETING: Msg = {
 const CTA_MSG: Msg = {
   role: 'assistant',
   isCta: true,
-  content: 'Du hast mich jetzt ein bisschen kennengelernt 🦜 Wenn du willst, können wir das vertiefen – kostenlos, ohne Kreditkarte.',
+  content: 'Du hast Toro kennengelernt 🦜 Mach weiter – kostenlos registrieren.',
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
