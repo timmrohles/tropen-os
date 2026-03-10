@@ -2,6 +2,28 @@
 
 > Einzige Quelle der Wahrheit für Claude Code.
 
+## Arbeitsweise
+
+### Autonomie-Level: Hoch
+
+Wir arbeiten lokal. Kein Produktionssystem gefährdet. Claude darf ohne Rückfrage:
+
+- Dateien erstellen, bearbeiten, löschen
+- Dependencies installieren
+- Git commits ausführen
+- Datenbankmigrationen erstellen
+- Konfigurationsdateien ändern
+- Refactoring durchführen
+- Bugs fixen
+
+Claude fragt NUR bei:
+
+- Destruktiven Aktionen die nicht rückgängig zu machen sind (z.B. Datenbank leeren)
+- Grundlegenden Architekturentscheidungen die das Gesamtsystem betreffen
+- Wenn zwei Lösungswege gleichwertig sind und Timms Präferenz wichtig ist
+
+---
+
 ## Tech Stack
 
 | Technologie | Version | Hinweis |
