@@ -24,6 +24,47 @@ Claude fragt NUR bei:
 
 ---
 
+## Nutzerbedürfnisse & Konsequenzen
+
+### Was Nutzer lieben – unser Status
+
+| Bedürfnis | Status |
+|-----------|--------|
+| Gute Beratung statt nur Antwort | ✅ Erledigt – Toro ist Berater |
+| Transparenz über Kosten und Modelle | ✅ Erledigt – SessionPanel |
+| Memory mit Kontrolle | ✅ Erledigt – `user_preferences` editierbar |
+| Breite Einsatzmöglichkeiten | ✅ Erledigt – Task-Modal und Pakete |
+| Real-Time Websuche | 🔜 Geplant V2 |
+| Voice Output | 🔜 Dify hat es, UI fehlt |
+| Multimodalität und Dateiupload | 🔜 UI fehlt |
+
+### Was Nutzer hassen – unsere Antwort
+
+| Problem | Unsere Lösung |
+|---------|---------------|
+| Zerbrechliche Sessions | ✅ Gelöst – Dify-Gedächtnis ab Nachricht 2 |
+| Unklare Datenschutz-Story | ✅ AVV, Training-Opt-Out, EU-Server |
+| Intransparente Filter | ✅ Toro Guard erklärt Ablehnungen |
+| Überaggressive Filter | 🔧 To-Do – Level-Slider statt alles/nichts |
+| Kosten- und Modell-Kontrolle für B2B | 🔧 To-Do – Admin-Dashboard noch nicht gebaut |
+
+### Drei konkrete To-Dos
+
+#### 1. Unsicherheit aktiv markieren
+Toro sagt explizit wenn er sich nicht sicher ist – niemals falsche Fakten selbstbewusst verkaufen.
+Im System-Prompt verankern: *"Wenn du unsicher bist, sage es. Schlage nach oder empfehle Prüfung."*
+
+#### 2. Proaktive aber abschaltbare Hilfe
+Toro schlägt nächste Schritte vor – immer mit sichtbarem X zum Schließen.
+- `user_preferences`: `proactive_hints BOOLEAN`, Default `true`
+- In Settings sichtbar mit Erklärung
+
+#### 3. Kosten-Forecast statt nur Verbrauch
+SessionPanel zeigt nicht nur Verbrauch sondern hochgerechnet was der Monat kosten wird.
+Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen Monat – möchtest du auf Eco wechseln?"*
+
+---
+
 ## Tech Stack
 
 | Technologie | Version | Hinweis |
