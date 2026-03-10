@@ -92,10 +92,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const safeHistory = history.slice(-10).map((m) => ({
-    role: m.role,
-    content: String(m.content).slice(0, 1000),
-  }))
+  const safeHistory = history.slice(-10)
+    .filter((m) => !detectInjection(String(m.content)))
+    .map((m): { role: 'user' | 'assistant'; content: string } => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: String(m.content).slice(0, 1000),
+    }))
 
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

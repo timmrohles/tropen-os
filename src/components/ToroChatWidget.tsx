@@ -57,9 +57,15 @@ export default function ToroChatWidget() {
   const [sending, setSending] = useState(false)
   const [sentCount, setSentCount] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const ctaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setSentCount(getSentCount())
+    return () => {
+      abortRef.current?.abort()
+      if (ctaTimerRef.current) clearTimeout(ctaTimerRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -87,10 +93,12 @@ export default function ToroChatWidget() {
     setMsgs((prev) => [...prev, { role: 'assistant', content: '', pending: true }])
 
     try {
+      abortRef.current = new AbortController()
       const res = await fetch('/api/public/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history }),
+        signal: abortRef.current.signal,
       })
 
       if (!res.ok || !res.body) {
@@ -140,7 +148,7 @@ export default function ToroChatWidget() {
       ])
 
       if (newCount >= MAX_MSGS) {
-        setTimeout(() => {
+        ctaTimerRef.current = setTimeout(() => {
           setMsgs((prev) => [...prev, CTA_MSG])
         }, 400)
       }
