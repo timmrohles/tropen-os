@@ -65,6 +65,59 @@ Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen 
 
 ---
 
+## Wissensbasis & RAG-Architektur
+
+### Fundament
+- Vector Store: **Supabase pgvector (EU)** — kein externer Vector Store
+- Embedding-Modell: **OpenAI text-embedding-3-small** (1536 Dimensionen)
+- Package: `openai` (bereits installiert)
+
+### Drei Wissensebenen
+| Ebene | Scope | Wer befüllt |
+|-------|-------|-------------|
+| Org | Alle Nutzer der Organisation | Admin |
+| User | Nur der eigene Nutzer | Jeder |
+| Projekt | Spezifisch für ein Projekt | Projekt-Mitglieder |
+
+**Toro-Priorisierung beim Antworten:** Projekt → User → Org → eigenes Wissen
+
+**Pflicht:** Quellenangabe bei jeder RAG-Antwort im Format: `Quelle: [Dokumentname] · [Datum]`
+
+### Quellen-Roadmap
+| Phase | Quellen |
+|-------|---------|
+| Phase 2 | Direkter Upload: PDF, DOCX, TXT, MD, CSV |
+| Phase 3 | Google Drive Sync, Notion, RSS Feeds, Web-Seiten manuell |
+| Phase 4 | Gmail Integration |
+
+### Dokument-Limits pro Tier
+| Tier | Max Dokumente | Max Dateigröße |
+|------|--------------|----------------|
+| Free | 10 | 10 MB |
+| Pro User | 100 | 25 MB |
+| Org Standard | 500 | 50 MB |
+| Org Premium | Unbegrenzt | 100 MB |
+
+### Phasierung
+1. **Woche 1** — RAG-Fundament + Dokument-Upload
+2. **Woche 2** — Wissenbasis-Struktur Org/User/Projekt
+3. **Woche 3–4** — Externe Quellen (RSS, Web)
+
+### DB-Schema (RAG)
+- `knowledge_sources`: id, organization_id, user_id (null = Org), project_id (null = nicht projektspezifisch), name, type (upload/rss/web/google_drive/notion), url, sync_interval, last_synced_at, is_active, created_at
+- `knowledge_documents`: id, source_id, organization_id, user_id, project_id, title, file_type, file_size, original_url, status (processing/ready/error), chunk_count, created_at
+- `knowledge_chunks`: id, document_id, organization_id, user_id, project_id, content TEXT, embedding vector(1536), chunk_index, metadata JSONB, created_at
+- `knowledge_citations`: id, message_id, chunk_id, relevance_score, created_at
+
+### Edge Functions
+- `knowledge-search`: query + context (org_id, user_id, project_id) → Embedding → Cosine Similarity → Top 5 Chunks mit Quellenangabe (Priorisierung: Projekt → User → Org)
+- `knowledge-ingest`: Datei → Text-Extraktion → Chunking (800 Zeichen, 100 Overlap) → Embeddings → knowledge_chunks
+
+### Migration
+- **017_rag_foundation.sql** — pgvector Extension, 4 Tabellen, ivfflat Index, RLS Policies
+
+---
+
 ## Tech Stack
 
 | Technologie | Version | Hinweis |
