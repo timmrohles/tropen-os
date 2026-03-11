@@ -38,7 +38,6 @@ export default function LoginPage() {
     } else {
       router.push('/workspaces')  // fallback if no workspace found
     }
-    router.refresh()
   }
 
   return (
@@ -48,8 +47,9 @@ export default function LoginPage() {
         <p style={s.sub}>Responsible AI Workspace für den Mittelstand</p>
 
         <form onSubmit={handleLogin} style={s.form}>
-          <label style={s.label}>E-Mail</label>
+          <label htmlFor="email" style={s.label}>E-Mail</label>
           <input
+            id="email"
             style={s.input}
             type="email"
             autoComplete="email"
@@ -58,8 +58,9 @@ export default function LoginPage() {
             required
           />
 
-          <label style={s.label}>Passwort</label>
+          <label htmlFor="password" style={s.label}>Passwort</label>
           <input
+            id="password"
             style={s.input}
             type="password"
             autoComplete="current-password"
@@ -101,9 +102,9 @@ const s: Record<string, React.CSSProperties> = {
     boxShadow: 'var(--shadow-md)'
   },
   logo: { fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' },
-  sub: { fontSize: 13, color: '#555', margin: '0 0 32px' },
+  sub: { fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 32px' },
   form: { display: 'flex', flexDirection: 'column', gap: 8 },
-  label: { fontSize: 12, color: '#666', marginBottom: 2 },
+  label: { fontSize: 12, color: 'var(--text-secondary)', marginBottom: 2 },
   input: {
     background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
@@ -115,8 +116,8 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: 8
   },
   btn: {
-    background: '#fff',
-    color: '#000',
+    background: 'var(--accent)',
+    color: 'var(--active-text)',
     border: 'none',
     padding: '11px',
     borderRadius: 6,
@@ -125,10 +126,10 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     marginTop: 8
   },
-  error: { fontSize: 13, color: '#ef4444', margin: '0 0 4px' },
+  error: { fontSize: 13, color: '#dc2626', margin: '0 0 4px' },
   forgotLink: {
     fontSize: 12,
-    color: '#444',
+    color: 'var(--text-tertiary)',
     textDecoration: 'none',
     textAlign: 'center' as const,
     marginTop: 12,
@@ -136,13 +137,13 @@ const s: Record<string, React.CSSProperties> = {
   },
   inviteNote: {
     fontSize: 12,
-    color: '#444',
+    color: 'var(--text-tertiary)',
     textAlign: 'center' as const,
     marginTop: 24,
     marginBottom: 0,
   },
   inviteLink: {
-    color: '#555',
+    color: 'var(--text-secondary)',
     textDecoration: 'none',
   }
 }

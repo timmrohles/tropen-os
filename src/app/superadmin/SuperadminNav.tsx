@@ -25,7 +25,7 @@ export default function SuperadminNav() {
                   fontWeight: active ? 600 : 400,
                   color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
                   textDecoration: 'none',
-                  transition: 'color 0.15s',
+                  transition: 'color var(--t-fast)',
                 }}
               >
                 {link.label}

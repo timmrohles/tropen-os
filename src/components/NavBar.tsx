@@ -203,7 +203,6 @@ export default function NavBar() {
             </>
           )}
 
-          {!showSuperadminNav && !showAdminNav && <></>}
         </ul>
 
         {/* Right side */}

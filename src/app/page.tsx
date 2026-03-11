@@ -161,13 +161,13 @@ export default async function HomePage() {
                 Wir arbeiten an einem ehrlichen Framework dafür. Bis dahin: volle Transparenz
                 über Modelle, Kosten und Nutzung – damit ihr selbst entscheiden könnt.
               </p>
-              <a
+              <Link
                 href="/responsible-ai"
                 className="inline-block mt-4 text-xs transition-colors no-underline"
                 style={{ color: 'var(--text-tertiary)' }}
               >
                 Mehr erfahren →
-              </a>
+              </Link>
             </div>
           </div>
         </div>
