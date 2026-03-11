@@ -33,7 +33,13 @@ export default function NavBar() {
 
   useEffect(() => {
     const stored = sessionStorage.getItem(VIEW_AS_KEY) as AccountRole | null
-    if (stored) setViewAs(stored)
+    // 'solo' was renamed to 'member' — migrate stale sessionStorage values
+    if (stored === ('solo' as string)) {
+      sessionStorage.setItem(VIEW_AS_KEY, 'member')
+      setViewAs('member')
+    } else if (stored) {
+      setViewAs(stored)
+    }
   }, [])
 
   useEffect(() => {
