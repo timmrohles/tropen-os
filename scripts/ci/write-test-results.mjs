@@ -5,12 +5,6 @@
 import { readFileSync, existsSync } from 'fs'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { persistSession: false } }
-)
-
 function parseVitestJson(file) {
   if (!existsSync(file)) {
     console.log(`[CI] ${file} nicht gefunden — überspringe`)
@@ -37,6 +31,16 @@ function outcomeToStatus(outcome) {
 }
 
 async function main() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !url.startsWith('http') || !key) {
+    console.warn('[CI] Supabase-Credentials fehlen oder ungültig — überspringe DB-Write')
+    return
+  }
+
+  const supabase = createClient(url, key, { auth: { persistSession: false } })
+
   const unitResults = parseVitestJson('test-results/unit.json')
   const commitSha = (process.env.CI_COMMIT_SHA ?? '').slice(0, 40) || null
   const now = new Date().toISOString()
