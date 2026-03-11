@@ -176,6 +176,64 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     setActiveAgentId,
   } = props
 
+  // ── Panel resize ──────────────────────────────────────────
+  const [leftWidth, setLeftWidth] = React.useState(() => {
+    if (typeof window === 'undefined') return 260
+    return parseInt(localStorage.getItem('lnav-width') ?? '260')
+  })
+  const [rightWidth, setRightWidth] = React.useState(() => {
+    if (typeof window === 'undefined') return 340
+    return parseInt(localStorage.getItem('sp-width') ?? '340')
+  })
+  const [spCollapsed, setSpCollapsed] = React.useState(false)
+  const leftWidthRef = React.useRef(leftWidth)
+  const rightWidthRef = React.useRef(rightWidth)
+  React.useEffect(() => { leftWidthRef.current = leftWidth }, [leftWidth])
+  React.useEffect(() => { rightWidthRef.current = rightWidth }, [rightWidth])
+
+  function persistLeft() { localStorage.setItem('lnav-width', String(leftWidthRef.current)) }
+  function persistRight() { localStorage.setItem('sp-width', String(rightWidthRef.current)) }
+
+  function startLeftResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = leftWidthRef.current
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const onMove = (ev: MouseEvent) => {
+      setLeftWidth(Math.max(180, Math.min(420, startW + ev.clientX - startX)))
+    }
+    const onUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      persistLeft()
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  function startRightResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = rightWidthRef.current
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const onMove = (ev: MouseEvent) => {
+      setRightWidth(Math.max(220, Math.min(520, startW - (ev.clientX - startX))))
+    }
+    const onUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      persistRight()
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
   return (
     <div className={`wl-root${isMobile ? ' wl-root--mobile' : ''}`}>
 
@@ -194,7 +252,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
       )}
 
       {/* ── Sidebar / LeftNav ── */}
-      <div className={isMobile ? `wl-mobile-nav${navOpen ? ' wl-mobile-nav--open' : ' wl-mobile-nav--closed'}` : undefined}>
+      <div
+        className={isMobile ? `wl-mobile-nav${navOpen ? ' wl-mobile-nav--open' : ' wl-mobile-nav--closed'}` : 'wl-panel-left'}
+        style={isMobile ? undefined : { width: leftWidth, flexShrink: 0 }}
+      >
         <LeftNav
           workspaceName={workspaceName}
           userInitial={userInitial}
@@ -289,6 +350,9 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           onSetContextMenuSubmenu={setContextMenuSubmenu}
         />
       </div>
+      {!isMobile && (
+        <div className="wl-resize-handle" onMouseDown={startLeftResize} aria-hidden="true" />
+      )}
 
       {/* ── Fixed Context Menu ── */}
       {contextMenuId && menuAnchor && (() => {
@@ -379,12 +443,19 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
 
       {/* ── Session Panel (Desktop only) ── */}
       {!isMobile && (
-        <SessionPanel
-          conversationId={activeConvId}
-          messages={messages}
-          routing={routing}
-          onNewConversation={newConversation}
-        />
+        <>
+          <div className="wl-resize-handle" onMouseDown={startRightResize} aria-hidden="true" />
+          <div className="wl-panel-right" style={{ width: spCollapsed ? 24 : rightWidth, flexShrink: 0 }}>
+            <SessionPanel
+              conversationId={activeConvId}
+              messages={messages}
+              routing={routing}
+              onNewConversation={newConversation}
+              collapsed={spCollapsed}
+              onToggleCollapse={() => setSpCollapsed(v => !v)}
+            />
+          </div>
+        </>
       )}
 
       {/* ── Toast ── */}

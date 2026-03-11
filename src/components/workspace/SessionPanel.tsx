@@ -31,6 +31,8 @@ export interface SessionPanelProps {
   messages: ChatMessage[]
   routing: Routing | null
   onNewConversation: () => void
+  collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 // ─────────────────────────────────────────────────────────
@@ -100,11 +102,15 @@ function Divider() {
 // Main Component
 // ─────────────────────────────────────────────────────────
 
-export default function SessionPanel({ conversationId: _convId, messages, routing, onNewConversation: _onNewConversation }: SessionPanelProps) {
+export default function SessionPanel({ conversationId: _convId, messages, routing, onNewConversation: _onNewConversation, collapsed: collapsedProp, onToggleCollapse }: SessionPanelProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
 
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsedInternal, setCollapsedInternal] = useState(false)
+  const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedInternal
+  function setCollapsed(v: boolean) {
+    if (onToggleCollapse) { onToggleCollapse() } else { setCollapsedInternal(v) }
+  }
   const [prefs, setPrefs] = useState<Prefs>({ chat_style: 'structured', memory_window: 20, thinking_mode: false, proactive_hints: true })
   const [userId, setUserId] = useState<string | null>(null)
   const [monthlyCost, setMonthlyCost] = useState<number | null>(null)
