@@ -808,12 +808,15 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     if (!input.trim() || sending) return
 
     const currentInput = input.trim()
+    sendingRef.current = true  // vor newConversation() setzen — verhindert loadMessages-Race
     let convId = activeConvId
     if (!convId) {
       convId = await newConversation()
-      if (!convId) return
+      if (!convId) {
+        sendingRef.current = false
+        return
+      }
     }
-    sendingRef.current = true
 
     setMessages((prev) => [
       ...prev,
