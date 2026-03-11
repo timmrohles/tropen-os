@@ -4,15 +4,23 @@ import Parrot from '@/components/Parrot'
 import { Scales, Buildings, Plant } from '@phosphor-icons/react/dist/ssr'
 import ToroChatWidget from '@/components/ToroChatWidget'
 
+const cardStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.72)',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  border: '1px solid rgba(255,255,255,0.65)',
+  borderRadius: 12,
+}
+
 // Features für das Grid
 const features = [
   {
-    icon: <Scales size={28} weight="duotone" style={{ color: '#a3b554' }} />,
+    icon: <Scales size={28} weight="duotone" style={{ color: 'var(--active-bg)' }} />,
     title: 'Responsible AI',
     text: 'Jedes Modell, jede Anfrage, jeder Cent – vollständig sichtbar. Budgets setzen, Modelle freigeben, Kosten kontrollieren. AI ohne Blackbox.'
   },
   {
-    icon: <Buildings size={28} weight="duotone" style={{ color: '#a1a1aa' }} />,
+    icon: <Buildings size={28} weight="duotone" style={{ color: 'var(--text-tertiary)' }} />,
     title: 'Team Workspace',
     text: 'Workspaces für Teams, Projekte und Abteilungen. Rollen, Einladungen, Zugriffskontrollen – alles auf einer Plattform.'
   },
@@ -34,23 +42,35 @@ export default async function HomePage() {
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-20">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-[#a3b554] font-medium mb-8 tracking-wide">
+        <div
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium mb-8 tracking-wide"
+          style={{ ...cardStyle, color: 'var(--active-bg)' }}
+        >
           <span className="w-1.5 h-1.5 rounded-full bg-[#a3b554] inline-block" />
           Verantwortungsvolle KI für den Mittelstand
         </div>
 
         {/* Titel */}
-        <h1 className="text-6xl font-black text-white tracking-tight leading-none mb-5">
+        <h1
+          className="text-6xl font-black tracking-tight leading-none mb-5"
+          style={{ color: 'var(--text-primary)' }}
+        >
           Tropen OS
         </h1>
 
         {/* Tagline */}
-        <p className="text-xl text-zinc-300 font-medium mb-4 max-w-xl">
+        <p
+          className="text-xl font-medium mb-4 max-w-xl"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           Der Responsible AI Workspace für dein Team.
         </p>
 
         {/* Subtext */}
-        <p className="text-base text-zinc-500 max-w-lg leading-relaxed mb-12">
+        <p
+          className="text-base max-w-lg leading-relaxed mb-12"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <Parrot size={18} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} /> Toro, dein KI-Papagei – er kennt jeden Pfad durch den Informationsdschungel.<br />
           Transparent, kontrollierbar, europäisch.
         </p>
@@ -62,11 +82,16 @@ export default async function HomePage() {
               href="/workspaces"
               className="bg-[#a3b554] hover:bg-[#b3c664] text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
             >
-              Zum Workspace →
+              Zum Chat →
             </Link>
             <Link
               href="/dashboard"
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-medium px-6 py-3 rounded-lg text-sm transition-colors no-underline"
+              className="font-medium px-6 py-3 rounded-lg text-sm transition-colors no-underline"
+              style={{
+                ...cardStyle,
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-medium)',
+              }}
             >
               Dashboard
             </Link>
@@ -90,11 +115,22 @@ export default async function HomePage() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col gap-3"
+              className="rounded-xl p-6 flex flex-col gap-3"
+              style={cardStyle}
             >
               {f.icon}
-              <h3 className="text-white font-semibold text-base">{f.title}</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed">{f.text}</p>
+              <h3
+                className="font-semibold text-base"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {f.title}
+              </h3>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {f.text}
+              </p>
             </div>
           ))}
         </div>
@@ -102,14 +138,23 @@ export default async function HomePage() {
 
       {/* ── CO₂-Commitment ───────────────────────────────── */}
       <section className="px-6 pb-16 max-w-4xl mx-auto w-full">
-        <div className="border-t border-[#1e3818] bg-zinc-900 rounded-xl px-8 py-7">
+        <div
+          className="rounded-xl px-8 py-7"
+          style={{ ...cardStyle, borderTop: '1px solid var(--border)' }}
+        >
           <div className="flex items-start gap-4">
-            <Plant size={18} weight="duotone" style={{ color: '#a3b554', marginTop: 2, flexShrink: 0 }} />
+            <Plant size={18} weight="duotone" style={{ color: 'var(--active-bg)', marginTop: 2, flexShrink: 0 }} />
             <div>
-              <h3 className="text-sm font-semibold text-zinc-200 mb-3">
+              <h3
+                className="text-sm font-semibold mb-3"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 Responsible AI – auch für den Planeten
               </h3>
-              <p className="text-sm text-zinc-500 leading-relaxed max-w-2xl">
+              <p
+                className="text-sm leading-relaxed max-w-2xl"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 Wir planen einen transparenten Aufschlag auf die Modellkosten für CO₂-Ausgleich.
                 Eine präzise Berechnung ist heute noch nicht möglich – der Energieverbrauch
                 variiert stark je nach Modell, Hardware und Rechenzentrum-Standort.{' '}
@@ -118,7 +163,8 @@ export default async function HomePage() {
               </p>
               <a
                 href="/responsible-ai"
-                className="inline-block mt-4 text-xs text-zinc-500 hover:text-zinc-300 transition-colors no-underline"
+                className="inline-block mt-4 text-xs transition-colors no-underline"
+                style={{ color: 'var(--text-tertiary)' }}
               >
                 Mehr erfahren →
               </a>
@@ -128,10 +174,13 @@ export default async function HomePage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <footer className="border-t border-zinc-900 px-6 py-5 text-center">
-        <p className="text-xs text-zinc-600">
+      <footer
+        className="px-6 py-5 text-center"
+        style={{ borderTop: '1px solid var(--border)' }}
+      >
+        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Tropen OS – ein Produkt von{' '}
-          <span className="text-zinc-500">Tropen Agentur</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Tropen Agentur</span>
         </p>
       </footer>
     </div>

@@ -26,7 +26,18 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/workspaces')
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (membership?.workspace_id) {
+      router.push(`/workspaces/${membership.workspace_id}`)
+    } else {
+      router.push('/workspaces')  // fallback if no workspace found
+    }
     router.refresh()
   }
 
