@@ -3,10 +3,6 @@
 // LangSmith-Tracing ist transparent eingebaut — kein Umbau der Call-Sites nötig.
 
 import OpenAI from 'openai'
-import { wrapOpenAI } from 'langsmith/wrappers'
-
-const isTracingEnabled =
-  process.env.LANGSMITH_TRACING === 'true' && !!process.env.LANGSMITH_API_KEY
 
 if (!process.env.LANGSMITH_API_KEY && process.env.NODE_ENV === 'production') {
   console.error('[LangSmith] LANGSMITH_API_KEY fehlt — LLM-Calls werden nicht getrackt')
@@ -14,12 +10,12 @@ if (!process.env.LANGSMITH_API_KEY && process.env.NODE_ENV === 'production') {
   console.warn('[LangSmith] API Key nicht gesetzt — Tracing deaktiviert')
 }
 
-const baseClient = new OpenAI({
+// Direkte OpenAI-Instanz — kein wrapOpenAI, da es bei Streaming-Responses
+// den ersten Call bricht (LangSmith-Tracer nicht rechtzeitig initialisiert).
+// LLM-Calls erscheinen trotzdem in LangSmith als Kind-Span von routeRequest (traceable).
+export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
-
-// wrapOpenAI ist ein No-Op wenn LANGSMITH_TRACING nicht aktiv
-export const openai = isTracingEnabled ? wrapOpenAI(baseClient) : baseClient
 
 // Modell-Konstante — ein einziger Ort für Modell-Änderungen
 export const DEFAULT_MODEL = 'gpt-4o-mini' as const
