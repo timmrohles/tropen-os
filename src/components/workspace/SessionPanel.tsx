@@ -322,7 +322,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
               onClick={() => setStyleDropOpen((v) => !v)}
             >
               {STYLE_LABELS[prefs.chat_style]}
-              <CaretDown size={14} style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+              <CaretDown size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
             </button>
             {styleDropOpen && (
               <div className="sp-select-menu">

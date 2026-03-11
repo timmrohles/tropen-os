@@ -497,7 +497,7 @@ export default function OnboardingPage() {
               </p>
               <p style={{ ...s.academyText, marginBottom: 12 }}>
                 Unser Einstiegskurs:{' '}
-                <strong style={{ color: '#c0c0c0' }}>"KI-Dschungel Survival Pass"</strong>
+                <strong style={{ color: 'var(--text-primary)' }}>"KI-Dschungel Survival Pass"</strong>
                 {' '}– für alle die KI sicher, effektiv und verantwortungsvoll einsetzen wollen.
               </p>
               <a
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
               {userName ? `, ${userName.split(' ')[0]}!` : '!'}
             </h1>
             <p style={s.sub}>
-              <strong style={{ color: '#e5e5e5' }}>{guideName || 'Toro'}</strong>{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>{guideName || 'Toro'}</strong>{' '}
               freut sich darauf, euch durch den Informationsdschungel zu führen.
             </p>
 
@@ -598,14 +598,14 @@ const s: Record<string, React.CSSProperties> = {
   // ── Layout ───────────────────────────────────────────────
   page: {
     minHeight: 'calc(100vh - 52px)',
-    background: '#0a0a0a',
+    background: 'var(--bg-surface-solid)',
     display: 'flex',
     flexDirection: 'column',
     margin: '-32px',
   },
   progressTrack: {
     height: 3,
-    background: '#1e1e1e',
+    background: 'var(--border)',
     flexShrink: 0,
   },
   progressBar: {
@@ -630,19 +630,19 @@ const s: Record<string, React.CSSProperties> = {
   },
 
   // ── Typography ───────────────────────────────────────────
-  stepLabel: { fontSize: 12, color: '#444', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 },
-  h1: { fontSize: 32, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 8, margin: '0 0 10px' },
-  sub: { fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 32, margin: '0 0 32px' },
-  label: { display: 'block', fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  hint: { display: 'block', fontSize: 12, color: '#444', marginTop: 6, lineHeight: 1.5 },
+  stepLabel: { fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 },
+  h1: { fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: 8, margin: '0 0 10px' },
+  sub: { fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 32, margin: '0 0 32px' },
+  label: { display: 'block', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  hint: { display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6, lineHeight: 1.5 },
   error: { fontSize: 13, color: '#ef4444', background: '#1f0a0a', padding: '10px 14px', borderRadius: 6, marginTop: 8 },
 
   // ── Form ─────────────────────────────────────────────────
   field: { display: 'flex', flexDirection: 'column', marginBottom: 24 },
   input: {
-    background: '#111',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '12px 16px',
     borderRadius: 8,
     fontSize: 15,
@@ -653,7 +653,7 @@ const s: Record<string, React.CSSProperties> = {
 
   // ── Logo Drop Zone ────────────────────────────────────────
   dropZone: {
-    border: '1px dashed #2a2a2a',
+    border: '1px dashed var(--border-medium)',
     borderRadius: 10,
     padding: '28px 20px',
     display: 'flex',
@@ -662,12 +662,12 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     gap: 8,
     cursor: 'pointer',
-    background: '#111',
+    background: 'var(--bg-surface)',
     transition: 'border-color 0.15s, background 0.15s',
     minHeight: 100,
   },
-  dropZoneActive: { borderColor: '#a3b554', background: '#1e3818' },
-  dropZoneHasLogo: { borderColor: '#2a2a2a', padding: '16px', background: '#111' },
+  dropZoneActive: { borderColor: '#a3b554', background: 'var(--accent-subtle)' },
+  dropZoneHasLogo: { borderColor: 'var(--border-medium)', padding: '16px', background: 'var(--bg-surface)' },
   logoPreview: { maxHeight: 64, maxWidth: '100%', objectFit: 'contain' },
   dropHint: { fontSize: 13, color: '#555' },
   dropSub: { fontSize: 11, color: '#333' },
@@ -696,21 +696,21 @@ const s: Record<string, React.CSSProperties> = {
   cardRow: { display: 'flex', gap: 10, flexWrap: 'wrap' },
   card: {
     flex: '1 1 140px', minWidth: 130,
-    background: '#111', border: '1px solid #222',
+    background: 'var(--bg-surface)', border: '1px solid var(--border)',
     borderRadius: 10, padding: '18px 14px',
     cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6,
     textAlign: 'left', transition: 'border-color 0.15s, background 0.15s',
   },
-  cardActive: { background: '#1e3818', border: '1px solid #a3b554' },
+  cardActive: { background: 'var(--accent-light)', border: '1px solid #a3b554' },
   cardEmoji: { fontSize: 24 },
-  cardTitle: { fontSize: 14, fontWeight: 600, color: '#e5e5e5' },
-  cardSub: { fontSize: 12, color: '#555', lineHeight: 1.4 },
+  cardTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' },
+  cardSub: { fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 },
 
   // ── Chips ────────────────────────────────────────────────
   chipRow: { display: 'flex', gap: 8, flexWrap: 'wrap' },
   chip: {
     fontSize: 12, padding: '8px 14px', borderRadius: 20,
-    border: '1px solid #2a2a2a', background: '#111', color: '#666',
+    border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)',
     cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
   },
   chipActive: { background: '#a3b554', border: '1px solid #a3b554', color: '#000', fontWeight: 600 },
@@ -718,12 +718,12 @@ const s: Record<string, React.CSSProperties> = {
   // ── Done Screen ──────────────────────────────────────────
   featureRow: { display: 'flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' },
   featureCard: {
-    background: '#111', border: '1px solid #1e1e1e', borderRadius: 10,
+    background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10,
     padding: '16px 14px', flex: '1 1 120px', maxWidth: 160,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
   },
-  featureTitle: { fontSize: 13, fontWeight: 600, color: '#ccc' },
-  featureSub: { fontSize: 11, color: '#555', textAlign: 'center' },
+  featureTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' },
+  featureSub: { fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center' },
 
   // ── Buttons ──────────────────────────────────────────────
   btnRow: { display: 'flex', gap: 10, marginTop: 24 },
@@ -734,7 +734,7 @@ const s: Record<string, React.CSSProperties> = {
     transition: 'opacity 0.15s',
   },
   btnSecondary: {
-    background: 'none', color: '#555', border: '1px solid #2a2a2a',
+    background: 'none', color: 'var(--text-secondary)', border: '1px solid var(--border)',
     padding: '13px 20px', borderRadius: 8, cursor: 'pointer',
     fontSize: 14, marginTop: 24, transition: 'color 0.15s',
   },
@@ -747,20 +747,20 @@ const s: Record<string, React.CSSProperties> = {
 
   // ── AI Act ────────────────────────────────────────────────
   aiActPara: {
-    fontSize: 15, color: '#888', lineHeight: 1.75,
+    fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75,
     margin: '0 0 16px',
   },
   checkboxLabel: {
     display: 'flex', alignItems: 'flex-start', gap: 12,
-    padding: '16px 18px', background: '#111',
-    border: '1px solid #252525', borderRadius: 8,
+    padding: '16px 18px', background: 'var(--bg-surface)',
+    border: '1px solid var(--border)', borderRadius: 8,
     cursor: 'pointer', marginBottom: 24,
   },
   checkbox: {
     width: 17, height: 17, marginTop: 2, flexShrink: 0,
     accentColor: '#a3b554', cursor: 'pointer',
   },
-  checkboxText: { fontSize: 14, color: '#ccc', lineHeight: 1.6 },
+  checkboxText: { fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.6 },
   academyCard: {
     background: '#08100f',
     borderWidth: '1px', borderStyle: 'solid', borderColor: '#1c3530',

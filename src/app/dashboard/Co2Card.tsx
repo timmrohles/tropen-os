@@ -34,11 +34,11 @@ export default function Co2Card({ co2Min, co2Max, periodLabel }: Co2CardProps) {
 
       {/* Value + Info icon row */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
+        <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
           {formatG(co2Min)}
         </span>
         <span style={{ fontSize: 18, color: '#52525b' }}>–</span>
-        <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>
+        <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
           {formatG(co2Max)}
         </span>
         <span style={{ fontSize: 12, color: '#71717a', marginLeft: 2 }}>CO₂</span>

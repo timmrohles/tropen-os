@@ -168,49 +168,49 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     marginBottom: 24
   },
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
   btn: {
-    background: '#2a2a2a',
-    border: '1px solid #3a3a3a',
-    color: '#fff',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '8px 16px',
     borderRadius: 6,
     cursor: 'pointer',
     fontSize: 13
   },
   inviteBox: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
     borderRadius: 8,
     padding: 24,
     marginBottom: 28
   },
-  inviteTitle: { margin: '0 0 16px', color: '#fff', fontSize: 15, fontWeight: 600 },
+  inviteTitle: { margin: '0 0 16px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 },
   inviteForm: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   input: {
-    background: '#111',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '8px 12px',
     borderRadius: 6,
     fontSize: 13,
     outline: 'none'
   },
   feedback: { marginTop: 12, fontSize: 13 },
-  hint: { margin: '12px 0 0', fontSize: 12, color: '#444' },
+  hint: { margin: '12px 0 0', fontSize: 12, color: 'var(--text-tertiary)' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: '#666',
+    color: 'var(--text-secondary)',
     padding: '6px 10px',
-    borderBottom: '1px solid #2a2a2a'
+    borderBottom: '1px solid var(--border)'
   },
   td: {
     fontSize: 13,
-    color: '#ccc',
+    color: 'var(--text-primary)',
     padding: '10px 10px',
-    borderBottom: '1px solid #1e1e1e',
+    borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle'
   },
   badge: { fontSize: 11, padding: '3px 8px', borderRadius: 4 }

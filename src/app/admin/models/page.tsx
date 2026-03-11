@@ -97,7 +97,7 @@ export default function ModelsPage() {
 
       {showNew && (
         <div style={s.newForm}>
-          <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: 15 }}>Neues Modell</h3>
+          <h3 style={{ margin: '0 0 16px', color: 'var(--text-primary)', fontSize: 15 }}>Neues Modell</h3>
           <div style={s.formGrid}>
             <input
               style={s.input}
@@ -166,7 +166,7 @@ export default function ModelsPage() {
             {models.map((m) => (
               <tr key={m.id}>
                 <td style={s.td}>
-                  <div style={{ fontWeight: 500, color: '#fff' }}>{m.name}</div>
+                  <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{m.name}</div>
                   {m.description && (
                     <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{m.description}</div>
                   )}
@@ -204,7 +204,7 @@ export default function ModelsPage() {
                   <span
                     style={{
                       ...s.badge,
-                      background: m.is_active ? '#1a3a1a' : '#2a1a1a',
+                      background: m.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
                       color: m.is_active ? '#22c55e' : '#ef4444'
                     }}
                   >
@@ -253,32 +253,32 @@ function InlineEdit({ value, onSave }: { value: number; onSave: (v: number) => v
 
 function providerColor(p: string) {
   return (
-    { openai: '#1a3a2a', anthropic: '#1a2a3a', mistral: '#2a2a1a', google: '#2a1a2a' }[p] ??
-    '#2a2a2a'
+    { openai: 'rgba(163,181,84,0.15)', anthropic: 'rgba(99,102,241,0.15)', mistral: 'rgba(251,191,36,0.15)', google: 'rgba(239,68,68,0.15)' }[p] ??
+    'var(--bg-surface)'
   )
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: '#666',
+    color: 'var(--text-secondary)',
     padding: '6px 10px',
-    borderBottom: '1px solid #2a2a2a'
+    borderBottom: '1px solid var(--border)'
   },
   td: {
     fontSize: 13,
-    color: '#ccc',
+    color: 'var(--text-primary)',
     padding: '10px 10px',
-    borderBottom: '1px solid #1e1e1e',
+    borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle'
   },
   btn: {
-    background: '#2a2a2a',
-    border: '1px solid #3a3a3a',
-    color: '#fff',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '8px 16px',
     borderRadius: 6,
     cursor: 'pointer',
@@ -286,37 +286,37 @@ const s: Record<string, React.CSSProperties> = {
   },
   btnGhost: {
     background: 'transparent',
-    border: '1px solid #2a2a2a',
-    color: '#666',
+    border: '1px solid var(--border)',
+    color: 'var(--text-secondary)',
     padding: '8px 16px',
     borderRadius: 6,
     cursor: 'pointer',
     fontSize: 13
   },
   btnSm: {
-    background: '#2a2a2a',
-    border: '1px solid #3a3a3a',
-    color: '#aaa',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-secondary)',
     padding: '4px 10px',
     borderRadius: 4,
     cursor: 'pointer',
     fontSize: 12
   },
   input: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '8px 12px',
     borderRadius: 6,
     fontSize: 13,
     outline: 'none'
   },
   badge: { fontSize: 11, padding: '3px 8px', borderRadius: 4 },
-  providerBadge: { fontSize: 11, padding: '3px 8px', borderRadius: 4, color: '#aaa' },
-  price: { cursor: 'pointer', color: '#aaa' },
+  providerBadge: { fontSize: 11, padding: '3px 8px', borderRadius: 4, color: 'var(--text-secondary)' },
+  price: { cursor: 'pointer', color: 'var(--text-secondary)' },
   newForm: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
     borderRadius: 8,
     padding: 20,
     marginBottom: 24

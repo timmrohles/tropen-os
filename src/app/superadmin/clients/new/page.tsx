@@ -199,7 +199,7 @@ const s: Record<string, React.CSSProperties> = {
   heading: {
     fontSize: 22,
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--text-primary)',
     marginTop: 8,
     marginBottom: 24,
   },
@@ -209,8 +209,8 @@ const s: Record<string, React.CSSProperties> = {
     gap: 16,
   },
   section: {
-    background: '#111',
-    border: '1px solid #1e1e1e',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border)',
     borderRadius: 10,
     padding: 20,
     display: 'flex',
@@ -242,9 +242,9 @@ const s: Record<string, React.CSSProperties> = {
     letterSpacing: '0.05em',
   },
   input: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '9px 12px',
     borderRadius: 7,
     fontSize: 13,
@@ -306,7 +306,7 @@ const s: Record<string, React.CSSProperties> = {
   successHeading: {
     fontSize: 22,
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
   },
   successText: {

@@ -48,7 +48,7 @@ function fileIcon(type: string | null) {
     case 'pdf':  return <FilePdf size={20} weight="fill" style={{ color: '#ef4444' }} />
     case 'docx': return <FileDoc size={20} weight="fill" style={{ color: '#3b82f6' }} />
     case 'csv':  return <FileCsv size={20} weight="fill" style={{ color: '#22c55e' }} />
-    default:     return <FileText size={20} weight="fill" style={{ color: 'rgba(255,255,255,0.4)' }} />
+    default:     return <FileText size={20} weight="fill" style={{ color: 'var(--text-tertiary)' }} />
   }
 }
 
@@ -274,7 +274,7 @@ export default function KnowledgePage() {
           {/* Dokument-Liste */}
           {loading ? (
             <div className="kb-empty">
-              <Spinner size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
+              <Spinner size={24} className="animate-spin" style={{ color: 'var(--text-tertiary)' }} />
             </div>
           ) : docs.length === 0 ? (
             <div className="kb-empty">

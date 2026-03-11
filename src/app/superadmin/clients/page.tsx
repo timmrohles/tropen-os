@@ -323,7 +323,7 @@ export default function ClientsPage() {
                             return (
                               <div key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }}>
                                 <span style={{ fontSize: 14 }}>{pkg.icon}</span>
-                                <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{pkg.name}</span>
+                                <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{pkg.name}</span>
                                 <button
                                   onClick={() => handleTogglePackage(org.id, pkg.id, active)}
                                   disabled={pkgTogglingKey === key}
@@ -406,7 +406,7 @@ export default function ClientsPage() {
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={s.modalTitle}>User aktivieren</h2>
             <p style={s.confirmText}>
-              Org: <strong style={{ color: '#fff' }}>{activateOrg.name}</strong><br />
+              Org: <strong style={{ color: 'var(--text-primary)' }}>{activateOrg.name}</strong><br />
               User muss bereits in Supabase Dashboard angelegt sein.
             </p>
 
@@ -446,7 +446,7 @@ export default function ClientsPage() {
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={s.modalTitle}>Ansicht öffnen</h2>
             <div style={s.impWarning}>
-              Du siehst genau was <strong style={{ color: '#fff' }}>{impModal.email}</strong> sieht — nichts mehr.
+              Du siehst genau was <strong style={{ color: 'var(--text-primary)' }}>{impModal.email}</strong> sieht — nichts mehr.
               Kein Schreiben, Löschen oder Ändern. Diese Session wird protokolliert.
             </div>
 
@@ -497,7 +497,7 @@ export default function ClientsPage() {
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={s.modalTitle}>Client löschen?</h2>
             <p style={s.confirmText}>
-              <strong style={{ color: '#fff' }}>{deleteOrg.name}</strong> und alle zugehörigen
+              <strong style={{ color: 'var(--text-primary)' }}>{deleteOrg.name}</strong> und alle zugehörigen
               Daten (Workspace, User, Einstellungen) werden unwiderruflich gelöscht.
             </p>
             <div style={s.modalFooter}>
@@ -524,7 +524,7 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     marginBottom: 32,
   },
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', margin: 0, marginBottom: 4 },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0, marginBottom: 4 },
   subtext: { fontSize: 13, color: 'var(--text-muted)', margin: 0 },
   newBtn: {
     background: 'var(--accent)',
@@ -552,7 +552,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   tr: { borderBottom: '1px solid rgba(255,255,255,0.05)' },
   td: { padding: '12px 12px', verticalAlign: 'middle', color: 'var(--text-primary)' },
-  orgName: { fontWeight: 500, color: '#fff' },
+  orgName: { fontWeight: 500, color: 'var(--text-primary)' },
   orgId: { color: 'var(--text-muted)', fontSize: 12, marginTop: 2 },
   wsName: { color: 'var(--text-secondary)' },
   badge: {
@@ -625,12 +625,12 @@ const s: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: 8,
   },
-  modalTitle: { fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 12px' },
+  modalTitle: { fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' },
   label: { fontSize: 12, color: 'var(--text-muted)', marginTop: 8 },
   input: {
     background: 'var(--bg-input)',
     border: '1px solid rgba(255,255,255,0.12)',
-    color: '#fff',
+    color: 'var(--text-primary)',
     padding: '9px 12px',
     borderRadius: 6,
     fontSize: 13,
@@ -680,7 +680,7 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 5,
   },
-  userEmail: { fontSize: 12, color: '#fff' },
+  userEmail: { fontSize: 12, color: 'var(--text-primary)' },
   userRole: { fontSize: 11, color: 'var(--text-muted)', marginTop: 1 },
   viewBtn: {
     background: 'transparent', border: '1px solid rgba(163,181,84,0.3)',

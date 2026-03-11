@@ -130,7 +130,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
                       {r.conversation_title ?? 'Untitled'}
                     </span>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
                       {r.role === 'assistant' ? 'Toro' : 'Du'}
                     </span>
                   </div>

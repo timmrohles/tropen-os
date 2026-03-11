@@ -53,18 +53,18 @@ export default async function WorkspacesPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 24 },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 24 },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 },
   card: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
     borderRadius: 10,
     padding: 20,
     textDecoration: 'none',
     display: 'block',
     transition: 'border-color 0.15s'
   },
-  cardName: { fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 6 },
+  cardName: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 },
   cardDesc: { fontSize: 13, color: '#555', marginBottom: 14 },
   cardMeta: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   roleBadge: {

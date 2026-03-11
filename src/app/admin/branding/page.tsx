@@ -245,12 +245,12 @@ export default function BrandingPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 8 },
-  sub: { fontSize: 13, color: '#555', marginBottom: 28 },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 },
+  sub: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 },
 
   section: {
-    background: '#111',
-    border: '1px solid #1e1e1e',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border)',
     borderRadius: 10,
     padding: 24,
     marginBottom: 24,
@@ -260,10 +260,10 @@ const s: Record<string, React.CSSProperties> = {
   },
 
   field: { display: 'flex', flexDirection: 'column', marginBottom: 20 },
-  label: { fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  label: { fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
 
   input: {
-    background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff',
+    background: 'var(--bg-surface-solid)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
     padding: '9px 14px', borderRadius: 7, fontSize: 13, outline: 'none',
     width: '100%', boxSizing: 'border-box',
   },
@@ -296,7 +296,7 @@ const s: Record<string, React.CSSProperties> = {
   successBox: { fontSize: 13, color: '#a3b554', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
 
   saveBtn: {
-    background: '#2a2a2a', border: '1px solid #3a3a3a', color: '#fff',
+    background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
     padding: '10px 22px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
     fontWeight: 500, marginTop: 4, width: 'fit-content',
   },

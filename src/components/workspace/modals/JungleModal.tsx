@@ -91,7 +91,7 @@ export function JungleModal({
                 >
                   {/* Folder Header */}
                   <div className="jm-folder-header">
-                    <Folder size={16} weight="duotone" style={{ color: 'rgba(255,255,255,0.7)' }} />
+                    <Folder size={16} weight="duotone" style={{ color: 'var(--text-secondary)' }} />
                     <input
                       className="jm-folder-name-input"
                       value={jungleProjectName(i)}

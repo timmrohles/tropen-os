@@ -138,7 +138,7 @@ function BudgetRow({
   return (
     <tr>
       <td style={s.td}>
-        <div style={{ color: '#fff', fontWeight: 500 }}>{label}</div>
+        <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{label}</div>
       </td>
       <td style={s.td}>
         <span style={s.sub2}>{sub}</span>
@@ -164,29 +164,29 @@ function BudgetRow({
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 8 },
-  h2: { fontSize: 16, fontWeight: 600, color: '#ccc', marginBottom: 12 },
-  sub: { fontSize: 13, color: '#555', marginBottom: 28 },
-  sub2: { fontSize: 12, color: '#555' },
+  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 },
+  h2: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 },
+  sub: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 },
+  sub2: { fontSize: 12, color: 'var(--text-secondary)' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: '#666',
+    color: 'var(--text-secondary)',
     padding: '6px 10px',
-    borderBottom: '1px solid #2a2a2a'
+    borderBottom: '1px solid var(--border)'
   },
   td: {
     fontSize: 13,
-    color: '#ccc',
+    color: 'var(--text-primary)',
     padding: '8px 10px',
-    borderBottom: '1px solid #1e1e1e',
+    borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle'
   },
   input: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '7px 12px',
     borderRadius: 6,
     fontSize: 13,
@@ -194,13 +194,13 @@ const s: Record<string, React.CSSProperties> = {
     width: 140
   },
   btn: {
-    background: '#2a2a2a',
-    border: '1px solid #3a3a3a',
-    color: '#fff',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '7px 16px',
     borderRadius: 6,
     cursor: 'pointer',
     fontSize: 13
   },
-  empty: { fontSize: 13, color: '#444', padding: 24, textAlign: 'center' }
+  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 24, textAlign: 'center' }
 }

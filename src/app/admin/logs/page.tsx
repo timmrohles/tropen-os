@@ -60,7 +60,7 @@ export default async function LogsPage() {
                   <span
                     style={{
                       ...s.badge,
-                      background: model?.provider === 'openai' ? '#1a3a1a' : '#1a2a3a'
+                      background: model?.provider === 'openai' ? 'rgba(163,181,84,0.12)' : 'rgba(99,102,241,0.12)'
                     }}
                   >
                     {model?.name ?? '—'}
@@ -80,17 +80,17 @@ export default async function LogsPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, marginBottom: 8, color: '#fff' },
-  meta: { fontSize: 13, color: '#555', marginBottom: 24 },
+  h1: { fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' },
+  meta: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: '#666',
+    color: 'var(--text-secondary)',
     padding: '6px 10px',
-    borderBottom: '1px solid #2a2a2a'
+    borderBottom: '1px solid var(--border)'
   },
-  td: { fontSize: 13, color: '#ccc', padding: '8px 10px', borderBottom: '1px solid #1e1e1e' },
-  empty: { fontSize: 13, color: '#444', padding: 32, textAlign: 'center' },
-  badge: { fontSize: 11, padding: '2px 8px', borderRadius: 4, color: '#aaa' }
+  td: { fontSize: 13, color: 'var(--text-primary)', padding: '8px 10px', borderBottom: '1px solid var(--border)' },
+  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 32, textAlign: 'center' },
+  badge: { fontSize: 11, padding: '2px 8px', borderRadius: 4, color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }
 }

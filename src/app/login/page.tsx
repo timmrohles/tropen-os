@@ -82,20 +82,21 @@ export default function LoginPage() {
 const s: Record<string, React.CSSProperties> = {
   wrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   card: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border)',
     borderRadius: 12,
     padding: '40px 48px',
-    width: 360
+    width: 360,
+    boxShadow: 'var(--shadow-md)'
   },
-  logo: { fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 6px' },
+  logo: { fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' },
   sub: { fontSize: 13, color: '#555', margin: '0 0 32px' },
   form: { display: 'flex', flexDirection: 'column', gap: 8 },
   label: { fontSize: 12, color: '#666', marginBottom: 2 },
   input: {
-    background: '#111',
-    border: '1px solid #2a2a2a',
-    color: '#fff',
+    background: 'var(--bg-surface-solid)',
+    border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)',
     padding: '10px 12px',
     borderRadius: 6,
     fontSize: 14,
