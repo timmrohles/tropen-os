@@ -129,15 +129,15 @@ export default function LeftNav({
   const canAct = selectedArr.length >= 1
 
   return (
-    <nav className="lnav">
+    <nav className="lnav" aria-label="Workspace-Navigation">
       {/* Logo */}
       <div className="lnav-logo">
         <TreePalm size={22} color="var(--accent)" weight="fill" />
-        <span className="lnav-logo-text">Tropen OS</span>
+        <span className="lnav-logo-text">{_workspaceName || 'Tropen OS'}</span>
       </div>
 
       {/* Navigation */}
-      <div className="lnav-section">
+      <div className="lnav-section" aria-label="Navigation">
         <span className="lnav-section-label t-dezent">Navigation</span>
         <NavItem href="/dashboard" icon={<ChartBar size={22} weight="fill" />} label="Dashboard" />
         <NavItem href="/projects" icon={<FolderOpen size={22} weight="fill" />} label="Projekte" />
@@ -149,7 +149,7 @@ export default function LeftNav({
 
       {/* Chats header – always visible */}
       <div className="lnav-chats-header">
-        <span className="lnav-section-label t-dezent" style={{ padding: '10px 10px 6px' }}>Chats</span>
+        <h2 className="lnav-section-label t-dezent" style={{ padding: '10px 10px 6px', margin: 0 }}>Chats</h2>
         <button
           className="lnav-edit-btn"
           onClick={selectMode ? handleFertig : onEnterEditMode}
@@ -159,7 +159,7 @@ export default function LeftNav({
       </div>
 
       {/* Scrollable conv list */}
-      <div className="lnav-conv-list sidebar-scroll">
+      <div className="lnav-conv-list sidebar-scroll" aria-label="Konversationsliste">
         <ProjectSidebar {...projectSidebarProps} projects={projects} selectMode={selectMode} />
         <Papierkorb
           trashCount={trashCount}
