@@ -22,6 +22,7 @@ type WorkspaceLayoutProps = WorkspaceState
 export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   const {
     // Core
+    workspaceId,
     workspaceName,
     conversations,
     activeConvId,
@@ -140,6 +141,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     userFullName,
     isAdmin,
     userInitial,
+    organizationId,
     handleLogout,
 
     // Mobile
@@ -170,6 +172,8 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     bulkSoftDelete,
     sendMessage,
     logout,
+    activeAgentId,
+    setActiveAgentId,
   } = props
 
   return (
@@ -229,9 +233,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           dragConvId={dragConvId}
           dragOverId={dragOverId}
           selectMode={selectMode}
-          jungleActive={jungleActive}
-          jungleLoading={jungleLoading}
-          ungroupedCount={ungroupedCount}
           searchWrapRef={searchWrapRef as unknown as React.RefObject<HTMLDivElement>}
           projectRenameInputRef={projectRenameInputRef as unknown as React.RefObject<HTMLInputElement>}
           escapeProjectEditRef={escapeProjectEditRef}
@@ -261,7 +262,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           onSetDragConvId={setDragConvId}
           onSetDragOverId={setDragOverId}
           onAssignToProject={assignToProject}
-          onOpenJungleModal={openJungleModal}
           onSetSelectMode={(fn) => setSelectMode(fn)}
           onSetSelectedIds={(ids) => setSelectedIds(ids)}
           selectedArr={selectedArr}
@@ -368,10 +368,14 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         messagesEndRef={messagesEndRef as unknown as React.RefObject<HTMLDivElement>}
         userInitial={userInitial}
         projects={projects}
+        workspaceId={workspaceId}
+        organizationId={organizationId ?? undefined}
         onNewConversation={newConversation}
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
         onAssignToProject={assignToProject}
+        activeAgentId={activeAgentId}
+        onSetActiveAgentId={setActiveAgentId}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

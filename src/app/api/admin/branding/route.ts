@@ -11,7 +11,7 @@ async function getAdminUser() {
     .select('organization_id, role')
     .eq('id', user.id)
     .single()
-  if (!me || !['owner', 'admin'].includes(me.role)) return null
+  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
   return me as { organization_id: string; role: string }
 }
 
@@ -27,7 +27,7 @@ export async function GET() {
 
   return NextResponse.json(data ?? {
     logo_url: null,
-    primary_color: '#14b8a6',
+    primary_color: '#a3b554',
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',

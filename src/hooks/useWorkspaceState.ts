@@ -107,6 +107,7 @@ export function matchesPeriod(conv: Conversation, period: PeriodValue): boolean 
 
 export interface WorkspaceState {
   // Core
+  workspaceId: string
   workspaceName: string
   conversations: Conversation[]
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>
@@ -133,6 +134,8 @@ export interface WorkspaceState {
   sending: boolean
   error: string
   setError: React.Dispatch<React.SetStateAction<string>>
+  activeAgentId: string | null
+  setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>
 
   // Projects
   projects: Project[]
@@ -238,6 +241,7 @@ export interface WorkspaceState {
   userFullName: string
   isAdmin: boolean
   userInitial: string
+  organizationId: string | null
 
   // Handlers
   newConversation: () => Promise<string | null>
@@ -269,7 +273,7 @@ export interface WorkspaceState {
 // Hook
 // ─────────────────────────────────────────────────────────
 
-export default function useWorkspaceState(workspaceId: string): WorkspaceState {
+export default function useWorkspaceState(workspaceId: string, initialConvId?: string | null): WorkspaceState {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
 
@@ -280,6 +284,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const sendingRef = useRef(false)
   const [input, setInput] = useState('')
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<PeriodValue>('all')
   const [taskFilter, setTaskFilter] = useState<TaskValue>('all')
@@ -297,6 +302,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
   const [userEmail, setUserEmail] = useState('')
   const [userFullName, setUserFullName] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [organizationId, setOrganizationId] = useState<string | null>(null)
 
   // Projects + rename
   const [projects, setProjects] = useState<Project[]>([])
@@ -375,12 +381,13 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
       setUserEmail(user.email ?? '')
       const { data: profile } = await supabase
         .from('users')
-        .select('full_name, role')
+        .select('full_name, role, organization_id')
         .eq('id', user.id)
         .maybeSingle()
       if (profile) {
         setUserFullName(profile.full_name ?? '')
         setIsAdmin(['owner', 'admin'].includes(profile.role))
+        setOrganizationId(profile.organization_id ?? null)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -466,8 +473,12 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
           .order('display_order')
       ])
       if (ws) setWorkspaceName((ws as { name: string }).name)
-      setConversations((convs ?? []) as Conversation[])
+      const loadedConvs = (convs ?? []) as Conversation[]
+      setConversations(loadedConvs)
       setProjects((projs ?? []) as Project[])
+      if (initialConvId && loadedConvs.some(c => c.id === initialConvId)) {
+        setActiveConvId(initialConvId)
+      }
       const { count } = await supabase
         .from('conversations')
         .select('id', { count: 'exact', head: true })
@@ -826,7 +837,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ workspace_id: workspaceId, conversation_id: convId, message: currentInput }),
+          body: JSON.stringify({ workspace_id: workspaceId, conversation_id: convId, message: currentInput, agent_id: activeAgentId ?? undefined }),
           signal: AbortSignal.timeout(30_000)
         }
       )
@@ -949,6 +960,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
 
   return {
     // Core
+    workspaceId,
     workspaceName,
     conversations, setConversations,
     activeConvId, setActiveConvId,
@@ -1040,6 +1052,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
     userFullName,
     isAdmin,
     userInitial,
+    organizationId,
 
     // Handlers
     newConversation,
@@ -1065,5 +1078,7 @@ export default function useWorkspaceState(workspaceId: string): WorkspaceState {
     sendMessage,
     logout,
     handleLogout,
+    activeAgentId,
+    setActiveAgentId,
   }
 }

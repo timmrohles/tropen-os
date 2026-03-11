@@ -80,7 +80,7 @@ export default function ModelsPage() {
   const providers = ['openai', 'anthropic', 'mistral', 'google']
 
   return (
-    <div>
+    <div className="content-max">
       <div
         style={{
           display: 'flex',

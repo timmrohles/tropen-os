@@ -102,7 +102,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   error: { fontSize: 13, color: '#ef4444', margin: '0 0 4px' },
   success: { display: 'flex', flexDirection: 'column', gap: 16 },
-  successText: { fontSize: 14, color: '#14b8a6', margin: 0 },
+  successText: { fontSize: 14, color: '#a3b554', margin: 0 },
   backLink: {
     fontSize: 13,
     color: '#555',

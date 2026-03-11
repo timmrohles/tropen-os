@@ -20,7 +20,7 @@ type ModelPref = 'cheapest' | 'eu_only' | 'auto'
 type TeamSize = 'solo' | 'small' | 'large'
 type IconNode = React.ReactNode
 
-const PRESET_COLORS = ['#14b8a6', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
+const PRESET_COLORS = ['#a3b554', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
 
 // ─────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
   const [orgName, setOrgName] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [primaryColor, setPrimaryColor] = useState('#14b8a6')
+  const [primaryColor, setPrimaryColor] = useState('#a3b554')
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [guideName, setGuideName] = useState('Toro')
   const [dragging, setDragging] = useState(false)
@@ -558,9 +558,9 @@ export default function OnboardingPage() {
 
             <div style={s.featureRow}>
               {[
-                { icon: <ChatCircle size={26} weight="duotone" style={{ color: '#14b8a6' }} />, title: 'Workspaces',     sub: 'Team-Chats & Projekte' },
-                { icon: <ChartBar size={26} weight="duotone" style={{ color: '#14b8a6' }} />, title: 'Dashboard',      sub: 'Kosten & Nutzung' },
-                { icon: <Scales size={26} weight="duotone" style={{ color: '#14b8a6' }} />, title: 'Responsible AI', sub: 'Transparenz & Kontrolle' },
+                { icon: <ChatCircle size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Workspaces',     sub: 'Team-Chats & Projekte' },
+                { icon: <ChartBar size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Dashboard',      sub: 'Kosten & Nutzung' },
+                { icon: <Scales size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Responsible AI', sub: 'Transparenz & Kontrolle' },
               ].map((f) => (
                 <div key={f.title} style={s.featureCard}>
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</span>
@@ -610,7 +610,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   progressBar: {
     height: '100%',
-    background: '#14b8a6',
+    background: '#a3b554',
     transition: 'width 0.4s ease',
   },
   content: {
@@ -666,7 +666,7 @@ const s: Record<string, React.CSSProperties> = {
     transition: 'border-color 0.15s, background 0.15s',
     minHeight: 100,
   },
-  dropZoneActive: { borderColor: '#14b8a6', background: '#0d2926' },
+  dropZoneActive: { borderColor: '#a3b554', background: '#1e3818' },
   dropZoneHasLogo: { borderColor: '#2a2a2a', padding: '16px', background: '#111' },
   logoPreview: { maxHeight: 64, maxWidth: '100%', objectFit: 'contain' },
   dropHint: { fontSize: 13, color: '#555' },
@@ -701,7 +701,7 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6,
     textAlign: 'left', transition: 'border-color 0.15s, background 0.15s',
   },
-  cardActive: { background: '#0d2926', border: '1px solid #14b8a6' },
+  cardActive: { background: '#1e3818', border: '1px solid #a3b554' },
   cardEmoji: { fontSize: 24 },
   cardTitle: { fontSize: 14, fontWeight: 600, color: '#e5e5e5' },
   cardSub: { fontSize: 12, color: '#555', lineHeight: 1.4 },
@@ -713,7 +713,7 @@ const s: Record<string, React.CSSProperties> = {
     border: '1px solid #2a2a2a', background: '#111', color: '#666',
     cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
   },
-  chipActive: { background: '#14b8a6', border: '1px solid #14b8a6', color: '#000', fontWeight: 600 },
+  chipActive: { background: '#a3b554', border: '1px solid #a3b554', color: '#000', fontWeight: 600 },
 
   // ── Done Screen ──────────────────────────────────────────
   featureRow: { display: 'flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' },
@@ -728,7 +728,7 @@ const s: Record<string, React.CSSProperties> = {
   // ── Buttons ──────────────────────────────────────────────
   btnRow: { display: 'flex', gap: 10, marginTop: 24 },
   btnPrimary: {
-    background: '#14b8a6', color: '#000', border: 'none',
+    background: '#a3b554', color: '#000', border: 'none',
     padding: '13px 28px', borderRadius: 8, cursor: 'pointer',
     fontSize: 15, fontWeight: 700, marginTop: 24,
     transition: 'opacity 0.15s',
@@ -758,19 +758,19 @@ const s: Record<string, React.CSSProperties> = {
   },
   checkbox: {
     width: 17, height: 17, marginTop: 2, flexShrink: 0,
-    accentColor: '#14b8a6', cursor: 'pointer',
+    accentColor: '#a3b554', cursor: 'pointer',
   },
   checkboxText: { fontSize: 14, color: '#ccc', lineHeight: 1.6 },
   academyCard: {
     background: '#08100f',
     borderWidth: '1px', borderStyle: 'solid', borderColor: '#1c3530',
-    borderLeftWidth: '3px', borderLeftStyle: 'solid', borderLeftColor: '#14b8a6',
+    borderLeftWidth: '3px', borderLeftStyle: 'solid', borderLeftColor: '#a3b554',
     borderRadius: 8, padding: '18px 20px', marginBottom: 20,
   },
   academyTitle: { fontSize: 14, fontWeight: 600, color: '#b0b0b0' },
   academyText: { fontSize: 13, color: '#666', lineHeight: 1.65, margin: '0 0 8px' },
   academyLink: {
-    fontSize: 13, color: '#14b8a6', textDecoration: 'none',
+    fontSize: 13, color: '#a3b554', textDecoration: 'none',
     fontWeight: 500, display: 'inline-block',
   },
   accordionWrap: { marginBottom: 8 },

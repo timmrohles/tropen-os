@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         organization_id: organizationId,
         organization_display_name: body.org_name?.trim() || null,
         logo_url: body.logo_url || null,
-        primary_color: body.primary_color ?? '#14b8a6',
+        primary_color: body.primary_color ?? '#a3b554',
         ai_guide_name: body.guide_name?.trim() || 'Toro',
         onboarding_completed: true,
       },

@@ -13,7 +13,7 @@ const STYLE_LABELS: Record<ChatStyle, string> = {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 600, margin: '0 auto', padding: '48px 24px' },
+  page: { paddingTop: 48, paddingBottom: 48 },
   heading: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 32 },
   section: {
     background: 'var(--bg-surface)', border: '1px solid var(--border-muted)',
@@ -52,6 +52,10 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 14, fontWeight: 700, cursor: 'pointer',
   },
   comingSoon: { fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8, display: 'block' },
+  hint: { fontSize: 11, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5, display: 'block' },
+  hintBest: { fontSize: 11, color: 'rgba(163,181,84,0.8)', marginTop: 3, display: 'block' },
+  hintWarn: { fontSize: 11, color: 'rgba(251,191,36,0.8)', marginTop: 3, display: 'block' },
+  expertToggle: { display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12, padding: '8px 0', marginTop: 4 },
 }
 
 export default function SettingsPage() {
@@ -62,8 +66,12 @@ export default function SettingsPage() {
   const [chatStyle, setChatStyle] = useState<ChatStyle>('structured')
   const [memoryWindow, setMemoryWindow] = useState(20)
   const [thinkingMode, setThinkingMode] = useState(false)
+  const [proactiveHints, setProactiveHints] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [expertMode, setExpertMode] = useState(false)
+  const [supportAccess, setSupportAccess] = useState(true)
+  const [impSessions, setImpSessions] = useState<{ id: string; ticket_ref: string | null; started_at: string; duration_minutes: number }[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -72,7 +80,7 @@ export default function SettingsPage() {
       const [{ data: profile }, { data: prefs }] = await Promise.all([
         supabase.from('users').select('full_name').eq('id', user.id).maybeSingle(),
         supabase.from('user_preferences')
-          .select('chat_style, memory_window, thinking_mode')
+          .select('chat_style, memory_window, thinking_mode, proactive_hints')
           .eq('user_id', user.id).maybeSingle(),
       ])
       if (profile) setFullName((profile as { full_name?: string | null }).full_name ?? '')
@@ -80,9 +88,20 @@ export default function SettingsPage() {
         setChatStyle(((prefs as { chat_style?: string }).chat_style as ChatStyle) ?? 'structured')
         setMemoryWindow((prefs as { memory_window?: number }).memory_window ?? 20)
         setThinkingMode((prefs as { thinking_mode?: boolean }).thinking_mode ?? false)
+        setProactiveHints((prefs as { proactive_hints?: boolean }).proactive_hints ?? true)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/user/impersonation-sessions')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return
+        setSupportAccess(data.supportAccessEnabled)
+        setImpSessions(data.sessions ?? [])
+      })
   }, [])
 
   async function save() {
@@ -96,6 +115,7 @@ export default function SettingsPage() {
           chat_style: chatStyle,
           memory_window: memoryWindow,
           thinking_mode: thinkingMode,
+          proactive_hints: proactiveHints,
         }).eq('user_id', user.id),
       ])
       setSaved(true)
@@ -106,7 +126,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={s.page}>
+    <div className="content-narrow" style={s.page}>
       <h1 style={s.heading}>Einstellungen</h1>
 
       {/* Mein Konto */}
@@ -142,6 +162,8 @@ export default function SettingsPage() {
               <option key={k} value={k}>{STYLE_LABELS[k]}</option>
             ))}
           </select>
+          <span style={s.hint}>Wie Toro seine Antworten aufbaut — kurz & direkt, strukturiert mit Überschriften, oder ausführlich mit Beispielen.</span>
+          <span style={s.hintBest}>Best Practice: „Strukturiert" eignet sich für die meisten Aufgaben. Wechsel zu „Klar" wenn du schnelle Antworten willst.</span>
         </div>
 
         <div style={s.row}>
@@ -155,12 +177,48 @@ export default function SettingsPage() {
             onChange={e => setMemoryWindow(Number(e.target.value))}
             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
           />
+          <span style={s.hint}>Wie viele vorherige Nachrichten Toro bei jeder Antwort mitlest — mehr Kontext, höhere Token-Kosten.</span>
+          {memoryWindow <= 20
+            ? <span style={s.hintBest}>Best Practice: 20 Nachrichten — gut ausbalanciert zwischen Kontext und Kosten.</span>
+            : <span style={s.hintWarn}>⚠️ Ab 30+ Nachrichten steigen die Kosten pro Anfrage spürbar.</span>
+          }
         </div>
 
         <div style={s.toggleRow}>
-          <div>
+          <div style={{ flex: 1 }}>
+            <div style={s.toggleLabel}>💡 Proaktive Hinweise</div>
+            <div style={s.toggleNote}>Toro schlägt nach Antworten nächste Schritte oder verwandte Themen vor.</div>
+            <span style={s.hintBest}>Best Practice: Einschalten — Toro hilft dir, tiefer einzusteigen ohne explizit fragen zu müssen.</span>
+          </div>
+          <button
+            onClick={() => setProactiveHints(v => !v)}
+            style={{
+              width: 36, height: 20, borderRadius: 10,
+              border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: proactiveHints ? 'var(--accent)' : '#252525',
+              position: 'relative', transition: 'background 0.2s', marginLeft: 12,
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 2, width: 16, height: 16,
+              borderRadius: '50%', background: '#fff',
+              transition: 'left 0.2s', left: proactiveHints ? 18 : 2,
+            }} />
+          </button>
+        </div>
+
+        {/* Expert Mode Toggle */}
+        <button style={s.expertToggle} onClick={() => setExpertMode(v => !v)}>
+          {expertMode ? '▾' : '▸'} {expertMode ? 'Experten-Einstellungen ausblenden' : 'Experten-Einstellungen anzeigen'}
+        </button>
+
+        {expertMode && (
+        <div style={s.toggleRow}>
+          <div style={{ flex: 1 }}>
             <div style={s.toggleLabel}>🧠 Toro denkt laut nach</div>
             <div style={s.toggleNote}>Experimentell – wird in einer der nächsten Versionen aktiviert.</div>
+            <span style={s.hint}>Aktiviert erweitertes Reasoning-Modell — Toro zeigt seine Gedankenkette vor der Antwort.</span>
+            <span style={s.hintWarn}>⚠️ Erhöht Kosten und Antwortzeit deutlich. Nur für komplexe Aufgaben empfohlen.</span>
           </div>
           <button
             onClick={() => setThinkingMode(v => !v)}
@@ -178,13 +236,70 @@ export default function SettingsPage() {
             }} />
           </button>
         </div>
+        )}
       </div>
 
       {/* Datenschutz */}
       <div style={s.section}>
         <span style={s.sectionTitle}>Datenschutz</span>
-        <span style={s.comingSoon}>Meine Daten exportieren — demnächst verfügbar</span>
-        <span style={s.comingSoon}>Konto löschen — demnächst verfügbar</span>
+
+        <div style={s.toggleRow}>
+          <div>
+            <div style={s.toggleLabel}>Support-Ansicht erlauben</div>
+            <div style={s.toggleNote}>
+              Tropen-Admins können deine Ansicht für Support-Zwecke öffnen.
+              Niemals in deinem Namen handeln. Du siehst alle Sessions unten.
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              const next = !supportAccess
+              setSupportAccess(next)
+              await fetch('/api/user/impersonation-sessions', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ supportAccessEnabled: next }),
+              })
+            }}
+            style={{
+              width: 36, height: 20, borderRadius: 10,
+              border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: supportAccess ? 'var(--accent)' : '#252525',
+              position: 'relative', transition: 'background 0.2s', marginLeft: 12,
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 2, width: 16, height: 16,
+              borderRadius: '50%', background: '#fff',
+              transition: 'left 0.2s', left: supportAccess ? 18 : 2,
+            }} />
+          </button>
+        </div>
+
+        {impSessions.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>
+              Letzte Sessions
+            </div>
+            {impSessions.map(sess => (
+              <div key={sess.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    Tropen Admin · {new Date(sess.started_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, {new Date(sess.started_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} · {sess.duration_minutes} Min
+                  </div>
+                  {sess.ticket_ref && (
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{sess.ticket_ref}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ marginTop: 16 }}>
+          <span style={s.comingSoon}>Meine Daten exportieren — demnächst verfügbar</span>
+          <span style={s.comingSoon}>Konto löschen — demnächst verfügbar</span>
+        </div>
       </div>
 
       <button

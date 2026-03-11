@@ -7,7 +7,7 @@ import ToroChatWidget from '@/components/ToroChatWidget'
 // Features für das Grid
 const features = [
   {
-    icon: <Scales size={28} weight="duotone" style={{ color: '#14b8a6' }} />,
+    icon: <Scales size={28} weight="duotone" style={{ color: '#a3b554' }} />,
     title: 'Responsible AI',
     text: 'Jedes Modell, jede Anfrage, jeder Cent – vollständig sichtbar. Budgets setzen, Modelle freigeben, Kosten kontrollieren. AI ohne Blackbox.'
   },
@@ -34,8 +34,8 @@ export default async function HomePage() {
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-20">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-teal-400 font-medium mb-8 tracking-wide">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
+        <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-[#a3b554] font-medium mb-8 tracking-wide">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a3b554] inline-block" />
           Verantwortungsvolle KI für den Mittelstand
         </div>
 
@@ -60,7 +60,7 @@ export default async function HomePage() {
           <div className="flex gap-3">
             <Link
               href="/workspaces"
-              className="bg-teal-500 hover:bg-teal-400 text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
+              className="bg-[#a3b554] hover:bg-[#b3c664] text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
             >
               Zum Workspace →
             </Link>
@@ -74,7 +74,7 @@ export default async function HomePage() {
         ) : (
           <Link
             href="/login"
-            className="bg-teal-500 hover:bg-teal-400 text-black font-semibold px-7 py-3 rounded-lg text-sm transition-colors no-underline"
+            className="bg-[#a3b554] hover:bg-[#b3c664] text-black font-semibold px-7 py-3 rounded-lg text-sm transition-colors no-underline"
           >
             Anmelden →
           </Link>
@@ -102,9 +102,9 @@ export default async function HomePage() {
 
       {/* ── CO₂-Commitment ───────────────────────────────── */}
       <section className="px-6 pb-16 max-w-4xl mx-auto w-full">
-        <div className="border-t border-teal-900 bg-zinc-900 rounded-xl px-8 py-7">
+        <div className="border-t border-[#1e3818] bg-zinc-900 rounded-xl px-8 py-7">
           <div className="flex items-start gap-4">
-            <Plant size={18} weight="duotone" style={{ color: '#14b8a6', marginTop: 2, flexShrink: 0 }} />
+            <Plant size={18} weight="duotone" style={{ color: '#a3b554', marginTop: 2, flexShrink: 0 }} />
             <div>
               <h3 className="text-sm font-semibold text-zinc-200 mb-3">
                 Responsible AI – auch für den Planeten

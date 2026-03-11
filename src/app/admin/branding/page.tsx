@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
-const PRESET_COLORS = ['#14b8a6', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
+const PRESET_COLORS = ['#a3b554', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
 interface BrandingData {
   logo_url: string | null
@@ -19,7 +19,7 @@ export default function BrandingPage() {
 
   const [data, setData] = useState<BrandingData>({
     logo_url: null,
-    primary_color: '#14b8a6',
+    primary_color: '#a3b554',
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
@@ -105,7 +105,7 @@ export default function BrandingPage() {
   }
 
   return (
-    <div>
+    <div className="content-max">
       <h1 style={s.h1}>Co-Branding</h1>
       <p style={s.sub}>Passe Logo, Farbe und den Namen deines KI-Assistenten an.</p>
 
@@ -293,7 +293,7 @@ const s: Record<string, React.CSSProperties> = {
   colorBar: { height: 5, borderRadius: 3, transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px' },
 
   errorBox: { fontSize: 13, color: '#ef4444', background: '#1f0a0a', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
-  successBox: { fontSize: 13, color: '#14b8a6', background: '#0a1f1e', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
+  successBox: { fontSize: 13, color: '#a3b554', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
 
   saveBtn: {
     background: '#2a2a2a', border: '1px solid #3a3a3a', color: '#fff',

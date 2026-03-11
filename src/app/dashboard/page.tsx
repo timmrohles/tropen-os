@@ -229,6 +229,7 @@ export default async function DashboardPage({
   // Render
   // ------------------------------------------------------------------
   return (
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 32 }}>
     <div className="space-y-6 pb-8">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -259,7 +260,7 @@ export default async function DashboardPage({
 
         <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
           <Text className="!text-zinc-400 text-xs uppercase tracking-widest">Top-Modell</Text>
-          <Metric className="!text-teal-400 mt-2 text-xl truncate">{topModel}</Metric>
+          <Metric className="!text-[#a3b554] mt-2 text-xl truncate">{topModel}</Metric>
         </Card>
 
         <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
@@ -317,7 +318,7 @@ export default async function DashboardPage({
                   <TableRow key={i}>
                     <TableCell className="!text-white font-medium">{ws.name}</TableCell>
                     <TableCell className="!text-zinc-400 text-right">{ws.requests}</TableCell>
-                    <TableCell className="!text-teal-400 text-right font-mono text-sm">
+                    <TableCell className="!text-[#a3b554] text-right font-mono text-sm">
                       {fmt(ws.cost)}
                     </TableCell>
                     <TableCell>
@@ -358,7 +359,7 @@ export default async function DashboardPage({
                   <TableRow key={i}>
                     <TableCell className="!text-white font-medium">{u.name}</TableCell>
                     <TableCell className="!text-zinc-400 text-right">{u.requests}</TableCell>
-                    <TableCell className="!text-teal-400 text-right font-mono text-sm">
+                    <TableCell className="!text-[#a3b554] text-right font-mono text-sm">
                       {fmt(u.cost)}
                     </TableCell>
                     <TableCell className="!text-zinc-400 text-sm">{u.lastActive}</TableCell>
@@ -369,6 +370,7 @@ export default async function DashboardPage({
           </Table>
         </Card>
       </div>
+    </div>
     </div>
   )
 }

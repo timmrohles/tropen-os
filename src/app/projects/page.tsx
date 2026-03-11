@@ -20,6 +20,18 @@ const AUD_LABELS: Record<string, string> = {
   internal: 'Intern', customers: 'Kunden', public: 'Öffentlichkeit'
 }
 
+interface Agent {
+  id: string
+  name: string
+  description: string | null
+  system_prompt: string | null
+  visibility: 'private' | 'org'
+  created_at: string
+}
+
+type AgentVisibility = 'private' | 'org'
+const EMPTY_AGENT_FORM: { name: string; description: string; system_prompt: string; visibility: AgentVisibility } = { name: '', description: '', system_prompt: '', visibility: 'private' }
+
 export default function ProjectsPage() {
   const [tab, setTab] = useState<Tab>('projects')
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
@@ -33,6 +45,15 @@ export default function ProjectsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
+
+  // Agents state
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [agentsLoading, setAgentsLoading] = useState(false)
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [agentForm, setAgentForm] = useState<{ name: string; description: string; system_prompt: string; visibility: AgentVisibility }>(EMPTY_AGENT_FORM)
+  const [agentSaving, setAgentSaving] = useState(false)
+  const [agentDeleteConfirm, setAgentDeleteConfirm] = useState(false)
+  const [creatingAgent, setCreatingAgent] = useState(false)
 
   const loadProjects = useCallback(async (wsId: string) => {
     const res = await fetch(`/api/projects?workspace_id=${wsId}`)
@@ -63,6 +84,71 @@ export default function ProjectsPage() {
   }, [loadProjects])
 
   useEffect(() => { loadWorkspace() }, [loadWorkspace])
+
+  useEffect(() => {
+    if (tab !== 'agents') return
+    setAgentsLoading(true)
+    fetch('/api/agents')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setAgents(Array.isArray(data) ? data : []))
+      .finally(() => setAgentsLoading(false))
+  }, [tab])
+
+  function selectAgent(a: Agent) {
+    setSelectedAgent(a)
+    setAgentForm({ name: a.name, description: a.description ?? '', system_prompt: a.system_prompt ?? '', visibility: a.visibility })
+    setAgentDeleteConfirm(false)
+    setCreatingAgent(false)
+  }
+
+  async function handleAgentSave() {
+    if (!agentForm.name.trim()) return
+    setAgentSaving(true)
+    try {
+      if (selectedAgent) {
+        const res = await fetch(`/api/agents/${selectedAgent.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(agentForm),
+        })
+        if (res.ok) {
+          const updated = await res.json()
+          setAgents(prev => prev.map(a => a.id === updated.id ? updated : a))
+          setSelectedAgent(updated)
+        }
+      } else {
+        const res = await fetch('/api/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(agentForm),
+        })
+        if (res.ok) {
+          const created = await res.json()
+          setAgents(prev => [created, ...prev])
+          setSelectedAgent(created)
+          setCreatingAgent(false)
+        }
+      }
+    } finally {
+      setAgentSaving(false)
+    }
+  }
+
+  async function handleAgentDelete() {
+    if (!selectedAgent) return
+    setAgentSaving(true)
+    try {
+      const res = await fetch(`/api/agents/${selectedAgent.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setAgents(prev => prev.filter(a => a.id !== selectedAgent.id))
+        setSelectedAgent(null)
+        setAgentDeleteConfirm(false)
+        setAgentForm(EMPTY_AGENT_FORM)
+      }
+    } finally {
+      setAgentSaving(false)
+    }
+  }
 
   function selectProject(p: Project) {
     setSelected(p)
@@ -132,12 +218,12 @@ export default function ProjectsPage() {
   }
 
   const s: Record<string, React.CSSProperties> = {
-    page:        { minHeight: '100vh', background: 'var(--bg-base)', padding: '32px 24px' },
-    inner:       { maxWidth: 1100, margin: '0 auto' },
+    page:        { minHeight: '100vh', background: 'var(--bg-base)' },
+    inner:       { paddingTop: 32, paddingBottom: 32 },
     header:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
     h1:          { fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', margin: 0 },
     tabs:        { display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid var(--color-border)', paddingBottom: 0 },
-    tab:         { padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)' },
+    tab:         { padding: '8px 16px', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '2px solid transparent', cursor: 'pointer', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)' },
     tabActive:   { background: 'var(--bg-surface)', borderBottom: '2px solid var(--accent)' },
     tabDisabled: { opacity: 0.5, cursor: 'default' },
     cols:        { display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 },
@@ -164,12 +250,12 @@ export default function ProjectsPage() {
   }
 
   if (loading) return (
-    <div style={s.page}><div style={s.inner}><p className="t-dezent">Lädt…</p></div></div>
+    <div style={s.page}><div className="content-max" style={s.inner}><p className="t-dezent">Lädt…</p></div></div>
   )
 
   return (
     <div style={s.page}>
-      <div style={s.inner}>
+      <div className="content-max" style={s.inner}>
         <div style={s.header}>
           <h1 style={s.h1} className="t-primary">Projekte & Vorlagen</h1>
         </div>
@@ -178,7 +264,7 @@ export default function ProjectsPage() {
         <div style={s.tabs}>
           {([
             { id: 'projects',   label: 'Meine Projekte', icon: <FolderOpen size={16} />, active: true  },
-            { id: 'agents',     label: 'Meine Agenten',  icon: <Robot size={16} />,      active: false },
+            { id: 'agents',     label: 'Meine Agenten',  icon: <Robot size={16} />,      active: true  },
             { id: 'community',  label: 'Community',      icon: <Users size={16} />,      active: false },
             { id: 'templates',  label: 'Vorlagen',       icon: <BookOpen size={16} />,   active: true  },
           ] as { id: Tab; label: string; icon: React.ReactNode; active: boolean }[]).map(t => (
@@ -329,17 +415,121 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        {/* Tab: Meine Agenten (Platzhalter) */}
+        {/* Tab: Meine Agenten */}
         {tab === 'agents' && (
-          <div style={s.placeholder}>
-            <Lock size={48} weight="thin" color="rgba(255,255,255,0.2)" />
-            <p className="t-primary" style={{ margin: 0, fontWeight: 600 }}>Kommt in Phase 3</p>
-            <p className="t-secondary" style={{ maxWidth: 420, textAlign: 'center', margin: 0 }}>
-              Erstelle eigene Agenten, weise sie Projekten zu und teile sie mit deinem Team. Agenten bauen auf System-Agenten auf und können mit eigenem System-Prompt erweitert werden.
-            </p>
-            <a href="mailto:hello@tropen-os.de?subject=Interesse: Agenten-System" style={{ color: 'var(--accent)', fontSize: 'var(--text-sm)', textDecoration: 'none' }}>
-              Interesse melden →
-            </a>
+          <div style={s.cols}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <button style={s.addBtn} onClick={() => { setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM); setCreatingAgent(true) }}>
+                  <Plus size={16} /> Neuer Agent
+                </button>
+              </div>
+
+              {agentsLoading ? (
+                <p className="t-dezent">Lädt…</p>
+              ) : agents.length === 0 && !creatingAgent ? (
+                <div style={s.placeholder}>
+                  <Robot size={48} weight="thin" color="rgba(255,255,255,0.2)" />
+                  <p className="t-primary" style={{ margin: 0, fontWeight: 600 }}>Noch keine Agenten</p>
+                  <p className="t-secondary" style={{ maxWidth: 380, textAlign: 'center', margin: 0, fontSize: 'var(--text-sm)' }}>
+                    Erstelle eigene Agenten mit individuellem System-Prompt. Weise sie Projekten zu oder teile sie mit deinem Team.
+                  </p>
+                  <button style={s.addBtn} onClick={() => setCreatingAgent(true)}>
+                    <Plus size={16} /> Ersten Agenten anlegen
+                  </button>
+                </div>
+              ) : (
+                <div style={s.grid}>
+                  {agents.map(a => (
+                    <div
+                      key={a.id}
+                      style={selectedAgent?.id === a.id ? s.cardActive : s.card}
+                      onClick={() => selectAgent(a)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <Robot size={15} color="var(--accent)" />
+                        <p className="t-primary" style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-sm)' }}>{a.name}</p>
+                      </div>
+                      {a.description && (
+                        <p className="t-secondary" style={{ margin: '0 0 8px', fontSize: 'var(--text-xs)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {a.description}
+                        </p>
+                      )}
+                      <span className="chip t-dezent">{a.visibility === 'org' ? 'Team sichtbar' : 'Privat'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Agent Detail/Create Panel */}
+            {(selectedAgent || creatingAgent) ? (
+              <div style={s.detail}>
+                <p className="t-primary" style={{ margin: '0 0 20px', fontWeight: 600, fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Robot size={16} />{creatingAgent && !selectedAgent ? 'Neuer Agent' : 'Agent bearbeiten'}
+                </p>
+
+                <div style={s.fieldWrap}>
+                  <label style={s.label} className="t-dezent">Name</label>
+                  <input style={s.input} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="z.B. Marketing-Texter" />
+                </div>
+
+                <div style={s.fieldWrap}>
+                  <label style={s.label} className="t-dezent">Beschreibung</label>
+                  <input style={s.input} value={agentForm.description} onChange={e => setAgentForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung…" />
+                </div>
+
+                <div style={s.fieldWrap}>
+                  <label style={s.label} className="t-dezent">System-Prompt</label>
+                  <div style={s.hintBox}>
+                    <div style={s.hintRow}>
+                      <LightbulbFilament size={16} color="var(--accent)" weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <span className="t-secondary">Erkläre dem Agenten seine Rolle, seinen Ton und seine Aufgaben. Dieser Text wird bei jedem Chat als Kontext mitgeschickt.</span>
+                    </div>
+                  </div>
+                  <textarea
+                    style={{ ...s.textarea, minHeight: 160 }}
+                    value={agentForm.system_prompt}
+                    onChange={e => setAgentForm(f => ({ ...f, system_prompt: e.target.value }))}
+                    placeholder="Du bist ein erfahrener Marketing-Texter. Du schreibst klar, überzeugend und zielgruppengerecht…"
+                  />
+                </div>
+
+                <div style={s.fieldWrap}>
+                  <label style={s.label} className="t-dezent">Sichtbarkeit</label>
+                  <select style={s.select} value={agentForm.visibility} onChange={e => setAgentForm(f => ({ ...f, visibility: e.target.value as AgentVisibility }))}>
+                    <option value="private">Nur ich</option>
+                    <option value="org">Ganzes Team</option>
+                  </select>
+                </div>
+
+                <div style={s.actions}>
+                  {selectedAgent && (
+                    agentDeleteConfirm ? (
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span className="t-secondary" style={{ fontSize: 'var(--text-xs)' }}>Wirklich löschen?</span>
+                        <button style={{ ...s.btnDanger, padding: '6px 12px' }} onClick={handleAgentDelete}>Ja</button>
+                        <button style={{ padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer' }} className="t-dezent" onClick={() => setAgentDeleteConfirm(false)}>Nein</button>
+                      </div>
+                    ) : (
+                      <button style={{ ...s.btnDanger, padding: '8px 12px' }} onClick={() => setAgentDeleteConfirm(true)}><Trash size={15} /></button>
+                    )
+                  )}
+                  {!selectedAgent && (
+                    <button style={{ padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)' }} className="t-dezent" onClick={() => { setCreatingAgent(false); setAgentForm(EMPTY_AGENT_FORM) }}>
+                      <X size={14} /> Abbrechen
+                    </button>
+                  )}
+                  <button style={s.btnPrimary} onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
+                    <FloppyDisk size={15} />{agentSaving ? 'Speichert…' : 'Speichern'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ ...s.detail, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p className="t-dezent" style={{ textAlign: 'center', fontSize: 'var(--text-sm)' }}>Agenten auswählen oder neu anlegen</p>
+              </div>
+            )}
           </div>
         )}
 

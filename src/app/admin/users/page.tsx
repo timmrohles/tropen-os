@@ -50,7 +50,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div>
+    <div className="content-max">
       <div style={s.header}>
         <h1 style={s.h1}>User-Verwaltung</h1>
         <button

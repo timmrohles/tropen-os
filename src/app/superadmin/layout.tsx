@@ -1,11 +1,8 @@
+import type { ReactNode } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
-export default async function SuperadminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function SuperadminLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,31 +16,16 @@ export default async function SuperadminLayout({
 
   if (data?.role !== 'superadmin') redirect('/workspaces')
 
-  const wrapper: React.CSSProperties = {
-    maxWidth: 960,
-    margin: '0 auto',
-    padding: '32px 24px',
-  }
-
-  const header: React.CSSProperties = {
-    borderBottom: '1px solid #1e1e1e',
-    marginBottom: 24,
-    paddingBottom: 16,
-  }
-
-  const headerText: React.CSSProperties = {
-    fontSize: 11,
-    color: '#444',
-    textTransform: 'uppercase',
-    margin: 0,
-  }
-
   return (
-    <div style={wrapper}>
-      <div style={header}>
-        <p style={headerText}>🦜 Tropen Superadmin</p>
+    <div style={{ background: 'var(--bg-surface)', minHeight: '100vh' }}>
+      <div className="content-wide" style={{ paddingTop: 32, paddingBottom: 48 }}>
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 24, paddingBottom: 14 }}>
+          <p style={{ fontSize: 12, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, fontWeight: 600 }}>
+            🦜 Tropen Superadmin
+          </p>
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   )
 }

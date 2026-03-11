@@ -49,7 +49,7 @@ export default function BudgetPage() {
   if (loading) return <p style={{ color: '#555' }}>Lade…</p>
 
   return (
-    <div>
+    <div className="content-max">
       <h1 style={s.h1}>Budget-Limits</h1>
       <p style={s.sub}>
         Monatliches Ausgaben-Limit pro Organisation und Workspace. Leer lassen = kein Limit.

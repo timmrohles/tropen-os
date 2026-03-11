@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     .from('organization_settings')
     .insert({
       organization_id: org.id,
-      primary_color: '#14b8a6',
+      primary_color: '#a3b554',
       ai_guide_name: 'Toro',
       ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
       onboarding_completed: false,

@@ -26,7 +26,7 @@ export default async function WorkspacesPage() {
   }))
 
   return (
-    <div>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 32 }}>
       <h1 style={s.h1}>Deine Workspaces</h1>
 
       {workspaces.length === 0 ? (

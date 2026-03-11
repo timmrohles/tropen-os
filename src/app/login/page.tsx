@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={s.wrap}>
+    <div className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
         <p style={s.sub}>Responsible AI Workspace für den Mittelstand</p>

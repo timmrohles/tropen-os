@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import OpenAI from 'openai'
+import { logRoutingDecision } from '@/lib/qa/routing-logger'
+import { classifyTask, getRoutingReason } from '@/lib/qa/task-classifier'
 
 // ─── Rate Limiting (in-memory, per IP) ────────────────────────────────────────
 const RATE_LIMIT = 20
@@ -99,6 +101,10 @@ export async function POST(req: NextRequest) {
       content: String(m.content).slice(0, 1000),
     }))
 
+  const taskType = classifyTask(message)
+  const routingReason = getRoutingReason(taskType, message.length)
+  const callStart = Date.now()
+
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     stream: true,
@@ -124,12 +130,27 @@ export async function POST(req: NextRequest) {
           }
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } catch {
+        controller.close()
+        logRoutingDecision({
+          taskType,
+          modelSelected: 'gpt-4o-mini',
+          routingReason,
+          latencyMs: Date.now() - callStart,
+          status: 'success',
+        })
+      } catch (err) {
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: 'Stream-Fehler' })}\n\n`)
         )
-      } finally {
         controller.close()
+        logRoutingDecision({
+          taskType,
+          modelSelected: 'gpt-4o-mini',
+          routingReason,
+          latencyMs: Date.now() - callStart,
+          status: 'error',
+          errorMessage: err instanceof Error ? err.message : String(err),
+        })
       }
     },
   })

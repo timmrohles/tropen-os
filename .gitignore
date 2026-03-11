@@ -32,3 +32,11 @@ npm-debug.log*
 .vscode/settings.json
 .idea/
 tsconfig.tsbuildinfo
+
+# Visual brainstorm sessions
+.superpowers/
+
+# ── CI / Testing ──────────────────────────────────────────
+test-results/*.json
+coverage/
+.vercel

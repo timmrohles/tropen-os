@@ -16,6 +16,7 @@ interface Prefs {
   chat_style: 'clear' | 'structured' | 'detailed'
   memory_window: number
   thinking_mode: boolean
+  proactive_hints: boolean
 }
 
 interface Routing {
@@ -104,8 +105,9 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   const supabase = supabaseRef.current
 
   const [collapsed, setCollapsed] = useState(false)
-  const [prefs, setPrefs] = useState<Prefs>({ chat_style: 'structured', memory_window: 20, thinking_mode: false })
+  const [prefs, setPrefs] = useState<Prefs>({ chat_style: 'structured', memory_window: 20, thinking_mode: false, proactive_hints: true })
   const [userId, setUserId] = useState<string | null>(null)
+  const [monthlyCost, setMonthlyCost] = useState<number | null>(null)
   const [styleDropOpen, setStyleDropOpen] = useState(false)
   const styleDropRef = useRef<HTMLDivElement>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -114,17 +116,35 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('chat_style, memory_window, thinking_mode')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      if (data) {
+
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+      const [{ data: prefsData }, { data: costData }] = await Promise.all([
+        supabase
+          .from('user_preferences')
+          .select('chat_style, memory_window, thinking_mode, proactive_hints')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('messages')
+          .select('cost_eur')
+          .eq('role', 'assistant')
+          .gte('created_at', startOfMonth),
+      ])
+
+      if (prefsData) {
         setPrefs({
-          chat_style: (data.chat_style as Prefs['chat_style']) ?? 'structured',
-          memory_window: (data as { memory_window?: number }).memory_window ?? 20,
-          thinking_mode: (data as { thinking_mode?: boolean }).thinking_mode ?? false,
+          chat_style: (prefsData.chat_style as Prefs['chat_style']) ?? 'structured',
+          memory_window: (prefsData as { memory_window?: number }).memory_window ?? 20,
+          thinking_mode: (prefsData as { thinking_mode?: boolean }).thinking_mode ?? false,
+          proactive_hints: (prefsData as { proactive_hints?: boolean }).proactive_hints ?? true,
         })
+      }
+
+      if (costData) {
+        const total = costData.reduce((s, m) => s + ((m as { cost_eur?: number | null }).cost_eur ?? 0), 0)
+        setMonthlyCost(total)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,6 +184,15 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     0
   )
 
+  // ── Kosten-Forecast ────────────────────────────────────
+
+  const now = new Date()
+  const dayOfMonth = now.getDate()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const forecastCost = monthlyCost !== null && dayOfMonth > 0
+    ? (monthlyCost / dayOfMonth) * daysInMonth
+    : null
+
   // ── Warnings ────────────────────────────────────────────
 
   const warnings: { level: 'amber' | 'orange' | 'red'; text: string }[] = []
@@ -175,6 +204,10 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     warnings.push({ level: 'red', text: `Achtung: hohe Kosten dieser Session (€${sessionCost.toFixed(4)})` })
   else if (sessionCost > 0.10)
     warnings.push({ level: 'orange', text: `Session kostet bereits €${sessionCost.toFixed(4)}` })
+  if (forecastCost !== null && forecastCost > 10)
+    warnings.push({ level: 'red', text: `Hochrechnung: ca. €${forecastCost.toFixed(2)} diesen Monat` })
+  else if (forecastCost !== null && forecastCost > 5)
+    warnings.push({ level: 'orange', text: `Hochrechnung: ca. €${forecastCost.toFixed(2)} diesen Monat` })
 
   // ── Collapsed State ─────────────────────────────────────
 
@@ -231,7 +264,9 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         <SectionLabel icon={<ChartBar size={10} />}>Diese Session</SectionLabel>
         <Row label="Nachrichten" value={msgCount > 0 ? String(msgCount) : '—'} />
         <Row label="Tokens" value={fmtTokens(sessionTokens)} />
-        <Row label="Kosten" value={sessionCost > 0 ? `€${sessionCost.toFixed(4)}` : '—'} />
+        <Row label="Kosten Session" value={sessionCost > 0 ? `€${sessionCost.toFixed(4)}` : '—'} />
+        <Row label="Kosten Monat" value={monthlyCost !== null && monthlyCost > 0 ? `€${monthlyCost.toFixed(4)}` : '—'} />
+        <Row label="Hochrechnung" value={forecastCost !== null && forecastCost > 0 ? `~€${forecastCost.toFixed(2)}` : '—'} />
         <Row label="CO₂ est." value={calcCO2(sessionTokens)} />
       </div>
 
@@ -304,6 +339,25 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
               </div>
             )}
           </div>
+        </div>
+
+        {/* Proaktive Hinweise Toggle */}
+        <div className="sp-field">
+          <div className="sp-toggle-row">
+            <span className="sp-toggle-label">
+              💡 Proaktive Hinweise
+            </span>
+            <button
+              className={`sp-toggle-btn${prefs.proactive_hints ? ' sp-toggle-btn--on' : ''}`}
+              onClick={() => updatePref('proactive_hints', !prefs.proactive_hints)}
+              title={prefs.proactive_hints ? 'Deaktivieren' : 'Aktivieren'}
+            >
+              <span className={`sp-toggle-thumb${prefs.proactive_hints ? ' sp-toggle-thumb--on' : ''}`} />
+            </button>
+          </div>
+          <p className="sp-toggle-note">
+            Toro schlägt nach Antworten nächste Schritte vor.
+          </p>
         </div>
 
         {/* Thinking Mode Toggle */}

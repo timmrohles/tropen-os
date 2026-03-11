@@ -115,6 +115,7 @@ Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen 
 
 ### Migration
 - **017_rag_foundation.sql** — pgvector Extension, 4 Tabellen, ivfflat Index, RLS Policies
+- **018_rls_users_fix.sql** — `users_select_own` Policy + `user_org_id()` SECURITY DEFINER — behebt Knowledge Upload + NavBar Superadmin
 
 ---
 
@@ -134,9 +135,50 @@ Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen 
 - Inline-Styles: alle Seiten nutzen `const s: Record<string, React.CSSProperties>`
 - Farben: CSS-Variablen aus `globals.css` — `var(--bg-base)` Background, `var(--accent)` Gelbgrün (Primär), `var(--text-primary)` Text
 - Farbpalette: Dschungel-Dunkelgrün (`--bg-base: #0d1f16`, `--bg-surface: #134e3a`), Akzent (`--accent: #a3b554`)
+- **Türkis/Teal ist verboten** — kein `teal-*`, `cyan-*`, `#14b8a6`, `#0d9488`, `#06b6d4`. Immer `var(--accent)` / `#a3b554`.
 - DB-Zugriff Client: immer `createClient()` aus `@/utils/supabase/client`
 - DB-Zugriff Server/API: `supabaseAdmin` aus `@/lib/supabase-admin` (Service Role, bypasses RLS)
 - Migrations: `supabase/migrations/00X_name.sql` — fortlaufend nummeriert
+
+## Content-Breiten (verbindlich)
+
+Jede Seite/Layout verwendet genau eine dieser Klassen. Root-`<main>` ist unstyled.
+
+| Klasse | Max-Width | Verwendet für |
+|--------|-----------|---------------|
+| `.content-max` | 1200px | Standard-Seiten (Dashboard, Settings, Admin-Seiten, Knowledge, Projects) |
+| `.content-narrow` | 720px | Formular-Seiten (Login, Onboarding, Forgot-Password, Reset-Password) |
+| `.content-wide` | 1400px | Superadmin-Seiten |
+| `.content-full` | 100% | Chat-Interface (Workspaces) |
+
+Responsive Padding (auto via CSS): Desktop >1280px: 48px | Tablet >768px: 24px | Mobile: 16px.
+
+Superadmin-Layout (`src/app/superadmin/layout.tsx`) setzt `bg-surface` als Page-Background + `content-wide`.
+Alle anderen Layouts/Seiten: eigenes `className="content-max"` + inline `paddingTop/paddingBottom`.
+
+## Drawer-System & UI-Architektur
+
+- **Chat bleibt Zentrum** — keine neuen Features stören den Chat-Bereich
+- **Alle neuen Features kommen als Drawer** (kein eigener Seitenaufruf wenn vermeidbar)
+- Drawer-Konventionen:
+  - Backdrop: `rgba(0,0,0,0.4)`, Klick auf Backdrop schließt
+  - Escape schließt immer
+  - Animation: `200ms ease-out`
+  - Kein Inline-Style in Drawer-Komponenten — CSS-Klassen aus `globals.css`
+- Drawer-Typen: Top (Artefakte), Right (Settings), Bottom (tbd)
+
+## Artefakte & Merkliste
+
+- **Artefakte** entstehen aus Chat-Antworten (Code-Blöcke, Dokumente, strukturierte Outputs)
+- **Chat-Header-Strip**: dünner Streifen über dem Chat, nur sichtbar wenn ≥1 Artefakt oder Lesezeichen existiert
+  - Zeigt: Artefakt-Anzahl (Büroklammer-Icon), Lesezeichen-Anzahl, "→ Workspace"-Link
+  - Klick öffnet Top-Drawer
+- **Top-Drawer**: listet Artefakte des aktuellen Chats (Name, Typ-Icon, Datum, Download)
+  - Link: "Alle Artefakte im Workspace →" am Ende
+  - X-Button + Escape + Backdrop-Klick schließt
+- **Lesezeichen**: Bookmark-Icon auf jeder Toro-Nachricht; Klick fügt zur Merkliste hinzu
+- **`/workspace`-Seite** (neu): Grid aller Artefakte aller Chats, Filter (Typ/Projekt/Chat/Datum), Suche, Aktionen (Download, in KB, löschen)
+- Icons: Phosphor Icons (`@phosphor-icons/react`)
 
 ## Dify Integration
 
@@ -324,6 +366,24 @@ Falls du das nicht warst, ignoriere diese Mail.
 
 ---
 
+## Datenbank-Migrations-Workflow
+
+Supabase CLI ist global installiert und das Projekt ist verlinkt (Ref: `vlwivsjfmcejhiqluaav`).
+Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
+
+### Ablauf für neue Migrationen
+1. Migration schreiben: `supabase/migrations/0XX_name.sql`
+2. Pushen: `cd "/c/Users/timmr/tropen OS" && supabase db push`
+3. Wenn eine Migration bereits manuell per SQL Editor angewendet wurde:
+   `supabase migration repair --status applied <nummer>` → dann `db push`
+
+### Bekannte Fallstricke
+- `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
+- Alle Zeilen in `.env.local` müssen `KEY=VALUE`-Format oder `# Kommentar` sein
+- Migration-Nummern sind einfache Zahlen (001, 002 ...), kein Timestamp-Format
+
+---
+
 ## Migrations-Übersicht
 
 | Datei | Inhalt |
@@ -344,6 +404,109 @@ Falls du das nicht warst, ignoriere diese Mail.
 | 014_rls_audit.sql | RLS-Audit: messages auf SELECT-only, conversations granulare Policies (SELECT/INSERT/UPDATE/DELETE) |
 | 015_thinking_mode.sql | thinking_mode BOOLEAN in user_preferences (experimentell, noch nicht in Edge Function) |
 | 016_smart_projects.sql | projects um description, context, tone, language, target_audience, memory, updated_at erweitert |
+| 017_rag_foundation.sql | pgvector, knowledge_sources/documents/chunks/citations |
+| 018_rls_users_fix.sql | users_select_own Policy + user_org_id() SECURITY DEFINER |
+| 019_workspace_members_rls.sql | workspace_members RLS-Fix |
+| 020_superadmin_workspace_member.sql | Superadmin als workspace_member eingetragen |
+| 021_impersonation.sql | impersonation_sessions + support_access_enabled in user_preferences |
+| 022_artifacts.sql | artifacts + bookmarks Tabellen |
+| 023_proactive_hints.sql | proactive_hints BOOLEAN in user_preferences |
+| 024_prompt_templates.sql | prompt_templates Tabelle (eigene Vorlagen) |
+| 025_agents.sql | agents Tabelle (Agenten-System Phase 1) |
+| 026_packages.sql | packages, package_agents, org_packages Tabellen + Marketing-Paket Seed-Daten |
+
+---
+
+## 🗺️ Produkt-Roadmap (Stand 2026-03-10)
+
+### ✅ Fertig
+
+#### 🎨 Design-System
+- Türkis/Teal vollständig entfernt, `var(--accent)` durchgängig
+- Content-Breiten: `.content-max` 1200px · `.content-narrow` 720px · `.content-wide` 1400px — alle Seiten migriert
+- Plan-Badges: Free `#4a5568/white`, Pro `#a3b554/#0d2418`, Enterprise `#1e5238/white + 1px accent`
+- Solide Farben (kein rgba als Background), Mindestschriftgröße 12px, Text weiß
+
+#### 💬 Chat & Workspace
+- Kimi-Style 3-Column Layout (LeftNav 240px, ChatArea flex, ProjectSidebar)
+- Multi-Select mit iOS-"Bearbeiten"-Pattern, Merge, Soft-Delete, Papierkorb
+- Jungle Order: Struktur-Vorschlag + Zusammenführen via Dify Workflow
+- Prompt-Bibliothek Phase 1: 5 Core-Vorlagen + TemplateDrawer (clientseitig)
+
+#### 📁 Smarte Projekte
+- `/projects` Seite mit 4 Tabs (Meine Projekte, Meine Agenten, Community, Vorlagen)
+- Projekt-Felder: Kontext, Ton, Sprache, Zielgruppe, Gedächtnis (Phase 2: manuell)
+
+#### 🧠 Wissensbasis & RAG
+- pgvector EU, `text-embedding-3-small`, 3 Ebenen (Org/User/Projekt)
+- Dokument-Upload UI + Edge Functions `knowledge-search` + `knowledge-ingest`
+- Migrations 017-018 deployed
+
+#### 🔒 Superadmin-Tool
+- `/superadmin/clients`: Clients anlegen, bearbeiten, löschen, User aktivieren
+- Role-Switcher im NavBar (Super / Admin / Solo) via sessionStorage
+- Superadmin-Org unlöschbar
+
+#### 👤 Impersonation (Admin-Ebenen & DSGVO)
+- Read-only Banner mit Countdown, vollständig geloggt (`impersonation_sessions`)
+- Zeitlich begrenzt (15/30/60 Min), Ticket-Referenz Pflicht
+- User sieht alle Sessions in Settings › Datenschutz
+- Toggle "Support-Ansicht erlauben"
+
+#### 💬 Startseiten-Chat
+- Anonym, 5 Nachrichten, localStorage, gpt-4o-mini
+- Toro kennt Startseiten-Kontext, CTA nach Limit
+
+#### 📎 Artefakte & Merkliste
+- `artifacts` + `bookmarks` Tabellen (Migration 022)
+- Chat-Header-Strip: Zähler für Artefakte + Lesezeichen, öffnet Drawer
+- Artefakte-Drawer (oben, 200ms ease-out, Backdrop, Escape)
+- Code-Blöcke: "Als Artefakt speichern" Button (Auto-Detect)
+- Bookmark-Icon auf jeder Toro-Antwort (toggle)
+- `/workspace` Seite: Grid aller Artefakte, Filter nach Typ, Suche, Download, Löschen
+
+---
+
+### 🔜 Nächste Schritte (Prio-Reihenfolge)
+
+#### 🤖 Agenten-System Phase 2
+- Agenten Projekten zuweisen (conversations.agent_id)
+- Agenten im Chat aktivieren (Dropdown im ChatInput)
+- System-Prompt als `agent_system_prompt` Input an Dify übergeben
+
+#### 📚 Prompt-Bibliothek Phase 3
+- Paket-Vorlagen je nach aktiviertem Paket
+- Vorlagen org-weit teilen
+
+#### 📦 Paket-System Phase 1 ✅
+- Marketing-Paket: 5 Agenten (Campaign Planner, Brand Voice Writer, Social Adapter, Newsletter Spezialist, Copy Texter)
+- Schnellstart-Chips (4 pro Agent) direkt im ChatInput
+- Superadmin aktiviert Paket pro Org in /superadmin/clients
+- Nächstes Paket: Wissenschafts-Paket
+
+---
+
+### ⬜ Geplant (später)
+
+#### 📦 Paket-System
+- Marketing-Paket: 10 Agenten, Hootsuite/Buffer/Mailchimp/Canva/HubSpot-Integration
+- Wissenschafts-Paket: 10 Agenten, Zotero-Anbindung, DFG/Horizon-Anträge
+- Risiko-Ranking: Marketing ✅ · Wissenschaft ⚠️ · Legal/Behörde 🔴 (nur mit Partner)
+
+#### 🛡️ Toro Guard
+- 4-Schichten: Automatisch → KI-Review (Risk Score 0–100) → Manuell → Community
+- Status-System: In Review / Community / Verifiziert / Featured / Deaktiviert
+- Immer bestes Modell, jede Entscheidung geloggt
+
+#### 🔗 n8n/Make Integration
+- Trigger aus Tropen OS, n8n als Agent-Tool, Tropen OS als n8n Node
+- Automationen-Tab in Projekt-Einstellungen
+- Community teilt Agent + Flow Templates
+
+#### 🏗️ Architektur & Positionierung
+- Wettbewerb durch Integration ersetzen: Elicit, Zotero, n8n einbinden
+- Community-Netzwerkeffekt: Agenten teilen, forken, bewerten
+- Tropen OS als KI-Betriebssystem positionieren, nicht als Wrapper
 
 ---
 

@@ -20,6 +20,7 @@ interface ChatRequest {
   workspace_id: string;
   conversation_id: string;
   message: string;
+  agent_id?: string;
 }
 
 interface TaskRouterResult {
@@ -114,7 +115,7 @@ serve(async (req) => {
     // 2. Request Body
     console.log("Step 2: Body parsen");
     const body: ChatRequest = await req.json();
-    const { workspace_id, conversation_id, message } = body;
+    const { workspace_id, conversation_id, message, agent_id } = body;
     if (!workspace_id || !conversation_id || !message) {
       return errorResponse("Fehlende Parameter");
     }
@@ -141,7 +142,7 @@ serve(async (req) => {
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
       supabase
         .from("user_preferences")
-        .select("chat_style, memory_window")
+        .select("chat_style, memory_window, proactive_hints")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -151,9 +152,21 @@ serve(async (req) => {
         .maybeSingle(),
     ]);
 
-    const chatStyle   = userPrefs?.chat_style   ?? "structured";
-    const memorySize  = userPrefs?.memory_window ?? 20;
-    const aiGuideName = orgSettings?.ai_guide_name ?? "Toro";
+    const chatStyle      = userPrefs?.chat_style      ?? "structured";
+    const memorySize     = userPrefs?.memory_window   ?? 20;
+    const proactiveHints = userPrefs?.proactive_hints ?? true;
+    const aiGuideName    = orgSettings?.ai_guide_name ?? "Toro";
+
+    // 5b. Agent-System-Prompt laden (wenn agent_id übergeben)
+    let agentSystemPrompt: string | null = null;
+    if (agent_id) {
+      const { data: agentData } = await supabase
+        .from("agents")
+        .select("system_prompt, name")
+        .eq("id", agent_id)
+        .maybeSingle();
+      agentSystemPrompt = agentData?.system_prompt ?? null;
+    }
 
     // 6. Workspace-Zugang + Policy Check
     console.log("Step 6: Workspace-Zugang prüfen");
@@ -260,6 +273,9 @@ serve(async (req) => {
         chat_style: chatStyle,
         memory_size: memorySize,
         ai_guide_name: aiGuideName,
+        proactive_hints: proactiveHints,
+        mark_uncertainty: true,
+        agent_system_prompt: agentSystemPrompt ?? "",
       },
       query: message,
       response_mode: "streaming",

@@ -247,7 +247,7 @@ const s: Record<string, React.CSSProperties> = {
 
   // ── Hero ──
   hero: {
-    background: 'linear-gradient(135deg, #0f4c4c, #134e4a)',
+    background: 'linear-gradient(135deg, #1a2d10, #1e3818)',
     padding: '80px 40px',
     position: 'relative',
   },
@@ -272,7 +272,7 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 48,
   },
   heroLabel: {
-    color: '#14b8a6',
+    color: '#a3b554',
     fontSize: 12,
     fontWeight: 600,
     letterSpacing: '0.12em',
@@ -295,9 +295,9 @@ const s: Record<string, React.CSSProperties> = {
     lineHeight: 1.6,
   },
   heroBadge: {
-    background: 'rgba(20,184,166,0.15)',
-    border: '1px solid #14b8a6',
-    color: '#14b8a6',
+    background: 'rgba(163,181,84,0.15)',
+    border: '1px solid #a3b554',
+    color: '#a3b554',
     borderRadius: 20,
     padding: '6px 14px',
     fontSize: 13,
@@ -367,7 +367,7 @@ const s: Record<string, React.CSSProperties> = {
   timelineCircle: {
     width: 36,
     height: 36,
-    background: '#14b8a6',
+    background: '#a3b554',
     color: '#000',
     borderRadius: '50%',
     fontWeight: 700,
@@ -391,7 +391,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   codeBox: {
     background: '#18181b',
-    border: '1px solid #14b8a6',
+    border: '1px solid #a3b554',
     borderRadius: 8,
     padding: 14,
     fontFamily: 'monospace',
@@ -546,13 +546,13 @@ const s: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   sourceLink: {
-    color: '#14b8a6',
+    color: '#a3b554',
     textDecoration: 'none',
   },
 
   // ── CTA Footer ──
   ctaSection: {
-    background: 'linear-gradient(135deg, #0f4c4c, #134e4a)',
+    background: 'linear-gradient(135deg, #1a2d10, #1e3818)',
     padding: '64px 40px',
     textAlign: 'center',
     display: 'flex',
@@ -572,7 +572,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   ctaAttribution: {
     fontSize: 14,
-    color: '#14b8a6',
+    color: '#a3b554',
     marginTop: 8,
   },
   ctaButtons: {
@@ -582,7 +582,7 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   ctaBtnPrimary: {
-    background: '#14b8a6',
+    background: '#a3b554',
     color: '#000',
     padding: '12px 24px',
     borderRadius: 8,

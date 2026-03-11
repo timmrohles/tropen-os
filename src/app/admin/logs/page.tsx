@@ -17,7 +17,7 @@ export default async function LogsPage() {
     .range(0, 99)
 
   return (
-    <div>
+    <div className="content-max">
       <h1 style={s.h1}>Usage Logs</h1>
       <p style={s.meta}>{count ?? 0} Einträge gesamt · Zeige die letzten 100</p>
 

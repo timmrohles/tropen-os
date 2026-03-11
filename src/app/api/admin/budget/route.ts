@@ -15,7 +15,7 @@ async function getAdminUser() {
     .eq('id', user.id)
     .single()
 
-  if (!me || !['owner', 'admin'].includes(me.role)) return null
+  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
   return me as { organization_id: string; role: string }
 }
 

@@ -188,9 +188,6 @@ export default function NewClientPage() {
 
 const s: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: '100vh',
-    background: '#0a0a0a',
-    padding: '32px 24px',
     maxWidth: 640,
     margin: '0 auto',
   },
@@ -276,8 +273,8 @@ const s: Record<string, React.CSSProperties> = {
     marginTop: 4,
   },
   submitBtn: {
-    background: '#14b8a6',
-    color: '#000',
+    background: 'var(--accent)',
+    color: '#0d2418',
     fontWeight: 700,
     fontSize: 14,
     border: 'none',

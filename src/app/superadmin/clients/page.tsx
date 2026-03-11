@@ -3,6 +3,17 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+interface ImpModal {
+  orgId: string
+  userId: string
+  email: string
+}
+
+interface ImpForm {
+  ticketRef: string
+  durationMinutes: number
+}
+
 interface OrgRow {
   id: string
   name: string
@@ -15,15 +26,15 @@ interface OrgRow {
 }
 
 const owner = (org: OrgRow) =>
-  org.users.find((u) => u.role === 'owner')?.email ?? '–'
+  (org.users.find((u) => u.role === 'owner') ?? org.users.find((u) => u.role === 'superadmin'))?.email ?? '–'
 
 const onboardingDone = (org: OrgRow) =>
   org.organization_settings?.[0]?.onboarding_completed === true
 
-const planBg: Record<string, string> = {
-  free: '#1e1e1e',
-  pro: '#1a2a3a',
-  enterprise: '#1a3a2a',
+const planStyle: Record<string, React.CSSProperties> = {
+  free:       { background: '#4a5568', color: '#ffffff' },
+  pro:        { background: '#a3b554', color: '#0d2418' },
+  enterprise: { background: '#1e5238', color: '#ffffff', border: '1px solid #a3b554' },
 }
 
 interface EditState {
@@ -48,6 +59,46 @@ export default function ClientsPage() {
   const [activateRole, setActivateRole] = useState('member')
   const [activating, setActivating] = useState(false)
   const [activateMsg, setActivateMsg] = useState('')
+  const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set())
+  const [impModal, setImpModal] = useState<ImpModal | null>(null)
+  const [packages, setPackages] = useState<{ id: string; slug: string; name: string; description: string | null; icon: string | null }[]>([])
+  const [orgPackages, setOrgPackages] = useState<Record<string, { id: string; package_id: string; is_active: boolean; activated_at: string }[]>>({})
+  const [pkgTogglingKey, setPkgTogglingKey] = useState<string | null>(null)
+  const [impForm, setImpForm] = useState<ImpForm>({ ticketRef: '', durationMinutes: 30 })
+  const [impLoading, setImpLoading] = useState(false)
+
+  function toggleExpand(orgId: string) {
+    setExpandedOrgs(prev => {
+      const next = new Set(prev)
+      next.has(orgId) ? next.delete(orgId) : next.add(orgId)
+      return next
+    })
+  }
+
+  async function openImpersonation() {
+    if (!impModal) return
+    setImpLoading(true)
+    try {
+      const res = await fetch('/api/superadmin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: impModal.userId,
+          targetEmail: impModal.email,
+          targetOrgId: impModal.orgId,
+          ticketRef: impForm.ticketRef.trim() || null,
+          durationMinutes: impForm.durationMinutes,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setImpModal(null)
+        window.open(`/workspaces?_imp=${data.sessionId}`, '_blank')
+      }
+    } finally {
+      setImpLoading(false)
+    }
+  }
 
   function loadOrgs() {
     setLoading(true)
@@ -58,7 +109,35 @@ export default function ClientsPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadOrgs() }, [])
+  useEffect(() => {
+    loadOrgs()
+    fetch('/api/superadmin/packages')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setPackages(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
+
+  async function loadOrgPackages(orgId: string) {
+    const res = await fetch(`/api/superadmin/packages/${orgId}`)
+    if (!res.ok) return
+    const data = await res.json()
+    setOrgPackages(prev => ({ ...prev, [orgId]: data }))
+  }
+
+  async function handleTogglePackage(orgId: string, packageId: string, currentActive: boolean) {
+    const key = `${orgId}:${packageId}`
+    setPkgTogglingKey(key)
+    try {
+      await fetch(`/api/superadmin/packages/${orgId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package_id: packageId, is_active: !currentActive }),
+      })
+      await loadOrgPackages(orgId)
+    } finally {
+      setPkgTogglingKey(null)
+    }
+  }
 
   function openEdit(org: OrgRow) {
     const ws = org.workspaces?.[0]
@@ -154,8 +233,9 @@ export default function ClientsPage() {
                 <th style={s.th}>Plan</th>
                 <th style={s.th}>Budget Org</th>
                 <th style={s.th}>Workspace</th>
-                <th style={s.th}>Owner-Email</th>
+                <th style={s.th}>User</th>
                 <th style={s.th}>Onboarding</th>
+                <th style={s.th}>Pakete</th>
                 <th style={s.th}>Aktionen</th>
               </tr>
             </thead>
@@ -169,7 +249,7 @@ export default function ClientsPage() {
                       <div style={s.orgId}>{org.id.slice(0, 8)}…</div>
                     </td>
                     <td style={s.td}>
-                      <span style={{ ...s.badge, background: planBg[org.plan] ?? '#1e1e1e' }}>
+                      <span style={{ ...s.badge, ...(planStyle[org.plan] ?? { background: '#4a5568', color: '#fff' }) }}>
                         {org.plan}
                       </span>
                     </td>
@@ -186,7 +266,37 @@ export default function ClientsPage() {
                         </div>
                       ) : '–'}
                     </td>
-                    <td style={s.td}>{owner(org)}</td>
+                    <td style={s.td}>
+                      <button
+                        style={s.expandBtn}
+                        onClick={() => toggleExpand(org.id)}
+                      >
+                        {expandedOrgs.has(org.id) ? '▴' : '▾'} {org.users.length} User
+                      </button>
+                      {expandedOrgs.has(org.id) && (
+                        <div style={s.userList}>
+                          {org.users.map(u => (
+                            <div key={u.id} style={s.userRow}>
+                              <div>
+                                <div style={s.userEmail}>{u.email}</div>
+                                <div style={s.userRole}>{u.role}</div>
+                              </div>
+                              {u.role !== 'superadmin' && (
+                                <button
+                                  style={s.viewBtn}
+                                  onClick={() => {
+                                    setImpModal({ orgId: org.id, userId: u.id, email: u.email })
+                                    setImpForm({ ticketRef: '', durationMinutes: 30 })
+                                  }}
+                                >
+                                  Ansicht öffnen
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td style={s.td}>
                       {onboardingDone(org) ? (
                         <span style={s.badgeDone}>Fertig</span>
@@ -195,10 +305,45 @@ export default function ClientsPage() {
                       )}
                     </td>
                     <td style={s.td}>
+                      <button
+                        style={s.expandBtn}
+                        onClick={() => {
+                          if (!orgPackages[org.id]) loadOrgPackages(org.id)
+                          else setOrgPackages(prev => { const n = { ...prev }; delete n[org.id]; return n })
+                        }}
+                      >
+                        📦 Pakete
+                      </button>
+                      {orgPackages[org.id] && (
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                          {packages.map(pkg => {
+                            const orgPkg = orgPackages[org.id]?.find(p => p.package_id === pkg.id)
+                            const active = orgPkg?.is_active ?? false
+                            const key = `${org.id}:${pkg.id}`
+                            return (
+                              <div key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }}>
+                                <span style={{ fontSize: 14 }}>{pkg.icon}</span>
+                                <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{pkg.name}</span>
+                                <button
+                                  onClick={() => handleTogglePackage(org.id, pkg.id, active)}
+                                  disabled={pkgTogglingKey === key}
+                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? '#0d2418' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                                >
+                                  {pkgTogglingKey === key ? '…' : active ? 'Aktiv' : 'Inaktiv'}
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </td>
+                    <td style={s.td}>
                       <div style={s.actions}>
                         <button style={s.editBtn} onClick={() => openEdit(org)}>Bearbeiten</button>
                         <button style={s.activateBtn} onClick={() => { setActivateOrg(org); setActivateMsg('') }}>+ User</button>
-                        <button style={s.deleteBtn} onClick={() => setDeleteOrg(org)}>Löschen</button>
+                        {!org.users.some((u) => u.role === 'superadmin') && (
+                          <button style={s.deleteBtn} onClick={() => setDeleteOrg(org)}>Löschen</button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -280,7 +425,7 @@ export default function ClientsPage() {
             </select>
 
             {activateMsg && (
-              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? '#14b8a6' : '#ef4444', marginTop: 8 }}>
+              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? '#a3b554' : '#ef4444', marginTop: 8 }}>
                 {activateMsg}
               </p>
             )}
@@ -289,6 +434,57 @@ export default function ClientsPage() {
               <button style={s.cancelBtn} onClick={() => setActivateOrg(null)}>Schließen</button>
               <button style={s.saveBtn} onClick={handleActivate} disabled={activating || !activateEmail}>
                 {activating ? 'Aktivieren…' : 'Aktivieren'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Impersonation Modal ── */}
+      {impModal && (
+        <div style={s.overlay} onClick={() => setImpModal(null)}>
+          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 style={s.modalTitle}>Ansicht öffnen</h2>
+            <div style={s.impWarning}>
+              Du siehst genau was <strong style={{ color: '#fff' }}>{impModal.email}</strong> sieht — nichts mehr.
+              Kein Schreiben, Löschen oder Ändern. Diese Session wird protokolliert.
+            </div>
+
+            <label style={s.label}>Support-Ticket-Referenz</label>
+            <input
+              style={s.input}
+              placeholder="z.B. TICKET-4321"
+              value={impForm.ticketRef}
+              onChange={(e) => setImpForm(f => ({ ...f, ticketRef: e.target.value }))}
+            />
+
+            <label style={{ ...s.label, marginTop: 12 }}>Dauer</label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              {[15, 30, 60].map(min => (
+                <button
+                  key={min}
+                  onClick={() => setImpForm(f => ({ ...f, durationMinutes: min }))}
+                  style={{
+                    flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13,
+                    cursor: 'pointer', fontWeight: impForm.durationMinutes === min ? 700 : 400,
+                    background: impForm.durationMinutes === min ? 'var(--accent)' : 'var(--bg-input)',
+                    color: impForm.durationMinutes === min ? '#0d2418' : 'var(--text-secondary)',
+                    border: impForm.durationMinutes === min ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                  }}
+                >
+                  {min} Min
+                </button>
+              ))}
+            </div>
+
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, marginBottom: 0 }}>
+              Der User sieht in seinen Einstellungen, wann und wie lange seine Ansicht geöffnet wurde.
+            </p>
+
+            <div style={s.modalFooter}>
+              <button style={s.cancelBtn} onClick={() => setImpModal(null)}>Abbrechen</button>
+              <button style={s.saveBtn} onClick={openImpersonation} disabled={impLoading}>
+                {impLoading ? 'Öffne…' : 'In neuem Tab öffnen'}
               </button>
             </div>
           </div>
@@ -319,10 +515,7 @@ export default function ClientsPage() {
 
 const s: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: '100vh',
-    background: '#0a0a0a',
-    color: '#e5e5e5',
-    padding: '40px 48px',
+    color: 'var(--text-primary)',
     fontFamily: 'sans-serif',
   },
   header: {
@@ -332,83 +525,85 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: 32,
   },
   h1: { fontSize: 24, fontWeight: 700, color: '#fff', margin: 0, marginBottom: 4 },
-  subtext: { fontSize: 13, color: '#555', margin: 0 },
+  subtext: { fontSize: 13, color: 'var(--text-muted)', margin: 0 },
   newBtn: {
-    background: '#14b8a6',
-    color: '#000',
+    background: 'var(--accent)',
+    color: '#0d2418',
     padding: '10px 20px',
     borderRadius: 7,
     textDecoration: 'none',
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: 13,
     display: 'inline-block',
     flexShrink: 0,
   },
-  tableWrapper: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: 13, color: '#e5e5e5' },
+  tableWrapper: {},
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'var(--text-primary)', tableLayout: 'fixed' },
   th: {
-    fontSize: 11,
-    color: '#555',
+    fontSize: 12,
+    color: 'var(--text-muted)',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     textAlign: 'left',
     padding: '8px 12px',
-    borderBottom: '1px solid #1e1e1e',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
     fontWeight: 600,
     whiteSpace: 'nowrap',
   },
-  tr: { borderBottom: '1px solid #141414' },
-  td: { padding: '12px 12px', verticalAlign: 'middle', color: '#e5e5e5' },
+  tr: { borderBottom: '1px solid rgba(255,255,255,0.05)' },
+  td: { padding: '12px 12px', verticalAlign: 'middle', color: 'var(--text-primary)' },
   orgName: { fontWeight: 500, color: '#fff' },
-  orgId: { color: '#444', fontSize: 11, marginTop: 2 },
-  wsName: { color: '#e5e5e5' },
+  orgId: { color: 'var(--text-muted)', fontSize: 12, marginTop: 2 },
+  wsName: { color: 'var(--text-secondary)' },
   badge: {
     display: 'inline-block',
-    padding: '3px 8px',
+    padding: '3px 10px',
     borderRadius: 4,
-    fontSize: 11,
-    fontWeight: 600,
-    color: '#e5e5e5',
+    fontSize: 12,
+    fontWeight: 700,
     textTransform: 'capitalize',
     letterSpacing: '0.03em',
   },
   badgeDone: {
     display: 'inline-block', padding: '3px 8px', borderRadius: 4,
-    fontSize: 11, fontWeight: 600, background: '#14b8a620', color: '#14b8a6',
+    fontSize: 12, fontWeight: 600, background: '#1e3818', color: '#a3b554',
   },
   badgePending: {
     display: 'inline-block', padding: '3px 8px', borderRadius: 4,
-    fontSize: 11, fontWeight: 600, background: '#1e1e1e', color: '#666',
+    fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)',
   },
-  actions: { display: 'flex', gap: 8 },
+  actions: { display: 'flex', gap: 8, flexWrap: 'nowrap' },
   editBtn: {
-    background: '#1e1e1e',
-    border: '1px solid #2a2a2a',
-    color: '#e5e5e5',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    color: 'var(--text-primary)',
     padding: '5px 12px',
     borderRadius: 5,
     fontSize: 12,
     cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
   },
   activateBtn: {
     background: 'transparent',
-    border: '1px solid #14b8a640',
-    color: '#14b8a6',
+    border: '1px solid rgba(163,181,84,0.4)',
+    color: 'var(--accent)',
     padding: '5px 12px',
     borderRadius: 5,
     fontSize: 12,
     cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
   },
   deleteBtn: {
     background: 'transparent',
-    border: '1px solid #3f1414',
+    border: '1px solid rgba(239,68,68,0.3)',
     color: '#ef4444',
     padding: '5px 12px',
     borderRadius: 5,
     fontSize: 12,
     cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
   },
-  muted: { color: '#555', fontSize: 14, padding: '24px 0' },
+  muted: { color: 'var(--text-muted)', fontSize: 14, padding: '24px 0' },
 
   // Modal
   overlay: {
@@ -421,8 +616,8 @@ const s: Record<string, React.CSSProperties> = {
     zIndex: 100,
   },
   modal: {
-    background: '#141414',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-elevated)',
+    border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 10,
     padding: '32px 36px',
     width: 440,
@@ -431,10 +626,10 @@ const s: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   modalTitle: { fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 12px' },
-  label: { fontSize: 11, color: '#666', marginTop: 8 },
+  label: { fontSize: 12, color: 'var(--text-muted)', marginTop: 8 },
   input: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: 'var(--bg-input)',
+    border: '1px solid rgba(255,255,255,0.12)',
     color: '#fff',
     padding: '9px 12px',
     borderRadius: 6,
@@ -446,21 +641,21 @@ const s: Record<string, React.CSSProperties> = {
   modalFooter: { display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 },
   cancelBtn: {
     background: 'transparent',
-    border: '1px solid #2a2a2a',
-    color: '#888',
+    border: '1px solid rgba(255,255,255,0.12)',
+    color: 'var(--text-muted)',
     padding: '8px 18px',
     borderRadius: 6,
     fontSize: 13,
     cursor: 'pointer',
   },
   saveBtn: {
-    background: '#14b8a6',
+    background: 'var(--accent)',
     border: 'none',
-    color: '#000',
+    color: '#0d2418',
     padding: '8px 18px',
     borderRadius: 6,
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
   },
   dangerBtn: {
@@ -473,5 +668,28 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: 'pointer',
   },
-  confirmText: { fontSize: 14, color: '#888', lineHeight: 1.6, margin: '0 0 8px' },
+  confirmText: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 8px' },
+
+  // User expand
+  expandBtn: {
+    background: 'transparent', border: 'none', color: 'var(--text-secondary)',
+    fontSize: 12, cursor: 'pointer', padding: '2px 0', textAlign: 'left' as const,
+  },
+  userList: { marginTop: 8, display: 'flex', flexDirection: 'column' as const, gap: 6 },
+  userRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 5,
+  },
+  userEmail: { fontSize: 12, color: '#fff' },
+  userRole: { fontSize: 11, color: 'var(--text-muted)', marginTop: 1 },
+  viewBtn: {
+    background: 'transparent', border: '1px solid rgba(163,181,84,0.3)',
+    color: 'var(--accent)', padding: '3px 10px', borderRadius: 4,
+    fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0,
+  },
+  impWarning: {
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 7, padding: '12px 14px', fontSize: 13, color: 'var(--text-secondary)',
+    lineHeight: 1.6, marginBottom: 8,
+  },
 }

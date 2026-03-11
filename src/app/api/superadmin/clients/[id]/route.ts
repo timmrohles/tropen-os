@@ -82,6 +82,18 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params
 
+  // Superadmin-Org ist unlöschbar
+  const { data: superadminUser } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('organization_id', id)
+    .eq('role', 'superadmin')
+    .maybeSingle()
+
+  if (superadminUser) {
+    return NextResponse.json({ error: 'Diese Organisation kann nicht gelöscht werden.' }, { status: 403 })
+  }
+
   // Delete in order: settings → workspaces → users → org
   await supabaseAdmin.from('organization_settings').delete().eq('organization_id', id)
   await supabaseAdmin.from('workspaces').delete().eq('organization_id', id)

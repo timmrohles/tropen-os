@@ -5,7 +5,6 @@ import {
   Folder, Image as ImageIcon, FileText, Code as CodeIcon,
   Lock, CaretRight, CaretDown, PencilSimple, X, CheckSquare,
 } from '@phosphor-icons/react'
-import Parrot from '@/components/Parrot'
 import ConvItem from './ConvItem'
 import { PERIODS, TASK_TYPES } from '@/hooks/useWorkspaceState'
 import type { Conversation, Project, PeriodValue, TaskValue } from '@/hooks/useWorkspaceState'
@@ -34,10 +33,6 @@ interface ProjectSidebarProps {
   dragConvId: string | null
   dragOverId: string | null
   selectMode: boolean
-  jungleActive: boolean
-  jungleLoading: boolean
-  ungroupedCount: number
-
   // Refs
   searchWrapRef: React.RefObject<HTMLDivElement>
   projectRenameInputRef: React.RefObject<HTMLInputElement>
@@ -75,8 +70,7 @@ interface ProjectSidebarProps {
   onSetDragOverId: (id: string | null) => void
   onAssignToProject: (convId: string, projectId: string | null) => void
 
-  // Callbacks - Jungle
-  onOpenJungleModal: () => void
+  // Callbacks - Select
   onSetSelectMode: (fn: (prev: boolean) => boolean) => void
   onSetSelectedIds: (ids: Set<string>) => void
 
@@ -117,9 +111,6 @@ export default function ProjectSidebar({
   dragConvId,
   dragOverId,
   selectMode,
-  jungleActive,
-  jungleLoading,
-  ungroupedCount,
 
   // Refs
   searchWrapRef,
@@ -158,8 +149,7 @@ export default function ProjectSidebar({
   onSetDragOverId,
   onAssignToProject,
 
-  // Callbacks - Jungle
-  onOpenJungleModal,
+  // Callbacks - Select
   onSetSelectMode,
   onSetSelectedIds,
 
@@ -437,28 +427,15 @@ export default function ProjectSidebar({
         ))}
       </div>
 
-      {/* Ordnung im Dschungel */}
+      {/* Select Mode */}
       <div className="ps-jungle-bar">
-        <div className={`ps-jungle-split${!jungleActive ? ' ps-jungle-split--inactive' : ''}`}>
-          <button
-            className={`ps-jungle-btn${!jungleActive ? ' ps-jungle-btn--disabled' : ''}`}
-            disabled={!jungleActive || jungleLoading}
-            onClick={onOpenJungleModal}
-            title={jungleActive
-              ? 'Toro analysiert deine Chats und schlägt eine sinnvolle Struktur vor'
-              : `Noch ${5 - ungroupedCount} Chats ohne Projekt nötig`}
-          >
-            <Parrot size={16} />
-            {jungleLoading ? 'analysiert…' : 'Ordnung im Dschungel'}
-          </button>
-          <button
-            className={`ps-select-mode-btn${selectMode ? ' ps-select-mode-btn--active' : ''}`}
-            onClick={() => { onSetSelectMode((v) => !v); onSetSelectedIds(new Set()) }}
-            title="Chats auswählen"
-          >
-            <CheckSquare size={15} weight={selectMode ? 'fill' : 'regular'} />
-          </button>
-        </div>
+        <button
+          className={`ps-select-mode-btn${selectMode ? ' ps-select-mode-btn--active' : ''}`}
+          onClick={() => { onSetSelectMode((v) => !v); onSetSelectedIds(new Set()) }}
+          title="Chats auswählen"
+        >
+          <CheckSquare size={15} weight={selectMode ? 'fill' : 'regular'} />
+        </button>
       </div>
     </>
   )
