@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { openai, DEFAULT_MODEL } from '@/lib/llm/openai'
+import { routeRequest } from '@/lib/llm/router'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
-import { classifyTask, getRoutingReason } from '@/lib/qa/task-classifier'
 
 // ─── Rate Limiting (in-memory, per IP) ────────────────────────────────────────
 const RATE_LIMIT = 20
@@ -99,29 +99,20 @@ export async function POST(req: NextRequest) {
       content: String(m.content).slice(0, 1000),
     }))
 
-  const taskType = classifyTask(message)
-  const routingReason = getRoutingReason(taskType, message.length)
+  const { taskType, routingReason } = await routeRequest(message)
   const callStart = Date.now()
 
-  const stream = await openai.chat.completions.create(
-    {
-      model: DEFAULT_MODEL,
-      stream: true,
-      max_tokens: 600,
-      temperature: 0.7,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...safeHistory,
-        { role: 'user', content: message },
-      ],
-    },
-    {
-      headers: {
-        'Helicone-Property-TaskType': taskType,
-        'Helicone-Property-RoutingReason': routingReason,
-      },
-    }
-  )
+  const stream = await openai.chat.completions.create({
+    model: DEFAULT_MODEL,
+    stream: true,
+    max_tokens: 600,
+    temperature: 0.7,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...safeHistory,
+      { role: 'user', content: message },
+    ],
+  })
 
   const encoder = new TextEncoder()
   const readable = new ReadableStream({

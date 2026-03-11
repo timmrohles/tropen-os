@@ -45,6 +45,8 @@ jobs:
           # Keine echten API-Keys nötig — alles gemockt
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: placeholder
+          LANGSMITH_TRACING: 'false'
+          LANGSMITH_API_KEY: ''
 
       # ── Test-Ergebnisse in Supabase schreiben ────────────────────
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { getLatencyStats, getCostByModel } from '@/lib/helicone/api'
+import { getLangSmithClient } from '@/lib/langsmith/tracer'
 import type { PerformanceResponse } from '@/types/qa'
 
 export const revalidate = 300
@@ -16,6 +16,44 @@ async function isSuperadmin() {
   return data?.role === 'superadmin'
 }
 
+async function getLangSmithStats() {
+  const client = getLangSmithClient()
+  if (!client) return null
+
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const runs: any[] = []
+
+    for await (const run of client.listRuns({
+      projectName: process.env.LANGSMITH_PROJECT ?? 'tropen-ai',
+      startTime: sevenDaysAgo,
+      runType: 'llm',
+      limit: 500,
+    })) {
+      runs.push(run)
+    }
+
+    const latencies = runs
+      .filter(r => r.end_time && r.start_time)
+      .map(r => new Date(r.end_time!).getTime() - new Date(r.start_time).getTime())
+      .sort((a, b) => a - b)
+
+    const totalTokens = runs.reduce((sum, r) => sum + (r.total_tokens ?? 0), 0)
+
+    return {
+      totalRuns: runs.length,
+      p50LatencyMs: latencies[Math.floor(latencies.length * 0.5)] ?? 0,
+      p95LatencyMs: latencies[Math.floor(latencies.length * 0.95)] ?? 0,
+      totalTokens,
+      avgTokensPerRun: runs.length > 0 ? Math.round(totalTokens / runs.length) : 0,
+    }
+  } catch (err) {
+    console.warn('[LangSmith] Stats fehlgeschlagen:', err)
+    return null
+  }
+}
+
 export async function GET() {
   try {
     if (!(await isSuperadmin())) {
@@ -25,7 +63,7 @@ export async function GET() {
     const supabase = createServiceClient()
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [lighthouseRes, latencyRes, heliconeLatency, heliconeCosts] = await Promise.all([
+    const [lighthouseRes, latencyRes, langsmithStats] = await Promise.all([
       supabase
         .from('qa_lighthouse_runs')
         .select('performance, accessibility, best_practices, seo, lcp_ms, inp_ms, cls_score, run_at')
@@ -39,8 +77,7 @@ export async function GET() {
         .in('metric_type', ['latency_p50', 'latency_p95'])
         .gte('measured_at', sevenDaysAgo),
 
-      getLatencyStats(7),
-      getCostByModel(7),
+      getLangSmithStats(),
     ])
 
     // Web Vitals — from latest lighthouse run
@@ -78,14 +115,7 @@ export async function GET() {
       lighthouse,
       webVitals,
       latencyByModel,
-      helicone: process.env.HELICONE_API_KEY
-        ? {
-            latencyP50: heliconeLatency.p50,
-            latencyP95: heliconeLatency.p95,
-            totalRequests: heliconeLatency.totalRequests,
-            costByModel: heliconeCosts,
-          }
-        : null,
+      langsmith: langsmithStats,
     }
     return NextResponse.json(response)
   } catch (err) {

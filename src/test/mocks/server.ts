@@ -12,15 +12,8 @@ export const handlers = [
     })
   ),
 
-  // OpenAI via Helicone Proxy (falls später verwendet)
-  http.post('https://oai.helicone.ai/v1/chat/completions', () =>
-    HttpResponse.json({
-      id: 'mock-completion',
-      choices: [{ message: { role: 'assistant', content: 'Mock' }, finish_reason: 'stop' }],
-      usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
-      model: 'gpt-4o-mini',
-    })
-  ),
+  // LangSmith API (Tracing — kein echter Call in Tests dank setup.ts)
+  http.post('https://api.smith.langchain.com/*', () => HttpResponse.json({})),
 
   // Supabase REST API
   http.get('*/rest/v1/qa_routing_log', () =>

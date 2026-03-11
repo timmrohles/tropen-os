@@ -55,3 +55,7 @@ vi.mock('next/headers', () => ({
 }))
 
 // node:crypto wird direkt von Node.js aufgelöst — kein Mock nötig
+
+// LangSmith in Tests immer deaktivieren — keine externen Calls
+process.env.LANGSMITH_TRACING = 'false'
+process.env.LANGSMITH_API_KEY = ''

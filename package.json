@@ -23,6 +23,7 @@
     "@supabase/supabase-js": "^2.49.0",
     "@tremor/react": "^3.18.7",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "langsmith": "^0.5.9",
     "next": "^16.1.6",
     "openai": "^6.27.0",
     "react": "^19.0.0",
@@ -59,6 +60,11 @@
     "vitest": "^4.0.18"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "msw", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
