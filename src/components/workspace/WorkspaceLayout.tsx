@@ -184,7 +184,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         <div className="wl-mobile-header">
           <button className="wl-hamburger" onClick={() => setNavOpen(v => !v)}>☰</button>
           <span className="wl-mobile-title">Tropen OS</span>
-          <button className="wl-mobile-new-chat" onClick={newConversation}>+</button>
+          <button className="wl-mobile-new-chat" onClick={() => newConversation()}>+</button>
         </div>
       )}
 
@@ -197,7 +197,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
       <div className={isMobile ? `wl-mobile-nav${navOpen ? ' wl-mobile-nav--open' : ' wl-mobile-nav--closed'}` : undefined}>
         <LeftNav
           workspaceName={workspaceName}
-          isAdmin={isAdmin}
           userInitial={userInitial}
           userFullName={userFullName}
           userEmail={userEmail}

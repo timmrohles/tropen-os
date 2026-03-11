@@ -4,8 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Folders, ChartBar, Robot, CurrencyEur, ClipboardText,
-  Users, TreePalm, SignOut, Gear, CaretDown, Plus,
+  ChartBar, TreePalm, SignOut, Gear, Plus,
   ArrowsMerge, FolderSimple, FolderOpen, Trash, Books,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
@@ -25,7 +24,6 @@ function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; l
 
 type LeftNavProps = {
   workspaceName: string
-  isAdmin: boolean
   userInitial: string
   userFullName: string
   userEmail: string
@@ -51,7 +49,6 @@ type LeftNavProps = {
 } & Omit<React.ComponentProps<typeof ProjectSidebar>, 'projects'>
 
 export default function LeftNav({
-  isAdmin,
   userInitial,
   userFullName,
   userEmail,
@@ -77,7 +74,6 @@ export default function LeftNav({
   ...projectSidebarProps
 }: LeftNavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [wsOpen, setWsOpen] = useState(false)
   const [activeAction, setActiveAction] = useState<'merge' | 'move' | 'delete' | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -147,19 +143,6 @@ export default function LeftNav({
         <NavItem href="/projects" icon={<FolderOpen size={22} weight="fill" />} label="Projekte" />
         <NavItem href="/knowledge" icon={<Books size={22} weight="fill" />} label="Wissen" />
 
-        {/* Workspaces Dropdown */}
-        <button className="lnav-item" onClick={() => setWsOpen(v => !v)}>
-          <span className="lnav-item-inner">
-            <Folders size={22} weight={wsOpen ? 'fill' : 'regular'} />
-            Workspaces
-          </span>
-          <CaretDown size={12} className={`lnav-item-expand${wsOpen ? ' lnav-item-expand--open' : ''}`} />
-        </button>
-        {wsOpen && (
-          <div className="lnav-ws-indent">
-            <div className="lnav-ws-placeholder">Module folgen…</div>
-          </div>
-        )}
       </div>
 
       <div className="lnav-divider" />
@@ -271,23 +254,6 @@ export default function LeftNav({
       <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
         {menuOpen && (
           <div className="lnav-user-menu">
-            {isAdmin && (
-              <>
-                <Link href="/admin/models" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-                  <Robot size={15} /> Modelle
-                </Link>
-                <Link href="/admin/budget" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-                  <CurrencyEur size={15} /> Budget
-                </Link>
-                <Link href="/admin/logs" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-                  <ClipboardText size={15} /> Logs
-                </Link>
-                <Link href="/admin/users" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-                  <Users size={15} /> User
-                </Link>
-                <div className="lnav-menu-divider" />
-              </>
-            )}
             <Link href="/settings" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
               <Gear size={15} /> Einstellungen
             </Link>
