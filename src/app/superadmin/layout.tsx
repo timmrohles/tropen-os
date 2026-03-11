@@ -1,16 +1,9 @@
 import type { ReactNode } from 'react'
-import Link from 'next/link'
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireSuperadmin } from '@/lib/auth/guards'
+import SuperadminNav from './SuperadminNav'
 
 export default async function SuperadminLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data } = await supabase
-    .from('users').select('role').eq('id', user.id).single()
-  if (data?.role !== 'superadmin') redirect('/workspaces')
+  await requireSuperadmin()
 
   return (
     <div style={{ background: 'transparent', minHeight: '100vh' }}>
@@ -27,23 +20,7 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
             <span aria-hidden="true">🦜</span>{' '}
             Tropen Superadmin
           </p>
-          <nav aria-label="Superadmin-Navigation">
-            <ul role="list" style={{ display: 'flex', gap: 20, listStyle: 'none', margin: 0, padding: 0 }}>
-              {[
-                { href: '/superadmin/clients', label: 'Clients' },
-                { href: '/admin/todos', label: 'To-Dos & Compliance' },
-              ].map(link => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <SuperadminNav />
         </header>
         {children}
       </div>
