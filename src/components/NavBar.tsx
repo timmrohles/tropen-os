@@ -73,7 +73,7 @@ export default function NavBar() {
     borderRadius: 999,
     transition: 'all var(--t-fast)',
     background: active ? 'var(--active-bg)' : 'transparent',
-    color: active ? 'var(--active-text)' : 'rgba(26,23,20,0.50)',
+    color: active ? 'var(--active-text)' : 'var(--text-secondary)',
     boxShadow: active ? '0 3px 10px rgba(26,46,35,0.30)' : 'none',
     display: 'block',
   })
