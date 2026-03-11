@@ -6,6 +6,10 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { AccountSwitcher, type AccountRole } from './AccountSwitcher'
+import {
+  ShieldCheck, ClipboardText, ListChecks,
+  ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush,
+} from '@phosphor-icons/react'
 
 const VIEW_AS_KEY = 'tropen_view_as'
 
@@ -75,7 +79,7 @@ export default function NavBar() {
     background: active ? 'var(--active-bg)' : 'transparent',
     color: active ? 'var(--active-text)' : 'var(--text-secondary)',
     boxShadow: active ? '0 3px 10px rgba(26,46,35,0.30)' : 'none',
-    display: 'block',
+    display: 'flex', alignItems: 'center', gap: 6,
   })
 
   return (
@@ -131,18 +135,21 @@ export default function NavBar() {
               <li>
                 <Link href="/superadmin/clients" style={navLinkStyle(isActive('/superadmin'))}
                   aria-current={isActive('/superadmin') ? 'page' : undefined}>
+                  <ShieldCheck size={16} weight="fill" aria-hidden="true" />
                   Superadmin
                 </Link>
               </li>
               <li>
                 <Link href="/admin/qa" style={navLinkStyle(isActive('/admin/qa'))}
                   aria-current={isActive('/admin/qa') ? 'page' : undefined}>
+                  <ClipboardText size={16} weight="fill" aria-hidden="true" />
                   QA
                 </Link>
               </li>
               <li>
                 <Link href="/admin/todos" style={navLinkStyle(isActive('/admin/todos'))}
                   aria-current={isActive('/admin/todos') ? 'page' : undefined}>
+                  <ListChecks size={16} weight="fill" aria-hidden="true" />
                   To-Dos
                 </Link>
               </li>
@@ -152,66 +159,51 @@ export default function NavBar() {
           {showAdminNav && (
             <>
               <li>
-                <Link href="/workspaces" style={navLinkStyle(isActive('/workspaces'))}
-                  aria-current={isActive('/workspaces') ? 'page' : undefined}>
-                  Workspaces
-                </Link>
-              </li>
-              <li>
                 <Link href="/dashboard" style={navLinkStyle(isActive('/dashboard') && !isActive('/admin'))}
                   aria-current={isActive('/dashboard') && !isActive('/admin') ? 'page' : undefined}>
+                  <ChartBar size={16} weight="fill" aria-hidden="true" />
                   Dashboard
                 </Link>
               </li>
               <li>
                 <Link href="/admin/models" style={navLinkStyle(isActive('/admin/models'))}
                   aria-current={isActive('/admin/models') ? 'page' : undefined}>
+                  <Cpu size={16} weight="fill" aria-hidden="true" />
                   Modelle
                 </Link>
               </li>
               <li>
                 <Link href="/admin/budget" style={navLinkStyle(isActive('/admin/budget'))}
                   aria-current={isActive('/admin/budget') ? 'page' : undefined}>
+                  <CurrencyEur size={16} weight="fill" aria-hidden="true" />
                   Budget
                 </Link>
               </li>
               <li>
                 <Link href="/admin/logs" style={navLinkStyle(isActive('/admin/logs'))}
                   aria-current={isActive('/admin/logs') ? 'page' : undefined}>
+                  <FileText size={16} weight="fill" aria-hidden="true" />
                   Logs
                 </Link>
               </li>
               <li>
                 <Link href="/admin/users" style={navLinkStyle(isActive('/admin/users'))}
                   aria-current={isActive('/admin/users') ? 'page' : undefined}>
+                  <Users size={16} weight="fill" aria-hidden="true" />
                   User
                 </Link>
               </li>
               <li>
                 <Link href="/admin/branding" style={navLinkStyle(isActive('/admin/branding'))}
                   aria-current={isActive('/admin/branding') ? 'page' : undefined}>
+                  <PaintBrush size={16} weight="fill" aria-hidden="true" />
                   Branding
                 </Link>
               </li>
             </>
           )}
 
-          {!showSuperadminNav && !showAdminNav && (
-            <>
-              <li>
-                <Link href="/workspaces" style={navLinkStyle(isActive('/workspaces'))}
-                  aria-current={isActive('/workspaces') ? 'page' : undefined}>
-                  Workspaces
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard" style={navLinkStyle(isActive('/dashboard'))}
-                  aria-current={isActive('/dashboard') ? 'page' : undefined}>
-                  Dashboard
-                </Link>
-              </li>
-            </>
-          )}
+          {!showSuperadminNav && !showAdminNav && <></>}
         </ul>
 
         {/* Right side */}
