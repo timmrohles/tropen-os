@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import OpenAI from 'openai'
+import { openai, DEFAULT_MODEL } from '@/lib/llm/openai'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
 import { classifyTask, getRoutingReason } from '@/lib/qa/task-classifier'
 
@@ -52,8 +52,6 @@ Regeln:
 - Du bist ein Vorschau-Toro — der echte Toro im Workspace kann viel mehr`
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
 export async function POST(req: NextRequest) {
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
@@ -105,17 +103,25 @@ export async function POST(req: NextRequest) {
   const routingReason = getRoutingReason(taskType, message.length)
   const callStart = Date.now()
 
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    stream: true,
-    max_tokens: 600,
-    temperature: 0.7,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...safeHistory,
-      { role: 'user', content: message },
-    ],
-  })
+  const stream = await openai.chat.completions.create(
+    {
+      model: DEFAULT_MODEL,
+      stream: true,
+      max_tokens: 600,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...safeHistory,
+        { role: 'user', content: message },
+      ],
+    },
+    {
+      headers: {
+        'Helicone-Property-TaskType': taskType,
+        'Helicone-Property-RoutingReason': routingReason,
+      },
+    }
+  )
 
   const encoder = new TextEncoder()
   const readable = new ReadableStream({
@@ -133,7 +139,7 @@ export async function POST(req: NextRequest) {
         controller.close()
         logRoutingDecision({
           taskType,
-          modelSelected: 'gpt-4o-mini',
+          modelSelected: DEFAULT_MODEL,
           routingReason,
           latencyMs: Date.now() - callStart,
           status: 'success',
@@ -145,7 +151,7 @@ export async function POST(req: NextRequest) {
         controller.close()
         logRoutingDecision({
           taskType,
-          modelSelected: 'gpt-4o-mini',
+          modelSelected: DEFAULT_MODEL,
           routingReason,
           latencyMs: Date.now() - callStart,
           status: 'error',

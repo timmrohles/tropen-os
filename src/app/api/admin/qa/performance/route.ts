@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getLatencyStats, getCostByModel } from '@/lib/helicone/api'
 import type { PerformanceResponse } from '@/types/qa'
 
 export const revalidate = 300
@@ -24,7 +25,7 @@ export async function GET() {
     const supabase = createServiceClient()
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [lighthouseRes, latencyRes] = await Promise.all([
+    const [lighthouseRes, latencyRes, heliconeLatency, heliconeCosts] = await Promise.all([
       supabase
         .from('qa_lighthouse_runs')
         .select('performance, accessibility, best_practices, seo, lcp_ms, inp_ms, cls_score, run_at')
@@ -37,6 +38,9 @@ export async function GET() {
         .select('model, metric_type, value')
         .in('metric_type', ['latency_p50', 'latency_p95'])
         .gte('measured_at', sevenDaysAgo),
+
+      getLatencyStats(7),
+      getCostByModel(7),
     ])
 
     // Web Vitals — from latest lighthouse run
@@ -70,7 +74,19 @@ export async function GET() {
         }
       : null
 
-    const response: PerformanceResponse = { lighthouse, webVitals, latencyByModel }
+    const response: PerformanceResponse = {
+      lighthouse,
+      webVitals,
+      latencyByModel,
+      helicone: process.env.HELICONE_API_KEY
+        ? {
+            latencyP50: heliconeLatency.p50,
+            latencyP95: heliconeLatency.p95,
+            totalRequests: heliconeLatency.totalRequests,
+            costByModel: heliconeCosts,
+          }
+        : null,
+    }
     return NextResponse.json(response)
   } catch (err) {
     console.error('[qa/performance]', err)

@@ -97,6 +97,12 @@ export interface PerformanceResponse {
     cls: number
   } | null
   latencyByModel: Array<{ model: string; p50: number; p95: number }>
+  helicone: {
+    latencyP50: number
+    latencyP95: number
+    totalRequests: number
+    costByModel: Array<{ model: string; totalCostUsd: number; requestCount: number }>
+  } | null
 }
 
 // ── Compliance ───────────────────────────────────────────────────────────────
