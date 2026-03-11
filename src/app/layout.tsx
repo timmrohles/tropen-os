@@ -4,6 +4,29 @@ import { Suspense } from 'react'
 import ConditionalNavBar from '@/components/ConditionalNavBar'
 import ImpersonationBanner from '@/components/ImpersonationBanner'
 import './globals.css'
+import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Tropen OS',
@@ -12,8 +35,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="de" className="dark">
-      <body style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+    <html lang="de">
+      <body className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`} style={{ minHeight: '100vh' }}>
         <ConditionalNavBar />
         <Suspense>
           <ImpersonationBanner />
