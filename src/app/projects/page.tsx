@@ -564,7 +564,7 @@ export default function ProjectsPage() {
                     href={workspaceId ? `/workspaces/${workspaceId}?template=${t.id}` : '/workspaces'}
                     style={{ ...s.addBtn, textDecoration: 'none', display: 'inline-flex' }}
                   >
-                    Im Workspace öffnen
+                    Im Department öffnen
                   </a>
                 </div>
               ))}

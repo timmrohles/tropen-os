@@ -2,16 +2,12 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import {
-  Badge,
-  Card,
-  Metric,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeaderCell,
   TableRow,
-  Text
 } from '@tremor/react'
 import Link from 'next/link'
 import PeriodTabs from './PeriodTabs'
@@ -71,6 +67,43 @@ function fmt(n: number) {
 }
 
 // ------------------------------------------------------------------
+// Shared styles
+// ------------------------------------------------------------------
+const card = {
+  background: 'rgba(255,255,255,0.72)',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  border: '1px solid rgba(255,255,255,0.65)',
+  borderRadius: 12,
+  padding: '16px 20px',
+  boxShadow: '0 2px 12px rgba(26,23,20,0.06)',
+}
+
+const labelStyle = {
+  fontSize: 11,
+  color: 'var(--text-tertiary)',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.08em',
+  margin: '0 0 8px',
+  fontWeight: 500,
+}
+
+const metricStyle = {
+  fontSize: 26,
+  fontWeight: 700,
+  color: 'var(--text-primary)',
+  letterSpacing: '-0.02em',
+  margin: 0,
+  lineHeight: 1.2,
+}
+
+const metricAccentStyle = {
+  ...metricStyle,
+  fontSize: 20,
+  color: 'var(--active-bg)',
+}
+
+// ------------------------------------------------------------------
 // Page
 // ------------------------------------------------------------------
 export default async function DashboardPage({
@@ -86,7 +119,6 @@ export default async function DashboardPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Eigenes Profil (für Rollencheck)
   const { data: profile } = await supabase
     .from('users')
     .select('role')
@@ -96,11 +128,8 @@ export default async function DashboardPage({
   const isSuperadmin = profile?.role === 'superadmin'
   const isPrivileged = isSuperadmin || profile?.role === 'owner' || profile?.role === 'admin'
 
-  // Superadmin benutzt supabaseAdmin (bypasses RLS) → sieht alle Orgs
-  // Alle anderen nutzen den User-Client (RLS filtert auf eigene Org)
   const db = isSuperadmin ? supabaseAdmin : supabase
 
-  // Parallele Fetches: Perioden-Daten + Chart-Daten (immer 30 Tage)
   const [{ data: rawRows }, { data: chartRaw }] = await Promise.all([
     db
       .from('usage_logs')
@@ -134,7 +163,7 @@ export default async function DashboardPage({
     Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
 
   // ------------------------------------------------------------------
-  // CO₂-Schätzung (basierend auf Modellklasse + Token-Gewicht)
+  // CO₂-Schätzung
   // ------------------------------------------------------------------
   const co2Min = rows.reduce((sum, r) => {
     const cls = r.model_class ?? 'fast'
@@ -157,7 +186,7 @@ export default async function DashboardPage({
   const periodLabel = periodLabels[period] ?? 'Dieser Monat'
 
   // ------------------------------------------------------------------
-  // Chart – letzte 30 Tage, immer vollständig
+  // Chart – letzte 30 Tage
   // ------------------------------------------------------------------
   const byDate: Record<string, number> = {}
   for (const r of chartRaw ?? []) {
@@ -172,7 +201,7 @@ export default async function DashboardPage({
   })
 
   // ------------------------------------------------------------------
-  // Tabelle 1 – nach Workspace
+  // Tabelle 1 – nach Department
   // ------------------------------------------------------------------
   const wsMap: Record<
     string,
@@ -230,147 +259,150 @@ export default async function DashboardPage({
   // ------------------------------------------------------------------
   return (
     <div className="content-max" style={{ paddingTop: 32, paddingBottom: 32 }}>
-    <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">
-            {isPrivileged ? 'Organisations-Übersicht' : 'Deine Nutzung'}
-          </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Dashboard
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 2, marginBottom: 0 }}>
+              {isPrivileged ? 'Organisations-Übersicht' : 'Deine Nutzung'}
+            </p>
+          </div>
+          <Suspense fallback={
+            <div style={{ height: 36, width: 240, background: 'rgba(255,255,255,0.5)', borderRadius: 8 }} />
+          }>
+            <PeriodTabs />
+          </Suspense>
         </div>
-        <Suspense fallback={<div className="h-10 w-64 bg-zinc-800 rounded-lg animate-pulse" />}>
-          <PeriodTabs />
-        </Suspense>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-xs uppercase tracking-widest">
-            Gesamtkosten
-          </Text>
-          <Metric className="!text-white mt-2">{fmt(totalCost)}</Metric>
-        </Card>
-
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-xs uppercase tracking-widest">Anfragen</Text>
-          <Metric className="!text-white mt-2">{requestCount.toLocaleString('de-DE')}</Metric>
-        </Card>
-
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-xs uppercase tracking-widest">Top-Modell</Text>
-          <Metric className="!text-[#a3b554] mt-2 text-xl truncate">{topModel}</Metric>
-        </Card>
-
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-xs uppercase tracking-widest">
-            {isPrivileged ? 'Aktive User' : 'Aktive Tage'}
-          </Text>
-          <Metric className="!text-white mt-2">
-            {isPrivileged ? activeUsers : userTable[0]?.lastActive ?? '—'}
-          </Metric>
-        </Card>
-      </div>
-
-      {/* CO₂-Karte */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-1">
-          <Co2Card co2Min={co2Min} co2Max={co2Max} periodLabel={periodLabel} />
-          <Link
-            href="/responsible-ai"
-            className="block mt-2 text-xs text-zinc-700 hover:text-zinc-500 transition-colors no-underline"
-          >
-            Wie berechnen wir das? →
-          </Link>
+        {/* KPI Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          <div style={card}>
+            <p style={labelStyle}>Gesamtkosten</p>
+            <p style={metricStyle}>{fmt(totalCost)}</p>
+          </div>
+          <div style={card}>
+            <p style={labelStyle}>Anfragen</p>
+            <p style={metricStyle}>{requestCount.toLocaleString('de-DE')}</p>
+          </div>
+          <div style={card}>
+            <p style={labelStyle}>Top-Modell</p>
+            <p style={{ ...metricAccentStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topModel}</p>
+          </div>
+          <div style={card}>
+            <p style={labelStyle}>{isPrivileged ? 'Aktive User' : 'Aktive Tage'}</p>
+            <p style={metricStyle}>
+              {isPrivileged ? activeUsers : userTable[0]?.lastActive ?? '—'}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Chart */}
-      <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-        <Text className="!text-zinc-400 text-sm mb-4">Kosten – letzte 30 Tage</Text>
-        <CostChart data={chartData} />
-      </Card>
+        {/* CO₂-Karte */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div>
+            <Co2Card co2Min={co2Min} co2Max={co2Max} periodLabel={periodLabel} />
+            <Link
+              href="/responsible-ai"
+              style={{ display: 'block', marginTop: 8, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
+            >
+              Wie berechnen wir das? →
+            </Link>
+          </div>
+        </div>
 
-      {/* Tables */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Workspace-Tabelle */}
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-sm mb-4">Nach Workspace</Text>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell className="!text-zinc-500">Workspace</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500 text-right">Anfragen</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500 text-right">Kosten</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500">Top-Modell</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {wsTable.length === 0 ? (
+        {/* Chart */}
+        <div style={card}>
+          <p style={{ ...labelStyle, marginBottom: 16 }}>Kosten – letzte 30 Tage</p>
+          <CostChart data={chartData} />
+        </div>
+
+        {/* Tables */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          {/* Department-Tabelle */}
+          <div style={card}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Nach Department</p>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={4} className="!text-zinc-600 text-center py-8 text-sm">
-                    Keine Daten für diesen Zeitraum
-                  </TableCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Department</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Top-Modell</TableHeaderCell>
                 </TableRow>
-              ) : (
-                wsTable.map((ws, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="!text-white font-medium">{ws.name}</TableCell>
-                    <TableCell className="!text-zinc-400 text-right">{ws.requests}</TableCell>
-                    <TableCell className="!text-[#a3b554] text-right font-mono text-sm">
-                      {fmt(ws.cost)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge size="xs" className="!bg-zinc-800 !text-zinc-400 !border-0">
-                        {ws.topModel}
-                      </Badge>
+              </TableHead>
+              <TableBody>
+                {wsTable.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
+                      Keine Daten für diesen Zeitraum
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+                ) : (
+                  wsTable.map((ws, i) => (
+                    <TableRow key={i}>
+                      <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{ws.name}</TableCell>
+                      <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{ws.requests}</TableCell>
+                      <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                        {fmt(ws.cost)}
+                      </TableCell>
+                      <TableCell>
+                        <span style={{
+                          display: 'inline-block', fontSize: 11, padding: '2px 8px',
+                          borderRadius: 999, background: 'rgba(26,46,35,0.08)',
+                          color: 'var(--text-secondary)', border: '1px solid rgba(26,46,35,0.12)',
+                        }}>
+                          {ws.topModel}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-        {/* User-Tabelle */}
-        <Card className="!bg-zinc-900 !border-zinc-800 !ring-0 !shadow-none">
-          <Text className="!text-zinc-400 text-sm mb-4">
-            {isPrivileged ? 'Nach User' : 'Deine Nutzung'}
-          </Text>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell className="!text-zinc-500">Name</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500 text-right">Anfragen</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500 text-right">Kosten</TableHeaderCell>
-                <TableHeaderCell className="!text-zinc-500">Letzter Tag</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {userTable.length === 0 ? (
+          {/* User-Tabelle */}
+          <div style={card}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>
+              {isPrivileged ? 'Nach User' : 'Deine Nutzung'}
+            </p>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={4} className="!text-zinc-600 text-center py-8 text-sm">
-                    Keine Daten für diesen Zeitraum
-                  </TableCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Name</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
+                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Letzter Tag</TableHeaderCell>
                 </TableRow>
-              ) : (
-                userTable.map((u, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="!text-white font-medium">{u.name}</TableCell>
-                    <TableCell className="!text-zinc-400 text-right">{u.requests}</TableCell>
-                    <TableCell className="!text-[#a3b554] text-right font-mono text-sm">
-                      {fmt(u.cost)}
+              </TableHead>
+              <TableBody>
+                {userTable.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
+                      Keine Daten für diesen Zeitraum
                     </TableCell>
-                    <TableCell className="!text-zinc-400 text-sm">{u.lastActive}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+                ) : (
+                  userTable.map((u, i) => (
+                    <TableRow key={i}>
+                      <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.name}</TableCell>
+                      <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{u.requests}</TableCell>
+                      <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                        {fmt(u.cost)}
+                      </TableCell>
+                      <TableCell style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{u.lastActive}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
       </div>
-    </div>
     </div>
   )
 }

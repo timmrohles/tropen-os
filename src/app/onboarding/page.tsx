@@ -211,7 +211,7 @@ export default function OnboardingPage() {
           <div style={s.step}>
             <div style={s.stepLabel}>Schritt 1 von 5</div>
             <h1 style={s.h1}>Wie heißt deine Organisation?</h1>
-            <p style={s.sub}>Richte dein Workspace-Branding ein. Du kannst alles später anpassen.</p>
+            <p style={s.sub}>Richte dein Department-Branding ein. Du kannst alles später anpassen.</p>
 
             <div style={s.field}>
               <label style={s.label}>Firmenname *</label>
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
                 value={guideName}
                 onChange={(e) => setGuideName(e.target.value)}
               />
-              <span style={s.hint}>So heißt dein KI-Assistent im Workspace. Beliebig wählbar.</span>
+              <span style={s.hint}>So heißt dein KI-Assistent im Department. Beliebig wählbar.</span>
             </div>
 
             {error && <div style={s.error}>{error}</div>}
@@ -312,8 +312,8 @@ export default function OnboardingPage() {
         {step === 2 && isAdmin && (
           <div style={s.step}>
             <div style={s.stepLabel}>Schritt 2 von 5</div>
-            <h1 style={s.h1}>Wie nutzt du {orgName || 'den Workspace'}?</h1>
-            <p style={s.sub}>Das hilft uns, den Workspace optimal einzurichten.</p>
+            <h1 style={s.h1}>Wie nutzt du {orgName || 'das Department'}?</h1>
+            <p style={s.sub}>Das hilft uns, das Department optimal einzurichten.</p>
 
             <div style={s.cardRow}>
               {([
@@ -558,7 +558,7 @@ export default function OnboardingPage() {
 
             <div style={s.featureRow}>
               {[
-                { icon: <ChatCircle size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Workspaces',     sub: 'Team-Chats & Projekte' },
+                { icon: <ChatCircle size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Departments',    sub: 'Team-Chats & Projekte' },
                 { icon: <ChartBar size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Dashboard',      sub: 'Kosten & Nutzung' },
                 { icon: <Scales size={26} weight="duotone" style={{ color: '#a3b554' }} />, title: 'Responsible AI', sub: 'Transparenz & Kontrolle' },
               ].map((f) => (

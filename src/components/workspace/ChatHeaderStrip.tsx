@@ -131,7 +131,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
               gap: 4,
             }}
           >
-            Workspace →
+            Department →
           </Link>
         </div>
 

@@ -33,7 +33,7 @@ export default function ResponsibleAIPage() {
             {
               icon: '📊',
               title: 'Kostentransparenz in Echtzeit',
-              text: 'Jede Anfrage zeigt Modell, Token-Verbrauch und Kosten. Kein verstecktes Preismodell. Das Dashboard zeigt wer was ausgibt – auf Organisations-, Workspace- und User-Ebene.',
+              text: 'Jede Anfrage zeigt Modell, Token-Verbrauch und Kosten. Kein verstecktes Preismodell. Das Dashboard zeigt wer was ausgibt – auf Organisations-, Department- und User-Ebene.',
             },
             {
               icon: '🇪🇺',

@@ -232,7 +232,7 @@ export default function ClientsPage() {
                 <th style={s.th}>Firma</th>
                 <th style={s.th}>Plan</th>
                 <th style={s.th}>Budget Org</th>
-                <th style={s.th}>Workspace</th>
+                <th style={s.th}>Department</th>
                 <th style={s.th}>User</th>
                 <th style={s.th}>Onboarding</th>
                 <th style={s.th}>Pakete</th>
@@ -376,11 +376,11 @@ export default function ClientsPage() {
             <input style={s.input} type="number" value={editForm.org_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, org_budget_limit: e.target.value })} />
 
-            <label style={s.label}>Workspace-Name</label>
+            <label style={s.label}>Department-Name</label>
             <input style={s.input} value={editForm.workspace_name}
               onChange={(e) => setEditForm({ ...editForm, workspace_name: e.target.value })} />
 
-            <label style={s.label}>Budget Workspace (€/Monat, leer = kein Limit)</label>
+            <label style={s.label}>Budget Department (€/Monat, leer = kein Limit)</label>
             <input style={s.input} type="number" value={editForm.workspace_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, workspace_budget_limit: e.target.value })} />
 
@@ -498,7 +498,7 @@ export default function ClientsPage() {
             <h2 style={s.modalTitle}>Client löschen?</h2>
             <p style={s.confirmText}>
               <strong style={{ color: 'var(--text-primary)' }}>{deleteOrg.name}</strong> und alle zugehörigen
-              Daten (Workspace, User, Einstellungen) werden unwiderruflich gelöscht.
+              Daten (Department, User, Einstellungen) werden unwiderruflich gelöscht.
             </p>
             <div style={s.modalFooter}>
               <button style={s.cancelBtn} onClick={() => setDeleteOrg(null)}>Abbrechen</button>

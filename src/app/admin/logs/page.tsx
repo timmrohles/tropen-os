@@ -27,7 +27,7 @@ export default async function LogsPage() {
             <th style={s.th}>Zeit</th>
             <th style={s.th}>Organisation</th>
             <th style={s.th}>User</th>
-            <th style={s.th}>Workspace</th>
+            <th style={s.th}>Department</th>
             <th style={s.th}>Modell</th>
             <th style={s.th}>Tokens (in/out)</th>
             <th style={s.th}>Kosten</th>

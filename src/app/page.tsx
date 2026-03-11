@@ -21,8 +21,8 @@ const features = [
   },
   {
     icon: <Buildings size={28} weight="duotone" style={{ color: 'var(--text-tertiary)' }} />,
-    title: 'Team Workspace',
-    text: 'Workspaces für Teams, Projekte und Abteilungen. Rollen, Einladungen, Zugriffskontrollen – alles auf einer Plattform.'
+    title: 'Team Department',
+    text: 'Departments für Teams, Projekte und Abteilungen. Rollen, Einladungen, Zugriffskontrollen – alles auf einer Plattform.'
   },
   {
     icon: <Parrot size={32} />,
@@ -63,7 +63,7 @@ export default async function HomePage() {
           className="text-xl font-medium mb-4 max-w-xl"
           style={{ color: 'var(--text-secondary)' }}
         >
-          Der Responsible AI Workspace für dein Team.
+          Der Responsible AI Department für dein Team.
         </p>
 
         {/* Subtext */}

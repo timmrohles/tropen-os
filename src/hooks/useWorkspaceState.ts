@@ -244,7 +244,7 @@ export interface WorkspaceState {
   organizationId: string | null
 
   // Handlers
-  newConversation: () => Promise<string | null>
+  newConversation: (initialMessages?: ChatMessage[]) => Promise<string | null>
   deleteConversation: (id: string) => Promise<void>
   createProject: () => Promise<void>
   deleteProject: (id: string) => Promise<void>
@@ -509,7 +509,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   // ── Handlers ───────────────────────────────────────────
 
-  async function newConversation(): Promise<string | null> {
+  async function newConversation(initialMessages?: ChatMessage[]): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return null
     const now = new Date().toISOString()
@@ -519,7 +519,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     }
     setConversations((prev) => [optimistic, ...prev])
     setActiveConvId(tempId)
-    setMessages([])
+    setMessages(initialMessages ?? [])
     setSearch('')
     setPeriodFilter('all')
     setTaskFilter('all')
@@ -808,21 +808,24 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     if (!input.trim() || sending) return
 
     const currentInput = input.trim()
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: currentInput, model_used: null, cost_eur: null, tokens_input: null, tokens_output: null }
+    const pendingMsg: ChatMessage = { id: `pending-${crypto.randomUUID()}`, role: 'assistant', content: '', model_used: null, cost_eur: null, tokens_input: null, tokens_output: null, pending: true }
+
     sendingRef.current = true  // vor newConversation() setzen — verhindert loadMessages-Race
     let convId = activeConvId
+    const isNewConv = !convId
     if (!convId) {
-      convId = await newConversation()
+      // Optimistic messages direkt in newConversation() setzen — kein leerer Bildschirm
+      convId = await newConversation([userMsg, pendingMsg])
       if (!convId) {
         sendingRef.current = false
         return
       }
     }
 
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: 'user', content: currentInput, model_used: null, cost_eur: null, tokens_input: null, tokens_output: null },
-      { id: `pending-${crypto.randomUUID()}`, role: 'assistant', content: '', model_used: null, cost_eur: null, tokens_input: null, tokens_output: null, pending: true }
-    ])
+    if (!isNewConv) {
+      setMessages((prev) => [...prev, userMsg, pendingMsg])
+    }
     setInput('')
     setSending(true)
     setError('')

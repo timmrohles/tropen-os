@@ -575,3 +575,105 @@ Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgel
 ### Projekt-Gedächtnis (Roadmap)
 - **Phase 2**: Manuelles Kontext-Textfeld im Projekt-Detail (Freitext, den Toro bei jedem Chat liest).
 - **Phase 3**: Toro extrahiert automatisch Personen, Deadlines, Entscheidungen und offene Fragen aus dem Chat-Verlauf via eigenem Dify-Workflow und schreibt sie in `projects.memory`.
+
+---
+
+## Webstandards & Barrierefreiheit
+
+> Gilt für alle UI-Komponenten, Seiten und Features. Claude prüft diese Standards bei jeder Änderung an Frontend-Dateien.
+
+### W3C HTML-Standards
+
+- **Valides HTML**: Kein deprecated HTML (z.B. `<center>`, `<font>`, `<b>` statt `<strong>`)
+- **Semantische Struktur**: `<main>`, `<nav>`, `<header>`, `<footer>`, `<section>`, `<article>` korrekt verwenden
+- **Heading-Hierarchie**: Nur eine `<h1>` pro Seite, keine Heading-Ebenen überspringen (h1 → h2 → h3)
+- **Landmark Roles**: Jede Seite hat genau eine `main` Landmark
+- **Listen**: Navigation immer als `<ul>/<li>`, nie als `<div>`-Kette
+- **Buttons vs. Links**: `<button>` für Aktionen, `<a href>` für Navigation — nie `<div onClick>`
+- **Formulare**: Jedes `<input>` hat ein zugehöriges `<label>` (htmlFor/id Paar) oder `aria-label`
+
+### WCAG 2.1 AA (Barrierefreiheit)
+
+#### Kontrast (Minimum AA)
+- **Normaler Text** (unter 18px / unter 14px bold): Kontrastverhältnis ≥ 4.5:1
+- **Großer Text** (ab 18px / ab 14px bold): Kontrastverhältnis ≥ 3:1
+- **UI-Komponenten & Icons**: Kontrastverhältnis ≥ 3:1 gegen Hintergrund
+- Prüftool: https://webaim.org/resources/contrastchecker/
+- Aktuelle Palette: `var(--accent)` #a3b554 auf `var(--bg-base)` #0d1f16 → **prüfen bei neuen Kombinationen**
+
+#### Tastaturnavigation
+- Alle interaktiven Elemente per Tab erreichbar
+- Fokus-Indikator immer sichtbar — nie `outline: none` ohne Alternative
+- Fokus-Reihenfolge logisch (DOM-Reihenfolge = visuelle Reihenfolge)
+- Modals/Drawer: Fokus-Trap (Tab bleibt im Modal), Escape schließt, Fokus kehrt zum Auslöser zurück
+
+#### ARIA & Screenreader
+- Icons ohne sichtbaren Text: `aria-label` oder `aria-hidden="true"` + visuell versteckter Text
+- Dynamische Inhalte (Chat-Nachrichten, Toasts): `aria-live="polite"` oder `aria-live="assertive"`
+- Loading-States: `aria-busy="true"` auf dem Container
+- Expanded/Collapsed (Drawer, Accordion): `aria-expanded` auf dem Trigger
+- Modals: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` auf den Titel
+- Fehlermeldungen: `aria-describedby` verknüpft Input mit Fehlermeldung
+- **Nie ARIA-Rollen auf falsche Elemente setzen** (kein `role="button"` auf `<div>` — richtiges Element verwenden)
+
+#### Bilder & Medien
+- `<img>` immer mit `alt`-Attribut (leer `alt=""` für dekorative Bilder)
+- SVG-Icons die Bedeutung tragen: `<title>` oder `aria-label`
+
+#### Formulare & Eingaben
+- Pflichtfelder: `required` + `aria-required="true"`
+- Fehler: Fehlermeldung programmatisch mit Input verknüpft (`aria-describedby`)
+- Autocomplete-Attribute für Standard-Felder setzen (`name`, `email`, `current-password`)
+
+#### Bewegung & Animationen
+- `prefers-reduced-motion` respektieren:
+```css
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+```
+- Bestehende Drawer-Animation (200ms ease-out): bereits konform, beibehalten
+
+#### Texte & Lesbarkeit
+- Mindestschriftgröße: 12px (bereits in Design System verankert)
+- Zeilenhöhe: mindestens 1.4 für Fließtext
+- Textabstand muss ohne Inhaltsverlust anpassbar sein (WCAG 1.4.12)
+- Kein Text in Bildern (außer Logos)
+
+### BFSG / EAA (Barrierefreiheitsstärkungsgesetz)
+
+**Gilt seit 28. Juni 2025** — Pflicht bereits aktiv. Tropen OS ist als B2B-SaaS mit Chat-Interface direkt betroffen.
+
+- **Konformitätserklärung**: Vor Launch eine Barrierefreiheitserklärung veröffentlichen (Seite `/accessibility` oder Footer-Link)
+- **Feedbackmechanismus**: Nutzer müssen Barrieren melden können — mindestens eine E-Mail-Adresse im Footer
+- **Durchsetzungsverfahren**: Schlichtungsstelle muss benannt werden (Ombudsstelle BFSG beim BMAS)
+- **Scope**: Betrifft alle Kernfunktionen — Chat-Interface, Onboarding, Settings, Wissensbasis
+- WCAG 2.1 AA Konformität ist die technische Grundlage für BFSG-Compliance
+
+### Art. 50 KI-VO — KI-Kennzeichnung (Marking / Framing)
+
+**Pflicht seit Februar 2025** (Art. 50 Abs. 1 KI-VO trat vor den Hochrisiko-Anforderungen in Kraft).
+
+- **Transparenzpflicht**: Nutzer müssen wissen dass sie mit einem KI-System interagieren
+- **Implementierung**: Deutlich sichtbarer Hinweis vor oder beim ersten Chat-Einstieg
+  - Onboarding Schritt 4 (AI Act Acknowledgement) deckt dies teilweise ab — prüfen ob ausreichend
+  - Zusätzlich: persistenter Hinweis im Chat-Interface (z.B. Subtext unter Toro-Antworten)
+- **Synthetische Inhalte** (Art. 50 Abs. 2): KI-generierte Texte, Audio, Bilder müssen als solche erkennbar sein
+- **Implementierung im Code**:
+  - `user_preferences.ai_act_acknowledged` bereits vorhanden (Migration 009)
+  - Noch fehlend: UI-Banner / persistente Kennzeichnung im Chat (offener Bug)
+- **Pflichtfeld in jedem neuen Feature**: Wenn ein Feature KI-Outputs an Nutzer ausgibt → KI-Kennzeichnung prüfen
+
+### Checkliste für neue UI-Features
+
+Claude prüft bei jedem neuen Feature oder jeder UI-Änderung:
+
+- [ ] Semantisches HTML verwendet (kein `<div>` für interaktive Elemente)
+- [ ] Alle interaktiven Elemente per Tastatur erreichbar
+- [ ] Fokus-Indikator sichtbar
+- [ ] ARIA-Labels auf Icons ohne sichtbaren Text
+- [ ] Kontrast AA-konform (bei neuen Farb-Kombinationen prüfen)
+- [ ] `aria-live` auf dynamische Inhalte (Chat-Nachrichten, Fehler, Loading)
+- [ ] Modals/Drawer: Fokus-Trap + Escape + Rückkehr-Fokus
+- [ ] `prefers-reduced-motion` berücksichtigt
+- [ ] KI-Outputs klar als KI-generiert erkennbar (Art. 50 KI-VO)

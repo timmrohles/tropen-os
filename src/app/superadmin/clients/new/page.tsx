@@ -10,7 +10,7 @@ export default function NewClientPage() {
     org_name: '',
     plan: 'free' as 'free' | 'pro' | 'enterprise',
     org_budget_limit: '',
-    workspace_name: 'Haupt-Workspace',
+    workspace_name: 'Haupt-Department',
     workspace_budget_limit: '',
     owner_email: '',
   })
@@ -119,12 +119,12 @@ export default function NewClientPage() {
           </div>
         </div>
 
-        {/* Section 2 – Workspace */}
+        {/* Section 2 – Department */}
         <div style={s.section}>
-          <div style={s.sectionLabel}>Workspace</div>
+          <div style={s.sectionLabel}>Department</div>
           <div style={s.row}>
             <div style={{ ...s.field, flex: 2 }}>
-              <label style={s.label}>Workspace-Name</label>
+              <label style={s.label}>Department-Name</label>
               <input
                 style={s.input}
                 type="text"
@@ -132,11 +132,11 @@ export default function NewClientPage() {
                 value={form.workspace_name}
                 onChange={handleChange}
                 required
-                placeholder="Haupt-Workspace"
+                placeholder="Haupt-Department"
               />
             </div>
             <div style={{ ...s.field, flex: 1 }}>
-              <label style={s.label}>Budget Limit Workspace</label>
+              <label style={s.label}>Budget Limit Department</label>
               <input
                 style={s.input}
                 type="number"

@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
-        <p style={s.sub}>Responsible AI Workspace für den Mittelstand</p>
+        <p style={s.sub}>Responsible AI Department für den Mittelstand</p>
 
         <form onSubmit={handleLogin} style={s.form}>
           <label htmlFor="email" style={s.label}>E-Mail</label>

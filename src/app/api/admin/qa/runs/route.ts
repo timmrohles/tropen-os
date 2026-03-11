@@ -20,14 +20,14 @@ const VALID_RUN_TYPES: QaRunType[] = [
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isSuperadmin())) {
+      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
+    }
+
     const supabase_auth = await createClient()
     const {
       data: { user },
     } = await supabase_auth.auth.getUser()
-
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
 
     const body = await request.json() as { runType?: QaRunType }
     const runType = body.runType

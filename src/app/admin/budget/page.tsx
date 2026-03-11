@@ -52,7 +52,7 @@ export default function BudgetPage() {
     <div className="content-max">
       <h1 style={s.h1}>Budget-Limits</h1>
       <p style={s.sub}>
-        Monatliches Ausgaben-Limit pro Organisation und Workspace. Leer lassen = kein Limit.
+        Monatliches Ausgaben-Limit pro Organisation und Department. Leer lassen = kein Limit.
       </p>
 
       <h2 style={s.h2}>Organisationen</h2>
@@ -90,7 +90,7 @@ export default function BudgetPage() {
       <table style={s.table}>
         <thead>
           <tr>
-            <th style={s.th}>Workspace</th>
+            <th style={s.th}>Department</th>
             <th style={s.th}>Organisation</th>
             <th style={s.th}>Budget / Monat (€)</th>
             <th style={s.th}></th>

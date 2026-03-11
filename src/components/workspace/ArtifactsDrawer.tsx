@@ -224,7 +224,7 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
               gap: 4,
             }}
           >
-            Alle Artefakte im Workspace →
+            Alle Artefakte im Department →
           </Link>
         </div>
       </div>

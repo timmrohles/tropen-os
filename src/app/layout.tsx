@@ -30,7 +30,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Tropen OS',
-  description: 'Responsible AI Workspace für den Mittelstand'
+  description: 'Responsible AI Department für den Mittelstand'
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

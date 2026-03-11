@@ -557,6 +557,32 @@ function PerformancePanel({ data, loading }: { data: PerformanceResponse | null;
           />
         )}
       </SectionCard>
+
+      {(loading || data?.langsmith) && (
+        <SectionCard title="LangSmith · LLM-Observability (letzte 7 Tage)">
+          {loading ? (
+            <div className="grid grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : data?.langsmith ? (
+            <div className="grid grid-cols-5 gap-4">
+              {[
+                { label: 'LLM Runs', value: data.langsmith.totalRuns.toLocaleString('de-DE'), sub: '7 Tage' },
+                { label: 'p50 Latenz', value: `${data.langsmith.p50LatencyMs}ms`, sub: 'Median' },
+                { label: 'p95 Latenz', value: `${data.langsmith.p95LatencyMs}ms`, sub: '95. Perzentil' },
+                { label: 'Tokens gesamt', value: data.langsmith.totalTokens.toLocaleString('de-DE'), sub: 'Input + Output' },
+                { label: 'Ø Tokens/Run', value: data.langsmith.avgTokensPerRun.toLocaleString('de-DE'), sub: 'Durchschnitt' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">{item.label}</div>
+                  <div className="text-2xl font-semibold text-white">{item.value}</div>
+                  <div className="text-xs text-white/30 mt-0.5">{item.sub}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </SectionCard>
+      )}
     </div>
   )
 }
