@@ -178,8 +178,8 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
 
   // ── Panel resize ──────────────────────────────────────────
   const [leftWidth, setLeftWidth] = React.useState(() => {
-    if (typeof window === 'undefined') return 260
-    return parseInt(localStorage.getItem('lnav-width') ?? '260')
+    if (typeof window === 'undefined') return 300
+    return parseInt(localStorage.getItem('lnav-width') ?? '300')
   })
   const [rightWidth, setRightWidth] = React.useState(() => {
     if (typeof window === 'undefined') return 340
