@@ -46,76 +46,90 @@ export default function BudgetPage() {
     await load()
   }
 
-  if (loading) return <p style={{ color: '#555' }}>Lade…</p>
+  if (loading) return (
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
+    </div>
+  )
 
   return (
-    <div className="content-max">
-      <h1 style={s.h1}>Budget-Limits</h1>
-      <p style={s.sub}>
-        Monatliches Ausgaben-Limit pro Organisation und Department. Leer lassen = kein Limit.
-      </p>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Budget-Limits</h1>
+          <p className="page-header-sub">Monatliches Ausgaben-Limit pro Organisation und Department. Leer lassen = kein Limit.</p>
+        </div>
+      </div>
 
-      <h2 style={s.h2}>Organisationen</h2>
-      <table style={s.table}>
-        <thead>
-          <tr>
-            <th style={s.th}>Organisation</th>
-            <th style={s.th}>Plan</th>
-            <th style={s.th}>Budget / Monat (€)</th>
-            <th style={s.th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {orgs.length === 0 && (
-            <tr>
-              <td colSpan={4} style={s.empty}>
-                Keine Organisationen
-              </td>
-            </tr>
-          )}
-          {orgs.map((org) => (
-            <BudgetRow
-              key={org.id}
-              label={org.name}
-              sub={org.plan}
-              currentLimit={org.budget_limit}
-              saving={saving === org.id}
-              onSave={(v) => setBudget('organization', org.id, v)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Organisationen</h2>
+      <div className="card" style={{ marginBottom: 32 }}>
+        <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={s.th}>Organisation</th>
+                <th style={s.th}>Plan</th>
+                <th style={s.th}>Budget / Monat (€)</th>
+                <th style={s.th}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {orgs.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={s.empty}>
+                    Keine Organisationen
+                  </td>
+                </tr>
+              )}
+              {orgs.map((org) => (
+                <BudgetRow
+                  key={org.id}
+                  label={org.name}
+                  sub={org.plan}
+                  currentLimit={org.budget_limit}
+                  saving={saving === org.id}
+                  onSave={(v) => setBudget('organization', org.id, v)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <h2 style={{ ...s.h2, marginTop: 36 }}>Workspaces</h2>
-      <table style={s.table}>
-        <thead>
-          <tr>
-            <th style={s.th}>Department</th>
-            <th style={s.th}>Organisation</th>
-            <th style={s.th}>Budget / Monat (€)</th>
-            <th style={s.th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {workspaces.length === 0 && (
-            <tr>
-              <td colSpan={4} style={s.empty}>
-                Keine Workspaces
-              </td>
-            </tr>
-          )}
-          {workspaces.map((ws) => (
-            <BudgetRow
-              key={ws.id}
-              label={ws.name}
-              sub={ws.organizations?.name ?? '—'}
-              currentLimit={ws.budget_limit}
-              saving={saving === ws.id}
-              onSave={(v) => setBudget('workspace', ws.id, v)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Departments</h2>
+      <div className="card">
+        <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={s.th}>Department</th>
+                <th style={s.th}>Organisation</th>
+                <th style={s.th}>Budget / Monat (€)</th>
+                <th style={s.th}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {workspaces.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={s.empty}>
+                    Keine Workspaces
+                  </td>
+                </tr>
+              )}
+              {workspaces.map((ws) => (
+                <BudgetRow
+                  key={ws.id}
+                  label={ws.name}
+                  sub={ws.organizations?.name ?? '—'}
+                  currentLimit={ws.budget_limit}
+                  saving={saving === ws.id}
+                  onSave={(v) => setBudget('workspace', ws.id, v)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
@@ -141,7 +155,7 @@ function BudgetRow({
         <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{label}</div>
       </td>
       <td style={s.td}>
-        <span style={s.sub2}>{sub}</span>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{sub}</span>
       </td>
       <td style={s.td}>
         <input
@@ -155,7 +169,7 @@ function BudgetRow({
         />
       </td>
       <td style={s.td}>
-        <button style={s.btn} onClick={() => onSave(val)} disabled={saving}>
+        <button className="btn btn-primary btn-sm" onClick={() => onSave(val)} disabled={saving}>
           {saving ? '…' : 'Speichern'}
         </button>
       </td>
@@ -164,25 +178,9 @@ function BudgetRow({
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 },
-  h2: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 },
-  sub: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 },
-  sub2: { fontSize: 12, color: 'var(--text-secondary)' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: {
-    textAlign: 'left',
-    fontSize: 12,
-    color: 'var(--text-secondary)',
-    padding: '6px 10px',
-    borderBottom: '1px solid var(--border)'
-  },
-  td: {
-    fontSize: 13,
-    color: 'var(--text-primary)',
-    padding: '8px 10px',
-    borderBottom: '1px solid var(--border)',
-    verticalAlign: 'middle'
-  },
+  th: { textAlign: 'left', fontSize: 12, color: 'var(--text-tertiary)', padding: '10px 14px', borderBottom: '1px solid var(--border)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
+  td: { fontSize: 13, color: 'var(--text-primary)', padding: '10px 14px', borderBottom: '1px solid var(--border)' },
+  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 32, textAlign: 'center' as const },
   input: {
     background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
@@ -193,14 +191,4 @@ const s: Record<string, React.CSSProperties> = {
     outline: 'none',
     width: 140
   },
-  btn: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border-medium)',
-    color: 'var(--text-primary)',
-    padding: '7px 16px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 13
-  },
-  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 24, textAlign: 'center' }
 }

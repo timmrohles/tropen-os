@@ -105,160 +105,154 @@ export default function BrandingPage() {
   }
 
   return (
-    <div className="content-max">
-      <h1 style={s.h1}>Co-Branding</h1>
-      <p style={s.sub}>Passe Logo, Farbe und den Namen deines KI-Assistenten an.</p>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Co-Branding</h1>
+          <p className="page-header-sub">Passe Logo, Farbe und den Namen deines KI-Assistenten an.</p>
+        </div>
+      </div>
 
       {/* ── Branding-Einstellungen ── */}
-      <div style={s.section}>
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ padding: '20px 24px' }}>
 
-        {/* Logo */}
-        <div style={s.field}>
-          <label style={s.label}>Logo</label>
-          <div style={s.logoRow}>
-            <div
-              style={s.dropZone}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo" style={s.logoImg} />
-              ) : uploading ? (
-                <span style={s.dropHint}>Wird hochgeladen…</span>
-              ) : (
-                <span style={s.dropHint}>Klicken zum Hochladen · PNG · SVG · JPG · max. 2 MB</span>
+          {/* Logo */}
+          <div style={s.field}>
+            <label style={s.label}>Logo</label>
+            <div style={s.logoRow}>
+              <div
+                style={s.dropZone}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" style={s.logoImg} />
+                ) : uploading ? (
+                  <span style={s.dropHint}>Wird hochgeladen…</span>
+                ) : (
+                  <span style={s.dropHint}>Klicken zum Hochladen · PNG · SVG · JPG · max. 2 MB</span>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }}
+              />
+              {logoPreview && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => { setLogoPreview(null); setData((d) => ({ ...d, logo_url: null })) }}
+                >
+                  Entfernen
+                </button>
               )}
             </div>
+          </div>
+
+          {/* Anzeigename */}
+          <div style={s.field}>
+            <label style={s.label}>Anzeigename der Organisation</label>
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }}
+              style={s.input}
+              placeholder="Muster GmbH"
+              value={data.organization_display_name ?? ''}
+              onChange={(e) => setData((d) => ({ ...d, organization_display_name: e.target.value || null }))}
             />
-            {logoPreview && (
+          </div>
+
+          {/* Primärfarbe */}
+          <div style={s.field}>
+            <label style={s.label}>Primärfarbe</label>
+            <div style={s.colorRow}>
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  style={{ ...s.colorSwatch, background: c, ...(data.primary_color === c ? s.colorSwatchActive : {}) }}
+                  onClick={() => { setData((d) => ({ ...d, primary_color: c })); setShowColorPicker(false) }}
+                  title={c}
+                />
+              ))}
               <button
-                style={s.removeBtn}
-                onClick={() => { setLogoPreview(null); setData((d) => ({ ...d, logo_url: null })) }}
+                style={{ ...s.colorSwatch, background: '#1e1e1e', border: '1px dashed #555' }}
+                onClick={() => setShowColorPicker((v) => !v)}
+                title="Eigene Farbe"
               >
-                Entfernen
+                <span style={{ fontSize: 12, color: '#888' }}>+</span>
               </button>
-            )}
+              {showColorPicker && (
+                <input
+                  type="color"
+                  value={data.primary_color}
+                  onChange={(e) => setData((d) => ({ ...d, primary_color: e.target.value }))}
+                  style={s.colorInput}
+                />
+              )}
+            </div>
+            <div style={{ ...s.colorBar, background: data.primary_color }}>
+              <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>{data.primary_color}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Anzeigename */}
-        <div style={s.field}>
-          <label style={s.label}>Anzeigename der Organisation</label>
-          <input
-            style={s.input}
-            placeholder="Muster GmbH"
-            value={data.organization_display_name ?? ''}
-            onChange={(e) => setData((d) => ({ ...d, organization_display_name: e.target.value || null }))}
-          />
-        </div>
-
-        {/* Primärfarbe */}
-        <div style={s.field}>
-          <label style={s.label}>Primärfarbe</label>
-          <div style={s.colorRow}>
-            {PRESET_COLORS.map((c) => (
-              <button
-                key={c}
-                style={{ ...s.colorSwatch, background: c, ...(data.primary_color === c ? s.colorSwatchActive : {}) }}
-                onClick={() => { setData((d) => ({ ...d, primary_color: c })); setShowColorPicker(false) }}
-                title={c}
-              />
-            ))}
-            <button
-              style={{ ...s.colorSwatch, background: '#1e1e1e', border: '1px dashed #555' }}
-              onClick={() => setShowColorPicker((v) => !v)}
-              title="Eigene Farbe"
-            >
-              <span style={{ fontSize: 12, color: '#888' }}>+</span>
-            </button>
-            {showColorPicker && (
-              <input
-                type="color"
-                value={data.primary_color}
-                onChange={(e) => setData((d) => ({ ...d, primary_color: e.target.value }))}
-                style={s.colorInput}
-              />
-            )}
+          {/* Guide Name */}
+          <div style={s.field}>
+            <label style={s.label}>Name des KI-Assistenten</label>
+            <input
+              style={s.input}
+              placeholder="Toro"
+              value={data.ai_guide_name}
+              onChange={(e) => setData((d) => ({ ...d, ai_guide_name: e.target.value }))}
+            />
           </div>
-          <div style={{ ...s.colorBar, background: data.primary_color }}>
-            <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>{data.primary_color}</span>
+
+          {/* Guide Description */}
+          <div style={s.field}>
+            <label style={s.label}>Beschreibung des KI-Assistenten</label>
+            <input
+              style={s.input}
+              placeholder="Dein KI-Guide durch den Informationsdschungel"
+              value={data.ai_guide_description}
+              onChange={(e) => setData((d) => ({ ...d, ai_guide_description: e.target.value }))}
+            />
           </div>
+
+          {error && <div style={s.errorBox}>{error}</div>}
+          {success && <div style={s.successBox}>Einstellungen gespeichert ✓</div>}
+
+          <button className="btn btn-primary" onClick={save} disabled={saving || uploading} style={{ marginTop: 8 }}>
+            {saving ? 'Speichern…' : 'Änderungen speichern'}
+          </button>
         </div>
-
-        {/* Guide Name */}
-        <div style={s.field}>
-          <label style={s.label}>Name des KI-Assistenten</label>
-          <input
-            style={s.input}
-            placeholder="Toro"
-            value={data.ai_guide_name}
-            onChange={(e) => setData((d) => ({ ...d, ai_guide_name: e.target.value }))}
-          />
-        </div>
-
-        {/* Guide Description */}
-        <div style={s.field}>
-          <label style={s.label}>Beschreibung des KI-Assistenten</label>
-          <input
-            style={s.input}
-            placeholder="Dein KI-Guide durch den Informationsdschungel"
-            value={data.ai_guide_description}
-            onChange={(e) => setData((d) => ({ ...d, ai_guide_description: e.target.value }))}
-          />
-        </div>
-
-        {error && <div style={s.errorBox}>{error}</div>}
-        {success && <div style={s.successBox}>Einstellungen gespeichert ✓</div>}
-
-        <button style={s.saveBtn} onClick={save} disabled={saving || uploading}>
-          {saving ? 'Speichern…' : 'Änderungen speichern'}
-        </button>
       </div>
 
       {/* ── White-Label Premium (gesperrt) ── */}
-      <div style={s.premiumSection}>
-        <div style={s.lockRow}>
-          <span style={s.lockIcon}>🔒</span>
-          <div>
-            <div style={s.premiumTitle}>White-Label – Tropen OS Premium</div>
-            <div style={s.premiumSub}>
-              Eigenes vollständiges Branding, eigene Domain (z.B.{' '}
-              <span style={s.domainExample}>ai.mustermann.de</span>
-              ), kein „powered by Tropen OS", vollständig anpassbare Oberfläche.
+      <div className="card">
+        <div style={{ padding: '20px 24px' }}>
+          <div style={s.lockRow}>
+            <span style={s.lockIcon}>🔒</span>
+            <div>
+              <div style={s.premiumTitle}>White-Label – Tropen OS Premium</div>
+              <div style={s.premiumSub}>
+                Eigenes vollständiges Branding, eigene Domain (z.B.{' '}
+                <span style={s.domainExample}>ai.mustermann.de</span>
+                ), kein „powered by Tropen OS", vollständig anpassbare Oberfläche.
+              </div>
             </div>
           </div>
+          <a
+            href="mailto:hello@tropen.de?subject=Anfrage%20White-Label%20Tropen%20OS"
+            className="btn btn-ghost"
+          >
+            Jetzt anfragen →
+          </a>
         </div>
-        <a
-          href="mailto:hello@tropen.de?subject=Anfrage%20White-Label%20Tropen%20OS"
-          style={s.premiumBtn}
-        >
-          Jetzt anfragen →
-        </a>
       </div>
     </div>
   )
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 },
-  sub: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 },
-
-  section: {
-    background: 'var(--bg-surface-solid)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    padding: 24,
-    marginBottom: 24,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 0,
-  },
-
   field: { display: 'flex', flexDirection: 'column', marginBottom: 20 },
   label: { fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
 
@@ -277,10 +271,6 @@ const s: Record<string, React.CSSProperties> = {
   },
   logoImg: { maxHeight: 36, maxWidth: '100%', objectFit: 'contain' },
   dropHint: { fontSize: 12, color: '#444' },
-  removeBtn: {
-    fontSize: 11, color: '#555', background: 'none', border: '1px solid #2a2a2a',
-    borderRadius: 5, padding: '5px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
-  },
 
   colorRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 },
   colorSwatch: {
@@ -295,30 +285,10 @@ const s: Record<string, React.CSSProperties> = {
   errorBox: { fontSize: 13, color: '#ef4444', background: '#1f0a0a', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
   successBox: { fontSize: 13, color: '#a3b554', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
 
-  saveBtn: {
-    background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
-    padding: '10px 22px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
-    fontWeight: 500, marginTop: 4, width: 'fit-content',
-  },
-
   // ── Premium Section ──
-  premiumSection: {
-    background: '#0e0e0e',
-    border: '1px solid #2a2a2a',
-    borderRadius: 10,
-    padding: 24,
-    opacity: 0.8,
-  },
   lockRow: { display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 },
   lockIcon: { fontSize: 20, flexShrink: 0, marginTop: 2 },
   premiumTitle: { fontSize: 15, fontWeight: 700, color: '#ccc', marginBottom: 6 },
   premiumSub: { fontSize: 13, color: '#555', lineHeight: 1.6 },
   domainExample: { color: '#888', fontFamily: 'monospace' },
-  premiumBtn: {
-    display: 'inline-block', background: 'none',
-    border: '1px solid #3a3a3a', color: '#666',
-    padding: '9px 18px', borderRadius: 7, fontSize: 13,
-    textDecoration: 'none', cursor: 'pointer',
-    transition: 'border-color 0.15s, color 0.15s',
-  },
 }

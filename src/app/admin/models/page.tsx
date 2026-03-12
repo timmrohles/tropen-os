@@ -80,25 +80,23 @@ export default function ModelsPage() {
   const providers = ['openai', 'anthropic', 'mistral', 'google']
 
   return (
-    <div className="content-max">
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24
-        }}
-      >
-        <h1 style={s.h1}>Modellkatalog</h1>
-        <button style={s.btn} onClick={() => setShowNew(true)}>
-          + Modell hinzufügen
-        </button>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Modelle</h1>
+          <p className="page-header-sub">AI-Modelle verwalten und Kosten konfigurieren</p>
+        </div>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => setShowNew(v => !v)}>
+            {showNew ? 'Abbrechen' : '+ Neues Modell'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
         <div style={s.newForm}>
           <h3 style={{ margin: '0 0 16px', color: 'var(--text-primary)', fontSize: 15 }}>Neues Modell</h3>
-          <div style={s.formGrid}>
+          <div style={{ ...s.formGrid, flexWrap: 'wrap' }}>
             <input
               style={s.input}
               placeholder="Name (z.B. gpt-4o)"
@@ -106,7 +104,7 @@ export default function ModelsPage() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
             <select
-              style={s.input}
+              style={{ background: '#fff', border: '1px solid var(--border-medium)', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
               value={form.provider}
               onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
             >
@@ -138,10 +136,10 @@ export default function ModelsPage() {
             />
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={s.btn} onClick={createModel} disabled={saving}>
+            <button className="btn btn-primary" onClick={createModel} disabled={saving}>
               Speichern
             </button>
-            <button style={s.btnGhost} onClick={() => setShowNew(false)}>
+            <button className="btn btn-ghost" onClick={() => setShowNew(false)}>
               Abbrechen
             </button>
           </div>
@@ -149,85 +147,81 @@ export default function ModelsPage() {
       )}
 
       {loading ? (
-        <p style={{ color: '#555' }}>Lade…</p>
+        <div style={{ paddingTop: 48, textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-tertiary)' }}>Lade…</p>
+        </div>
       ) : (
-        <table style={s.table}>
-          <thead>
-            <tr>
-              <th style={s.th}>Modell</th>
-              <th style={s.th}>Provider</th>
-              <th style={s.th}>Kosten / 1k Input</th>
-              <th style={s.th}>Kosten / 1k Output</th>
-              <th style={s.th}>Status</th>
-              <th style={s.th}>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {models.map((m) => (
-              <tr key={m.id}>
-                <td style={s.td}>
-                  <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{m.name}</div>
-                  {m.description && (
-                    <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{m.description}</div>
-                  )}
-                </td>
-                <td style={s.td}>
-                  <span style={{ ...s.providerBadge, background: providerColor(m.provider) }}>
-                    {m.provider}
-                  </span>
-                </td>
-                <td style={s.td}>
-                  {editing === m.id ? (
-                    <InlineEdit
-                      value={m.cost_per_1k_input}
-                      onSave={(v) => saveEdit(m.id, { cost_per_1k_input: v })}
-                    />
-                  ) : (
-                    <span style={s.price} onClick={() => setEditing(m.id)}>
-                      €{m.cost_per_1k_input} ✎
-                    </span>
-                  )}
-                </td>
-                <td style={s.td}>
-                  {editing === m.id ? (
-                    <InlineEdit
-                      value={m.cost_per_1k_output}
-                      onSave={(v) => saveEdit(m.id, { cost_per_1k_output: v })}
-                    />
-                  ) : (
-                    <span style={s.price} onClick={() => setEditing(m.id)}>
-                      €{m.cost_per_1k_output} ✎
-                    </span>
-                  )}
-                </td>
-                <td style={s.td}>
-                  <span
-                    style={{
-                      ...s.badge,
-                      background: m.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: m.is_active ? '#22c55e' : '#ef4444'
-                    }}
-                  >
-                    {m.is_active ? 'Aktiv' : 'Inaktiv'}
-                  </span>
-                </td>
-                <td style={s.td}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button style={s.btnSm} onClick={() => toggleActive(m)}>
-                      {m.is_active ? 'Deaktivieren' : 'Aktivieren'}
-                    </button>
-                    <button
-                      style={{ ...s.btnSm, color: '#ef4444' }}
-                      onClick={() => deleteModel(m.id)}
-                    >
-                      Löschen
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="card">
+          <div className="table-scroll">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={s.th}>Modell</th>
+                  <th style={s.th}>Provider</th>
+                  <th style={s.th}>Kosten / 1k Input</th>
+                  <th style={s.th}>Kosten / 1k Output</th>
+                  <th style={s.th}>Status</th>
+                  <th style={s.th}>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {models.map((m) => (
+                  <tr key={m.id}>
+                    <td style={s.td}>
+                      <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{m.name}</div>
+                      {m.description && (
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{m.description}</div>
+                      )}
+                    </td>
+                    <td style={s.td}>
+                      <span style={{ ...s.providerBadge, background: providerColor(m.provider) }}>
+                        {m.provider}
+                      </span>
+                    </td>
+                    <td style={s.td}>
+                      {editing === m.id ? (
+                        <InlineEdit
+                          value={m.cost_per_1k_input}
+                          onSave={(v) => saveEdit(m.id, { cost_per_1k_input: v })}
+                        />
+                      ) : (
+                        <span style={s.price} onClick={() => setEditing(m.id)}>
+                          €{m.cost_per_1k_input} ✎
+                        </span>
+                      )}
+                    </td>
+                    <td style={s.td}>
+                      {editing === m.id ? (
+                        <InlineEdit
+                          value={m.cost_per_1k_output}
+                          onSave={(v) => saveEdit(m.id, { cost_per_1k_output: v })}
+                        />
+                      ) : (
+                        <span style={s.price} onClick={() => setEditing(m.id)}>
+                          €{m.cost_per_1k_output} ✎
+                        </span>
+                      )}
+                    </td>
+                    <td style={s.td}>
+                      <button
+                        className={m.is_active ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'}
+                        onClick={() => toggleActive(m)}
+                      >
+                        {m.is_active ? 'Aktiv' : 'Inaktiv'}
+                      </button>
+                    </td>
+                    <td style={s.td}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing(m.id)}>Bearbeiten</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteModel(m.id)}>Löschen</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -238,13 +232,13 @@ function InlineEdit({ value, onSave }: { value: number; onSave: (v: number) => v
   return (
     <div style={{ display: 'flex', gap: 4 }}>
       <input
-        style={{ ...s.input, width: 100, padding: '2px 6px', fontSize: 12 }}
+        style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', borderRadius: 6, outline: 'none', width: 100, padding: '2px 6px', fontSize: 12 }}
         type="number"
         step="0.000001"
         value={val}
         onChange={(e) => setVal(e.target.value)}
       />
-      <button style={s.btnSm} onClick={() => onSave(parseFloat(val))}>
+      <button className="btn btn-ghost btn-sm" onClick={() => onSave(parseFloat(val))}>
         ✓
       </button>
     </div>
@@ -259,48 +253,22 @@ function providerColor(p: string) {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
-  table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: 'var(--text-secondary)',
-    padding: '6px 10px',
-    borderBottom: '1px solid var(--border)'
+    color: 'var(--text-tertiary)',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--border)',
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.06em'
   },
   td: {
     fontSize: 13,
     color: 'var(--text-primary)',
-    padding: '10px 10px',
+    padding: '10px 14px',
     borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle'
-  },
-  btn: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border-medium)',
-    color: 'var(--text-primary)',
-    padding: '8px 16px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 13
-  },
-  btnGhost: {
-    background: 'transparent',
-    border: '1px solid var(--border)',
-    color: 'var(--text-secondary)',
-    padding: '8px 16px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 13
-  },
-  btnSm: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border-medium)',
-    color: 'var(--text-secondary)',
-    padding: '4px 10px',
-    borderRadius: 4,
-    cursor: 'pointer',
-    fontSize: 12
   },
   input: {
     background: 'var(--bg-surface-solid)',
@@ -311,7 +279,6 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
     outline: 'none'
   },
-  badge: { fontSize: 11, padding: '3px 8px', borderRadius: 4 },
   providerBadge: { fontSize: 11, padding: '3px 8px', borderRadius: 4, color: 'var(--text-secondary)' },
   price: { cursor: 'pointer', color: 'var(--text-secondary)' },
   newForm: {

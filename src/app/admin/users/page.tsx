@@ -50,102 +50,102 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="content-max">
-      <div style={s.header}>
-        <h1 style={s.h1}>User-Verwaltung</h1>
-        <button
-          style={s.btn}
-          onClick={() => {
-            setShowInvite((v) => !v)
-            setFeedback('')
-          }}
-        >
-          {showInvite ? 'Abbrechen' : '+ User einladen'}
-        </button>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">User-Verwaltung</h1>
+          <p className="page-header-sub">Teammitglieder einladen und Rollen verwalten</p>
+        </div>
+        <div className="page-header-actions">
+          <button
+            className="btn btn-primary"
+            onClick={() => { setShowInvite(v => !v); setFeedback('') }}
+          >
+            {showInvite ? 'Abbrechen' : '+ User einladen'}
+          </button>
+        </div>
       </div>
 
       {showInvite && (
-        <div style={s.inviteBox}>
-          <h3 style={s.inviteTitle}>User einladen</h3>
-          <form onSubmit={invite} style={s.inviteForm}>
-            <input
-              style={s.input}
-              type="email"
-              placeholder="Email-Adresse"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              required
-              autoFocus
-            />
-            <select
-              style={s.input}
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-            <button style={s.btn} type="submit" disabled={sending}>
-              {sending ? 'Sende…' : 'Einladung senden'}
-            </button>
-          </form>
-          {feedback && (
-            <div
-              style={{
-                ...s.feedback,
-                color: feedback.startsWith('Einladung') ? '#22c55e' : '#ef4444'
-              }}
-            >
-              {feedback}
-            </div>
-          )}
-          <p style={s.hint}>
-            Der User erhält eine E-Mail mit einem Magic Link. Beim ersten Login gibt er seinen Namen
-            ein.
-          </p>
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div style={{ padding: '16px 20px' }}>
+            <form onSubmit={invite} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <input
+                style={s.input}
+                type="email"
+                placeholder="Email-Adresse"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              <select
+                style={s.input}
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-primary" type="submit" disabled={sending}>
+                {sending ? 'Sende…' : 'Einladung senden'}
+              </button>
+            </form>
+            {feedback && <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{feedback}</p>}
+            <p style={s.hint}>
+              Der User erhält eine E-Mail mit einem Magic Link. Beim ersten Login gibt er seinen Namen
+              ein.
+            </p>
+          </div>
         </div>
       )}
 
       {loading ? (
-        <p style={{ color: '#555' }}>Lade…</p>
+        <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+          <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
+        </div>
       ) : (
-        <table style={s.table}>
-          <thead>
-            <tr>
-              <th style={s.th}>Name</th>
-              <th style={s.th}>Email</th>
-              <th style={s.th}>Rolle</th>
-              <th style={s.th}>Status</th>
-              <th style={s.th}>Erstellt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td style={s.td}>{u.full_name ?? <span style={{ color: '#444' }}>—</span>}</td>
-                <td style={s.td}>{u.email}</td>
-                <td style={s.td}>
-                  <span style={{ ...s.badge, ...roleBadgeStyle(u.role) }}>{u.role}</span>
-                </td>
-                <td style={s.td}>
-                  <span
-                    style={{
-                      ...s.badge,
-                      background: u.is_active ? '#1a3a1a' : '#2a1a1a',
-                      color: u.is_active ? '#22c55e' : '#ef4444'
-                    }}
-                  >
-                    {u.is_active ? 'Aktiv' : 'Inaktiv'}
-                  </span>
-                </td>
-                <td style={s.td}>{new Date(u.created_at).toLocaleDateString('de-DE')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="card">
+          <div className="table-scroll">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={s.th}>Name</th>
+                  <th style={s.th}>Email</th>
+                  <th style={s.th}>Rolle</th>
+                  <th style={s.th}>Status</th>
+                  <th style={s.th}>Erstellt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td style={s.td}>{u.full_name ?? <span style={{ color: 'var(--text-tertiary)' }}>—</span>}</td>
+                    <td style={s.td}>{u.email}</td>
+                    <td style={s.td}>
+                      <span style={{ ...s.badge, ...roleBadgeStyle(u.role) }}>{u.role}</span>
+                    </td>
+                    <td style={s.td}>
+                      <span
+                        style={{
+                          ...s.badge,
+                          background: u.is_active ? '#1a3a1a' : '#2a1a1a',
+                          color: u.is_active ? '#22c55e' : '#ef4444'
+                        }}
+                      >
+                        {u.is_active ? 'Aktiv' : 'Inaktiv'}
+                      </span>
+                    </td>
+                    <td style={s.td}>{new Date(u.created_at).toLocaleDateString('de-DE')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -162,31 +162,6 @@ function roleBadgeStyle(role: string): React.CSSProperties {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24
-  },
-  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
-  btn: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border-medium)',
-    color: 'var(--text-primary)',
-    padding: '8px 16px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 13
-  },
-  inviteBox: {
-    background: 'var(--bg-surface-solid)',
-    border: '1px solid var(--border-medium)',
-    borderRadius: 8,
-    padding: 24,
-    marginBottom: 28
-  },
-  inviteTitle: { margin: '0 0 16px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 },
-  inviteForm: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   input: {
     background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
@@ -196,20 +171,21 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
     outline: 'none'
   },
-  feedback: { marginTop: 12, fontSize: 13 },
   hint: { margin: '12px 0 0', fontSize: 12, color: 'var(--text-tertiary)' },
-  table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left',
     fontSize: 12,
-    color: 'var(--text-secondary)',
-    padding: '6px 10px',
-    borderBottom: '1px solid var(--border)'
+    color: 'var(--text-tertiary)',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--border)',
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.06em'
   },
   td: {
     fontSize: 13,
     color: 'var(--text-primary)',
-    padding: '10px 10px',
+    padding: '10px 14px',
     borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle'
   },
