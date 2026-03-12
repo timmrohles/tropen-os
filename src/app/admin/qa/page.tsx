@@ -282,6 +282,7 @@ function QualityPanel({ data, loading }: { data: QualityResponse | null; loading
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
           </div>
         ) : (
+          <div className="table-scroll">
           <table className="w-full">
             <thead>
               <tr>
@@ -310,6 +311,7 @@ function QualityPanel({ data, loading }: { data: QualityResponse | null; loading
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </SectionCard>
 
@@ -378,7 +380,7 @@ function RoutingPanel({
             <button
               onClick={() => onRun('routing')}
               disabled={running}
-              className="text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 px-3 py-1 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {running ? '● Läuft…' : 'Test ausführen'}
             </button>
@@ -391,6 +393,7 @@ function RoutingPanel({
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
           </div>
         ) : (
+          <div className="table-scroll">
           <table className="w-full">
             <thead>
               <tr>
@@ -432,6 +435,7 @@ function RoutingPanel({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </SectionCard>
 
@@ -629,7 +633,7 @@ function CompliancePanel({
           <button
             onClick={() => onRun('bias')}
             disabled={running}
-            className="text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 px-3 py-1 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {running ? '● Läuft…' : 'Test ausführen'}
           </button>
@@ -640,6 +644,7 @@ function CompliancePanel({
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
           </div>
         ) : (
+          <div className="table-scroll">
           <table className="w-full">
             <thead>
               <tr>
@@ -663,6 +668,7 @@ function CompliancePanel({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </SectionCard>
 
@@ -786,19 +792,19 @@ export default function QADashboard() {
     : '—'
 
   return (
-    <div className="content-max dark pt-8 pb-12">
-      <div className="flex items-end justify-between mb-8 pb-5 border-b border-white/10">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
-            Admin · QA Dashboard
-          </div>
-          <h1 className="text-2xl font-semibold text-white">Quality &amp; Compliance</h1>
+    <div className="content-wide dark" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">QA & Observability</h1>
+          <p className="page-header-sub">Modell-Routing, Bias-Evaluierungen, Lighthouse & Compliance</p>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-widest text-white/30">
-            Letzte Aktualisierung
+        <div className="page-header-actions">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-widest text-white/30">
+              Letzte Aktualisierung
+            </div>
+            <div className="text-sm text-white/50 mt-0.5">{now}</div>
           </div>
-          <div className="text-sm text-white/50 mt-0.5">{now}</div>
         </div>
       </div>
 

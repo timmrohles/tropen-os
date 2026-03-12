@@ -661,7 +661,7 @@ const TODOS: Todo[] = [
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
   offen:     { label: 'Offen',     bg: 'var(--accent-subtle)',   color: 'var(--accent)' },
-  in_arbeit: { label: 'In Arbeit', bg: 'rgba(163,181,84,0.15)',  color: '#a3b554' },
+  in_arbeit: { label: 'In Arbeit', bg: 'var(--accent-subtle)',   color: 'var(--accent)' },
   erledigt:  { label: 'Erledigt',  bg: 'rgba(52,211,153,0.12)',  color: '#34d399' },
   blockiert: { label: 'Blockiert', bg: 'rgba(248,113,113,0.12)', color: '#f87171' },
   geplant:   { label: 'Geplant',   bg: 'rgba(147,197,253,0.10)', color: '#93c5fd' },
@@ -678,9 +678,6 @@ const KATEGORIEN = [...new Set(TODOS.map(t => t.kategorie))]
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
 const s: Record<string, React.CSSProperties> = {
-  header:      { marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--border)' },
-  h1:          { fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' },
-  subtitle:    { fontSize: 13, color: 'var(--text-tertiary)', margin: 0 },
   controls:    { display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center' },
   stats:       { display: 'flex', gap: 24, marginBottom: 28, flexWrap: 'wrap' },
   statCard:    { padding: '12px 20px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px solid var(--border)' },
@@ -696,15 +693,6 @@ const s: Record<string, React.CSSProperties> = {
   ref:         { fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'monospace' },
   badgeRow:    { display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 },
   empty:       { padding: '32px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 },
-}
-
-function filterBtnStyle(active: boolean): React.CSSProperties {
-  return {
-    fontSize: 12, padding: '5px 12px', borderRadius: 6, cursor: 'pointer', transition: 'all 150ms',
-    border: active ? '1px solid rgba(163,181,84,0.5)' : '1px solid var(--border)',
-    background: active ? 'rgba(163,181,84,0.12)' : 'var(--bg-surface)',
-    color: active ? '#a3b554' : 'var(--text-secondary)',
-  }
 }
 
 function badgeStyle(bg: string, color: string): React.CSSProperties {
@@ -738,19 +726,19 @@ export default function TodoPage() {
   const hoch    = TODOS.filter(t => t.prioritaet === 'hoch' && t.status !== 'erledigt').length
 
   return (
-    <div>
-      <div style={s.header}>
-        <h1 style={s.h1}>To-Do & Compliance Tracker</h1>
-        <p style={s.subtitle}>
-          Alle Tasks aus CLAUDE.md + Roadmap — Stand 2026-03-11 · {total} Einträge gesamt · {erled} erledigt
-        </p>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">To-Do & Compliance Tracker</h1>
+          <p className="page-header-sub">Alle Tasks aus CLAUDE.md + Roadmap · {total} Einträge gesamt · {erled} erledigt</p>
+        </div>
       </div>
 
       {/* Stats */}
       <div style={s.stats}>
         {[
           { value: offen,  label: 'Offen',     color: 'var(--text-secondary)' },
-          { value: arbeit, label: 'In Arbeit',  color: '#a3b554' },
+          { value: arbeit, label: 'In Arbeit',  color: 'var(--accent)' },
           { value: erled,  label: 'Erledigt',   color: '#34d399' },
           { value: hoch,   label: '⚠ Hohe Prio', color: '#f87171' },
         ].map(stat => (
@@ -765,20 +753,21 @@ export default function TodoPage() {
       <div style={s.controls}>
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Status</span>
         {(['alle', 'offen', 'in_arbeit', 'erledigt', 'blockiert', 'geplant'] as const).map(s_ => (
-          <button key={s_} style={filterBtnStyle(filterStatus === s_)} onClick={() => { setFilterStatus(s_); if (s_ === 'erledigt') setHideErledigt(false) }}>
+          <button key={s_} className={filterStatus === s_ ? 'chip chip--active' : 'chip'} onClick={() => { setFilterStatus(s_); if (s_ === 'erledigt') setHideErledigt(false) }}>
             {s_ === 'alle' ? 'Alle' : STATUS_CONFIG[s_ as Status]?.label ?? s_}
           </button>
         ))}
         <button
-          style={{ ...filterBtnStyle(hideErledigt), marginLeft: 8 }}
+          className={hideErledigt ? 'chip chip--active' : 'chip'}
+          style={{ marginLeft: 8 }}
           onClick={() => setHideErledigt(v => !v)}
         >
           {hideErledigt ? '✓ Erledigte ausgeblendet' : '○ Erledigte sichtbar'}
         </button>
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginLeft: 8 }}>Kategorie</span>
-        <button style={filterBtnStyle(filterKat === 'alle')} onClick={() => setFilterKat('alle')}>Alle</button>
+        <button className={filterKat === 'alle' ? 'chip chip--active' : 'chip'} onClick={() => setFilterKat('alle')}>Alle</button>
         {KATEGORIEN.map(k => (
-          <button key={k} style={filterBtnStyle(filterKat === k)} onClick={() => setFilterKat(k)}>{k}</button>
+          <button key={k} className={filterKat === k ? 'chip chip--active' : 'chip'} onClick={() => setFilterKat(k)}>{k}</button>
         ))}
       </div>
 
