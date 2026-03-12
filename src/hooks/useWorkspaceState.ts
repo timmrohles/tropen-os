@@ -201,6 +201,10 @@ export interface WorkspaceState {
   setMergeProjectDropOpen: React.Dispatch<React.SetStateAction<boolean>>
   toastMsg: string
 
+  // Memory modal
+  showMemoryModal: boolean
+  setShowMemoryModal: React.Dispatch<React.SetStateAction<boolean>>
+
   // Jungle structure modal
   jungleSummary: string
   jungleProjects: JungleProject[]
@@ -354,6 +358,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [mergeProjectDropOpen, setMergeProjectDropOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
+  // Memory modal
+  const [showMemoryModal, setShowMemoryModal] = useState(false)
+  const warnedConvRef = useRef<Set<string>>(new Set())
+
   // Mobile
   const [isMobile, setIsMobile] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
@@ -436,6 +444,17 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  // Auto-trigger memory modal at 85% context (once per conversation)
+  useEffect(() => {
+    if (!activeConvId) return
+    if (contextPercent < 85) return
+    if (warnedConvRef.current.has(activeConvId)) return
+    const activeConv = conversations.find((c) => c.id === activeConvId)
+    if (!activeConv?.project_id) return
+    warnedConvRef.current.add(activeConvId)
+    setShowMemoryModal(true)
+  }, [contextPercent, activeConvId, conversations])
 
   // Multi-select: Escape exits mode
   useEffect(() => {
@@ -1035,6 +1054,9 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     mergeReady,
     mergeProjectDropOpen, setMergeProjectDropOpen,
     toastMsg,
+
+    // Memory modal
+    showMemoryModal, setShowMemoryModal,
 
     // Mobile
     isMobile,

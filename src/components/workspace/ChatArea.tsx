@@ -9,6 +9,7 @@ import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
 import ContextBar from './ContextBar'
 import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
+import MemorySaveModal from './MemorySaveModal'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -29,6 +30,9 @@ interface ChatAreaProps {
   activeAgentId?: string | null
   onSetActiveAgentId?: (id: string | null) => void
   contextPercent: number
+  activeConvProjectId: string | null
+  showMemoryModal: boolean
+  onSetShowMemoryModal: (v: boolean) => void
 }
 
 export default function ChatArea({
@@ -50,6 +54,9 @@ export default function ChatArea({
   activeAgentId,
   onSetActiveAgentId,
   contextPercent,
+  activeConvProjectId,
+  showMemoryModal,
+  onSetShowMemoryModal,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -106,7 +113,31 @@ export default function ChatArea({
             onOpenBookmarks={() => setBookmarksDrawerOpen(true)}
             onOpenSearch={() => setSearchDrawerOpen(true)}
           />
-          {activeConvId && <ContextBar percent={contextPercent} />}
+          {activeConvId && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ContextBar percent={contextPercent} />
+              {activeConvProjectId && (
+                <button
+                  onClick={() => onSetShowMemoryModal(true)}
+                  title="Ins Gedächtnis speichern"
+                  aria-label="Ins Gedächtnis speichern"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-tertiary)',
+                    fontSize: 16,
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  🧠
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="carea-messages">
             {messages.map((msg, i) => (
@@ -158,6 +189,15 @@ export default function ChatArea({
             onClose={() => setSearchDrawerOpen(false)}
             workspaceId={workspaceId}
           />
+
+          {activeConvProjectId && (
+            <MemorySaveModal
+              open={showMemoryModal}
+              onClose={() => onSetShowMemoryModal(false)}
+              projectId={activeConvProjectId}
+              conversationId={activeConvId}
+            />
+          )}
         </>
       )}
     </div>

@@ -174,7 +174,13 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     logout,
     activeAgentId,
     setActiveAgentId,
+
+    // Memory modal
+    showMemoryModal,
+    setShowMemoryModal,
   } = props
+
+  const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
 
   // ── Panel resize ──────────────────────────────────────────
   // Always start with defaults (matches SSR), then sync from localStorage after hydration
@@ -443,6 +449,9 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         activeAgentId={activeAgentId}
         onSetActiveAgentId={setActiveAgentId}
         contextPercent={props.contextPercent}
+        activeConvProjectId={activeConvProjectId}
+        showMemoryModal={showMemoryModal}
+        onSetShowMemoryModal={setShowMemoryModal}
       />
 
       {/* ── Session Panel (Desktop only) ── */}
