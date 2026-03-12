@@ -461,6 +461,19 @@ Falls du das nicht warst, ignoriere diese Mail.
 - `POST /api/superadmin/clients` → Org + Workspace + organization_settings anlegen + Owner einladen
 - Kein öffentliches Signup – Owner-Accounts werden ausschließlich durch Tropen angelegt
 
+### Superadmin To-Do (Stand 2026-03-12)
+
+| Priorität | Feature | Status |
+|-----------|---------|--------|
+| 🔴 Hoch | Phase 2 Plan C — Workspaces + Card Engine | ⬜ Offen |
+| 🔴 Hoch | Phase 2 Plan D — Chat & Context Integration | ⬜ Offen |
+| 🟡 Mittel | Phase 2 Plan E — Transformations-Engine | ⬜ Offen |
+| 🟡 Mittel | Phase 2 Plan F — UI (Projekte + Workspaces) | ⬜ Offen |
+| 🟡 Mittel | Phase 2 Plan G — Feeds | ⬜ Offen |
+| 🟢 Niedrig | Agenten-System Phase 2 (Zuweisung zu Projekten/Chats) | ⬜ Offen |
+| 🟢 Niedrig | Prompt-Bibliothek Phase 3 (DB-backed, org-weit) | ⬜ Offen |
+| 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
+
 ### Client anlegen – Ablauf
 1. `/superadmin/clients/new` ausfüllen: Firma, Plan, Budget, Workspace, Owner-Email
 2. API legt an: `organizations` → `workspaces` → `organization_settings` → `inviteUserByEmail`
@@ -526,7 +539,7 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 
 ---
 
-## 🗺️ Produkt-Roadmap (Stand 2026-03-10)
+## 🗺️ Produkt-Roadmap (Stand 2026-03-12)
 
 ### ✅ Fertig
 
@@ -542,9 +555,24 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 - Jungle Order: Struktur-Vorschlag + Zusammenführen via Dify Workflow
 - Prompt-Bibliothek Phase 1: 5 Core-Vorlagen + TemplateDrawer (clientseitig)
 
-#### 📁 Smarte Projekte
+#### 📁 Smarte Projekte (Phase 1)
 - `/projects` Seite mit 4 Tabs (Meine Projekte, Meine Agenten, Community, Vorlagen)
 - Projekt-Felder: Kontext, Ton, Sprache, Zielgruppe, Gedächtnis (Phase 2: manuell)
+
+#### 🧠 Phase 2 — DB-Fundament + Projekte CRUD (2026-03-12)
+- **Plan A (Migrationen 030–033 + Fix-Migrationen):** projects, project_participants, project_knowledge, project_memory (APPEND ONLY), workspaces (Karten-basiert), workspace_participants, cards, card_history (APPEND ONLY), connections, knowledge_entries, outcomes, dept_settings, org_knowledge, dept_knowledge, agent_assignments, transformations, transformation_links, templates, feed_sources, feed_schemas, feed_source_schemas, feed_items, feed_processing_log (APPEND ONLY), feed_distributions — alle mit RLS deployed
+- **Plan B (Projects CRUD + Gedächtnis + Context-Awareness):**
+  - `GET/POST /api/projects` — department_id-basiert, auto-participant
+  - `GET/PATCH/DELETE /api/projects/[id]` — Soft-Delete, meta-merge, title-Validierung
+  - `GET/POST /api/projects/[id]/memory` — APPEND ONLY, type/importance/tags validiert
+  - `POST /api/projects/[id]/memory/summary` — Haiku-Zusammenfassung, frozen=true, Ownership-Check
+  - `src/lib/api/projects.ts` — getAuthUser() + verifyProjectAccess() shared helpers
+  - `src/lib/token-counter.ts` — estimateTokens(), estimateConversationTokens(), MODEL_CONTEXT_LIMIT
+  - `src/components/workspace/ContextBar.tsx` — Monospace █/░ Balken, amber ≥60%, rot ≥85%
+  - `src/components/workspace/MemorySaveModal.tsx` — 2 Tabs: AI-Zusammenfassung + Manuell
+  - `useWorkspaceState`: contextPercent, showMemoryModal, auto-trigger bei 85%
+  - `ChatArea`: 🧠-Button + MemorySaveModal, nur sichtbar wenn Conv project_id hat
+  - Commits: 4e7a2b1 … d9aecae (10 Commits)
 
 #### 🧠 Wissensbasis & RAG
 - pgvector EU, `text-embedding-3-small`, 3 Ebenen (Org/User/Projekt)
@@ -576,11 +604,51 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 
 ---
 
-### 🔜 Nächste Schritte (Prio-Reihenfolge)
+### 🔜 Nächste Schritte — Phase 2 Build-Reihenfolge
+
+> Pläne liegen in `docs/superpowers/plans/`
+
+#### Plan C — Workspaces + Card Engine
+- `workspaces` CRUD (`GET/POST /api/workspaces`, `GET/PATCH/DELETE /api/workspaces/[id]`)
+- `cards` CRUD mit `card_history` (APPEND ONLY)
+- `connections` Graph-Links zwischen Karten
+- `knowledge_entries` CRUD
+- `workspace_messages` (Silo-Chat + Karten-Chat)
+- `operators` + `operator_results` (Berechnungsknoten)
+- `outcomes` CRUD
+- Plan noch zu schreiben
+
+#### Plan D — Chat & Context Integration
+- Projekt-Kontext-Injection beim AI-Aufruf (Gedächtnis + Wissensbasis → System-Prompt)
+- Memory-Warnung im Chat-Header (85%-Trigger sichtbar kommunizieren)
+- Workspace-Chat-Context (knowledge_entries fließen in Chat)
+- Plan noch zu schreiben
+
+#### Plan E — Transformations-Engine
+- `POST /api/transformations` — analyze + suggest + build + link
+- Projekt → Workspace: AI analysiert Gedächtnis, schlägt Karten-Struktur vor
+- Projekt → Agent: AI konfiguriert auf Basis Projekt-Gedächtnis
+- Immer: Vorschau → Bestätigung → Ausführung, nie destruktiv
+- Plan noch zu schreiben
+
+#### Plan F — UI (Projekte + Workspaces)
+- Projekte-Seite neu: Liste mit Gedächtnis-Zähler, Wissensbasis-Tab
+- Workspaces-Seite: Karten-Graph-View, Outcome-Board
+- Transformations-Trigger als kontextueller Hinweis (kein Nav-Punkt)
+- Plan noch zu schreiben
+
+#### Plan G — Feeds
+- Feed-Quellen CRUD, Schemas, Stage-Pipeline (Stage 1 regelbasiert, Stage 2 Haiku, Stage 3 Sonnet)
+- Feed-Distributions (→ Workspaces, Projekte, standalone)
+- Plan noch zu schreiben
+
+---
+
+#### Weitere To-Dos (parallel möglich)
 
 #### 🧠 SKILL.md System — Toro-Verbesserungen
-- **Modellwahl-Optimierung:** Toro wählt automatisch das passende Modell je nach Aufgabentyp (Schnelligkeit vs. Qualität vs. Kosten)
-- **Zusammenfassungs-Qualität:** Zusammenfassungen langer Gespräche verbessern (Vollständigkeit, Struktur, Relevanz)
+- **Modellwahl-Optimierung:** Toro wählt automatisch das passende Modell je nach Aufgabentyp
+- **Zusammenfassungs-Qualität:** Zusammenfassungen langer Gespräche verbessern
 - **Workspace-Erstellung verbessern:** Onboarding-Flow für neue Workspaces optimieren
 
 #### 🤖 Agenten-System Phase 2
@@ -884,14 +952,17 @@ Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgel
 | `src/components/workspace/LeftNav.tsx` | 309 | OK |
 
 ### Nächste Schritte (Priorität)
-1. ~~**🔴 Edge Function `workflow_finished`-Event**~~ → **✅ Behoben 2026-03-09** — `workflow_finished` und `message_end` getrennt behandelt; `dify_conversation_id` wird jetzt korrekt aus `message_end` gespeichert
+1. ~~**🔴 Edge Function `workflow_finished`-Event**~~ → **✅ Behoben 2026-03-09**
 2. ~~**Smarte Projekte Phase 2**~~ → **✅ Behoben 2026-03-09** — `/projects`-Seite (4 Tabs), erweitertes Schema, API-Route, LeftNav-Link
-3. **Prompt-Bibliothek Phase 3** — DB-Tabelle `prompt_templates`, eigene Vorlagen speichern, Sidebar-Integration
-4. **Agenten-System Phase 3** — `agents`-Tabelle, User-Agenten, Projekt-Zuweisungen, Community Phase 4
+3. ~~**Phase 2 Plan A — DB-Fundament**~~ → **✅ Erledigt 2026-03-12** — Migrationen 030–033 + RLS-Fixes live
+4. ~~**Phase 2 Plan B — Projects CRUD + Gedächtnis + Context-Awareness**~~ → **✅ Erledigt 2026-03-12** — API-Routes, MemorySaveModal, ContextBar, Token-Counter
+5. **Phase 2 Plan C — Workspaces + Card Engine** → ⬜ Nächster Schritt
+6. **Phase 2 Plan D — Chat & Context Integration** → ⬜ Danach
+7. **Phase 2 Plan E/F/G** → ⬜ Folgt
 
-### Projekt-Gedächtnis (Roadmap)
-- **Phase 2**: Manuelles Kontext-Textfeld im Projekt-Detail (Freitext, den Toro bei jedem Chat liest).
-- **Phase 3**: Toro extrahiert automatisch Personen, Deadlines, Entscheidungen und offene Fragen aus dem Chat-Verlauf via eigenem Dify-Workflow und schreibt sie in `projects.memory`.
+### Projekt-Gedächtnis (Stand 2026-03-12)
+- **✅ Implementiert:** `project_memory` Tabelle (APPEND ONLY), API `GET/POST /api/projects/[id]/memory`, AI-Zusammenfassung via Haiku (`POST /api/projects/[id]/memory/summary`), MemorySaveModal (2 Tabs: AI + Manuell), Auto-Trigger bei 85% Context, 🧠-Button im Chat
+- **⬜ Offen:** Gedächtnis-Injection in AI-Aufruf (Plan D), Gedächtnis-Anzeige in Projekt-Detail (Plan F)
 
 ---
 
