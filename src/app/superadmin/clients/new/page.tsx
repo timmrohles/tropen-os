@@ -56,7 +56,7 @@ export default function NewClientPage() {
 
   if (success) {
     return (
-      <div style={s.page}>
+      <div className="content-narrow" style={{ paddingTop: 32, paddingBottom: 48 }}>
         <div style={s.successBox}>
           <div style={s.successIcon}>🦜</div>
           <h2 style={s.successHeading}>Client angelegt!</h2>
@@ -69,115 +69,127 @@ export default function NewClientPage() {
   }
 
   return (
-    <div style={s.page}>
-      <Link href="/superadmin/clients" style={s.backLink}>← Alle Clients</Link>
-      <h1 style={s.heading}>Neuer Client</h1>
+    <div className="content-narrow" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Neuer Client</h1>
+          <p className="page-header-sub">Neue Organisation anlegen und ersten Admin einladen</p>
+        </div>
+      </div>
+
+      <Link href="/superadmin/clients" className="btn btn-ghost btn-sm" style={{ marginBottom: 24, display: 'inline-flex' }}>← Alle Clients</Link>
 
       <form onSubmit={handleSubmit} style={s.form}>
         {/* Section 1 – Organisation */}
-        <div style={s.section}>
-          <div style={s.sectionLabel}>Organisation</div>
-          <div style={s.field}>
-            <label style={s.label}>Firmenname</label>
-            <input
-              style={s.input}
-              type="text"
-              name="org_name"
-              value={form.org_name}
-              onChange={handleChange}
-              required
-              placeholder="Firmenname"
-            />
-          </div>
-          <div style={s.row}>
-            <div style={{ ...s.field, flex: 1 }}>
-              <label style={s.label}>Plan</label>
-              <select
-                style={s.input}
-                name="plan"
-                value={form.plan}
-                onChange={handleChange}
-              >
-                <option value="free">Free</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
-              </select>
-            </div>
-            <div style={{ ...s.field, flex: 1 }}>
-              <label style={s.label}>Budget Limit Org</label>
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div style={{ padding: '20px 24px' }}>
+            <div style={s.sectionLabel}>Organisation</div>
+            <div style={s.field}>
+              <label style={s.label}>Firmenname</label>
               <input
                 style={s.input}
-                type="number"
-                name="org_budget_limit"
-                value={form.org_budget_limit}
+                type="text"
+                name="org_name"
+                value={form.org_name}
                 onChange={handleChange}
-                placeholder="Kein Limit"
-                min="0"
-                step="0.01"
+                required
+                placeholder="Firmenname"
               />
+            </div>
+            <div style={s.row}>
+              <div style={{ ...s.field, flex: 1 }}>
+                <label style={s.label}>Plan</label>
+                <select
+                  style={s.input}
+                  name="plan"
+                  value={form.plan}
+                  onChange={handleChange}
+                >
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+              <div style={{ ...s.field, flex: 1 }}>
+                <label style={s.label}>Budget Limit Org</label>
+                <input
+                  style={s.input}
+                  type="number"
+                  name="org_budget_limit"
+                  value={form.org_budget_limit}
+                  onChange={handleChange}
+                  placeholder="Kein Limit"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Section 2 – Department */}
-        <div style={s.section}>
-          <div style={s.sectionLabel}>Department</div>
-          <div style={s.row}>
-            <div style={{ ...s.field, flex: 2 }}>
-              <label style={s.label}>Department-Name</label>
-              <input
-                style={s.input}
-                type="text"
-                name="workspace_name"
-                value={form.workspace_name}
-                onChange={handleChange}
-                required
-                placeholder="Haupt-Department"
-              />
-            </div>
-            <div style={{ ...s.field, flex: 1 }}>
-              <label style={s.label}>Budget Limit Department</label>
-              <input
-                style={s.input}
-                type="number"
-                name="workspace_budget_limit"
-                value={form.workspace_budget_limit}
-                onChange={handleChange}
-                placeholder="Kein Limit"
-                min="0"
-                step="0.01"
-              />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div style={{ padding: '20px 24px' }}>
+            <div style={s.sectionLabel}>Department</div>
+            <div style={s.row}>
+              <div style={{ ...s.field, flex: 2 }}>
+                <label style={s.label}>Department-Name</label>
+                <input
+                  style={s.input}
+                  type="text"
+                  name="workspace_name"
+                  value={form.workspace_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Haupt-Department"
+                />
+              </div>
+              <div style={{ ...s.field, flex: 1 }}>
+                <label style={s.label}>Budget Limit Department</label>
+                <input
+                  style={s.input}
+                  type="number"
+                  name="workspace_budget_limit"
+                  value={form.workspace_budget_limit}
+                  onChange={handleChange}
+                  placeholder="Kein Limit"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Section 3 – Owner einladen */}
-        <div style={s.section}>
-          <div style={s.sectionLabel}>Owner einladen</div>
-          <div style={s.field}>
-            <label style={s.label}>E-Mail</label>
-            <input
-              style={s.input}
-              type="email"
-              name="owner_email"
-              value={form.owner_email}
-              onChange={handleChange}
-              required
-              placeholder="owner@beispiel.de"
-            />
-            <p style={s.hint}>
-              Einladungsmail wird sofort versendet. Owner landet im Onboarding.
-            </p>
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div style={{ padding: '20px 24px' }}>
+            <div style={s.sectionLabel}>Owner einladen</div>
+            <div style={s.field}>
+              <label style={s.label}>E-Mail</label>
+              <input
+                style={s.input}
+                type="email"
+                name="owner_email"
+                value={form.owner_email}
+                onChange={handleChange}
+                required
+                placeholder="owner@beispiel.de"
+              />
+              <p style={s.hint}>
+                Einladungsmail wird sofort versendet. Owner landet im Onboarding.
+              </p>
+            </div>
           </div>
         </div>
 
         {error && <div style={s.error}>{error}</div>}
 
         <div style={s.buttonRow}>
-          <button type="submit" style={s.submitBtn} disabled={saving}>
+          <button type="submit" className="btn btn-primary" style={{ marginTop: 8 }} disabled={saving}>
             {saving ? 'Wird angelegt…' : 'Client anlegen & Einladung senden'}
           </button>
-          <Link href="/superadmin/clients" style={s.cancelBtn}>
+          <Link href="/superadmin/clients" className="btn btn-ghost">
             Abbrechen
           </Link>
         </div>
@@ -187,47 +199,23 @@ export default function NewClientPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: {
-    maxWidth: 640,
-    margin: '0 auto',
-  },
-  backLink: {
-    color: '#555',
-    fontSize: 12,
-    textDecoration: 'none',
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: 700,
-    color: 'var(--text-primary)',
-    marginTop: 8,
-    marginBottom: 24,
+  sectionLabel: {
+    fontSize: 11,
+    color: 'var(--text-secondary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    fontWeight: 600,
+    marginBottom: 12,
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
-  },
-  section: {
-    background: 'var(--bg-surface-solid)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    padding: 20,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    fontWeight: 600,
-    marginBottom: 2,
+    gap: 0,
   },
   field: {
     display: 'flex',
     flexDirection: 'column',
+    marginBottom: 12,
   },
   row: {
     display: 'flex',
@@ -235,7 +223,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   label: {
     fontSize: 11,
-    color: '#666',
+    color: 'var(--text-secondary)',
     fontWeight: 600,
     marginBottom: 6,
     textTransform: 'uppercase',
@@ -254,7 +242,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   hint: {
     fontSize: 11,
-    color: '#444',
+    color: 'var(--text-tertiary)',
     marginTop: 6,
     marginBottom: 0,
   },
@@ -271,24 +259,6 @@ const s: Record<string, React.CSSProperties> = {
     gap: 10,
     alignItems: 'center',
     marginTop: 4,
-  },
-  submitBtn: {
-    background: 'var(--accent)',
-    color: '#0d2418',
-    fontWeight: 700,
-    fontSize: 14,
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px 20px',
-    cursor: 'pointer',
-  },
-  cancelBtn: {
-    border: '1px solid #2a2a2a',
-    color: '#666',
-    textDecoration: 'none',
-    borderRadius: 8,
-    padding: '10px 16px',
-    fontSize: 14,
   },
   successBox: {
     display: 'flex',
@@ -311,7 +281,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   successText: {
     fontSize: 14,
-    color: '#555',
+    color: 'var(--text-secondary)',
     margin: 0,
   },
 }

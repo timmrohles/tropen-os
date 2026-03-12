@@ -33,8 +33,8 @@ const onboardingDone = (org: OrgRow) =>
 
 const planStyle: Record<string, React.CSSProperties> = {
   free:       { background: '#4a5568', color: '#ffffff' },
-  pro:        { background: '#a3b554', color: '#0d2418' },
-  enterprise: { background: '#1e5238', color: '#ffffff', border: '1px solid #a3b554' },
+  pro:        { background: 'var(--accent)', color: '#ffffff' },
+  enterprise: { background: 'var(--active-bg)', color: '#ffffff', border: '1px solid var(--accent)' },
 }
 
 interface EditState {
@@ -207,20 +207,18 @@ export default function ClientsPage() {
   }
 
   return (
-    <div style={s.page}>
-      <div style={s.header}>
-        <div>
-          <h1 style={s.h1}>Clients</h1>
-          <p style={s.subtext}>
-            {loading ? '' : `${orgs.length} Organisation${orgs.length !== 1 ? 'en' : ''}`}
-          </p>
+    <div className="content-wide" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Clients</h1>
+          <p className="page-header-sub">Organisationen, Workspaces und Pakete verwalten</p>
         </div>
-        <Link href="/superadmin/clients/new" style={s.newBtn}>
-          + Neuer Client
-        </Link>
+        <div className="page-header-actions">
+          <a href="/superadmin/clients/new" className="btn btn-primary">+ Neuer Client</a>
+        </div>
       </div>
 
-      <div style={s.tableWrapper}>
+      <div className="table-scroll">
         {loading ? (
           <p style={s.muted}>Lade…</p>
         ) : orgs.length === 0 ? (
@@ -283,7 +281,7 @@ export default function ClientsPage() {
                               </div>
                               {u.role !== 'superadmin' && (
                                 <button
-                                  style={s.viewBtn}
+                                  className="btn btn-ghost btn-sm"
                                   onClick={() => {
                                     setImpModal({ orgId: org.id, userId: u.id, email: u.email })
                                     setImpForm({ ticketRef: '', durationMinutes: 30 })
@@ -327,7 +325,7 @@ export default function ClientsPage() {
                                 <button
                                   onClick={() => handleTogglePackage(org.id, pkg.id, active)}
                                   disabled={pkgTogglingKey === key}
-                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? '#0d2418' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? '#fff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
                                 >
                                   {pkgTogglingKey === key ? '…' : active ? 'Aktiv' : 'Inaktiv'}
                                 </button>
@@ -339,10 +337,10 @@ export default function ClientsPage() {
                     </td>
                     <td style={s.td}>
                       <div style={s.actions}>
-                        <button style={s.editBtn} onClick={() => openEdit(org)}>Bearbeiten</button>
-                        <button style={s.activateBtn} onClick={() => { setActivateOrg(org); setActivateMsg('') }}>+ User</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(org)}>Bearbeiten</button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)' }} onClick={() => { setActivateOrg(org); setActivateMsg('') }}>+ User</button>
                         {!org.users.some((u) => u.role === 'superadmin') && (
-                          <button style={s.deleteBtn} onClick={() => setDeleteOrg(org)}>Löschen</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => setDeleteOrg(org)}>Löschen</button>
                         )}
                       </div>
                     </td>
@@ -389,10 +387,10 @@ export default function ClientsPage() {
               onChange={(e) => setEditForm({ ...editForm, owner_email: e.target.value })} />
 
             <div style={s.modalFooter}>
-              <button style={s.cancelBtn} onClick={() => { setEditOrg(null); setEditForm(null) }}>
+              <button className="btn btn-ghost" onClick={() => { setEditOrg(null); setEditForm(null) }}>
                 Abbrechen
               </button>
-              <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Speichern…' : 'Speichern'}
               </button>
             </div>
@@ -425,14 +423,14 @@ export default function ClientsPage() {
             </select>
 
             {activateMsg && (
-              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? '#a3b554' : '#ef4444', marginTop: 8 }}>
+              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? 'var(--accent)' : '#ef4444', marginTop: 8 }}>
                 {activateMsg}
               </p>
             )}
 
             <div style={s.modalFooter}>
-              <button style={s.cancelBtn} onClick={() => setActivateOrg(null)}>Schließen</button>
-              <button style={s.saveBtn} onClick={handleActivate} disabled={activating || !activateEmail}>
+              <button className="btn btn-ghost" onClick={() => setActivateOrg(null)}>Schließen</button>
+              <button className="btn btn-primary" onClick={handleActivate} disabled={activating || !activateEmail}>
                 {activating ? 'Aktivieren…' : 'Aktivieren'}
               </button>
             </div>
@@ -468,7 +466,7 @@ export default function ClientsPage() {
                     flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13,
                     cursor: 'pointer', fontWeight: impForm.durationMinutes === min ? 700 : 400,
                     background: impForm.durationMinutes === min ? 'var(--accent)' : 'var(--bg-input)',
-                    color: impForm.durationMinutes === min ? '#0d2418' : 'var(--text-secondary)',
+                    color: impForm.durationMinutes === min ? '#fff' : 'var(--text-secondary)',
                     border: impForm.durationMinutes === min ? 'none' : '1px solid rgba(255,255,255,0.12)',
                   }}
                 >
@@ -477,13 +475,13 @@ export default function ClientsPage() {
               ))}
             </div>
 
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, marginBottom: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 12, marginBottom: 0 }}>
               Der User sieht in seinen Einstellungen, wann und wie lange seine Ansicht geöffnet wurde.
             </p>
 
             <div style={s.modalFooter}>
-              <button style={s.cancelBtn} onClick={() => setImpModal(null)}>Abbrechen</button>
-              <button style={s.saveBtn} onClick={openImpersonation} disabled={impLoading}>
+              <button className="btn btn-ghost" onClick={() => setImpModal(null)}>Abbrechen</button>
+              <button className="btn btn-primary" onClick={openImpersonation} disabled={impLoading}>
                 {impLoading ? 'Öffne…' : 'In neuem Tab öffnen'}
               </button>
             </div>
@@ -501,8 +499,8 @@ export default function ClientsPage() {
               Daten (Department, User, Einstellungen) werden unwiderruflich gelöscht.
             </p>
             <div style={s.modalFooter}>
-              <button style={s.cancelBtn} onClick={() => setDeleteOrg(null)}>Abbrechen</button>
-              <button style={s.dangerBtn} onClick={handleDelete} disabled={deleting}>
+              <button className="btn btn-ghost" onClick={() => setDeleteOrg(null)}>Abbrechen</button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
                 {deleting ? 'Löschen…' : 'Endgültig löschen'}
               </button>
             </div>
@@ -514,34 +512,10 @@ export default function ClientsPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: {
-    color: 'var(--text-primary)',
-    fontFamily: 'sans-serif',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-  },
-  h1: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0, marginBottom: 4 },
-  subtext: { fontSize: 13, color: 'var(--text-muted)', margin: 0 },
-  newBtn: {
-    background: 'var(--accent)',
-    color: '#0d2418',
-    padding: '10px 20px',
-    borderRadius: 7,
-    textDecoration: 'none',
-    fontWeight: 700,
-    fontSize: 13,
-    display: 'inline-block',
-    flexShrink: 0,
-  },
-  tableWrapper: {},
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'var(--text-primary)', tableLayout: 'fixed' },
   th: {
     fontSize: 12,
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     textAlign: 'left',
@@ -553,7 +527,7 @@ const s: Record<string, React.CSSProperties> = {
   tr: { borderBottom: '1px solid rgba(255,255,255,0.05)' },
   td: { padding: '12px 12px', verticalAlign: 'middle', color: 'var(--text-primary)' },
   orgName: { fontWeight: 500, color: 'var(--text-primary)' },
-  orgId: { color: 'var(--text-muted)', fontSize: 12, marginTop: 2 },
+  orgId: { color: 'var(--text-tertiary)', fontSize: 12, marginTop: 2 },
   wsName: { color: 'var(--text-secondary)' },
   badge: {
     display: 'inline-block',
@@ -566,44 +540,14 @@ const s: Record<string, React.CSSProperties> = {
   },
   badgeDone: {
     display: 'inline-block', padding: '3px 8px', borderRadius: 4,
-    fontSize: 12, fontWeight: 600, background: '#1e3818', color: '#a3b554',
+    fontSize: 12, fontWeight: 600, background: 'var(--accent-subtle)', color: 'var(--accent)',
   },
   badgePending: {
     display: 'inline-block', padding: '3px 8px', borderRadius: 4,
-    fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)',
+    fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.06)', color: 'var(--text-tertiary)',
   },
   actions: { display: 'flex', gap: 8, flexWrap: 'nowrap' },
-  editBtn: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    color: 'var(--text-primary)',
-    padding: '5px 12px',
-    borderRadius: 5,
-    fontSize: 12,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
-  },
-  activateBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(163,181,84,0.4)',
-    color: 'var(--accent)',
-    padding: '5px 12px',
-    borderRadius: 5,
-    fontSize: 12,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
-  },
-  deleteBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(239,68,68,0.3)',
-    color: '#ef4444',
-    padding: '5px 12px',
-    borderRadius: 5,
-    fontSize: 12,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
-  },
-  muted: { color: 'var(--text-muted)', fontSize: 14, padding: '24px 0' },
+  muted: { color: 'var(--text-tertiary)', fontSize: 14, padding: '24px 0' },
 
   // Modal
   overlay: {
@@ -626,7 +570,7 @@ const s: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   modalTitle: { fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' },
-  label: { fontSize: 12, color: 'var(--text-muted)', marginTop: 8 },
+  label: { fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 },
   input: {
     background: 'var(--bg-input)',
     border: '1px solid rgba(255,255,255,0.12)',
@@ -639,35 +583,6 @@ const s: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box',
   },
   modalFooter: { display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 },
-  cancelBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.12)',
-    color: 'var(--text-muted)',
-    padding: '8px 18px',
-    borderRadius: 6,
-    fontSize: 13,
-    cursor: 'pointer',
-  },
-  saveBtn: {
-    background: 'var(--accent)',
-    border: 'none',
-    color: '#0d2418',
-    padding: '8px 18px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  dangerBtn: {
-    background: '#ef4444',
-    border: 'none',
-    color: '#fff',
-    padding: '8px 18px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
   confirmText: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 8px' },
 
   // User expand
@@ -681,12 +596,7 @@ const s: Record<string, React.CSSProperties> = {
     padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 5,
   },
   userEmail: { fontSize: 12, color: 'var(--text-primary)' },
-  userRole: { fontSize: 11, color: 'var(--text-muted)', marginTop: 1 },
-  viewBtn: {
-    background: 'transparent', border: '1px solid rgba(163,181,84,0.3)',
-    color: 'var(--accent)', padding: '3px 10px', borderRadius: 4,
-    fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0,
-  },
+  userRole: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1 },
   impWarning: {
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 7, padding: '12px 14px', fontSize: 13, color: 'var(--text-secondary)',
