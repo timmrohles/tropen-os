@@ -13,8 +13,7 @@ const STYLE_LABELS: Record<ChatStyle, string> = {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { paddingTop: 48, paddingBottom: 48 },
-  heading: { fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 32 },
+  page: { paddingTop: 32, paddingBottom: 48 },
   section: {
     background: 'var(--bg-surface)', border: '1px solid var(--border-muted)',
     borderRadius: 10, padding: '20px 24px', marginBottom: 20,
@@ -22,7 +21,7 @@ const s: Record<string, React.CSSProperties> = {
   sectionTitle: {
     fontSize: 12, fontWeight: 700, letterSpacing: '0.07em',
     textTransform: 'uppercase' as const,
-    color: 'var(--text-muted)', marginBottom: 16, display: 'block',
+    color: 'var(--text-tertiary)', marginBottom: 16, display: 'block',
   },
   row: { display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 16 },
   label: { fontSize: 13, color: 'var(--text-secondary)' },
@@ -33,10 +32,11 @@ const s: Record<string, React.CSSProperties> = {
   },
   inputReadonly: { opacity: 0.5, cursor: 'not-allowed' },
   select: {
-    background: 'var(--bg-input)', border: '1px solid var(--border)',
-    color: 'var(--text-primary)', borderRadius: 6, padding: '8px 12px',
-    fontSize: 14, outline: 'none', width: '100%', cursor: 'pointer',
-    boxSizing: 'border-box' as const,
+    background: '#fff', border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)', borderRadius: 8,
+    padding: '8px 32px 8px 12px', fontSize: 14, outline: 'none',
+    width: '100%', cursor: 'pointer',
+    boxSizing: 'border-box' as const, appearance: 'none' as const,
   },
   sliderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sliderValue: { color: 'var(--text-primary)', fontWeight: 600, fontSize: 13 },
@@ -45,17 +45,12 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center', marginBottom: 16,
   },
   toggleLabel: { fontSize: 13, color: 'var(--text-secondary)' },
-  toggleNote: { fontSize: 11, color: 'var(--text-muted)', marginTop: 4 },
-  saveBtn: {
-    background: 'var(--accent)', color: '#0d1f16',
-    border: 'none', borderRadius: 6, padding: '10px 24px',
-    fontSize: 14, fontWeight: 700, cursor: 'pointer',
-  },
-  comingSoon: { fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8, display: 'block' },
-  hint: { fontSize: 11, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5, display: 'block' },
+  toggleNote: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 },
+  comingSoon: { fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic', marginBottom: 8, display: 'block' },
+  hint: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, lineHeight: 1.5, display: 'block' },
   hintBest: { fontSize: 11, color: 'rgba(163,181,84,0.8)', marginTop: 3, display: 'block' },
   hintWarn: { fontSize: 11, color: 'rgba(251,191,36,0.8)', marginTop: 3, display: 'block' },
-  expertToggle: { display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12, padding: '8px 0', marginTop: 4 },
+  expertToggle: { display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '8px 0', marginTop: 4 },
 }
 
 export default function SettingsPage() {
@@ -127,7 +122,12 @@ export default function SettingsPage() {
 
   return (
     <div className="content-narrow" style={s.page}>
-      <h1 style={s.heading}>Einstellungen</h1>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Einstellungen</h1>
+          <p className="page-header-sub">Profil, Präferenzen und Datenschutz</p>
+        </div>
+      </div>
 
       {/* Mein Konto */}
       <div style={s.section}>
@@ -278,7 +278,7 @@ export default function SettingsPage() {
 
         {impSessions.length > 0 && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>
               Letzte Sessions
             </div>
             {impSessions.map(sess => (
@@ -288,7 +288,7 @@ export default function SettingsPage() {
                     Tropen Admin · {new Date(sess.started_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, {new Date(sess.started_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} · {sess.duration_minutes} Min
                   </div>
                   {sess.ticket_ref && (
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{sess.ticket_ref}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{sess.ticket_ref}</div>
                   )}
                 </div>
               </div>
@@ -302,11 +302,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <button
-        style={s.saveBtn}
-        onClick={save}
-        disabled={saving}
-      >
+      <button className="btn btn-primary" onClick={save} disabled={saving} style={{ marginTop: 8 }}>
         {saved ? '✓ Gespeichert' : saving ? 'Speichern…' : 'Speichern'}
       </button>
     </div>

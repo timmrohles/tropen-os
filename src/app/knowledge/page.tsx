@@ -45,9 +45,9 @@ function formatBytes(bytes: number): string {
 
 function fileIcon(type: string | null) {
   switch (type?.toLowerCase()) {
-    case 'pdf':  return <FilePdf size={20} weight="fill" style={{ color: '#ef4444' }} />
-    case 'docx': return <FileDoc size={20} weight="fill" style={{ color: '#3b82f6' }} />
-    case 'csv':  return <FileCsv size={20} weight="fill" style={{ color: '#22c55e' }} />
+    case 'pdf':  return <FilePdf size={20} weight="fill" style={{ color: 'var(--error)' }} />
+    case 'docx': return <FileDoc size={20} weight="fill" style={{ color: 'var(--accent)' }} />
+    case 'csv':  return <FileCsv size={20} weight="fill" style={{ color: 'var(--accent)' }} />
     default:     return <FileText size={20} weight="fill" style={{ color: 'var(--text-tertiary)' }} />
   }
 }
@@ -205,26 +205,31 @@ export default function KnowledgePage() {
     { id: 'project', label: 'Projekt-Wissen', icon: <FolderOpen size={16} weight="fill" /> },
   ]
 
+  if (loading && docs.length === 0) return (
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
+    </div>
+  )
+
   return (
-    <div className="kb-wrap content-max">
-      {/* Header */}
-      <div className="kb-header">
-        <h1 className="kb-title">
-          <Books size={24} weight="fill" style={{ verticalAlign: 'middle', marginRight: 10, color: '#a3b554' }} />
-          Wissensbasis
-        </h1>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title">Wissensbasis</h1>
+          <p className="page-header-sub">Dokumente für Toro – Org, User und Projekt-Ebene</p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="kb-tabs">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {TABS.map(t => {
           const disabled = t.adminOnly && !isAdmin
           return (
             <button
               key={t.id}
-              className={`kb-tab${tab === t.id ? ' kb-tab--active' : ''}${disabled ? ' kb-tab--disabled' : ''}`}
               onClick={() => !disabled && setTab(t.id)}
               disabled={disabled}
+              className={tab === t.id ? 'chip chip--active' : 'chip'}
             >
               {t.icon}
               {t.label}
