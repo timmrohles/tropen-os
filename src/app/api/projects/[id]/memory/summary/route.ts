@@ -1,35 +1,9 @@
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabase
-    .from('users').select('organization_id, role').eq('id', user.id).single()
-  if (!profile?.organization_id) return null
-  return { id: user.id, organization_id: profile.organization_id, role: profile.role } as {
-    id: string; organization_id: string; role: string
-  }
-}
-
-async function verifyProjectAccess(
-  projectId: string,
-  me: { id: string; organization_id: string; role: string }
-): Promise<boolean> {
-  if (me.role === 'superadmin') return true
-  const { data: project } = await supabaseAdmin
-    .from('projects').select('department_id').eq('id', projectId).is('deleted_at', null).single()
-  if (!project) return false
-  const { data } = await supabaseAdmin
-    .from('departments').select('id')
-    .eq('id', project.department_id).eq('organization_id', me.organization_id).single()
-  return !!data
-}
 
 // POST /api/projects/[id]/memory/summary
 // Body: { conversation_id }
@@ -51,6 +25,15 @@ export async function POST(
 
   if (!body.conversation_id)
     return NextResponse.json({ error: 'conversation_id fehlt' }, { status: 400 })
+
+  // Verify conversation belongs to this project
+  const { data: conv } = await supabaseAdmin
+    .from('conversations')
+    .select('project_id')
+    .eq('id', body.conversation_id)
+    .single()
+  if (!conv || conv.project_id !== id)
+    return NextResponse.json({ error: 'Conversation gehört nicht zu diesem Projekt' }, { status: 403 })
 
   // Load messages
   const { data: messages } = await supabaseAdmin
@@ -82,7 +65,10 @@ ${convText}`,
     }],
   })
 
-  const summary = (response.content[0] as { type: string; text: string }).text.trim()
+  const firstBlock = response.content[0]
+  if (!firstBlock || firstBlock.type !== 'text')
+    return NextResponse.json({ error: 'AI-Zusammenfassung fehlgeschlagen' }, { status: 500 })
+  const summary = firstBlock.text.trim()
 
   // Insert as frozen summary — APPEND ONLY
   const { data, error } = await supabaseAdmin

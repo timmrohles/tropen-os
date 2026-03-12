@@ -1,21 +1,6 @@
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-  if (!profile?.organization_id) return null
-  return { id: user.id, organization_id: profile.organization_id, role: profile.role } as {
-    id: string; organization_id: string; role: string
-  }
-}
+import { getAuthUser } from '@/lib/api/projects'
 
 async function verifyDeptOrg(departmentId: string, organizationId: string): Promise<boolean> {
   const { data } = await supabaseAdmin
@@ -87,11 +72,14 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Auto-add creator as admin participant
-  await supabaseAdmin.from('project_participants').insert({
+  const { error: participantErr } = await supabaseAdmin.from('project_participants').insert({
     project_id: project.id,
     user_id: me.id,
     role: 'admin',
   })
+  if (participantErr) {
+    console.error('[projects] participant insert error:', participantErr.message)
+  }
 
   return NextResponse.json(project)
 }
