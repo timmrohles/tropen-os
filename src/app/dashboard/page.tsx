@@ -69,16 +69,6 @@ function fmt(n: number) {
 // ------------------------------------------------------------------
 // Shared styles
 // ------------------------------------------------------------------
-const card = {
-  background: 'rgba(255,255,255,0.72)',
-  backdropFilter: 'blur(20px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-  border: '1px solid rgba(255,255,255,0.65)',
-  borderRadius: 12,
-  padding: '16px 20px',
-  boxShadow: '0 2px 12px rgba(26,23,20,0.06)',
-}
-
 const labelStyle = {
   fontSize: 11,
   color: 'var(--text-tertiary)',
@@ -262,37 +252,35 @@ export default async function DashboardPage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Dashboard
-            </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 2, marginBottom: 0 }}>
-              {isPrivileged ? 'Organisations-Übersicht' : 'Deine Nutzung'}
-            </p>
+        <div className="page-header" style={{ marginBottom: 24 }}>
+          <div className="page-header-text">
+            <h1 className="page-header-title">Dashboard</h1>
+            <p className="page-header-sub">{isPrivileged ? 'Organisations-Übersicht' : 'Deine Nutzung'}</p>
           </div>
-          <Suspense fallback={
-            <div style={{ height: 36, width: 240, background: 'rgba(255,255,255,0.5)', borderRadius: 8 }} />
-          }>
-            <PeriodTabs />
-          </Suspense>
+          <div className="page-header-actions">
+            <Suspense fallback={
+              <div style={{ height: 36, width: 240, background: 'rgba(255,255,255,0.5)', borderRadius: 8 }} />
+            }>
+              <PeriodTabs />
+            </Suspense>
+          </div>
         </div>
 
         {/* KPI Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-          <div style={card}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={labelStyle}>Gesamtkosten</p>
             <p style={metricStyle}>{fmt(totalCost)}</p>
           </div>
-          <div style={card}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={labelStyle}>Anfragen</p>
             <p style={metricStyle}>{requestCount.toLocaleString('de-DE')}</p>
           </div>
-          <div style={card}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={labelStyle}>Top-Modell</p>
             <p style={{ ...metricAccentStyle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topModel}</p>
           </div>
-          <div style={card}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={labelStyle}>{isPrivileged ? 'Aktive User' : 'Aktive Tage'}</p>
             <p style={metricStyle}>
               {isPrivileged ? activeUsers : userTable[0]?.lastActive ?? '—'}
@@ -314,7 +302,7 @@ export default async function DashboardPage({
         </div>
 
         {/* Chart */}
-        <div style={card}>
+        <div className="card" style={{ padding: '16px 20px' }}>
           <p style={{ ...labelStyle, marginBottom: 16 }}>Kosten – letzte 30 Tage</p>
           <CostChart data={chartData} />
         </div>
@@ -322,83 +310,87 @@ export default async function DashboardPage({
         {/* Tables */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {/* Department-Tabelle */}
-          <div style={card}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={{ ...labelStyle, marginBottom: 16 }}>Nach Department</p>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Department</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Top-Modell</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {wsTable.length === 0 ? (
+            <div className="table-scroll">
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
-                      Keine Daten für diesen Zeitraum
-                    </TableCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Department</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Top-Modell</TableHeaderCell>
                   </TableRow>
-                ) : (
-                  wsTable.map((ws, i) => (
-                    <TableRow key={i}>
-                      <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{ws.name}</TableCell>
-                      <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{ws.requests}</TableCell>
-                      <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
-                        {fmt(ws.cost)}
-                      </TableCell>
-                      <TableCell>
-                        <span style={{
-                          display: 'inline-block', fontSize: 11, padding: '2px 8px',
-                          borderRadius: 999, background: 'rgba(26,46,35,0.08)',
-                          color: 'var(--text-secondary)', border: '1px solid rgba(26,46,35,0.12)',
-                        }}>
-                          {ws.topModel}
-                        </span>
+                </TableHead>
+                <TableBody>
+                  {wsTable.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
+                        Keine Daten für diesen Zeitraum
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    wsTable.map((ws, i) => (
+                      <TableRow key={i}>
+                        <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{ws.name}</TableCell>
+                        <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{ws.requests}</TableCell>
+                        <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                          {fmt(ws.cost)}
+                        </TableCell>
+                        <TableCell>
+                          <span style={{
+                            display: 'inline-block', fontSize: 11, padding: '2px 8px',
+                            borderRadius: 999, background: 'rgba(26,46,35,0.08)',
+                            color: 'var(--text-secondary)', border: '1px solid rgba(26,46,35,0.12)',
+                          }}>
+                            {ws.topModel}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* User-Tabelle */}
-          <div style={card}>
+          <div className="card" style={{ padding: '16px 20px' }}>
             <p style={{ ...labelStyle, marginBottom: 16 }}>
               {isPrivileged ? 'Nach User' : 'Deine Nutzung'}
             </p>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Name</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
-                  <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Letzter Tag</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {userTable.length === 0 ? (
+            <div className="table-scroll">
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
-                      Keine Daten für diesen Zeitraum
-                    </TableCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Name</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
+                    <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Letzter Tag</TableHeaderCell>
                   </TableRow>
-                ) : (
-                  userTable.map((u, i) => (
-                    <TableRow key={i}>
-                      <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.name}</TableCell>
-                      <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{u.requests}</TableCell>
-                      <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
-                        {fmt(u.cost)}
+                </TableHead>
+                <TableBody>
+                  {userTable.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontSize: 13 }}>
+                        Keine Daten für diesen Zeitraum
                       </TableCell>
-                      <TableCell style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{u.lastActive}</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    userTable.map((u, i) => (
+                      <TableRow key={i}>
+                        <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.name}</TableCell>
+                        <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{u.requests}</TableCell>
+                        <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                          {fmt(u.cost)}
+                        </TableCell>
+                        <TableCell style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{u.lastActive}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
 

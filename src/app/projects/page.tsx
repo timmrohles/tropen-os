@@ -32,6 +32,15 @@ interface Agent {
 type AgentVisibility = 'private' | 'org'
 const EMPTY_AGENT_FORM: { name: string; description: string; system_prompt: string; visibility: AgentVisibility } = { name: '', description: '', system_prompt: '', visibility: 'private' }
 
+const inp: React.CSSProperties = {
+  width: '100%', background: '#fff', border: '1px solid var(--border-medium)',
+  borderRadius: 8, padding: '8px 12px', color: 'var(--text-primary)',
+  fontSize: 13, boxSizing: 'border-box', outline: 'none',
+  fontFamily: 'var(--font-sans, system-ui)',
+}
+const textarea: React.CSSProperties = { ...inp, minHeight: 96, resize: 'vertical' as const }
+const sel: React.CSSProperties = { ...inp }
+
 export default function ProjectsPage() {
   const [tab, setTab] = useState<Tab>('projects')
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
@@ -46,7 +55,6 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
 
-  // Agents state
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentsLoading, setAgentsLoading] = useState(false)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
@@ -217,361 +225,378 @@ export default function ProjectsPage() {
     }
   }
 
-  const s: Record<string, React.CSSProperties> = {
-    page:        { minHeight: '100vh', background: 'var(--bg-base)' },
-    inner:       { paddingTop: 32, paddingBottom: 32 },
-    header:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
-    h1:          { fontSize: 'var(--text-xl)', fontFamily: 'var(--font-display)', margin: 0 },
-    tabs:        { display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid var(--color-border)', paddingBottom: 0 },
-    tab:         { padding: '8px 16px', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '2px solid transparent', cursor: 'pointer', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)' },
-    tabActive:   { background: 'var(--bg-surface)', borderBottom: '2px solid var(--accent)' },
-    tabDisabled: { opacity: 0.5, cursor: 'default' },
-    cols:        { display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 },
-    grid:        { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 },
-    card:        { background: 'var(--bg-surface)', borderRadius: 10, padding: '16px', border: '1px solid var(--color-border)', cursor: 'pointer' },
-    cardActive:  { background: 'var(--bg-surface)', borderRadius: 10, padding: '16px', border: '1px solid var(--accent)', cursor: 'pointer' },
-    detail:      { background: 'var(--bg-surface)', borderRadius: 10, border: '1px solid var(--color-border)', padding: 24 },
-    fieldWrap:   { marginBottom: 16 },
-    label:       { display: 'block', fontSize: 'var(--text-xs)', marginBottom: 6 },
-    input:       { width: '100%', background: 'var(--bg-base)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '8px 10px', color: 'var(--color-text)', fontSize: 'var(--text-sm)', boxSizing: 'border-box' },
-    textarea:    { width: '100%', background: 'var(--bg-base)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '8px 10px', color: 'var(--color-text)', fontSize: 'var(--text-sm)', minHeight: 100, resize: 'vertical', boxSizing: 'border-box' },
-    select:      { width: '100%', background: 'var(--bg-base)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '8px 10px', color: 'var(--color-text)', fontSize: 'var(--text-sm)' },
-    hintBox:     { background: 'rgba(163,181,84,0.08)', border: '1px solid rgba(163,181,84,0.25)', borderRadius: 8, padding: '12px 14px', marginBottom: 8, fontSize: 'var(--text-xs)' },
-    hintRow:     { display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 },
-    actions:     { display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 },
-    btnPrimary:  { padding: '8px 16px', background: 'var(--accent)', color: '#0d1f16', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 6 },
-    btnDanger:   { padding: '8px 16px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 6 },
-    placeholder: { textAlign: 'center', padding: '60px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 },
-    tplGrid:     { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 },
-    tplCard:     { background: 'var(--bg-surface)', borderRadius: 10, padding: 20, border: '1px solid var(--color-border)' },
-    addBtn:      { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(163,181,84,0.12)', border: '1px solid rgba(163,181,84,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--accent)' },
-    chatCount:   { fontSize: 'var(--text-xs)', padding: '2px 8px', background: 'rgba(255,255,255,0.07)', borderRadius: 20, display: 'inline-block' },
-    infoBox:     { display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, marginTop: 6, fontSize: 'var(--text-xs)' },
-  }
-
   if (loading) return (
-    <div style={s.page}><div className="content-max" style={s.inner}><p className="t-dezent">Lädt…</p></div></div>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>Lädt…</p>
+    </div>
   )
 
+  const TABS: { id: Tab; label: string; icon: React.ReactNode; active: boolean }[] = [
+    { id: 'projects',   label: 'Meine Workspaces', icon: <FolderOpen size={15} weight="bold" />, active: true },
+    { id: 'agents',     label: 'Meine Agenten',    icon: <Robot size={15} weight="bold" />,      active: true },
+    { id: 'community',  label: 'Community',         icon: <Users size={15} weight="bold" />,      active: false },
+    { id: 'templates',  label: 'Vorlagen',          icon: <BookOpen size={15} weight="bold" />,   active: true },
+  ]
+
   return (
-    <div style={s.page}>
-      <div className="content-max" style={s.inner}>
-        <div style={s.header}>
-          <h1 style={s.h1} className="t-primary">Projekte & Vorlagen</h1>
+    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .projects-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="page-header-text">
+          <h1 className="page-header-title">Workspaces</h1>
+          <p className="page-header-sub">Organisiere deine Chats, Agenten und Vorlagen</p>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div style={s.tabs}>
-          {([
-            { id: 'projects',   label: 'Meine Projekte', icon: <FolderOpen size={16} />, active: true  },
-            { id: 'agents',     label: 'Meine Agenten',  icon: <Robot size={16} />,      active: true  },
-            { id: 'community',  label: 'Community',      icon: <Users size={16} />,      active: false },
-            { id: 'templates',  label: 'Vorlagen',       icon: <BookOpen size={16} />,   active: true  },
-          ] as { id: Tab; label: string; icon: React.ReactNode; active: boolean }[]).map(t => (
-            <button
-              key={t.id}
-              style={{ ...s.tab, ...(tab === t.id ? s.tabActive : {}), ...(!t.active ? s.tabDisabled : {}) }}
-              className={tab === t.id ? 't-primary' : 't-secondary'}
-              onClick={() => t.active && setTab(t.id)}
-            >
-              {t.icon}
-              {t.label}
-              {!t.active && <Lock size={12} style={{ marginLeft: 2 }} />}
-            </button>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0, flexWrap: 'wrap' }}>
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => t.active && setTab(t.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+              borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+              cursor: t.active ? 'pointer' : 'default',
+              fontSize: 13,
+              fontWeight: tab === t.id ? 600 : 400,
+              color: tab === t.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+              opacity: t.active ? 1 : 0.5,
+              borderRadius: '6px 6px 0 0',
+              transition: 'all var(--t-fast)',
+              fontFamily: 'var(--font-sans, system-ui)',
+            }}
+          >
+            {t.icon}
+            {t.label}
+            {!t.active && <Lock size={11} style={{ marginLeft: 2 }} />}
+          </button>
+        ))}
+      </div>
 
-        {/* Tab: Meine Projekte */}
-        {tab === 'projects' && (
-          <div style={s.cols}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                {creating ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      autoFocus
-                      value={newName}
-                      onChange={e => setNewName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewName('') } }}
-                      placeholder="Projektname…"
-                      style={{ ...s.input, width: 200 }}
-                    />
-                    <button style={s.btnPrimary} onClick={handleCreate}>Erstellen</button>
-                    <button style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }} className="t-dezent" onClick={() => { setCreating(false); setNewName('') }}><X size={16} /></button>
-                  </div>
-                ) : (
-                  <button style={s.addBtn} onClick={() => setCreating(true)}><Plus size={16} /> Neues Projekt</button>
-                )}
-              </div>
-
-              {projects.length === 0 ? (
-                <div style={s.placeholder}>
-                  <FolderOpen size={48} weight="thin" color="rgba(255,255,255,0.2)" />
-                  <p className="t-dezent">Noch keine Projekte</p>
-                  <button style={s.addBtn} onClick={() => setCreating(true)}><Plus size={16} /> Erstes Projekt anlegen</button>
+      {/* Tab: Meine Workspaces */}
+      {tab === 'projects' && (
+        <div className="projects-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 400px', gap: 20, alignItems: 'start' }}>
+          {/* List */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-header-label">Workspaces</span>
+              {creating ? (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    autoFocus
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewName('') } }}
+                    placeholder="Workspace-Name…"
+                    style={{ ...inp, width: 180, padding: '5px 10px' }}
+                  />
+                  <button className="btn btn-primary btn-sm" onClick={handleCreate}>Erstellen</button>
+                  <button className="btn-icon" onClick={() => { setCreating(false); setNewName('') }} style={{ color: 'var(--text-tertiary)' }}>
+                    <X size={14} />
+                  </button>
                 </div>
               ) : (
-                <div style={s.grid}>
-                  {projects.map(p => {
-                    const count = p.conversations?.[0]?.count ?? 0
-                    return (
-                      <div key={p.id} style={selected?.id === p.id ? s.cardActive : s.card} onClick={() => selectProject(p)}>
-                        <p className="t-primary" style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.name}</p>
-                        {p.description && (
-                          <p className="t-secondary" style={{ margin: '0 0 8px', fontSize: 'var(--text-xs)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                            {p.description}
-                          </p>
-                        )}
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {p.tone && <span className="chip">{TONE_LABELS[p.tone] ?? p.tone}</span>}
-                          <span style={s.chatCount} className="t-dezent">{count} Chats</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>
+                  <Plus size={14} weight="bold" /> Neu
+                </button>
               )}
             </div>
-
-            {/* Detail-Panel */}
-            {selected ? (
-              <div style={s.detail}>
-                <p className="t-primary" style={{ margin: '0 0 20px', fontWeight: 600, fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <PencilSimple size={16} />Projekt bearbeiten
-                </p>
-
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Name</label>
-                  <input style={s.input} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-                </div>
-
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Beschreibung</label>
-                  <input style={s.input} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung…" />
-                </div>
-
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Projekt-Kontext für Toro</label>
-                  <div style={s.hintBox}>
-                    <div style={s.hintRow}>
-                      <LightbulbFilament size={16} color="var(--accent)" weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <span className="t-secondary">Schreib hier alles, was Toro über dieses Projekt wissen soll – Hintergrund, Ziele, Einschränkungen, wichtige Begriffe.</span>
-                    </div>
-                    <p className="t-dezent" style={{ margin: '6px 0 0 24px', fontStyle: 'italic' }}>
-                      Beispiel: „Dieses Projekt ist für den Launch unserer App ‚Waldpfad'. Zielgruppe: 30–50 jährige Outdoor-Enthusiasten. Budget: 50.000 €. Launch: 15. Mai 2026."
-                    </p>
-                  </div>
-                  <textarea style={s.textarea} value={form.context} onChange={e => setForm(f => ({ ...f, context: e.target.value }))} placeholder="Kontext für Toro…" />
-                  <div style={s.infoBox}>
-                    <Info size={14} color="rgba(255,255,255,0.4)" style={{ flexShrink: 0, marginTop: 1 }} />
-                    <span className="t-dezent">Auto-Extraktion (Toro liest Chats und ergänzt den Kontext automatisch) kommt in Phase 3.</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
-                  <div>
-                    <label style={s.label} className="t-dezent">Ton</label>
-                    <select style={s.select} value={form.tone} onChange={e => setForm(f => ({ ...f, tone: e.target.value }))}>
-                      {Object.entries(TONE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={s.label} className="t-dezent">Sprache</label>
-                    <select style={s.select} value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
-                      {Object.entries(LANG_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={s.label} className="t-dezent">Zielgruppe</label>
-                    <select style={s.select} value={form.target_audience} onChange={e => setForm(f => ({ ...f, target_audience: e.target.value }))}>
-                      {Object.entries(AUD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {saveError && (
-                  <p style={{ margin: '0 0 12px', fontSize: 'var(--text-xs)', color: '#ef4444' }}>{saveError}</p>
-                )}
-                <div style={s.actions}>
-                  {deleteConfirm ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span className="t-secondary" style={{ fontSize: 'var(--text-xs)' }}>Wirklich löschen?</span>
-                      <button style={{ ...s.btnDanger, padding: '6px 12px' }} onClick={handleDelete}>Ja</button>
-                      <button style={{ padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer' }} className="t-dezent" onClick={() => setDeleteConfirm(false)}>Nein</button>
-                    </div>
-                  ) : (
-                    <button style={{ ...s.btnDanger, padding: '8px 12px' }} onClick={() => setDeleteConfirm(true)}><Trash size={15} /></button>
-                  )}
-                  <button style={s.btnPrimary} onClick={handleSave} disabled={saving}>
-                    <FloppyDisk size={15} />{saving ? 'Speichert…' : 'Speichern'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ ...s.detail, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p className="t-dezent" style={{ textAlign: 'center', fontSize: 'var(--text-sm)' }}>Projekt auswählen oder neu anlegen</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab: Meine Agenten */}
-        {tab === 'agents' && (
-          <div style={s.cols}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                <button style={s.addBtn} onClick={() => { setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM); setCreatingAgent(true) }}>
-                  <Plus size={16} /> Neuer Agent
-                </button>
-              </div>
-
-              {agentsLoading ? (
-                <p className="t-dezent">Lädt…</p>
-              ) : agents.length === 0 && !creatingAgent ? (
-                <div style={s.placeholder}>
-                  <Robot size={48} weight="thin" color="rgba(255,255,255,0.2)" />
-                  <p className="t-primary" style={{ margin: 0, fontWeight: 600 }}>Noch keine Agenten</p>
-                  <p className="t-secondary" style={{ maxWidth: 380, textAlign: 'center', margin: 0, fontSize: 'var(--text-sm)' }}>
-                    Erstelle eigene Agenten mit individuellem System-Prompt. Weise sie Projekten zu oder teile sie mit deinem Team.
-                  </p>
-                  <button style={s.addBtn} onClick={() => setCreatingAgent(true)}>
-                    <Plus size={16} /> Ersten Agenten anlegen
+            <div className="card-body" style={{ padding: '4px' }}>
+              {projects.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <FolderOpen size={40} weight="thin" style={{ color: 'var(--text-tertiary)' }} />
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-tertiary)' }}>Noch keine Workspaces</p>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setCreating(true)}>
+                    <Plus size={14} weight="bold" /> Ersten Workspace anlegen
                   </button>
                 </div>
               ) : (
-                <div style={s.grid}>
-                  {agents.map(a => (
-                    <div
-                      key={a.id}
-                      style={selectedAgent?.id === a.id ? s.cardActive : s.card}
-                      onClick={() => selectAgent(a)}
+                projects.map(p => {
+                  const count = p.conversations?.[0]?.count ?? 0
+                  const active = selected?.id === p.id
+                  return (
+                    <button
+                      key={p.id}
+                      className={`list-row${active ? ' list-row--active' : ''}`}
+                      onClick={() => selectProject(p)}
+                      style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Robot size={15} color="var(--accent)" />
-                        <p className="t-primary" style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-sm)' }}>{a.name}</p>
-                      </div>
-                      {a.description && (
-                        <p className="t-secondary" style={{ margin: '0 0 8px', fontSize: 'var(--text-xs)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {a.description}
-                        </p>
-                      )}
-                      <span className="chip t-dezent">{a.visibility === 'org' ? 'Team sichtbar' : 'Privat'}</span>
+                      <FolderOpen size={16} weight="fill" style={{ flexShrink: 0, color: active ? 'var(--active-text)' : 'var(--accent)' }} />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        {p.description && (
+                          <span style={{ fontSize: 12, color: active ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' as const }}>
+                            {p.description}
+                          </span>
+                        )}
+                      </span>
+                      <span className="badge" style={active ? { background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)' } : {}}>
+                        {count} Chats
+                      </span>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Detail Panel */}
+          {selected ? (
+            <div className="card">
+              <div className="card-header">
+                <span className="card-header-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PencilSimple size={13} /> Workspace bearbeiten
+                </span>
+              </div>
+              <div className="card-body" style={{ padding: '16px' }}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Name</label>
+                  <input style={inp} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Beschreibung</label>
+                  <input style={inp} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung…" />
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Kontext für Toro</label>
+                  <div style={{ background: 'var(--accent-light)', border: '1px solid rgba(45,122,80,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8 }}>
+                    <LightbulbFilament size={15} weight="fill" style={{ flexShrink: 0, marginTop: 1, color: 'var(--accent)' }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Was soll Toro über diesen Workspace wissen? Hintergrund, Ziele, Einschränkungen, wichtige Begriffe.</span>
+                  </div>
+                  <textarea style={textarea} value={form.context} onChange={e => setForm(f => ({ ...f, context: e.target.value }))} placeholder="Kontext für Toro…" />
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', padding: '8px 10px', background: 'var(--bg-surface-2)', borderRadius: 6, marginTop: 6 }}>
+                    <Info size={13} style={{ flexShrink: 0, marginTop: 1, color: 'var(--text-tertiary)' }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Auto-Extraktion kommt in Phase 3.</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                  {[
+                    { label: 'Ton', key: 'tone', opts: TONE_LABELS, val: form.tone },
+                    { label: 'Sprache', key: 'language', opts: LANG_LABELS, val: form.language },
+                    { label: 'Zielgruppe', key: 'target_audience', opts: AUD_LABELS, val: form.target_audience },
+                  ].map(({ label, key, opts, val }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>{label}</label>
+                      <select style={sel} value={val} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
+                        {Object.entries(opts).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
                     </div>
                   ))}
                 </div>
+
+                {saveError && (
+                  <p style={{ margin: '0 0 12px', fontSize: 12, color: '#ef4444' }}>{saveError}</p>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                  {deleteConfirm ? (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Wirklich löschen?</span>
+                      <button className="btn btn-danger btn-sm" onClick={handleDelete}>Ja</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setDeleteConfirm(false)}>Nein</button>
+                    </div>
+                  ) : (
+                    <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(true)}>
+                      <Trash size={14} />
+                    </button>
+                  )}
+                  <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+                    <FloppyDisk size={14} weight="bold" />{saving ? 'Speichert…' : 'Speichern'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>Workspace auswählen oder neu anlegen</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Meine Agenten */}
+      {tab === 'agents' && (
+        <div className="projects-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 400px', gap: 20, alignItems: 'start' }}>
+          <div className="card">
+            <div className="card-header">
+              <span className="card-header-label">Agenten</span>
+              <button className="btn btn-primary btn-sm" onClick={() => { setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM); setCreatingAgent(true) }}>
+                <Plus size={14} weight="bold" /> Neu
+              </button>
+            </div>
+            <div className="card-body" style={{ padding: '4px' }}>
+              {agentsLoading ? (
+                <p style={{ padding: '20px', fontSize: 13, color: 'var(--text-tertiary)' }}>Lädt…</p>
+              ) : agents.length === 0 && !creatingAgent ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <Robot size={40} weight="thin" style={{ color: 'var(--text-tertiary)' }} />
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Noch keine Agenten</p>
+                  <p style={{ maxWidth: 320, textAlign: 'center', margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                    Erstelle Agenten mit individuellem System-Prompt und weise sie Workspaces zu.
+                  </p>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setCreatingAgent(true)}>
+                    <Plus size={14} weight="bold" /> Ersten Agenten anlegen
+                  </button>
+                </div>
+              ) : (
+                agents.map(a => {
+                  const active = selectedAgent?.id === a.id
+                  return (
+                    <button
+                      key={a.id}
+                      className={`list-row${active ? ' list-row--active' : ''}`}
+                      onClick={() => selectAgent(a)}
+                      style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                    >
+                      <Robot size={16} weight="fill" style={{ flexShrink: 0, color: active ? 'var(--active-text)' : 'var(--accent)' }} />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                        {a.description && (
+                          <span style={{ fontSize: 12, color: active ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' as const }}>
+                            {a.description}
+                          </span>
+                        )}
+                      </span>
+                      <span className="badge" style={active ? { background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)' } : {}}>
+                        {a.visibility === 'org' ? 'Team' : 'Privat'}
+                      </span>
+                    </button>
+                  )
+                })
               )}
             </div>
+          </div>
 
-            {/* Agent Detail/Create Panel */}
-            {(selectedAgent || creatingAgent) ? (
-              <div style={s.detail}>
-                <p className="t-primary" style={{ margin: '0 0 20px', fontWeight: 600, fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Robot size={16} />{creatingAgent && !selectedAgent ? 'Neuer Agent' : 'Agent bearbeiten'}
-                </p>
-
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Name</label>
-                  <input style={s.input} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="z.B. Marketing-Texter" />
+          {(selectedAgent || creatingAgent) ? (
+            <div className="card">
+              <div className="card-header">
+                <span className="card-header-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Robot size={13} /> {creatingAgent && !selectedAgent ? 'Neuer Agent' : 'Agent bearbeiten'}
+                </span>
+              </div>
+              <div className="card-body" style={{ padding: '16px' }}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Name</label>
+                  <input style={inp} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="z.B. Marketing-Texter" />
                 </div>
 
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Beschreibung</label>
-                  <input style={s.input} value={agentForm.description} onChange={e => setAgentForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung…" />
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Beschreibung</label>
+                  <input style={inp} value={agentForm.description} onChange={e => setAgentForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung…" />
                 </div>
 
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">System-Prompt</label>
-                  <div style={s.hintBox}>
-                    <div style={s.hintRow}>
-                      <LightbulbFilament size={16} color="var(--accent)" weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <span className="t-secondary">Erkläre dem Agenten seine Rolle, seinen Ton und seine Aufgaben. Dieser Text wird bei jedem Chat als Kontext mitgeschickt.</span>
-                    </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>System-Prompt</label>
+                  <div style={{ background: 'var(--accent-light)', border: '1px solid rgba(45,122,80,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8 }}>
+                    <LightbulbFilament size={15} weight="fill" style={{ flexShrink: 0, marginTop: 1, color: 'var(--accent)' }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Erkläre dem Agenten seine Rolle, seinen Ton und seine Aufgaben. Wird bei jedem Chat mitgeschickt.</span>
                   </div>
                   <textarea
-                    style={{ ...s.textarea, minHeight: 160 }}
+                    style={{ ...textarea, minHeight: 140 }}
                     value={agentForm.system_prompt}
                     onChange={e => setAgentForm(f => ({ ...f, system_prompt: e.target.value }))}
-                    placeholder="Du bist ein erfahrener Marketing-Texter. Du schreibst klar, überzeugend und zielgruppengerecht…"
+                    placeholder="Du bist ein erfahrener Marketing-Texter…"
                   />
                 </div>
 
-                <div style={s.fieldWrap}>
-                  <label style={s.label} className="t-dezent">Sichtbarkeit</label>
-                  <select style={s.select} value={agentForm.visibility} onChange={e => setAgentForm(f => ({ ...f, visibility: e.target.value as AgentVisibility }))}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>Sichtbarkeit</label>
+                  <select style={sel} value={agentForm.visibility} onChange={e => setAgentForm(f => ({ ...f, visibility: e.target.value as AgentVisibility }))}>
                     <option value="private">Nur ich</option>
                     <option value="org">Ganzes Team</option>
                   </select>
                 </div>
 
-                <div style={s.actions}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   {selectedAgent && (
                     agentDeleteConfirm ? (
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span className="t-secondary" style={{ fontSize: 'var(--text-xs)' }}>Wirklich löschen?</span>
-                        <button style={{ ...s.btnDanger, padding: '6px 12px' }} onClick={handleAgentDelete}>Ja</button>
-                        <button style={{ padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer' }} className="t-dezent" onClick={() => setAgentDeleteConfirm(false)}>Nein</button>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Wirklich löschen?</span>
+                        <button className="btn btn-danger btn-sm" onClick={handleAgentDelete}>Ja</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setAgentDeleteConfirm(false)}>Nein</button>
                       </div>
                     ) : (
-                      <button style={{ ...s.btnDanger, padding: '8px 12px' }} onClick={() => setAgentDeleteConfirm(true)}><Trash size={15} /></button>
+                      <button className="btn btn-danger btn-sm" onClick={() => setAgentDeleteConfirm(true)}>
+                        <Trash size={14} />
+                      </button>
                     )
                   )}
                   {!selectedAgent && (
-                    <button style={{ padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)' }} className="t-dezent" onClick={() => { setCreatingAgent(false); setAgentForm(EMPTY_AGENT_FORM) }}>
-                      <X size={14} /> Abbrechen
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setCreatingAgent(false); setAgentForm(EMPTY_AGENT_FORM) }}>
+                      <X size={13} /> Abbrechen
                     </button>
                   )}
-                  <button style={s.btnPrimary} onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
-                    <FloppyDisk size={15} />{agentSaving ? 'Speichert…' : 'Speichern'}
+                  <button className="btn btn-primary btn-sm" onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
+                    <FloppyDisk size={14} weight="bold" />{agentSaving ? 'Speichert…' : 'Speichern'}
                   </button>
                 </div>
               </div>
-            ) : (
-              <div style={{ ...s.detail, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p className="t-dezent" style={{ textAlign: 'center', fontSize: 'var(--text-sm)' }}>Agenten auswählen oder neu anlegen</p>
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>Agenten auswählen oder neu anlegen</p>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Tab: Community (Platzhalter) */}
-        {tab === 'community' && (
-          <div style={s.placeholder}>
-            <Lock size={48} weight="thin" color="rgba(255,255,255,0.2)" />
-            <p className="t-primary" style={{ margin: 0, fontWeight: 600 }}>Kommt in Phase 4</p>
-            <p className="t-secondary" style={{ maxWidth: 420, textAlign: 'center', margin: 0 }}>
-              Entdecke öffentliche Agenten, teile deine eigenen und baue auf dem Wissen der Community auf. Mit Bewertungen, Nutzungszahlen und kuratierten Featured Agents.
-            </p>
-            <a href="mailto:hello@tropen-os.de?subject=Interesse: Community" style={{ color: 'var(--accent)', fontSize: 'var(--text-sm)', textDecoration: 'none' }}>
-              Interesse melden →
-            </a>
-          </div>
-        )}
+      {/* Tab: Community */}
+      {tab === 'community' && (
+        <div className="card" style={{ padding: '60px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
+          <Lock size={40} weight="thin" style={{ color: 'var(--text-tertiary)' }} />
+          <p style={{ margin: 0, fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>Kommt in Phase 4</p>
+          <p style={{ maxWidth: 420, textAlign: 'center', margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+            Entdecke öffentliche Agenten, teile deine eigenen und baue auf dem Wissen der Community auf.
+          </p>
+          <a href="mailto:hello@tropen-os.de?subject=Interesse: Community" style={{ color: 'var(--accent)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
+            Interesse melden →
+          </a>
+        </div>
+      )}
 
-        {/* Tab: Vorlagen */}
-        {tab === 'templates' && (
-          <div>
-            <p className="t-secondary" style={{ marginBottom: 24, fontSize: 'var(--text-sm)' }}>
-              Starte einen Chat mit einer strukturierten Vorlage.
-            </p>
-            <div style={s.tplGrid}>
-              {TEMPLATES.map(t => (
-                <div key={t.id} style={s.tplCard}>
-                  <p className="t-primary" style={{ margin: '0 0 6px', fontWeight: 600, fontSize: 'var(--text-sm)' }}>{t.label}</p>
+      {/* Tab: Vorlagen */}
+      {tab === 'templates' && (
+        <div>
+          <p style={{ marginBottom: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
+            Starte einen Chat mit einer strukturierten Vorlage.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {TEMPLATES.map(t => (
+              <div key={t.id} className="card">
+                <div className="card-header">
+                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{t.label}</span>
+                </div>
+                <div className="card-body">
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-                    {t.fields.map(f => <span key={f.id} className="chip t-dezent">{f.label}</span>)}
+                    {t.fields.map(f => <span key={f.id} className="chip">{f.label}</span>)}
                   </div>
                   <a
-                    href={workspaceId ? `/workspaces/${workspaceId}?template=${t.id}` : '/workspaces'}
-                    style={{ ...s.addBtn, textDecoration: 'none', display: 'inline-flex' }}
+                    href={workspaceId ? `/workspaces/${workspaceId}?template=${t.id}` : '/chat'}
+                    className="btn btn-ghost btn-sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex' }}
                   >
                     Im Department öffnen
                   </a>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
