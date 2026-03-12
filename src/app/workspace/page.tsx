@@ -69,7 +69,7 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     fontSize: 13,
     background: 'transparent',
     border: 'none',
@@ -111,7 +111,7 @@ const s: Record<string, React.CSSProperties> = {
     left: 10,
     top: '50%',
     transform: 'translateY(-50%)',
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     pointerEvents: 'none' as const,
   },
   typeFilters: {
@@ -150,7 +150,7 @@ const s: Record<string, React.CSSProperties> = {
     lineHeight: 1.3,
   },
   cardPreview: {
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     fontSize: 12,
     lineHeight: 1.5,
     fontFamily: 'monospace',
@@ -167,22 +167,12 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   cardDate: {
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     fontSize: 11,
   },
   cardActions: {
     display: 'flex',
     gap: 6,
-  },
-  iconBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: 'var(--text-muted)',
-    padding: 4,
-    display: 'flex',
-    alignItems: 'center',
-    borderRadius: 4,
   },
   typeBadge: {
     display: 'inline-flex',
@@ -200,7 +190,7 @@ const s: Record<string, React.CSSProperties> = {
   empty: {
     textAlign: 'center' as const,
     padding: '60px 0',
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
   },
   emptyTitle: {
     fontSize: 16,
@@ -212,25 +202,11 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
   },
   loading: {
-    color: 'var(--text-muted)',
+    color: 'var(--text-tertiary)',
     fontSize: 13,
     padding: '40px 0',
     textAlign: 'center' as const,
   },
-}
-
-function filterChipStyle(active: boolean): React.CSSProperties {
-  return {
-    background: active ? 'var(--accent)' : 'var(--bg-surface)',
-    border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-    borderRadius: 20,
-    padding: '5px 12px',
-    color: active ? '#0d2418' : 'var(--text-secondary)',
-    fontSize: 12,
-    fontWeight: active ? 600 : 400,
-    cursor: 'pointer',
-    transition: 'all 150ms',
-  }
 }
 
 function WorkspacePageInner() {
@@ -311,7 +287,7 @@ function WorkspacePageInner() {
           Zurück zum Chat
         </button>
         <h1 style={s.h1}>Artefakte</h1>
-        <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+        <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
           {artifacts.length} gesamt
         </span>
       </div>
@@ -333,7 +309,7 @@ function WorkspacePageInner() {
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
-              style={filterChipStyle(typeFilter === t)}
+              className={typeFilter === t ? 'chip chip--active' : 'chip'}
             >
               {t === 'all' ? 'Alle' : TYPE_LABELS[t]}
             </button>
@@ -380,7 +356,7 @@ function WorkspacePageInner() {
                   <button
                     onClick={() => downloadArtifact(art)}
                     title="Herunterladen"
-                    style={s.iconBtn}
+                    className="btn-icon"
                   >
                     <DownloadSimple size={15} />
                   </button>
@@ -388,11 +364,8 @@ function WorkspacePageInner() {
                     onClick={() => handleDelete(art.id)}
                     title="Löschen"
                     disabled={deletingId === art.id}
-                    style={{
-                      ...s.iconBtn,
-                      color: deletingId === art.id ? 'var(--text-muted)' : 'var(--text-muted)',
-                      opacity: deletingId === art.id ? 0.4 : 1,
-                    }}
+                    className="btn-icon"
+                    style={{ opacity: deletingId === art.id ? 0.4 : 1 }}
                   >
                     <Trash size={15} />
                   </button>
