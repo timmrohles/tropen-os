@@ -185,7 +185,7 @@
   transition: all var(--t-fast); white-space: nowrap;
   box-shadow: var(--shadow-xs);
 }
-.chip:hover { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+.chip:hover { background: var(--accent-dark); border-color: var(--accent-dark); color: var(--active-text); }
 .chip--active {
   background: var(--accent);
   border-color: var(--accent);
