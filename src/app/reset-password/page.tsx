@@ -36,11 +36,11 @@ export default function ResetPasswordPage() {
     }
 
     setSuccess(true)
-    setTimeout(() => router.push('/workspaces'), 2000)
+    setTimeout(() => router.push('/chat'), 2000)
   }
 
   return (
-    <div style={s.wrap}>
+    <div className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
         <p style={s.sub}>Neues Passwort setzen</p>
@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
 
             {error && <p style={s.error}>{error}</p>}
 
-            <button style={s.btn} type="submit" disabled={loading}>
+            <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? 'Wird gespeichert…' : 'Passwort speichern'}
             </button>
           </form>
@@ -97,9 +97,9 @@ const s: Record<string, React.CSSProperties> = {
     boxShadow: 'var(--shadow-md)',
   },
   logo: { fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' },
-  sub: { fontSize: 13, color: '#555', margin: '0 0 32px' },
+  sub: { fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 32px' },
   form: { display: 'flex', flexDirection: 'column', gap: 8 },
-  label: { fontSize: 12, color: '#666', marginBottom: 2 },
+  label: { fontSize: 12, color: 'var(--text-secondary)', marginBottom: 2 },
   input: {
     background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
@@ -110,18 +110,7 @@ const s: Record<string, React.CSSProperties> = {
     outline: 'none',
     marginBottom: 8,
   },
-  btn: {
-    background: '#fff',
-    color: '#000',
-    border: 'none',
-    padding: '11px',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    marginTop: 8,
-  },
   error: { fontSize: 13, color: '#ef4444', margin: '0 0 4px' },
   successBox: { textAlign: 'center' as const, padding: '16px 0' },
-  successText: { fontSize: 14, color: '#a3b554', margin: 0 },
+  successText: { fontSize: 14, color: 'var(--accent)', margin: 0 },
 }

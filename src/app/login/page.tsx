@@ -33,11 +33,7 @@ export default function LoginPage() {
       .limit(1)
       .maybeSingle()
 
-    if (membership?.workspace_id) {
-      router.push(`/workspaces/${membership.workspace_id}`)
-    } else {
-      router.push('/workspaces')  // fallback if no workspace found
-    }
+    router.push('/chat')
   }
 
   return (
@@ -71,7 +67,7 @@ export default function LoginPage() {
 
           {error && <p style={s.error}>{error}</p>}
 
-          <button style={s.btn} type="submit" disabled={loading}>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? 'Anmelden…' : 'Anmelden'}
           </button>
 
@@ -115,18 +111,7 @@ const s: Record<string, React.CSSProperties> = {
     outline: 'none',
     marginBottom: 8
   },
-  btn: {
-    background: 'var(--accent)',
-    color: 'var(--active-text)',
-    border: 'none',
-    padding: '11px',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    marginTop: 8
-  },
-  error: { fontSize: 13, color: '#dc2626', margin: '0 0 4px' },
+  error: { fontSize: 13, color: 'var(--error)', margin: '0 0 4px' },
   forgotLink: {
     fontSize: 12,
     color: 'var(--text-tertiary)',
