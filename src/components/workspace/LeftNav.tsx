@@ -2,25 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import {
-  ChartBar, TreePalm, SignOut, Gear, Plus,
-  ArrowsMerge, FolderSimple, FolderOpen, Trash, Books,
+  TreePalm, SignOut, Gear, Plus,
+  ArrowsMerge, FolderSimple, Trash,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
 import Papierkorb from './Papierkorb'
 import type { Project } from '@/hooks/useWorkspaceState'
-
-function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  const pathname = usePathname()
-  const active = pathname === href || pathname.startsWith(href + '/')
-  return (
-    <Link href={href} className={`lnav-item${active ? ' lnav-item--active' : ''}`}>
-      {icon}
-      <span>{label}</span>
-    </Link>
-  )
-}
 
 type LeftNavProps = {
   workspaceName: string
@@ -136,17 +124,6 @@ export default function LeftNav({
         <span className="lnav-logo-text">{_workspaceName || 'Tropen OS'}</span>
       </div>
 
-      {/* Navigation */}
-      <div className="lnav-section" aria-label="Navigation">
-        <span className="lnav-section-label t-dezent">Navigation</span>
-        <NavItem href="/dashboard" icon={<ChartBar size={22} weight="fill" />} label="Dashboard" />
-        <NavItem href="/projects" icon={<FolderOpen size={22} weight="fill" />} label="Projekte" />
-        <NavItem href="/knowledge" icon={<Books size={22} weight="fill" />} label="Wissen" />
-
-      </div>
-
-      <div className="lnav-divider" />
-
       {/* Chats header – always visible */}
       <div className="lnav-chats-header">
         <h2 className="lnav-section-label t-dezent" style={{ padding: '10px 10px 6px', margin: 0 }}>Chats</h2>
@@ -209,7 +186,7 @@ export default function LeftNav({
                   className="lnav-move-item"
                   onClick={() => { onBulkAssignToProject(p.id); handleFertig() }}
                 >
-                  {p.name}
+                  {p.title}
                 </button>
               ))}
             </div>

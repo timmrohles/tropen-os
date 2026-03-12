@@ -351,9 +351,9 @@ export default function ProjectSidebar({
                     onDoubleClick={(e) => {
                       e.stopPropagation()
                       onSetEditingProjectId(project.id)
-                      onSetEditingProjectName(project.name)
+                      onSetEditingProjectName(project.title)
                     }}
-                  >{project.name}</span>
+                  >{project.title}</span>
                 )}
                 {editingProjectId !== project.id && (
                   <button
@@ -361,7 +361,7 @@ export default function ProjectSidebar({
                     onMouseDown={(e) => {
                       e.stopPropagation()
                       onSetEditingProjectId(project.id)
-                      onSetEditingProjectName(project.name)
+                      onSetEditingProjectName(project.title)
                     }}
                     title="Umbenennen"
                   ><PencilSimple size={11} /></button>

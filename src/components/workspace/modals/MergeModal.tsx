@@ -12,7 +12,7 @@ interface MergeModalProps {
   mergeAfterAction: 'trash' | 'keep' | 'delete'
   mergeProjectId: string | null
   mergeProjectDropOpen: boolean
-  projects: Array<{ id: string; name: string }>
+  projects: Array<{ id: string; title: string }>
   selectedIds: Set<string>
   conversations: Array<{ id: string; title: string | null }>
   selectedArr: string[]
@@ -98,7 +98,7 @@ export function MergeModal({
               <div className="mm-section-label mm-section-label--mt">In Projekt ablegen</div>
               <div className="mm-project-wrap">
                 <button className="mm-project-btn" onClick={() => onSetMergeProjectDropOpen(!mergeProjectDropOpen)}>
-                  {projects.find((p) => p.id === mergeProjectId)?.name ?? 'Kein Projekt'} ▾
+                  {projects.find((p) => p.id === mergeProjectId)?.title ?? 'Kein Projekt'} ▾
                 </button>
                 {mergeProjectDropOpen && (
                   <div className="mm-project-dropdown">
@@ -107,7 +107,7 @@ export function MergeModal({
                     </button>
                     {projects.map((p) => (
                       <button key={p.id} className="mm-project-dropdown-item" onClick={() => { onSetMergeProjectId(p.id); onSetMergeProjectDropOpen(false) }}>
-                        {p.name}
+                        {p.title}
                       </button>
                     ))}
                   </div>

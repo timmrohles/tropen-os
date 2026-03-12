@@ -395,7 +395,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
                     e.stopPropagation()
                     setMenuAnchor(null)
                     assignToProject(menuConv.id, p.id)
-                  }}>{p.name}</button>
+                  }}>{p.title}</button>
                 ))}
               </div>
             )}

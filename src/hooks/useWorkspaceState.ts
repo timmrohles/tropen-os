@@ -42,17 +42,15 @@ export interface Conversation {
 
 export interface Project {
   id: string
-  name: string
-  description?: string | null
-  context?: string | null
-  tone?: string | null
-  language?: string | null
-  target_audience?: string | null
-  memory?: string | null
-  display_order: number
-  conversations?: { count: number }[]
-  created_at?: string
-  updated_at?: string | null
+  title: string
+  goal: string | null
+  instructions: string | null
+  meta: Record<string, unknown>
+  department_id: string
+  created_by: string
+  created_at: string
+  updated_at: string | null
+  conversations?: string[]  // kept for LeftNav grouping
 }
 
 export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'> {
@@ -458,7 +456,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     if (!workspaceId) return
     async function load() {
       const [{ data: ws }, { data: convs }, { data: projs }] = await Promise.all([
-        supabase.from('workspaces').select('name').eq('id', workspaceId).single(),
+        supabase.from('departments').select('name').eq('id', workspaceId).single(),
         supabase
           .from('conversations')
           .select('id, title, created_at, project_id, task_type, deleted_at')
@@ -468,9 +466,9 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
           .limit(50),
         supabase
           .from('projects')
-          .select('id, name, description, context, tone, language, target_audience, memory, display_order, created_at, updated_at')
-          .eq('workspace_id', workspaceId)
-          .order('display_order')
+          .select('id, title, goal, instructions, meta, department_id, created_by, created_at, updated_at')
+          .eq('department_id', workspaceId)
+          .order('created_at')
       ])
       if (ws) setWorkspaceName((ws as { name: string }).name)
       const loadedConvs = (convs ?? []) as Conversation[]
@@ -558,14 +556,16 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   }
 
   async function createProject() {
-    const name = newProjectName.trim()
+    const title = newProjectName.trim()
     setCreatingProject(false)
     setNewProjectName('')
-    if (!name) return
+    if (!title) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
     const { data } = await supabase
       .from('projects')
-      .insert({ workspace_id: workspaceId, name, display_order: projects.length })
-      .select('id, name, display_order')
+      .insert({ department_id: workspaceId, title, goal: null, instructions: null, meta: {}, created_by: user.id })
+      .select('id, title, goal, instructions, meta, department_id, created_by, created_at, updated_at')
       .single()
     if (data) setProjects((prev) => [...prev, data as Project])
   }
@@ -580,8 +580,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     const trimmed = name.trim()
     setEditingProjectId(null)
     if (!trimmed) return
-    await supabase.from('projects').update({ name: trimmed }).eq('id', id)
-    setProjects((prev) => prev.map((p) => p.id === id ? { ...p, name: trimmed } : p))
+    await supabase.from('projects').update({ title: trimmed }).eq('id', id)
+    setProjects((prev) => prev.map((p) => p.id === id ? { ...p, title: trimmed } : p))
   }
 
   async function renameConversation(id: string, title: string) {
@@ -696,10 +696,11 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         const proj = jungleProjects[i]
         const name = (jungleEditName[i] ?? proj.name).trim()
         if (!name || proj.conversations.length === 0) continue
+        const { data: { user: jUser } } = await supabase.auth.getUser()
         const { data: newProj } = await supabase
           .from('projects')
-          .insert({ workspace_id: workspaceId, name, display_order: projects.length + i })
-          .select('id, name, display_order')
+          .insert({ department_id: workspaceId, title: name, goal: null, instructions: null, meta: {}, created_by: jUser?.id ?? '' })
+          .select('id, title, goal, instructions, meta, department_id, created_by, created_at, updated_at')
           .single()
         if (newProj) {
           setProjects((prev) => [...prev, newProj as Project])
