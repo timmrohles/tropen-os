@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { estimateConversationTokens, MODEL_CONTEXT_LIMIT } from '@/lib/token-counter'
 import { createClient } from '@/utils/supabase/client'
 import type { Message } from '@/lib/types'
 
@@ -228,6 +229,7 @@ export interface WorkspaceState {
   filteredConvs: Conversation[]
   activePeriodLabel: string | undefined
   hasActiveFilters: boolean
+  contextPercent: number
 
   // Mobile
   isMobile: boolean
@@ -280,6 +282,16 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConvId, setActiveConvId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+
+  const contextTokens = useMemo(
+    () => estimateConversationTokens(messages),
+    [messages]
+  )
+  const contextPercent = useMemo(
+    () => Math.min(100, Math.round((contextTokens / MODEL_CONTEXT_LIMIT) * 100)),
+    [contextTokens]
+  )
+
   const sendingRef = useRef(false)
   const [input, setInput] = useState('')
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
@@ -1053,6 +1065,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     filteredConvs,
     activePeriodLabel,
     hasActiveFilters,
+    contextPercent,
 
     // User
     userEmail,

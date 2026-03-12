@@ -442,6 +442,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onAssignToProject={assignToProject}
         activeAgentId={activeAgentId}
         onSetActiveAgentId={setActiveAgentId}
+        contextPercent={props.contextPercent}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

@@ -6,6 +6,7 @@ import EmptyState from './EmptyState'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
+import ContextBar from './ContextBar'
 import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 
@@ -27,6 +28,7 @@ interface ChatAreaProps {
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
   activeAgentId?: string | null
   onSetActiveAgentId?: (id: string | null) => void
+  contextPercent: number
 }
 
 export default function ChatArea({
@@ -47,6 +49,7 @@ export default function ChatArea({
   onAssignToProject: _onAssignToProject,
   activeAgentId,
   onSetActiveAgentId,
+  contextPercent,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -103,6 +106,7 @@ export default function ChatArea({
             onOpenBookmarks={() => setBookmarksDrawerOpen(true)}
             onOpenSearch={() => setSearchDrawerOpen(true)}
           />
+          {activeConvId && <ContextBar percent={contextPercent} />}
 
           <div className="carea-messages">
             {messages.map((msg, i) => (
