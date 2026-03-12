@@ -518,6 +518,11 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 | 024_prompt_templates.sql | prompt_templates Tabelle (eigene Vorlagen) |
 | 025_agents.sql | agents Tabelle (Agenten-System Phase 1) |
 | 026_packages.sql | packages, package_agents, org_packages Tabellen + Marketing-Paket Seed-Daten |
+| 027+ | diverse Fixes (RLS, workspace → department rename) |
+| 030_projects_schema.sql | projects, project_participants, project_knowledge, project_memory (APPEND ONLY) |
+| 031_workspaces_schema.sql | workspaces (Karten-basiert), workspace_participants, cards, card_history (APPEND ONLY), connections, knowledge_entries, outcomes |
+| 032_support_tables.sql | dept_settings, org_knowledge, dept_knowledge, agent_assignments, transformations, transformation_links, templates |
+| 033_feed_tables.sql | feed_sources, feed_schemas, feed_source_schemas, feed_items, feed_processing_log (APPEND ONLY), feed_distributions |
 
 ---
 
@@ -616,6 +621,209 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 - Wettbewerb durch Integration ersetzen: Elicit, Zotero, n8n einbinden
 - Community-Netzwerkeffekt: Agenten teilen, forken, bewerten
 - Tropen OS als KI-Betriebssystem positionieren, nicht als Wrapper
+
+---
+
+---
+
+## Phase 2 — tropen_ System (Gesamtarchitektur v0.5)
+
+> Vollständiges Konzeptdokument: `docs/tropen-os-architektur.md`
+> Build-Reihenfolge: Prompt 00 → 08 (siehe unten)
+
+### System-Architektur
+
+#### Bestehend (NICHT anfassen)
+
+| DB-Tabelle         | UI-Label     | Bedeutung                          |
+|--------------------|--------------|-------------------------------------|
+| departments        | "Department" | Org-weite Einheit (ex workspaces)  |
+| department_members | —            | Mitgliedschaft in Department        |
+| conversations      | "Chat"       | Einzelnes Gespräch                 |
+
+#### Neu (werden ohne tropen_ Präfix angelegt)
+
+| DB-Tabelle          | UI-Label       |
+|---------------------|----------------|
+| projects            | "Projekt"      |
+| project_memory      | "Gedächtnis"   |
+| workspaces          | "Workspace"    |
+| cards               | "Karte"        |
+| agents              | "Agent"        |
+| feed_sources        | "Quelle"       |
+| transformations     | (intern)       |
+
+Hierarchie:
+```
+Department (departments)
+  ├── Projekte (projects)    → Wissensbasis + Gedächtnis + Chats
+  └── Workspaces (workspaces) → Karten-Graph + Outcomes
+```
+
+### Projekte: Kern-Konzept
+
+Projekte sind smarte Projektordner mit Gedächtnis.
+Wissensbasis (Dateien, Notizen, Links) + Chat-History + Projekt-Gedächtnis.
+**Keine Aufgabenliste. Keine hardcodierten Felder.** Domänenspezifische Felder via Templates.
+
+**Projekt-Gedächtnis:**
+- Akkumuliert automatisch aus Chats (Key Insights, Entscheidungen, offene Fragen)
+- Wird bei Context-Window-Warnung eingefroren (Zusammenfassung)
+- Fließt in jeden neuen Chat im Projekt als Kontext
+- Tabelle: `tropen_project_memory` (APPEND ONLY)
+
+```typescript
+interface MemoryEntry {
+  id: string
+  type: 'insight' | 'decision' | 'open_question' | 'summary' | 'fact'
+  content: string
+  sourceConversationId: string
+  createdAt: string
+  importance: 'high' | 'medium' | 'low'
+  tags: string[]
+  frozen: boolean
+}
+```
+
+### Context-Window-Awareness
+
+- Token-Count nach jeder Message berechnen (tiktoken, kein API-Aufruf)
+- Füllstand im Chat-Header anzeigen: `[████████░░] 80%`
+- **Warnung bei 85%:** Zusammenfassung ins Gedächtnis anbieten
+- **Am Chat-Ende:** Key Insights speichern anbieten
+- Zusammenfassung via `claude-haiku-4-5-20251001` (token-sparend)
+- Gilt in Projekten (→ `tropen_project_memory`) UND Workspaces (→ `tropen_knowledge_entries`)
+
+### Transformations-Schicht
+
+Kein Nav-Punkt. Erscheint kontextuell als nicht-aufdringlicher Hinweis.
+Trigger: nach N Chats, Gedächtnis-Schwelle, oder explizit vom Member.
+
+- Projekt → Workspace: AI analysiert Gedächtnis, schlägt Karten-Struktur vor
+- Projekt → Agent: AI konfiguriert auf Basis Projekt-Gedächtnis
+- Projekt → Feed: AI schlägt Quellen basierend auf Themen vor
+
+**Immer: Vorschau → Bestätigung → Ausführung. Nie destruktiv.**
+Original bleibt nach Transformation erhalten. Verbindung aktiv via `tropen_transformation_links`.
+
+### Wissens-Hierarchie (für jeden AI-Aufruf)
+
+```
+1. Org-Wissen (locked)               → immer
+2. Department-Wissen                 → immer
+3. Projekt-Gedächtnis                → wenn in Projekt
+4. Projekt-Wissensbasis              → wenn in Projekt
+5. Workspace-Wissen                  → wenn in Workspace
+6. Karten-Wissen                     → wenn in Karten-Chat
+7. Feed-Artefakte (relevant)         → wenn zugeordnet
+8. suggested/open Konventionen       → Member-Wert oder Default
+```
+
+### Kontroll-Spektrum
+
+```typescript
+interface ControlledSetting<T> {
+  value: T
+  controlMode: 'locked' | 'suggested' | 'open'
+  setBy: 'org' | 'dept' | 'member'
+  explanation?: string
+  bestPractice?: string
+}
+```
+
+Department kann einschränken, nie lockern. Member kann überschreiben was `'suggested'` oder `'open'` ist.
+
+### AI-Modelle (Phase 2)
+
+| Verwendung                    | Modell                       |
+|-------------------------------|------------------------------|
+| Projekt-Chat                  | claude-sonnet-4-20250514     |
+| Workspace Silo + Karten-Chat  | claude-sonnet-4-20250514     |
+| Transformations-Engine        | claude-sonnet-4-20250514     |
+| Context-Zusammenfassung       | claude-haiku-4-5-20251001    |
+| Feed Stage 2 (Scoring)        | claude-haiku-4-5-20251001    |
+| Feed Stage 3 (Deep)           | claude-sonnet-4-20250514     |
+
+Feed Stage 1: KEIN AI-Aufruf — regelbasiert.
+
+**SDK:** Anthropic SDK direkt (`ANTHROPIC_API_KEY` in `.env.local`) — kein Dify für neue tropen_ Features.
+
+### Token-Sparsamkeit
+
+- Feed Stage 1: kein API-Aufruf
+- Feed Stage 2: Haiku, max 300 Output-Tokens
+- Feed Stage 3: Sonnet, max 10 Items pro Batch, Budget-Check vor Aufruf
+- Context-Zusammenfassungen: Haiku (nicht Sonnet)
+- Token-Count lokal berechnen (tiktoken), kein API-Aufruf dafür
+
+### Migration (Prompt 00 — zuerst ausführen)
+
+```
+projects → tropen_projects
+  name → title
+  context, tone, language, target_audience, memory → meta (jsonb)
+  migratedFromProjectId in meta
+conversations → tropen_project_id Spalte ergänzen
+projects Tabelle nach Migration droppen
+```
+
+### Was NICHT angefasst wird
+
+- `workspaces` Tabelle (= Department)
+- `conversations` Tabelle
+- `/chat` Route
+- `src/lib/supabase-admin.ts`
+- Bestehende Department-UI und -Actions
+
+### Toter Code — löschen wenn Build startet
+
+- `/ws/` Route
+- Altes `actions/workspaces.ts` (Canvas-System)
+- Canvas-Tabellen ohne `tropen_` Präfix
+
+### Design-Tokens (tropen_ Features — dunkles Theme)
+
+Neue tropen_ Workspaces/Projekte verwenden ein dunkles Theme:
+
+```javascript
+tropen: {
+  bg:      "#080808",
+  surface: "#0e0e0e",
+  border:  "#1e1e1e",
+  text:    "#e0e0e0",
+  muted:   "#444444",
+  input:   "#00C9A7",
+  process: "#7C6FF7",
+  output:  "#F7A44A",
+}
+```
+
+Font: `'DM Mono', monospace`
+
+> Das bestehende helle Theme (`var(--bg-base)` = `#EAE9E5`) bleibt für alle vorhandenen Seiten.
+> Die neuen tropen_ Features bekommen ihr eigenes dunkles Theme-Scope.
+
+### Build-Reihenfolge
+
+```
+Prompt 00 → Migration projects → tropen_projects
+Prompt 01 → Schema (alle tropen_ Tabellen)
+Prompt 02 → Projekt CRUD + Gedächtnis + Context-Awareness
+Prompt 03 → Workspace CRUD + Card Engine
+Prompt 04 → Connection Graph
+Prompt 05 → Chat & Context (Projekt + Workspace)
+Prompt 06 → Transformations-Engine
+Prompt 07 → UI (Projekte + Workspaces)
+Prompt 08 → Feeds
+```
+
+### Phase-2-Konventionen (zusätzlich zu bestehenden Regeln)
+
+- Neue Tabellen **ohne** `tropen_` Präfix (da `workspaces` jetzt frei ist)
+- **APPEND ONLY**: `card_history`, `project_memory`, `feed_processing_log` — niemals UPDATE oder DELETE
+- Meta-Felder: immer mergen, nie ersetzen (`{ ...existing.meta, ...newFields }`)
+- Soft Delete: `deletedAt`, nie hard delete (außer explizit angefordert)
+- Zod-Validierung am Anfang jeder Server Action
 
 ---
 
