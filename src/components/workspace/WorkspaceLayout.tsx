@@ -177,19 +177,22 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   } = props
 
   // ── Panel resize ──────────────────────────────────────────
-  const [leftWidth, setLeftWidth] = React.useState(() => {
-    if (typeof window === 'undefined') return 300
-    return parseInt(localStorage.getItem('lnav-width') ?? '300')
-  })
-  const [rightWidth, setRightWidth] = React.useState(() => {
-    if (typeof window === 'undefined') return 340
-    return parseInt(localStorage.getItem('sp-width') ?? '340')
-  })
+  // Always start with defaults (matches SSR), then sync from localStorage after hydration
+  const [leftWidth, setLeftWidth] = React.useState(300)
+  const [rightWidth, setRightWidth] = React.useState(340)
   const [spCollapsed, setSpCollapsed] = React.useState(false)
   const leftWidthRef = React.useRef(leftWidth)
   const rightWidthRef = React.useRef(rightWidth)
   React.useEffect(() => { leftWidthRef.current = leftWidth }, [leftWidth])
   React.useEffect(() => { rightWidthRef.current = rightWidth }, [rightWidth])
+  React.useEffect(() => {
+    const stored = localStorage.getItem('lnav-width')
+    if (stored) setLeftWidth(parseInt(stored))
+  }, [])
+  React.useEffect(() => {
+    const stored = localStorage.getItem('sp-width')
+    if (stored) setRightWidth(parseInt(stored))
+  }, [])
 
   function persistLeft() { localStorage.setItem('lnav-width', String(leftWidthRef.current)) }
   function persistRight() { localStorage.setItem('sp-width', String(rightWidthRef.current)) }
