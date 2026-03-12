@@ -204,6 +204,15 @@ const TODOS: Todo[] = [
     prioritaet: 'mittel',
     referenz: 'Roadmap',
   },
+  {
+    id: 'chat-21',
+    titel: 'SKILL.md System: Toro-Modellwahl & Zusammenfassungsqualität',
+    beschreibung: 'Drei Verbesserungen am SKILL.md/Skills-System: (1) Modellwahl-Optimierung — Toro wählt automatisch das passende Modell je nach Aufgabentyp (Schnelligkeit vs. Qualität vs. Kosten). (2) Zusammenfassungs-Qualität — Zusammenfassungen langer Gespräche verbessern. (3) Workspace-Erstellung verbessern — Onboarding-Flow für neue Workspaces optimieren.',
+    status: 'offen',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'mittel',
+    referenz: 'SKILL.md',
+  },
 
   // ══════════════════════════════════════════════════════════════════════════
   // Projekte & Wissensbasis

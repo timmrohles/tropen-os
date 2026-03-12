@@ -119,6 +119,17 @@ Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen 
 
 ---
 
+## DB-ZUGRIFF: WICHTIGE CONSTRAINT
+
+Drizzle ORM funktioniert in dieser Umgebung nicht für Queries.
+
+- **Schema-Definition:** Drizzle (für Typen + Migrations-Referenz)
+- **Alle Queries:** `supabaseAdmin.from('table').select/insert/update/delete`
+- Drizzle-Typen als Mapper nach Query-Result nutzen
+- `supabaseAdmin` ist konfiguriert in `src/lib/supabase-admin.ts`
+
+---
+
 ## Tech Stack
 
 | Technologie | Version | Hinweis |
@@ -133,12 +144,105 @@ Warnung bei Annäherung an Schwellenwert: *"Du bist auf dem Weg zu 45€ diesen 
 ## Code-Regeln
 
 - Inline-Styles: alle Seiten nutzen `const s: Record<string, React.CSSProperties>`
-- Farben: CSS-Variablen aus `globals.css` — `var(--bg-base)` Background, `var(--accent)` Gelbgrün (Primär), `var(--text-primary)` Text
-- Farbpalette: Dschungel-Dunkelgrün (`--bg-base: #0d1f16`, `--bg-surface: #134e3a`), Akzent (`--accent: #a3b554`)
-- **Türkis/Teal ist verboten** — kein `teal-*`, `cyan-*`, `#14b8a6`, `#0d9488`, `#06b6d4`. Immer `var(--accent)` / `#a3b554`.
+- Farben: **immer** CSS-Variablen aus `globals.css` — niemals Hex-Werte hardcoden
+- Farbpalette (helles Theme, Stand März 2026):
+  - Background: `var(--bg-base)` = `#EAE9E5` (Beige/Sand)
+  - Surface: `var(--bg-surface)` = `rgba(255,255,255,0.80)` (weißes Glas)
+  - Nav: `var(--bg-nav)` = `rgba(255,255,255,0.72)`
+  - Text primär: `var(--text-primary)` = `#1A1714`
+  - Text sekundär: `var(--text-secondary)` = `#4A4540`
+  - Text tertiär: `var(--text-tertiary)` = `#6B6560`
+  - Akzent (Grün): `var(--accent)` = `#2D7A50`
+  - Akzent hell: `var(--accent-light)` = `#D4EDDE`
+  - Active/Selected Pill: `var(--active-bg)` = `#1A2E23` (dunkelgrüne Pill, weißer Text)
+  - Border: `var(--border)` = `rgba(26,23,20,0.08)`
+- **Das alte Dunkelgrün-Theme (`#0d1f16`, `#134e3a`, `#a3b554`) ist abgelöst — nicht mehr verwenden.**
+- Buttons primär: `background: var(--accent)`, `color: #fff`
+- Active-States: `background: var(--active-bg)`, `color: var(--active-text)`
 - DB-Zugriff Client: immer `createClient()` aus `@/utils/supabase/client`
 - DB-Zugriff Server/API: `supabaseAdmin` aus `@/lib/supabase-admin` (Service Role, bypasses RLS)
 - Migrations: `supabase/migrations/00X_name.sql` — fortlaufend nummeriert
+
+## Komponenten-Patterns (verbindlich — immer diese Klassen verwenden)
+
+### Cards
+```tsx
+<div className="card">
+  <div className="card-header">
+    <span className="card-header-label">Titel</span>
+    <button className="btn btn-ghost btn-sm">Aktion</button>
+  </div>
+  <div className="card-body">
+    <span className="card-section-label">Abschnitt</span>
+    {/* list-rows */}
+    <div className="card-divider" />
+  </div>
+</div>
+```
+- Immer `className="card"` — nie eigene box-styles erfinden
+- `border-radius: var(--radius-lg)` (14px), Glasmorphismus, `box-shadow: var(--shadow-sm)`
+
+### Buttons
+```tsx
+<button className="btn btn-primary">+ Quelle</button>   // Grün, Shadow
+<button className="btn btn-ghost">Einstellungen</button>  // Weißes Glas
+<button className="btn btn-danger">Löschen</button>       // Rot
+<button className="btn btn-sm btn-ghost">Klein</button>   // Kleiner Variant
+<button className="btn-icon"><Icon /></button>             // Icon-only
+```
+- Immer `className="btn"` als Basis + Modifier
+- Primary: `var(--accent)` Hintergrund, weißer Text, grüner Shadow
+- Ghost: `rgba(255,255,255,0.80)`, Border `var(--border-medium)`
+
+### Page-Header (jede Seite)
+```tsx
+<div className="page-header">
+  <div className="page-header-text">
+    <h1 className="page-header-title">Feed</h1>
+    <p className="page-header-sub">Untertitel</p>
+  </div>
+  <div className="page-header-actions">
+    <button className="btn btn-ghost">⚙ Einstellungen</button>
+    <button className="btn btn-primary">+ Neu</button>
+  </div>
+</div>
+```
+- `page-header-title` = Plus Jakarta Sans, 26px, weight 800, letter-spacing -0.03em
+- Buttons rechts, `padding-top: 4px` für vertikale Ausrichtung
+
+### List-Rows (Sidebar-Listen, Card-Listen)
+```tsx
+<button className="list-row list-row--active">
+  Aktiver Eintrag <span className="badge">3</span>
+</button>
+<button className="list-row">Inaktiver Eintrag</button>
+<button className="list-row list-row--add">
+  <PlusIcon /> Hinzufügen
+</button>
+```
+- Active: `var(--active-bg)` = `#1A2E23`, weißer Text
+- Add-Zeile: `var(--accent)` Farbe, grüner Hover
+
+### Chips / Filter-Pills
+```tsx
+<div className="chip chip--active">Alle</div>
+<div className="chip">Hoch</div>
+```
+- Default: weißer Hintergrund, `var(--border-medium)`
+- Active: `var(--accent-light)` = `#D4EDDE`, Border `var(--accent)`
+
+### Icons
+- **Phosphor Icons** (`@phosphor-icons/react`) — immer `weight="bold"` oder `weight="fill"`
+- Größen: NavBar 18px, Cards/Listen 16px, Inline-Text 14px
+- Nie Emoji als funktionale Icons verwenden
+
+### Page-Layout
+```tsx
+<div className="content-wide" style={{ paddingTop: 32, paddingBottom: 48 }}>
+  <div className="page-header">…</div>
+  {/* grid / content */}
+</div>
+```
 
 ## Content-Breiten (verbindlich)
 
@@ -424,8 +528,8 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 #### 🎨 Design-System
 - Türkis/Teal vollständig entfernt, `var(--accent)` durchgängig
 - Content-Breiten: `.content-max` 1200px · `.content-narrow` 720px · `.content-wide` 1400px — alle Seiten migriert
-- Plan-Badges: Free `#4a5568/white`, Pro `#a3b554/#0d2418`, Enterprise `#1e5238/white + 1px accent`
-- Solide Farben (kein rgba als Background), Mindestschriftgröße 12px, Text weiß
+- Plan-Badges: Free `var(--text-tertiary)/white`, Pro `var(--accent)/white`, Enterprise `var(--active-bg)/white`
+- Mindestschriftgröße 12px
 
 #### 💬 Chat & Workspace
 - Kimi-Style 3-Column Layout (LeftNav 240px, ChatArea flex, ProjectSidebar)
@@ -468,6 +572,11 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 ---
 
 ### 🔜 Nächste Schritte (Prio-Reihenfolge)
+
+#### 🧠 SKILL.md System — Toro-Verbesserungen
+- **Modellwahl-Optimierung:** Toro wählt automatisch das passende Modell je nach Aufgabentyp (Schnelligkeit vs. Qualität vs. Kosten)
+- **Zusammenfassungs-Qualität:** Zusammenfassungen langer Gespräche verbessern (Vollständigkeit, Struktur, Relevanz)
+- **Workspace-Erstellung verbessern:** Onboarding-Flow für neue Workspaces optimieren
 
 #### 🤖 Agenten-System Phase 2
 - Agenten Projekten zuweisen (conversations.agent_id)
@@ -599,7 +708,7 @@ Token-Nutzung und `conversation_id` werden für beide Event-Typen korrekt ausgel
 - **Großer Text** (ab 18px / ab 14px bold): Kontrastverhältnis ≥ 3:1
 - **UI-Komponenten & Icons**: Kontrastverhältnis ≥ 3:1 gegen Hintergrund
 - Prüftool: https://webaim.org/resources/contrastchecker/
-- Aktuelle Palette: `var(--accent)` #a3b554 auf `var(--bg-base)` #0d1f16 → **prüfen bei neuen Kombinationen**
+- Aktuelle Palette: `var(--accent)` #2D7A50 auf `var(--bg-base)` #EAE9E5 → **prüfen bei neuen Kombinationen**
 
 #### Tastaturnavigation
 - Alle interaktiven Elemente per Tab erreichbar
