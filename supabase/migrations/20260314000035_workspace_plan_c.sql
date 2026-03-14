@@ -209,8 +209,10 @@ ALTER TABLE public.workspace_exports  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_messages ENABLE ROW LEVEL SECURITY;
 
 -- ---- workspace_assets ----
+-- Note: DROP POLICY IF EXISTS before CREATE POLICY (PG < 16.2 has no CREATE POLICY IF NOT EXISTS)
 
-CREATE POLICY IF NOT EXISTS "workspace_assets_select"
+DROP POLICY IF EXISTS "workspace_assets_select"  ON public.workspace_assets;
+CREATE POLICY "workspace_assets_select"
   ON public.workspace_assets FOR SELECT
   USING (
     workspace_id IN (
@@ -219,7 +221,8 @@ CREATE POLICY IF NOT EXISTS "workspace_assets_select"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "workspace_assets_insert"
+DROP POLICY IF EXISTS "workspace_assets_insert"  ON public.workspace_assets;
+CREATE POLICY "workspace_assets_insert"
   ON public.workspace_assets FOR INSERT
   WITH CHECK (
     workspace_id IN (
@@ -228,7 +231,8 @@ CREATE POLICY IF NOT EXISTS "workspace_assets_insert"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "workspace_assets_delete"
+DROP POLICY IF EXISTS "workspace_assets_delete"  ON public.workspace_assets;
+CREATE POLICY "workspace_assets_delete"
   ON public.workspace_assets FOR DELETE
   USING (
     workspace_id IN (
@@ -240,7 +244,8 @@ CREATE POLICY IF NOT EXISTS "workspace_assets_delete"
 
 -- ---- workspace_exports ----
 
-CREATE POLICY IF NOT EXISTS "workspace_exports_select"
+DROP POLICY IF EXISTS "workspace_exports_select" ON public.workspace_exports;
+CREATE POLICY "workspace_exports_select"
   ON public.workspace_exports FOR SELECT
   USING (
     workspace_id IN (
@@ -249,7 +254,8 @@ CREATE POLICY IF NOT EXISTS "workspace_exports_select"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "workspace_exports_insert"
+DROP POLICY IF EXISTS "workspace_exports_insert" ON public.workspace_exports;
+CREATE POLICY "workspace_exports_insert"
   ON public.workspace_exports FOR INSERT
   WITH CHECK (
     workspace_id IN (
@@ -261,7 +267,8 @@ CREATE POLICY IF NOT EXISTS "workspace_exports_insert"
 
 -- ---- workspace_messages ----
 
-CREATE POLICY IF NOT EXISTS "workspace_messages_select"
+DROP POLICY IF EXISTS "workspace_messages_select" ON public.workspace_messages;
+CREATE POLICY "workspace_messages_select"
   ON public.workspace_messages FOR SELECT
   USING (
     workspace_id IN (
@@ -270,7 +277,8 @@ CREATE POLICY IF NOT EXISTS "workspace_messages_select"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "workspace_messages_insert"
+DROP POLICY IF EXISTS "workspace_messages_insert" ON public.workspace_messages;
+CREATE POLICY "workspace_messages_insert"
   ON public.workspace_messages FOR INSERT
   WITH CHECK (
     workspace_id IN (
