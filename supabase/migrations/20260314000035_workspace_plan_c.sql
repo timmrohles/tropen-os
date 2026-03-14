@@ -203,12 +203,29 @@ CREATE INDEX IF NOT EXISTS idx_workspace_messages_card_id
 -- ============================================================
 -- 5b. Convert workspace_participants.role from enum to TEXT
 -- ============================================================
--- The Drizzle schema created participant_role enum with (owner, editor, reviewer, viewer).
+-- The Drizzle schema may have created participant_role enum with (owner, editor, reviewer, viewer).
 -- Plan C uses 'admin' | 'member' | 'viewer' — simpler to store as TEXT.
--- USING role::TEXT preserves existing stored values as-is.
+-- Guard: only convert if the column is still of enum type.
 
-ALTER TABLE public.workspace_participants
-  ALTER COLUMN role TYPE TEXT USING role::TEXT;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'workspace_participants'
+      AND column_name  = 'role'
+      AND udt_name     = 'participant_role'
+  ) THEN
+    -- Drop default first; it may reference the enum type
+    ALTER TABLE public.workspace_participants ALTER COLUMN role DROP DEFAULT;
+    -- Convert enum → TEXT
+    ALTER TABLE public.workspace_participants
+      ALTER COLUMN role TYPE TEXT USING role::TEXT;
+    -- Restore a sensible default
+    ALTER TABLE public.workspace_participants ALTER COLUMN role SET DEFAULT 'member';
+  END IF;
+END;
+$$;
 
 -- ============================================================
 -- 6. RLS for new tables
@@ -248,7 +265,7 @@ CREATE POLICY "workspace_assets_delete"
     workspace_id IN (
       SELECT workspace_id FROM public.workspace_participants
       WHERE user_id = auth.uid()
-        AND role = 'admin'
+        AND role::TEXT = 'admin'
     )
   );
 
@@ -271,7 +288,7 @@ CREATE POLICY "workspace_exports_insert"
     workspace_id IN (
       SELECT workspace_id FROM public.workspace_participants
       WHERE user_id = auth.uid()
-        AND role IN ('admin','member')
+        AND role::TEXT IN ('admin','member')
     )
   );
 
@@ -294,7 +311,7 @@ CREATE POLICY "workspace_messages_insert"
     workspace_id IN (
       SELECT workspace_id FROM public.workspace_participants
       WHERE user_id = auth.uid()
-        AND role IN ('admin','member')
+        AND role::TEXT IN ('admin','member')
     )
   );
 
