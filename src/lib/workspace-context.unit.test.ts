@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { buildCardContext } from './workspace-context'
 
 vi.mock('@/lib/supabase-admin', () => ({
   supabaseAdmin: { from: vi.fn() },
@@ -94,5 +95,62 @@ describe('buildContextSnapshot', () => {
     expect(snap.workspaceId).toBe('ws-1')
     expect(snap.cardCount).toBe(2)
     expect(typeof snap.capturedAt).toBe('string')
+  })
+})
+
+describe('buildCardContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('includes card title in output', async () => {
+    ;(supabaseAdmin.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === 'cards') {
+        return {
+          select: () => ({
+            eq: () => ({
+              is: () => ({
+                maybeSingle: () => Promise.resolve({
+                  data: {
+                    id: 'card-1',
+                    title: 'Marktanalyse',
+                    role: 'process',
+                    content_type: 'text',
+                    content: { text: 'Analyse der Märkte' },
+                  },
+                }),
+              }),
+              in: () => Promise.resolve({ data: [] }),
+            }),
+          }),
+        }
+      }
+      if (table === 'card_history') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => Promise.resolve({ data: [] }),
+              }),
+            }),
+          }),
+        }
+      }
+      if (table === 'connections') {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [] }),
+          }),
+        }
+      }
+      return {
+        select: () => ({
+          eq: () => Promise.resolve({ data: [] }),
+        }),
+      }
+    })
+
+    const result = await buildCardContext('card-1')
+    expect(result).toContain('Marktanalyse')
   })
 })

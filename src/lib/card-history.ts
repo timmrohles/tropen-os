@@ -8,7 +8,7 @@ import type { CardHistoryEntry } from '@/types/workspace-plan-c.types'
 export async function writeCardSnapshot(
   card: Card,
   changeReason: string,
-  triggeredBy?: string,
+  changedBy?: string,
 ): Promise<CardHistoryEntry> {
   const { data, error } = await supabaseAdmin
     .from('card_history')
@@ -17,7 +17,7 @@ export async function writeCardSnapshot(
       workspace_id: card.workspaceId,
       snapshot: card as unknown as Record<string, unknown>,
       change_reason: changeReason,
-      changed_by: triggeredBy ?? null,
+      changed_by: changedBy ?? null,
     })
     .select()
     .single()
