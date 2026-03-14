@@ -25,7 +25,7 @@ function getAnthropic(): Anthropic {
 // ---------------------------------------------------------------------------
 
 export function computeContentHash(url: string, title: string): string {
-  return createHash('sha256').update(url + title).digest('hex')
+  return createHash('sha256').update(url + '\x00' + title).digest('hex')
 }
 
 // ---------------------------------------------------------------------------
@@ -87,15 +87,16 @@ export function runStage1(
 // ---------------------------------------------------------------------------
 
 async function buildStage2Prompt(source: FeedSource): Promise<string> {
-  const { data: negRows } = await supabaseAdmin
+  const { data: negRows, error: negErr } = await supabaseAdmin
     .from('feed_items')
     .select('title')
     .eq('source_id', source.id)
     .eq('status', 'not_relevant')
     .order('created_at', { ascending: false })
     .limit(10)
+  if (negErr) log.warn('[stage2] failed to load negative examples', { sourceId: source.id, error: negErr.message })
 
-  const negExamples = (negRows ?? []).map((r: Record<string, unknown>) => r.title as string)
+  const negExamples = (negRows ?? []).map((r) => (r as { title: string }).title).filter(Boolean)
 
   let prompt = `Du bewertest die Relevanz von Nachrichtenartikeln für die Feed-Quelle "${source.name}".
 
@@ -114,13 +115,13 @@ export async function runStage2(
   itemId: string,
   item: RawFeedItem,
   source: FeedSource,
-): Promise<Stage2Result> {
+): Promise<Stage2Result & { error: boolean }> {
   const systemPrompt = await buildStage2Prompt(source)
   const excerpt = (item.content ?? '').slice(0, 200)
   const startMs = Date.now()
 
   let tokensIn = 0, tokensOut = 0
-  let result: Stage2Result = { score: 0, reason: 'Stage 2 failed' }
+  let result: Stage2Result & { error: boolean } = { score: 0, reason: 'Stage 2 failed', error: true }
   let errorMsg: string | null = null
 
   try {
@@ -137,7 +138,7 @@ export async function runStage2(
     const match = raw.match(/\{[\s\S]*\}/)
     if (match) {
       const parsed = JSON.parse(match[0])
-      result = { score: Math.min(10, Math.max(1, Number(parsed.score) || 1)), reason: String(parsed.reason ?? '') }
+      result = { score: Math.min(10, Math.max(1, Number(parsed.score) || 1)), reason: String(parsed.reason ?? ''), error: false }
     }
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : String(err)
@@ -157,7 +158,7 @@ export async function runStage2(
     error: errorMsg,
   })
 
-  return result
+  return { ...result, error: errorMsg !== null }
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +196,9 @@ Antworte NUR mit JSON:
       const parsed = JSON.parse(match[0])
       result = {
         summary: String(parsed.summary ?? ''),
-        keyFacts: Array.isArray(parsed.key_facts) ? parsed.key_facts.slice(0, 5) : [],
+        keyFacts: Array.isArray(parsed.key_facts)
+          ? parsed.key_facts.filter((f): f is string => typeof f === 'string').slice(0, 5)
+          : [],
       }
     }
   } catch (err) {
@@ -263,6 +266,13 @@ export async function processItem(item: RawFeedItem, source: FeedSource): Promis
   if (!s1.passed) return itemId
 
   const s2 = await runStage2(itemId, item, source)
+  if (s2.error && s2.score === 0) {
+    // Stage 2 failed entirely — don't mark as processed so it can be retried
+    // Reset content_hash to allow reprocessing (delete and let next run re-insert)
+    await supabaseAdmin.from('feed_items').update({ status: 'deleted' }).eq('id', itemId)
+    log.warn('[processItem] Stage 2 failed, item marked deleted for retry', { itemId })
+    return null
+  }
   const updates: Record<string, unknown> = {
     stage: 2,
     score: s2.score,
@@ -276,6 +286,7 @@ export async function processItem(item: RawFeedItem, source: FeedSource): Promis
     updates.key_facts = s3.keyFacts.length > 0 ? s3.keyFacts : null
   }
 
-  await supabaseAdmin.from('feed_items').update(updates).eq('id', itemId)
+  const { error: updateErr } = await supabaseAdmin.from('feed_items').update(updates).eq('id', itemId)
+  if (updateErr) log.error('[processItem] failed to update item after stages', { itemId, error: updateErr.message })
   return itemId
 }

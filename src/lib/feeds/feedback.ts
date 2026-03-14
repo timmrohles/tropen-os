@@ -23,7 +23,7 @@ export async function recordNotRelevant(itemId: string): Promise<void> {
     .eq('source_id', item.source_id as string)
     .eq('status', 'not_relevant')
 
-  if ((count ?? 0) % 5 === 0) {
+  if (count !== null && count > 0 && count % 5 === 0) {
     log.info('[feedback] threshold crossed — Stage 2 prompt will be enriched', {
       sourceId: item.source_id,
       notRelevantCount: count,
