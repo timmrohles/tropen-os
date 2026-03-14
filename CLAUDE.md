@@ -893,6 +893,52 @@ Prompt 08 → Feeds
 - Soft Delete: `deletedAt`, nie hard delete (außer explizit angefordert)
 - Zod-Validierung am Anfang jeder Server Action
 
+### Routen & Semantik
+
+| Route | Bedeutung |
+|-------|-----------|
+| `/projects` | Smarte Projektordner — Gedächtnis + Chats + Wissensbasis |
+| `/workspace` | Karten-System — Phase 2, API vollständig (Plan C) |
+| `/chat` | Einzelnes Gespräch (bestehend, nicht anfassen) |
+| `/dashboard` | Org-Übersicht |
+
+## Workspace + Card Engine (Plan C)
+
+Backend vollständig gebaut in Phase 2. UI kommt in Plan F.
+
+**Core-Prinzip:** Ein Workspace ist für mehrstufige, komplexe Aufgaben.
+Karten (`input` → `process` → `output`) produzieren zusammen ein Ergebnis.
+
+**Stale-Propagation:** Änderung an Karte → direkte Abhängigkeiten werden auf
+`status='stale'` gesetzt (nicht rekursiv). Logik: `src/lib/stale-propagation.ts`.
+
+**Briefing-Flow:** `POST /api/workspaces/[id]/briefing` → Toro stellt Fragen →
+gibt JSON `{ goal, cards[] }` zurück → Client bestätigt → Cards werden angelegt
+via `POST /api/workspaces/[id]/cards`.
+
+**Export:** `chat` und `markdown` implementiert.
+`word` / `pdf` / `presentation` → 501 (kommt Plan F/G).
+
+**Zeitdimension:** `getWorkspaceAt(id, date)` aus `src/lib/workspace-time.ts`
+rekonstruiert Workspace-Zustand aus `context_snapshot` in `workspace_messages`.
+
+**card_history ist APPEND ONLY.** Kein UPDATE, kein DELETE — weder in Code noch in Policies.
+
+**Neue Tabellen:** `workspace_assets`, `workspace_exports`, `workspace_messages`
+Migration: `supabase/migrations/20260314000035_workspace_plan_c.sql`
+
+**Neue Routen:**
+- `GET/POST /api/workspaces` — Liste + anlegen
+- `GET/PATCH/DELETE /api/workspaces/[id]` — Einzelner Workspace
+- `GET/POST /api/workspaces/[id]/cards` — Karten
+- `PATCH/DELETE /api/workspaces/[id]/cards/[cid]` — Karte aktualisieren (+ snapshot + stale)
+- `POST/DELETE /api/workspaces/[id]/connections/[connid]` — Verbindungen
+- `GET/POST /api/workspaces/[id]/assets/[aid]` — Assets
+- `GET/POST /api/workspaces/[id]/chat` — Silo- und Karten-Chat
+- `POST /api/workspaces/[id]/briefing` — Briefing-Flow
+- `POST /api/workspaces/[id]/export` — Export starten
+- `GET /api/workspaces/[id]/exports` — Export-History
+
 ---
 
 ## Zwischenstand 2026-03-08 — Offene Bugs & nächste Schritte
