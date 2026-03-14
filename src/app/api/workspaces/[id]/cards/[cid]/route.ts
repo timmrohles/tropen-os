@@ -63,6 +63,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .from('cards')
     .update(updates)
     .eq('id', cid)
+    .eq('workspace_id', id)
     .select()
     .single()
 

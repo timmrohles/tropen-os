@@ -22,6 +22,7 @@ export async function POST(request: Request, { params }: Params) {
     .from('cards')
     .select('id')
     .eq('workspace_id', id)
+    .is('deleted_at', null)
     .in('id', [body.sourceCardId, body.targetCardId])
 
   if (!cards || cards.length < 2)

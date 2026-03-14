@@ -99,8 +99,24 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: 'KI-Antwort fehlgeschlagen' }, { status: 500 })
   }
 
-  // Build minimal context snapshot
-  const contextSnapshot = buildContextSnapshot(id, { title: '', goal: null, status: 'draft' }, [])
+  // Build context snapshot with actual workspace data
+  let contextSnapshot: Record<string, unknown> = {}
+  try {
+    const [{ data: wsData }, { data: cardData }] = await Promise.all([
+      supabaseAdmin.from('workspaces').select('title, goal, status').eq('id', id).maybeSingle(),
+      supabaseAdmin.from('cards').select('id, title, role, status').eq('workspace_id', id).is('deleted_at', null),
+    ])
+    if (wsData && cardData) {
+      contextSnapshot = buildContextSnapshot(
+        id,
+        wsData as { title: string; goal: string | null; status: 'draft' | 'active' | 'exported' | 'locked' },
+        cardData as Array<{ id: string; title: string; role: 'input' | 'process' | 'output'; status: 'draft' | 'ready' | 'stale' | 'processing' | 'error' }>,
+        body.cardId
+      )
+    }
+  } catch {
+    // Non-fatal — empty snapshot is acceptable fallback
+  }
 
   // Save both messages
   await supabaseAdmin.from('workspace_messages').insert([
