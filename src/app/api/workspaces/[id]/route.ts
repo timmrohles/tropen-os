@@ -35,7 +35,15 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.goal !== undefined) updates.goal = body.goal.trim()
   if (body.domain !== undefined) updates.domain = body.domain.trim()
   if (body.status !== undefined) updates.status = body.status
-  if (body.meta !== undefined) updates.meta = body.meta
+  if (body.meta !== undefined) {
+    // Merge meta — never replace (project convention)
+    const { data: current } = await supabaseAdmin
+      .from('workspaces')
+      .select('meta')
+      .eq('id', id)
+      .maybeSingle()
+    updates.meta = { ...(current?.meta ?? {}), ...body.meta }
+  }
 
   const { data, error } = await supabaseAdmin
     .from('workspaces')
@@ -68,15 +76,19 @@ export async function DELETE(_req: Request, { params }: Params) {
   const canWrite = await canWriteWorkspace(id, me)
   if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { error } = await supabaseAdmin
+  const { data: deleted, error } = await supabaseAdmin
     .from('workspaces')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle()
 
   if (error) {
     log.error('[workspaces/[id]] DELETE failed', { error: error.message, id })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+  if (!deleted) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   return new NextResponse(null, { status: 204 })
 }

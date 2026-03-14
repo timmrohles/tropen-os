@@ -42,6 +42,7 @@ export async function markDirectDepsStale(
       updated_at: new Date().toISOString(),
     })
     .in('id', depIds)
+    .eq('workspace_id', workspaceId)
 
   if (updateErr) {
     log.error('[stale-propagation] update failed', { error: updateErr.message, depIds })

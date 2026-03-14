@@ -24,6 +24,9 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
 
   if (me.role !== 'superadmin') {
+    // Scope to caller's org — prevents cross-org enumeration via department_id
+    query = query.eq('organization_id', me.organization_id)
+
     const { data: participantRows } = await supabaseAdmin
       .from('workspace_participants')
       .select('workspace_id')

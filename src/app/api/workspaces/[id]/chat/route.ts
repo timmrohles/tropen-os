@@ -119,7 +119,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   // Save both messages
-  await supabaseAdmin.from('workspace_messages').insert([
+  const { error: saveErr } = await supabaseAdmin.from('workspace_messages').insert([
     {
       workspace_id: id,
       card_id: body.cardId ?? null,
@@ -137,6 +137,9 @@ export async function POST(request: Request, { params }: Params) {
       token_usage: tokenUsage,
     },
   ])
+  if (saveErr) {
+    log.error('[chat] message save failed', { error: saveErr.message, workspaceId: id })
+  }
 
   return NextResponse.json({ content: assistantContent, token_usage: tokenUsage })
 }

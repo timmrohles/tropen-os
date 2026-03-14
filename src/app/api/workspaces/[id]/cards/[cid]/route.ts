@@ -6,8 +6,6 @@ import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
 import { updateCardSchema } from '@/lib/validators/workspace-plan-c'
 import { writeCardSnapshot } from '@/lib/card-history'
 import { markDirectDepsStale } from '@/lib/stale-propagation'
-import type { Card } from '@/db/schema'
-
 const log = createLogger('api:workspaces:cards:[cid]')
 type Params = { params: Promise<{ id: string; cid: string }> }
 
@@ -38,7 +36,7 @@ export async function PATCH(request: Request, { params }: Params) {
   // The snapshot value is stored as jsonb, so the raw row data is preserved correctly.
   try {
     await writeCardSnapshot(
-      current as unknown as Card,
+      current as Record<string, unknown>,
       body.changeReason ?? 'Karte aktualisiert',
       me.id,
     )
@@ -57,7 +55,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.chartConfig !== undefined) updates.chart_config = body.chartConfig
   if (body.status !== undefined) updates.status = body.status
   if (body.sortOrder !== undefined) updates.sort_order = body.sortOrder
-  if (body.meta !== undefined) updates.meta = body.meta
+  if (body.meta !== undefined) updates.meta = { ...(current.meta ?? {}), ...body.meta }
 
   const { data: updated, error: updateErr } = await supabaseAdmin
     .from('cards')

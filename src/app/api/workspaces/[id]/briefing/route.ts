@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { z } from 'zod'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
 import { startBriefingSchema } from '@/lib/validators/workspace-plan-c'
 import { createLogger } from '@/lib/logger'
+
+const briefingProposalSchema = z.object({
+  goal: z.string(),
+  cards: z.array(z.object({
+    title: z.string(),
+    role: z.enum(['input', 'process', 'output']),
+    content_type: z.string().optional(),
+    description: z.string().optional(),
+  })),
+})
 
 const log = createLogger('api:workspaces:briefing')
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -49,12 +60,14 @@ export async function POST(request: Request, { params }: Params) {
     const content = response.content[0].type === 'text' ? response.content[0].text : ''
     const tokenUsage = { input: response.usage.input_tokens, output: response.usage.output_tokens }
 
-    // Detect JSON card proposal
+    // Detect JSON card proposal — validate shape before trusting the content
     let proposal = null
     try {
       const trimmed = content.trim()
       if (trimmed.startsWith('{') && trimmed.includes('"cards"')) {
-        proposal = JSON.parse(trimmed)
+        const parsed = JSON.parse(trimmed)
+        const result = briefingProposalSchema.safeParse(parsed)
+        if (result.success) proposal = result.data
       }
     } catch {
       // Not JSON — it's a follow-up question, that's fine
