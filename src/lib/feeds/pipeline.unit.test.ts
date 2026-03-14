@@ -33,7 +33,7 @@ describe('runStage1', () => {
 
   it('rejects item missing required keyword', () => {
     const result = runStage1(
-      makeItem({ title: 'Sports results', content: 'Football match' }),
+      makeItem({ title: 'Sports results from the weekend', content: 'Football match highlights' }),
       makeSource({ keywordsInclude: ['AI', 'LLM'] })
     )
     expect(result.passed).toBe(false)
@@ -41,7 +41,7 @@ describe('runStage1', () => {
 
   it('passes item with at least one required keyword', () => {
     const result = runStage1(
-      makeItem({ title: 'New LLM released', content: 'Details here' }),
+      makeItem({ title: 'New LLM model released this week', content: 'Details about the latest AI advancement' }),
       makeSource({ keywordsInclude: ['AI', 'LLM'] })
     )
     expect(result.passed).toBe(true)

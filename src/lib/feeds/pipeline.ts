@@ -48,8 +48,8 @@ export function runStage1(
 
   // 2. Minimum content length
   const combinedLength = item.title.length + (item.content?.length ?? 0)
-  if (combinedLength < 20) {
-    return { passed: false, reason: 'Content too short (< 20 chars)' }
+  if (combinedLength < 50) {
+    return { passed: false, reason: 'Content too short (< 50 chars)' }
   }
 
   // 3. Domain allow-list
