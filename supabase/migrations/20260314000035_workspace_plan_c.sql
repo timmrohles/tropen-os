@@ -201,6 +201,18 @@ CREATE INDEX IF NOT EXISTS idx_workspace_messages_card_id
   ON public.workspace_messages (card_id);
 
 -- ============================================================
+-- 5b. Ensure participant_role enum includes Plan C values
+-- ============================================================
+-- The Drizzle schema created participant_role with (owner, editor, reviewer, viewer).
+-- Plan C uses 'admin' and 'member' for workspace_participants.role.
+-- ALTER TYPE ADD VALUE is safe outside transactions in PG, so we commit first.
+
+COMMIT;
+ALTER TYPE public.participant_role ADD VALUE IF NOT EXISTS 'admin';
+ALTER TYPE public.participant_role ADD VALUE IF NOT EXISTS 'member';
+BEGIN;
+
+-- ============================================================
 -- 6. RLS for new tables
 -- ============================================================
 
