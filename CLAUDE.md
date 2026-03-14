@@ -536,6 +536,7 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 | 031_workspaces_schema.sql | workspaces (Karten-basiert), workspace_participants, cards, card_history (APPEND ONLY), connections, knowledge_entries, outcomes |
 | 032_support_tables.sql | dept_settings, org_knowledge, dept_knowledge, agent_assignments, transformations, transformation_links, templates |
 | 033_feed_tables.sql | feed_sources, feed_schemas, feed_source_schemas, feed_items, feed_processing_log (APPEND ONLY), feed_distributions |
+| 20260314000036_feeds_v2.sql | Drops old feed tables, creates Prompt-08 v2 schema: feed_sources/items/schemas/distributions/processing_log with keywords, min_score, content_hash UNIQUE |
 
 ---
 
@@ -637,10 +638,15 @@ Claude kann Migrationen direkt ausführen — kein manueller SQL-Editor nötig.
 - Transformations-Trigger als kontextueller Hinweis (kein Nav-Punkt)
 - Plan noch zu schreiben
 
-#### Plan G — Feeds
-- Feed-Quellen CRUD, Schemas, Stage-Pipeline (Stage 1 regelbasiert, Stage 2 Haiku, Stage 3 Sonnet)
-- Feed-Distributions (→ Workspaces, Projekte, standalone)
-- Plan noch zu schreiben
+#### Plan G — Feeds ✅ Implementiert (2026-03-14)
+- `feed_sources` CRUD (RSS, Email, API, URL), keywords_include/exclude, domains_allow, min_score pro Quelle
+- `feed_items` mit 3-stufiger Pipeline: Stage 1 (regelbasiert, 0 tokens), Stage 2 (Haiku, score 1-10), Stage 3 (Sonnet, summary + key_facts)
+- Feedback-Loop: ≥5 `not_relevant` → Stage-2-Prompt wird automatisch angereichert
+- Email-Inbound: `POST /api/feeds/inbound/email` (Resend-Webhook)
+- Cron: `GET /api/cron/sync-feeds` (Vercel, alle 30 Min.)
+- Newscenter UI: `/feeds` (Sidebar, IntersectionObserver Auto-Read, Infinite Scroll)
+- Source-Wizard: `/feeds/new` (4-Schritt-Assistent)
+- `feed_processing_log` ist APPEND ONLY — niemals UPDATE oder DELETE
 
 ---
 
