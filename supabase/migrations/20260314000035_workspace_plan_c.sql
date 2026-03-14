@@ -12,7 +12,7 @@ ALTER TABLE public.workspaces
   ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft','active','exported','locked')),
-  ADD COLUMN IF NOT EXISTS briefing_chat_id UUID,
+  ADD COLUMN IF NOT EXISTS briefing_chat_id UUID, -- intentionally no FK: conversations scope may change during Plan C build-out
   ADD COLUMN IF NOT EXISTS domain TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_workspaces_organization_id
@@ -43,17 +43,18 @@ $$;
 ALTER TABLE public.cards
   ADD COLUMN IF NOT EXISTS content JSONB;
 
--- 2b. Handle status column: drop enum-typed status, add TEXT status
+-- 2b. Handle status column: drop non-TEXT status, add TEXT status
+-- Defensive guard: handles dev DBs where card_status enum was created manually.
+-- In standard migration history (031→present), cards.status is already TEXT.
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1
-    FROM information_schema.columns c
-    JOIN pg_catalog.pg_type t ON t.typname = 'card_status'
-    WHERE c.table_schema = 'public'
-      AND c.table_name   = 'cards'
-      AND c.column_name  = 'status'
-      AND c.udt_name     = 'card_status'
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'cards'
+      AND column_name  = 'status'
+      AND data_type   <> 'text'
   ) THEN
     ALTER TABLE public.cards DROP COLUMN status;
   END IF;
@@ -127,6 +128,19 @@ BEGIN
 END;
 $$;
 
+-- Rename UNIQUE constraint to match new column names (if still using old name)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'connections_from_card_id_to_card_id_key'
+  ) THEN
+    ALTER TABLE public.connections
+      RENAME CONSTRAINT connections_from_card_id_to_card_id_key
+      TO connections_source_card_id_target_card_id_key;
+  END IF;
+END;
+$$;
+
 -- ============================================================
 -- 5. Create new tables
 -- ============================================================
@@ -151,6 +165,8 @@ CREATE INDEX IF NOT EXISTS idx_workspace_assets_card_id
   ON public.workspace_assets (card_id);
 
 -- workspace_exports
+-- Note: status updates (pending→processing→ready) use supabaseAdmin (service_role), not user auth.
+-- No UPDATE policy needed for client-side access.
 CREATE TABLE IF NOT EXISTS public.workspace_exports (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -177,8 +193,9 @@ CREATE TABLE IF NOT EXISTS public.workspace_messages (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_workspace_messages_workspace_id
-  ON public.workspace_messages (workspace_id);
+-- Composite index covers single-column workspace_id lookups and sorted queries by created_at
+CREATE INDEX IF NOT EXISTS idx_workspace_messages_workspace_created
+  ON public.workspace_messages (workspace_id, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_workspace_messages_card_id
   ON public.workspace_messages (card_id);
