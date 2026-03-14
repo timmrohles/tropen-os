@@ -123,6 +123,7 @@ export async function buildCardContext(cardId: string): Promise<string> {
       .from('cards')
       .select('id, title, role, content_type, content, status')
       .in('id', upstreamIds)
+      .limit(20) // cap to avoid unbounded system-prompt growth
     upstreamCards = (upstreamRows ?? []) as CardDbRow[]
   }
 
