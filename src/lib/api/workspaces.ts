@@ -4,8 +4,10 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { OrgRole } from '@/lib/types'
+import { WorkspacePlanC } from '@/types/workspace-plan-c.types'
 
-export type AuthUser = { id: string; organization_id: string; role: string }
+export type AuthUser = { id: string; organization_id: string; role: OrgRole | 'superadmin' }
 
 export async function getAuthUser(): Promise<AuthUser | null> {
   const supabase = await createClient()
@@ -56,7 +58,7 @@ export async function canWriteWorkspace(
 export async function requireWorkspaceAccess(
   workspaceId: string,
   me: AuthUser
-): Promise<Record<string, unknown> | null> {
+): Promise<WorkspacePlanC | null> {
   if (me.role !== 'superadmin') {
     const allowed = await canReadWorkspace(workspaceId, me)
     if (!allowed) return null
@@ -67,5 +69,5 @@ export async function requireWorkspaceAccess(
     .eq('id', workspaceId)
     .is('deleted_at', null)
     .maybeSingle()
-  return data
+  return data as unknown as WorkspacePlanC
 }
