@@ -4,15 +4,6 @@ import Parrot from '@/components/Parrot'
 import { Scales, Buildings, Plant } from '@phosphor-icons/react/dist/ssr'
 import ToroChatWidget from '@/components/ToroChatWidget'
 
-const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.72)',
-  backdropFilter: 'blur(20px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-  border: '1px solid rgba(255,255,255,0.65)',
-  borderRadius: 12,
-}
-
-// Features für das Grid
 const features = [
   {
     icon: <Scales size={28} weight="fill" style={{ color: 'var(--active-bg)' }} />,
@@ -38,13 +29,12 @@ export default async function HomePage() {
   } = await supabase.auth.getUser()
 
   return (
-    <div className="min-h-[calc(100vh-52px)] flex flex-col">
+    <div className="content-max">
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-20">
+      <section className="flex flex-col items-center justify-center text-center pt-16 pb-20">
         {/* Badge */}
-        <div
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium mb-8 tracking-wide"
-          style={{ ...cardStyle, color: 'var(--active-bg)' }}
+        <div className="card inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium mb-8 tracking-wide"
+          style={{ color: 'var(--active-bg)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] inline-block" />
           Verantwortungsvolle KI für den Mittelstand
@@ -78,29 +68,15 @@ export default async function HomePage() {
         {/* CTA */}
         {user ? (
           <div className="flex gap-3">
-            <Link
-              href="/workspaces"
-              className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
-            >
+            <Link href="/workspaces" className="btn btn-primary">
               Zum Chat →
             </Link>
-            <Link
-              href="/dashboard"
-              className="font-medium px-6 py-3 rounded-lg text-sm transition-colors no-underline"
-              style={{
-                ...cardStyle,
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-medium)',
-              }}
-            >
+            <Link href="/dashboard" className="btn btn-ghost">
               Dashboard
             </Link>
           </div>
         ) : (
-          <Link
-            href="/login"
-            className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-7 py-3 rounded-lg text-sm transition-colors no-underline"
-          >
+          <Link href="/login" className="btn btn-primary">
             Anmelden →
           </Link>
         )}
@@ -110,14 +86,10 @@ export default async function HomePage() {
       <ToroChatWidget />
 
       {/* ── Feature Grid ─────────────────────────────────── */}
-      <section className="px-6 pb-20 max-w-4xl mx-auto w-full">
+      <section className="pb-20 max-w-4xl mx-auto w-full">
         <div className="grid grid-cols-3 gap-4">
           {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-xl p-6 flex flex-col gap-3"
-              style={cardStyle}
-            >
+            <div key={f.title} className="card rounded-xl p-6 flex flex-col gap-3">
               {f.icon}
               <h3
                 className="font-semibold text-base"
@@ -137,11 +109,8 @@ export default async function HomePage() {
       </section>
 
       {/* ── CO₂-Commitment ───────────────────────────────── */}
-      <section className="px-6 pb-16 max-w-4xl mx-auto w-full">
-        <div
-          className="rounded-xl px-8 py-7"
-          style={{ ...cardStyle, borderTop: '1px solid var(--border)' }}
-        >
+      <section className="pb-16 max-w-4xl mx-auto w-full">
+        <div className="card rounded-xl px-8 py-7">
           <div className="flex items-start gap-4">
             <Plant size={18} weight="fill" style={{ color: 'var(--active-bg)', marginTop: 2, flexShrink: 0 }} />
             <div>
@@ -175,7 +144,7 @@ export default async function HomePage() {
 
       {/* ── Footer ───────────────────────────────────────── */}
       <footer
-        className="px-6 py-5 text-center"
+        className="py-5 text-center"
         style={{ borderTop: '1px solid var(--border)' }}
       >
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
