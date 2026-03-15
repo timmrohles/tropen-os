@@ -51,6 +51,34 @@ Wenn Claude beim Update eine Entscheidung von Timm braucht:
 
 ---
 
+## Qualitätsstandards — Webapp Manifest
+
+Das Projekt verwendet ein eigenes Audit-System mit 25 Kategorien und gewichtetem Scoring.
+Alle Dokumente liegen in `docs/webapp-manifest/`:
+
+| Datei | Inhalt |
+|-------|--------|
+| `manifesto.md` | 10 Kernprinzipien (Philosophie) |
+| `engineering-standard.md` | Konkrete Regeln pro Kategorie (25 Kategorien) |
+| `audit-system.md` | Gewichtetes Scoring (0–5 pro Regel, Gewichte 1–3) |
+| `audit-report-YYYY-MM-DD.md` | Jeweiliger Audit-Report |
+| `templates/audit-report-template.docx` | Report-Vorlage |
+
+**Scoring:** `score = Σ(rule_score × weight) / Σ(max_score × weight) × 100`
+
+| Score | Status |
+|-------|--------|
+| 85–100% | 🟢 Production Grade |
+| 70–84% | 🟡 Stable |
+| 50–69% | 🟠 Risky |
+| < 50% | 🔴 Prototype |
+
+**Letzter Audit:** 2026-03-15 — Score und Status siehe aktuellen Report.
+
+Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
+
+---
+
 ## ⚠️ VOR JEDEM UI-BUILD — PFLICHTCHECK
 
 Bevor du eine neue Seite, Komponente oder ein UI-Feature baust, prüfe diese Liste.
