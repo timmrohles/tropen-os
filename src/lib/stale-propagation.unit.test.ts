@@ -33,7 +33,9 @@ describe('markDirectDepsStale', () => {
       if (table === 'cards') {
         return {
           update: () => ({
-            in: () => Promise.resolve({ error: null }),
+            in: () => ({
+              eq: () => Promise.resolve({ error: null }),
+            }),
           }),
         }
       }

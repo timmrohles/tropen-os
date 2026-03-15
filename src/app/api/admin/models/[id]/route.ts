@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+const log = createLogger('admin/models/id')
 
 async function getAdminUser() {
   const supabase = await createClient()
@@ -45,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single()
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return NextResponse.json(data)
@@ -61,7 +63,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { error } = await supabaseAdmin.from('model_catalog').delete().eq('id', id)
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return new NextResponse(null, { status: 204 })

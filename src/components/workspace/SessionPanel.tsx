@@ -6,6 +6,7 @@ import {
   Brain, ChartBar, Cpu, Sliders,
   CaretLeft, CaretRight, CaretDown,
 } from '@phosphor-icons/react'
+import ParrotIcon from '@/components/ParrotIcon'
 import type { ChatMessage } from '@/hooks/useWorkspaceState'
 
 // ─────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   const supabase = supabaseRef.current
 
   const [collapsedInternal, setCollapsedInternal] = useState(false)
-  const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedInternal
+  const collapsed = collapsedProp === undefined ? collapsedInternal : collapsedProp
   function setCollapsed(v: boolean) {
     if (onToggleCollapse) { onToggleCollapse() } else { setCollapsedInternal(v) }
   }
@@ -224,7 +225,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
           <CaretRight size={13} />
         </button>
         <div className="sp-parrot" title="Toro ist hier">
-          <span style={{ fontSize: 16 }}>🦜</span>
+          <ParrotIcon size={20} />
         </div>
       </div>
     )

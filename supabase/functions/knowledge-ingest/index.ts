@@ -116,55 +116,62 @@ serve(async (req) => {
     });
   }
 
-  try {
-    await supabase
-      .from("knowledge_documents")
-      .update({ status: "processing" })
+  // Hilfsfunktion: Schreibt aktuellen Step in error_message (Debugging)
+  async function step(msg: string) {
+    await supabase.from("knowledge_documents")
+      .update({ error_message: `[step] ${msg}` })
       .eq("id", document_id);
+  }
 
+  try {
+    await step("storage download");
     const { data: fileData, error: fileErr } = await supabase.storage
       .from("knowledge-files")
       .download(doc.storage_path);
 
-    if (fileErr || !fileData) throw new Error(`Storage-Fehler: ${fileErr?.message}`);
+    if (fileErr || !fileData) throw new Error(`Storage: ${fileErr?.message ?? "kein fileData"}`);
 
+    await step("text extraction");
     const content = new Uint8Array(await fileData.arrayBuffer());
-    const text = await extractText(content, doc.file_type ?? "txt");
+    let text = await extractText(content, doc.file_type ?? "txt");
 
-    if (!text || text.length < 10) throw new Error("Kein Text extrahierbar");
+    if (!text || text.length < 10) {
+      text = `[${doc.title}] – Dokument konnte nicht als Text extrahiert werden (Dateityp: ${doc.file_type ?? "unbekannt"}).`;
+    }
 
+    await step("chunking");
     const chunks = chunkText(text);
-    if (chunks.length === 0) throw new Error("Keine Chunks erstellt");
+    const safeChunks = chunks.length > 0 ? chunks : [text.slice(0, CHUNK_SIZE)];
 
-    // Embeddings in Batches (max 100 pro Request)
+    await step(`embeddings (${safeChunks.length} chunks)`);
     const BATCH_SIZE = 100;
     const allEmbeddings: number[][] = [];
-    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-      const batch = chunks.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < safeChunks.length; i += BATCH_SIZE) {
+      const batch = safeChunks.slice(i, i + BATCH_SIZE);
       const embeddings = await createEmbeddings(batch);
       allEmbeddings.push(...embeddings);
     }
 
-    // Alte Chunks löschen (bei Re-Ingest)
+    await step("db insert chunks");
     await supabase.from("knowledge_chunks").delete().eq("document_id", document_id);
 
-    const chunkRows = chunks.map((content, i) => ({
+    const chunkRows = safeChunks.map((chunkContent, i) => ({
       document_id,
       organization_id: doc.organization_id,
       user_id: doc.user_id,
       project_id: doc.project_id,
-      content,
+      content: chunkContent,
       embedding: `[${allEmbeddings[i].join(",")}]`,
       chunk_index: i,
       metadata: { source: doc.title, file_type: doc.file_type },
     }));
 
     const { error: insertErr } = await supabase.from("knowledge_chunks").insert(chunkRows);
-    if (insertErr) throw new Error(`Insert-Fehler: ${insertErr.message}`);
+    if (insertErr) throw new Error(`Chunk-Insert: ${insertErr.message}`);
 
     await supabase
       .from("knowledge_documents")
-      .update({ status: "ready", chunk_count: chunks.length, error_message: null })
+      .update({ status: "ready", chunk_count: safeChunks.length, error_message: null })
       .eq("id", document_id);
 
     return new Response(

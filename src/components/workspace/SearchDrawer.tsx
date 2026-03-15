@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { X, MagnifyingGlass, ChatCircle } from '@phosphor-icons/react'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface SearchResult {
   id: string
@@ -34,6 +35,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const trapRef = useFocusTrap<HTMLDivElement>(open)
 
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim() || q.trim().length < 2) { setResults([]); return }
@@ -81,7 +83,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, animation: 'fadeIn 200ms ease-out' }}
       />
-      <div style={{
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Suche" style={{
         position: 'fixed', top: 52, left: 0, right: 0, zIndex: 201,
         background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -110,7 +112,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
           ) : query.trim().length < 2 ? (
             <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0' }}>Mindestens 2 Zeichen eingeben…</div>
           ) : results.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0' }}>Keine Ergebnisse für „{query}"</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0' }}>Keine Ergebnisse für &bdquo;{query}&ldquo;</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>

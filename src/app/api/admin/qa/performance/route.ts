@@ -1,8 +1,10 @@
+import { createLogger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getLangSmithClient } from '@/lib/langsmith/tracer'
 import type { PerformanceResponse } from '@/types/qa'
+const log = createLogger('admin/qa/performance')
 
 export const revalidate = 300
 
@@ -49,7 +51,7 @@ async function getLangSmithStats() {
       avgTokensPerRun: runs.length > 0 ? Math.round(totalTokens / runs.length) : 0,
     }
   } catch (err) {
-    console.warn('[LangSmith] Stats fehlgeschlagen:', err)
+    log.warn('[LangSmith] Stats fehlgeschlagen:', err)
     return null
   }
 }
@@ -119,7 +121,7 @@ export async function GET() {
     }
     return NextResponse.json(response)
   } catch (err) {
-    console.error('[qa/performance]', err)
+    log.error('[qa/performance]', err)
     return NextResponse.json(
       { error: 'Interner Fehler', code: 'QA_PERFORMANCE_ERROR' },
       { status: 500 }

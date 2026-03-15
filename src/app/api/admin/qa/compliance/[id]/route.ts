@@ -1,7 +1,9 @@
+import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { QaComplianceStatus } from '@/types/qa'
+const log = createLogger('admin/qa/compliance/id')
 
 async function isSuperadmin() {
   const supabase = await createClient()
@@ -55,7 +57,7 @@ export async function PATCH(
 
     return NextResponse.json(data)
   } catch (err) {
-    console.error('[qa/compliance/[id]]', err)
+    log.error('[qa/compliance/[id]]', err)
     return NextResponse.json(
       { error: 'Interner Fehler', code: 'QA_COMPLIANCE_PATCH_ERROR' },
       { status: 500 }

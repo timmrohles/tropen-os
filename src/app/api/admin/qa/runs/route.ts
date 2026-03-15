@@ -1,7 +1,9 @@
+import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { QaRunType, RunResponse } from '@/types/qa'
+const log = createLogger('admin/qa/runs')
 
 async function isSuperadmin() {
   const supabase = await createClient()
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 })
   } catch (err) {
-    console.error('[qa/runs]', err)
+    log.error('[qa/runs]', err)
     return NextResponse.json(
       { error: 'Interner Fehler', code: 'QA_RUNS_ERROR' },
       { status: 500 }

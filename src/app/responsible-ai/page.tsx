@@ -125,7 +125,7 @@ export default function ResponsibleAIPage() {
                 <tr>
                   <td style={s.td}>Energie pro Token</td>
                   <td style={s.td}>~5×10⁻⁷ kWh/Token</td>
-                  <td style={s.td}>Stanford „Price of Prompting" (2024)</td>
+                  <td style={s.td}>Stanford &bdquo;Price of Prompting&ldquo; (2024)</td>
                 </tr>
                 <tr>
                   <td style={s.td}>DE-Strommix</td>
@@ -194,7 +194,7 @@ export default function ResponsibleAIPage() {
           <h2 style={s.sourcesTitle}>Quellen &amp; Methodik</h2>
           <div style={s.sourcesList}>
             <p style={s.sourceItem}>
-              Stanford University: „The Price of Prompting" –{' '}
+              Stanford University: &bdquo;The Price of Prompting&ldquo; –{' '}
               <Link href="https://arxiv.org/abs/2407.16893" target="_blank" rel="noopener noreferrer" style={s.sourceLink}>
                 arxiv.org/abs/2407.16893
               </Link>
@@ -225,7 +225,7 @@ export default function ResponsibleAIPage() {
       <div style={s.ctaSection}>
         <span style={s.ctaIcon}>🦜</span>
         <p style={s.ctaQuote}>
-          „Ich finde, Transparenz ist der erste Schritt zu verantwortungsvoller KI-Nutzung."
+          &bdquo;Ich finde, Transparenz ist der erste Schritt zu verantwortungsvoller KI-Nutzung.&ldquo;
         </p>
         <p style={s.ctaAttribution}>– Toro</p>
         <div style={s.ctaButtons}>
@@ -272,7 +272,7 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 48,
   },
   heroLabel: {
-    color: '#a3b554',
+    color: 'var(--accent)',
     fontSize: 12,
     fontWeight: 600,
     letterSpacing: '0.12em',
@@ -296,8 +296,8 @@ const s: Record<string, React.CSSProperties> = {
   },
   heroBadge: {
     background: 'rgba(163,181,84,0.15)',
-    border: '1px solid #a3b554',
-    color: '#a3b554',
+    border: '1px solid var(--accent)',
+    color: 'var(--accent)',
     borderRadius: 20,
     padding: '6px 14px',
     fontSize: 13,
@@ -367,7 +367,7 @@ const s: Record<string, React.CSSProperties> = {
   timelineCircle: {
     width: 36,
     height: 36,
-    background: '#a3b554',
+    background: 'var(--accent)',
     color: '#000',
     borderRadius: '50%',
     fontWeight: 700,
@@ -391,7 +391,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   codeBox: {
     background: '#18181b',
-    border: '1px solid #a3b554',
+    border: '1px solid var(--accent)',
     borderRadius: 8,
     padding: 14,
     fontFamily: 'monospace',
@@ -546,7 +546,7 @@ const s: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   sourceLink: {
-    color: '#a3b554',
+    color: 'var(--accent)',
     textDecoration: 'none',
   },
 
@@ -572,7 +572,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   ctaAttribution: {
     fontSize: 14,
-    color: '#a3b554',
+    color: 'var(--accent)',
     marginTop: 8,
   },
   ctaButtons: {
@@ -582,7 +582,7 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   ctaBtnPrimary: {
-    background: '#a3b554',
+    background: 'var(--accent)',
     color: '#000',
     padding: '12px 24px',
     borderRadius: 8,

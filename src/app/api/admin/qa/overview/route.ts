@@ -1,7 +1,9 @@
+import { createLogger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { OverviewResponse } from '@/types/qa'
+const log = createLogger('admin/qa/overview')
 
 export const dynamic = 'force-dynamic'
 
@@ -147,7 +149,7 @@ export async function GET() {
 
     return NextResponse.json(response)
   } catch (err) {
-    console.error('[qa/overview]', err)
+    log.error('[qa/overview]', err)
     return NextResponse.json(
       { error: 'Interner Fehler', code: 'QA_OVERVIEW_ERROR' },
       { status: 500 }

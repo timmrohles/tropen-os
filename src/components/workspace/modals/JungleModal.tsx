@@ -77,7 +77,7 @@ export function JungleModal({
               <button className="modal-close" onClick={onClose}>×</button>
             </div>
             {jungleSummary && (
-              <p className="jm-summary">"{jungleSummary}"</p>
+              <p className="jm-summary">&bdquo;{jungleSummary}&ldquo;</p>
             )}
 
             {/* Projekt-Ordner */}
@@ -91,7 +91,7 @@ export function JungleModal({
                 >
                   {/* Folder Header */}
                   <div className="jm-folder-header">
-                    <Folder size={16} weight="duotone" style={{ color: 'var(--text-secondary)' }} />
+                    <Folder size={16} weight="fill" style={{ color: 'var(--text-secondary)' }} />
                     <input
                       className="jm-folder-name-input"
                       value={jungleProjectName(i)}

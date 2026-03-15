@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Ersten Workspace der Org laden
   const { data: ws } = await supabaseAdmin
-    .from('workspaces')
+    .from('departments')
     .select('id')
     .eq('organization_id', orgId)
     .order('created_at', { ascending: true })
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // workspace_members – falls Workspace vorhanden
   if (ws) {
-    await supabaseAdmin.from('workspace_members').upsert(
+    await supabaseAdmin.from('department_members').upsert(
       { workspace_id: ws.id, user_id: authUser.id, role },
       { onConflict: 'workspace_id,user_id' }
     )

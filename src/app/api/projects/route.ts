@@ -1,6 +1,10 @@
+import { createLogger } from '@/lib/logger'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
+import { validateBody } from '@/lib/validators'
+import { createProjectSchema } from '@/lib/validators/projects'
+const log = createLogger('projects')
 
 async function verifyDeptOrg(departmentId: string, organizationId: string): Promise<boolean> {
   const { data } = await supabaseAdmin
@@ -12,7 +16,7 @@ async function verifyDeptOrg(departmentId: string, organizationId: string): Prom
   return !!data
 }
 
-// GET /api/projects?department_id=...
+// GET /api/projects?department_id=...&limit=50&offset=0
 export async function GET(request: Request) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
@@ -21,20 +25,24 @@ export async function GET(request: Request) {
   const department_id = searchParams.get('department_id')
   if (!department_id) return NextResponse.json({ error: 'department_id fehlt' }, { status: 400 })
 
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
+  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10), 0)
+
   if (me.role !== 'superadmin') {
     const allowed = await verifyDeptOrg(department_id, me.organization_id)
     if (!allowed) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error, count } = await supabaseAdmin
     .from('projects')
-    .select('id, department_id, title, goal, instructions, meta, created_by, created_at, updated_at')
+    .select('id, department_id, title, goal, instructions, meta, created_by, created_at, updated_at', { count: 'exact' })
     .eq('department_id', department_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
 // POST /api/projects
@@ -42,28 +50,21 @@ export async function POST(request: Request) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
 
-  let body: Record<string, unknown>
-  try { body = await request.json() }
-  catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }) }
-
-  const { department_id, title, goal, instructions } = body as {
-    department_id?: string; title?: string; goal?: string; instructions?: string
-  }
-  if (!department_id || !title?.trim())
-    return NextResponse.json({ error: 'department_id und title erforderlich' }, { status: 400 })
+  const { data: body, error: validationError } = await validateBody(request, createProjectSchema)
+  if (validationError) return validationError
 
   if (me.role !== 'superadmin') {
-    const allowed = await verifyDeptOrg(department_id, me.organization_id)
+    const allowed = await verifyDeptOrg(body.department_id, me.organization_id)
     if (!allowed) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 
   const { data: project, error } = await supabaseAdmin
     .from('projects')
     .insert({
-      department_id,
-      title: (title as string).trim(),
-      goal: goal?.trim() ?? null,
-      instructions: instructions?.trim() ?? null,
+      department_id: body.department_id,
+      title: body.title.trim(),
+      goal: body.goal?.trim() ?? null,
+      instructions: body.instructions?.trim() ?? null,
       created_by: me.id,
     })
     .select()
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     role: 'admin',
   })
   if (participantErr) {
-    console.error('[projects] participant insert error:', participantErr.message)
+    log.error('[projects] participant insert error:', participantErr.message)
   }
 
   return NextResponse.json(project)

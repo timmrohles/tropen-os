@@ -5,6 +5,7 @@ export type FieldDef =
 export interface Template {
   id: 'chat' | 'research' | 'create' | 'summarize' | 'extract'
   label: string
+  taskType?: string
   fields: FieldDef[]
   assemble: (values: Record<string, string>) => string
 }

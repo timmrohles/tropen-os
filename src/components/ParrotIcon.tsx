@@ -1,0 +1,58 @@
+import React from 'react'
+
+interface ParrotIconProps {
+  size?: number
+  className?: string
+  style?: React.CSSProperties
+}
+
+/**
+ * Toro — Tropen OS mascot icon.
+ * Brand colors: accent green (#2D7A50), white, dark (#1A1714).
+ */
+export default function ParrotIcon({ size = 24, className, style }: ParrotIconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className={className}
+      style={style}
+    >
+      {/* Crest feathers */}
+      <path d="M18 4 C16 2, 13 2, 12 4 C11 6, 13 7, 14 6 C14 8, 16 8, 17 7 C17 9, 19 8, 18 6 Z" fill="#235f3e" />
+
+      {/* Body */}
+      <ellipse cx="15" cy="18" rx="8" ry="9" fill="#2D7A50" />
+
+      {/* Head */}
+      <circle cx="19" cy="10" r="6" fill="#2D7A50" />
+
+      {/* Wing highlight */}
+      <path d="M9 16 C7 18, 7 22, 9 24 C11 22, 12 19, 11 16 Z" fill="#235f3e" />
+
+      {/* Chest highlight */}
+      <ellipse cx="15" cy="20" rx="4" ry="5" fill="#3a9163" />
+
+      {/* Eye white */}
+      <circle cx="21" cy="9" r="2.2" fill="#fff" />
+      {/* Pupil */}
+      <circle cx="21.5" cy="9" r="1.1" fill="#1A1714" />
+      {/* Eye shine */}
+      <circle cx="21.9" cy="8.4" r="0.45" fill="#fff" />
+
+      {/* Beak — upper */}
+      <path d="M24.5 10.5 C26.5 10, 27 11.5, 25.5 12.5 C24.5 13, 23.5 12.5, 23.5 11.5 Z" fill="#fff" />
+      {/* Beak — lower */}
+      <path d="M24 12.5 C25.5 12.5, 26 13.5, 25 14 C24 14.5, 23 13.5, 23.5 12.5 Z" fill="#e8e5e0" />
+
+      {/* Tail feathers */}
+      <path d="M10 24 C8 26, 7 29, 9 30 C10 28, 12 27, 12 25 Z" fill="#235f3e" />
+      <path d="M13 25 C12 28, 12 31, 14 31 C14.5 29, 15 27, 15 25 Z" fill="#2D7A50" />
+      <path d="M16 25 C16 28, 17 30, 19 30 C18.5 28, 18 26, 17 25 Z" fill="#235f3e" />
+    </svg>
+  )
+}

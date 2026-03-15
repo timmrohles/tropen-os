@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+const log = createLogger('admin/models')
 
 const VALID_PROVIDERS = ['openai', 'anthropic', 'mistral', 'google'] as const
 
@@ -33,7 +35,7 @@ export async function GET() {
     .order('name')
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return NextResponse.json(data)
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return NextResponse.json(data, { status: 201 })

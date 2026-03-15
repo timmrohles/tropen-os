@@ -1,0 +1,60 @@
+name: Design System Lint
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**/*.tsx'
+      - 'src/**/*.ts'
+      - 'src/**/*.jsx'
+      - 'src/**/*.js'
+      - 'src/app/globals.css'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.tsx'
+      - 'src/**/*.ts'
+
+jobs:
+  design-lint:
+    name: Design System Enforcer
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Design System Lint
+        id: design_lint
+        run: node scripts/ci/lint-design-system.mjs
+
+      - name: PR Comment on Failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ❌ Design System Violations\n\n` +
+                    `Dieser PR enthält Design-System-Verletzungen.\n\n` +
+                    `**Häufige Fehler:**\n` +
+                    `- Verbotene Hex-Farben statt \`var(--*)\`\n` +
+                    `- Verbotene Icon-Libraries (nur \`@phosphor-icons/react\` erlaubt)\n` +
+                    `- Falsches Icon-Weight (nur \`bold\` oder \`fill\`)\n` +
+                    `- Eigene Button/Card-Styles statt Design-System-Klassen\n\n` +
+                    `Siehe [CLAUDE.md → VOR JEDEM UI-BUILD](../blob/main/CLAUDE.md) für die vollständige Checkliste.\n\n` +
+                    `[Details ansehen](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            })

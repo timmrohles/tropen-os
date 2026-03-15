@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { X, Code, Table, FileText, ListBullets, DownloadSimple } from '@phosphor-icons/react'
 import Link from 'next/link'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface Artifact {
   id: string
@@ -49,6 +50,7 @@ function downloadArtifact(artifact: Artifact) {
 export default function ArtifactsDrawer({ conversationId, workspaceId, open, onClose }: ArtifactsDrawerProps) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
   const [loading, setLoading] = useState(false)
+  const trapRef = useFocusTrap<HTMLDivElement>(open)
 
   const fetchArtifacts = useCallback(async () => {
     setLoading(true)
@@ -94,6 +96,10 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
 
       {/* Drawer panel */}
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Artefakte dieses Chats"
         style={{
           position: 'fixed',
           top: 52,
@@ -123,6 +129,7 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
           </span>
           <button
             onClick={onClose}
+            aria-label="Schließen"
             style={{
               background: 'none',
               border: 'none',

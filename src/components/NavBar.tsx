@@ -9,7 +9,10 @@ import { AccountSwitcher, type AccountRole } from './AccountSwitcher'
 import {
   ShieldCheck, ClipboardText, ListChecks,
   ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush,
+  ChatCircle, FolderOpen, Books, Compass, Buildings, SquaresFour, RssSimple, Archive,
+  Sparkle,
 } from '@phosphor-icons/react'
+import ParrotIcon from './ParrotIcon'
 
 const VIEW_AS_KEY = 'tropen_view_as'
 
@@ -18,6 +21,7 @@ interface OrgBranding {
   primary_color: string
   organization_display_name: string | null
   ai_guide_name: string
+  members_see_models: boolean
 }
 
 export default function NavBar() {
@@ -26,6 +30,7 @@ export default function NavBar() {
   const pathname = usePathname()
   const [branding, setBranding] = useState<OrgBranding | null>(null)
   const [isSuperadmin, setIsSuperadmin] = useState(false)
+  const [dbRole, setDbRole] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const [viewAs, setViewAs] = useState<AccountRole>('superadmin')
 
@@ -45,7 +50,7 @@ export default function NavBar() {
   useEffect(() => {
     supabase
       .from('organization_settings')
-      .select('logo_url, primary_color, organization_display_name, ai_guide_name')
+      .select('logo_url, primary_color, organization_display_name, ai_guide_name, members_see_models')
       .maybeSingle()
       .then(({ data }) => { if (data) setBranding(data) })
 
@@ -55,6 +60,7 @@ export default function NavBar() {
       const { data: profile } = await supabase
         .from('users').select('role').eq('id', user.id).maybeSingle()
       if (profile?.role === 'superadmin') setIsSuperadmin(true)
+      setDbRole(profile?.role ?? null)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -74,7 +80,14 @@ export default function NavBar() {
   const displayName = branding?.organization_display_name
   const logoUrl = branding?.logo_url
   const showSuperadminNav = isSuperadmin && viewAs === 'superadmin'
-  const showAdminNav = !showSuperadminNav && viewAs === 'org_admin'
+  const showAdminNav = !showSuperadminNav && (
+    (isSuperadmin && (viewAs === 'org_admin' || viewAs === 'viewer')) ||
+    (!isSuperadmin && (dbRole === 'org_admin' || dbRole === 'viewer'))
+  )
+  const showMemberNav = !showSuperadminNav && !showAdminNav && (
+    (isSuperadmin && viewAs === 'member') ||
+    (!isSuperadmin && dbRole === 'member')
+  )
 
   const navLinkStyle = (active: boolean): React.CSSProperties => ({
     fontSize: 13, fontWeight: active ? 600 : 400,
@@ -115,12 +128,7 @@ export default function NavBar() {
               unoptimized
             />
           ) : (
-            <div style={{
-              width: 28, height: 28, background: 'var(--active-bg)', borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-            }}>
-              🦜
-            </div>
+            <ParrotIcon size={30} />
           )}
           {!logoUrl && (
             <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -157,6 +165,13 @@ export default function NavBar() {
                   aria-current={isActive('/admin/todos') ? 'page' : undefined}>
                   <ListChecks size={16} weight="fill" aria-hidden="true" />
                   To-Dos
+                </Link>
+              </li>
+              <li>
+                <Link href="/design-reference" style={navLinkStyle(isActive('/design-reference'))}
+                  aria-current={isActive('/design-reference') ? 'page' : undefined}>
+                  <Sparkle size={16} weight="fill" aria-hidden="true" />
+                  Design Ref
                 </Link>
               </li>
             </>
@@ -206,6 +221,83 @@ export default function NavBar() {
                   Branding
                 </Link>
               </li>
+              <li>
+                <Link href="/department" style={navLinkStyle(isActive('/department'))}
+                  aria-current={isActive('/department') ? 'page' : undefined}>
+                  <Buildings size={16} weight="fill" aria-hidden="true" />
+                  Department
+                </Link>
+              </li>
+            </>
+          )}
+
+          {showMemberNav && (
+            <>
+              <li>
+                <Link href="/chat" style={navLinkStyle(isActive('/chat'))}
+                  aria-current={isActive('/chat') ? 'page' : undefined}>
+                  <ChatCircle size={16} weight="fill" aria-hidden="true" />
+                  Chat
+                </Link>
+              </li>
+              <li>
+                <Link href="/projects" style={navLinkStyle(isActive('/projects'))}
+                  aria-current={isActive('/projects') ? 'page' : undefined}>
+                  <FolderOpen size={16} weight="fill" aria-hidden="true" />
+                  Projekte
+                </Link>
+              </li>
+              <li>
+                <Link href="/workspace" style={navLinkStyle(isActive('/workspace'))}
+                  aria-current={isActive('/workspace') ? 'page' : undefined}>
+                  <SquaresFour size={16} weight="fill" aria-hidden="true" />
+                  Workspace
+                </Link>
+              </li>
+              <li>
+                <Link href="/feeds" style={navLinkStyle(isActive('/feeds'))}
+                  aria-current={isActive('/feeds') ? 'page' : undefined}>
+                  <RssSimple size={16} weight="fill" aria-hidden="true" />
+                  Feeds
+                </Link>
+              </li>
+              <li>
+                <Link href="/artifacts" style={navLinkStyle(isActive('/artifacts'))}
+                  aria-current={isActive('/artifacts') ? 'page' : undefined}>
+                  <Archive size={16} weight="fill" aria-hidden="true" />
+                  Artefakte
+                </Link>
+              </li>
+              <li>
+                <Link href="/hub" style={navLinkStyle(isActive('/hub'))}
+                  aria-current={isActive('/hub') ? 'page' : undefined}>
+                  <Compass size={16} weight="fill" aria-hidden="true" />
+                  Hub
+                </Link>
+              </li>
+              <li>
+                <Link href="/knowledge" style={navLinkStyle(isActive('/knowledge'))}
+                  aria-current={isActive('/knowledge') ? 'page' : undefined}>
+                  <Books size={16} weight="fill" aria-hidden="true" />
+                  Wissen
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard" style={navLinkStyle(isActive('/dashboard'))}
+                  aria-current={isActive('/dashboard') ? 'page' : undefined}>
+                  <ChartBar size={16} weight="fill" aria-hidden="true" />
+                  Dashboard
+                </Link>
+              </li>
+              {branding?.members_see_models && (
+                <li>
+                  <Link href="/admin/models" style={navLinkStyle(isActive('/admin/models'))}
+                    aria-current={isActive('/admin/models') ? 'page' : undefined}>
+                    <Cpu size={16} weight="fill" aria-hidden="true" />
+                    Modelle
+                  </Link>
+                </li>
+              )}
             </>
           )}
 

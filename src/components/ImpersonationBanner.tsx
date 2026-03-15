@@ -27,7 +27,7 @@ export default function ImpersonationBanner() {
     }
     sessionStorage.removeItem(KEY)
     setSession(null)
-    router.push('/workspaces')
+    router.push('/chat')
   }, [router])
 
   // On mount: check URL param, then sessionStorage

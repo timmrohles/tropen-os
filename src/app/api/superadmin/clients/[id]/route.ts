@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Update first workspace
   if (workspace_name !== undefined) {
     const { data: ws } = await supabaseAdmin
-      .from('workspaces')
+      .from('departments')
       .select('id')
       .eq('organization_id', id)
       .order('created_at', { ascending: true })
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (ws) {
       await supabaseAdmin
-        .from('workspaces')
+        .from('departments')
         .update({
           name: workspace_name,
           budget_limit: workspace_budget_limit ?? null,
@@ -96,7 +96,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   // Delete in order: settings → workspaces → users → org
   await supabaseAdmin.from('organization_settings').delete().eq('organization_id', id)
-  await supabaseAdmin.from('workspaces').delete().eq('organization_id', id)
+  await supabaseAdmin.from('departments').delete().eq('organization_id', id)
   await supabaseAdmin.from('users').delete().eq('organization_id', id)
 
   const { error } = await supabaseAdmin.from('organizations').delete().eq('id', id)

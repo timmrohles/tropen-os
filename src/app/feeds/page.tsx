@@ -4,38 +4,16 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem } from '@/actions/feeds'
 import type { FeedItem, FeedSource } from '@/types/feeds'
-import { BookmarkSimple, ArrowSquareOut, Check, DotsThree, ThumbsDown, Archive, Trash } from '@phosphor-icons/react'
+import {
+  BookmarkSimple, ArrowSquareOut, CheckCircle, DotsThree,
+  ThumbsDown, Archive, Trash, Rss, MagnifyingGlass,
+} from '@phosphor-icons/react'
 
-const BADGE_COLOR: Record<string, string> = {
+const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
   email: '#7C6FF7',
   api:   '#F7A44A',
-  url:   '#888',
-}
-
-const s: Record<string, React.CSSProperties> = {
-  page:       { display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--bg-base)' },
-  sidebar:    { width: 220, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '16px 0' },
-  sideSection:{ padding: '0 16px 8px' },
-  sideLabel:  { fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 },
-  sideItem:   { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', cursor: 'pointer', borderRadius: 6, fontSize: 13, color: 'var(--text-secondary)', transition: 'background 120ms' },
-  sideItemActive: { background: 'var(--active-bg)', color: 'var(--active-text, #fff)' },
-  stream:     { flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 12 },
-  topBar:     { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 },
-  searchInput:{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 14, color: 'var(--text-primary)', outline: 'none' },
-  card:       { background: 'var(--bg-surface)', borderRadius: 10, padding: '14px 16px', border: '1px solid var(--border)', transition: 'border-color 120ms', position: 'relative' },
-  cardUnread: { borderLeft: '3px solid var(--accent)' },
-  badge:      { display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', marginBottom: 6 },
-  title:      { fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 },
-  summary:    { fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 },
-  facts:      { display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 },
-  fact:       { fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-base)', borderRadius: 4, padding: '2px 8px', border: '1px solid var(--border)' },
-  actions:    { display: 'flex', gap: 8, alignItems: 'center' },
-  actionBtn:  { display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' },
-  score:      { position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' },
-  empty:      { textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 },
-  menu:       { position: 'absolute' as const, right: 12, top: 36, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,.1)', zIndex: 10, minWidth: 180 },
-  menuItem:   { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' },
+  url:   'var(--text-tertiary)',
 }
 
 const PAGE_SIZE = 20
@@ -53,12 +31,9 @@ export default function FeedsPage() {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const readTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
-  // Load sources (client-side, user's org only via RLS)
   useEffect(() => {
     supabase.from('feed_sources').select('*').eq('is_active', true).order('name')
-      .then(({ data }) => {
-        if (data) setSources(data.map(mapSource))
-      })
+      .then(({ data }) => { if (data) setSources(data.map(mapSource)) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -104,7 +79,7 @@ export default function FeedsPage() {
     }, { threshold: 0.5 })
     return () => {
       observerRef.current?.disconnect()
-      readTimers.current.forEach((t) => clearTimeout(t))
+      for (const t of readTimers.current) clearTimeout(t)
     }
   }, [])
 
@@ -125,198 +100,250 @@ export default function FeedsPage() {
   )).slice(0, 20)
 
   return (
-    <div style={s.page} onClick={() => setMenuOpen(null)}>
-      {/* Left Sidebar */}
-      <div style={s.sidebar} onClick={(e) => e.stopPropagation()}>
-        <div style={s.sideSection}>
-          <div style={s.sideLabel}>Quellen</div>
-          <div
-            role="button"
-            tabIndex={0}
-            style={{ ...s.sideItem, ...(selectedSource === null ? s.sideItemActive : {}) }}
-            onClick={() => setSelectedSource(null)}
-            onKeyDown={(e) => e.key === 'Enter' && setSelectedSource(null)}
-          >
-            Alle Quellen
-          </div>
-          {sources.map((src) => (
-            <div
-              key={src.id}
-              role="button"
-              tabIndex={0}
-              style={{ ...s.sideItem, ...(selectedSource === src.id ? s.sideItemActive : {}) }}
-              onClick={() => setSelectedSource(src.id)}
-              onKeyDown={(e) => e.key === 'Enter' && setSelectedSource(src.id)}
-            >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: BADGE_COLOR[src.type] ?? '#888', flexShrink: 0 }} aria-hidden="true" />
-              {src.name}
-            </div>
-          ))}
+    <div
+      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}
+      onClick={() => setMenuOpen(null)}
+    >
+      {/* Page Header */}
+      <div className="page-header" style={{ flexShrink: 0, padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'var(--bg-nav)' }}>
+        <div className="page-header-text">
+          <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Rss size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            Newscenter
+          </h1>
+          <p className="page-header-sub">Deine kuratierten Feed-Quellen</p>
         </div>
-        {allTags.length > 0 && (
-          <div style={{ ...s.sideSection, marginTop: 16 }}>
-            <div style={s.sideLabel}>Themen</div>
-            {allTags.map((tag) => (
-              <div
-                key={tag}
-                role="button"
-                tabIndex={0}
-                style={{ ...s.sideItem, fontSize: 12 }}
-                onClick={() => { setSearch(tag); loadItems(0, true) }}
-                onKeyDown={(e) => e.key === 'Enter' && (setSearch(tag), loadItems(0, true))}
-              >
-                #{tag}
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="page-header-actions">
+          <a href="/feeds/new" className="btn btn-primary">+ Quelle</a>
+        </div>
       </div>
 
-      {/* Main Stream */}
-      <div style={s.stream}>
-        <div style={s.topBar}>
-          <input
-            style={s.searchInput}
-            placeholder="Suche in Feeds..."
-            value={search}
-            aria-label="Feed-Suche"
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const }}>
-            {total} Artikel
-          </span>
-          <a href="/feeds/new" className="btn btn-primary" style={{ whiteSpace: 'nowrap' as const }}>
-            + Quelle
-          </a>
+      {/* Body: Sidebar + Stream */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Left Sidebar */}
+        <div
+          className="sidebar-scroll"
+          style={{ width: 220, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '12px 0', background: 'rgba(255,255,255,0.45)' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ padding: '0 8px 6px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
+              Quellen
+            </div>
+            <button
+              className={`list-row${selectedSource === null ? ' list-row--active' : ''}`}
+              onClick={() => setSelectedSource(null)}
+            >
+              Alle Quellen
+              {total > 0 && <span className="badge" style={{ marginLeft: 'auto' }}>{total}</span>}
+            </button>
+            {sources.map((src) => (
+              <button
+                key={src.id}
+                className={`list-row${selectedSource === src.id ? ' list-row--active' : ''}`}
+                onClick={() => setSelectedSource(src.id)}
+              >
+                <span
+                  style={{ width: 8, height: 8, borderRadius: '50%', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', flexShrink: 0 }}
+                  aria-hidden="true"
+                />
+                {src.name}
+              </button>
+            ))}
+          </div>
+
+          {allTags.length > 0 && (
+            <div style={{ padding: '12px 8px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
+                Themen
+              </div>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  className="list-row"
+                  style={{ fontSize: 12, color: 'var(--accent)' }}
+                  onClick={() => { setSearch(tag); loadItems(0, true) }}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {loading && items.length === 0 && (
-          <div style={s.empty} role="status" aria-live="polite">Wird geladen…</div>
-        )}
+        {/* Main Stream */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Search + count */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <div style={{ flex: 1, position: 'relative' as const }}>
+              <MagnifyingGlass
+                size={14}
+                weight="bold"
+                color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
+                aria-hidden="true"
+              />
+              <input
+                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 14, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
+                placeholder="Suche in Feeds..."
+                value={search}
+                aria-label="Feed-Suche"
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const }}>
+              {total} Artikel
+            </span>
+          </div>
 
-        {!loading && items.length === 0 && (
-          <div style={s.empty}>Keine Artikel gefunden.</div>
-        )}
+          {loading && items.length === 0 && (
+            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
+              Wird geladen…
+            </div>
+          )}
 
-        {items.map((item) => {
-          const src = getSource(item.sourceId)
-          const isUnread = item.status === 'unread'
-          return (
-            <div
-              key={item.id}
-              data-item-id={item.id}
-              ref={isUnread ? registerCard : undefined}
-              style={{ ...s.card, ...(isUnread ? s.cardUnread : {}) }}
-              onClick={() => setMenuOpen(null)}
-            >
-              {item.score && (
-                <span style={s.score} aria-label={`Relevanz: ${item.score} von 10`}>{item.score}/10</span>
-              )}
-              {src && (
-                <div style={{ ...s.badge, background: BADGE_COLOR[src.type] ?? '#888' }}>
-                  {src.name}
-                </div>
-              )}
-              <div style={s.title}>{item.title}</div>
-              {item.summary && <div style={s.summary}>{item.summary}</div>}
-              {item.keyFacts && item.keyFacts.length > 0 && (
-                <div style={s.facts}>
-                  {item.keyFacts.slice(0, 4).map((f, i) => (
-                    <span key={i} style={s.fact}>• {f}</span>
-                  ))}
-                </div>
-              )}
-              <div style={s.actions}>
-                {item.url && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    style={{ ...s.actionBtn, textDecoration: 'none' }}
-                    aria-label={`Artikel öffnen: ${item.title}`}
+          {!loading && items.length === 0 && (
+            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
+              Keine Artikel gefunden.
+            </div>
+          )}
+
+          {items.map((item) => {
+            const src = getSource(item.sourceId)
+            const isUnread = item.status === 'unread'
+            return (
+              <div
+                key={item.id}
+                data-item-id={item.id}
+                ref={isUnread ? registerCard : undefined}
+                className="card"
+                style={{ padding: '14px 16px', borderLeft: isUnread ? '3px solid var(--accent)' : undefined, position: 'relative' as const }}
+                onClick={() => setMenuOpen(null)}
+              >
+                {item.score && (
+                  <span
+                    style={{ position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }}
+                    aria-label={`Relevanz: ${item.score} von 10`}
                   >
-                    <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
-                  </a>
+                    {item.score}/10
+                  </span>
                 )}
-                <button
-                  style={{ ...s.actionBtn, color: item.isSaved ? 'var(--accent)' : 'var(--text-secondary)' }}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    await toggleItemSaved(item.id, !item.isSaved)
-                    setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it))
-                  }}
-                  aria-pressed={item.isSaved}
-                  aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
-                >
-                  <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'regular'} aria-hidden="true" />
-                  {item.isSaved ? 'Gespeichert' : 'Merken'}
-                </button>
-                <button
-                  style={s.actionBtn}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    await markItemRead(item.id)
-                    setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: 'read' } : it))
-                  }}
-                  aria-label="Als gelesen markieren"
-                >
-                  <Check size={13} weight="bold" aria-hidden="true" /> Abhaken
-                </button>
-                <button
-                  style={{ ...s.actionBtn, marginLeft: 'auto' }}
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
-                  aria-label="Weitere Aktionen"
-                  aria-haspopup="true"
-                  aria-expanded={menuOpen === item.id}
-                >
-                  <DotsThree size={16} weight="bold" aria-hidden="true" />
-                </button>
-
-                {menuOpen === item.id && (
-                  <div style={s.menu} role="menu" onClick={(e) => e.stopPropagation()}>
-                    <div
-                      role="menuitem"
-                      tabIndex={0}
-                      style={s.menuItem}
-                      onClick={async () => { await markItemNotRelevant(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      onKeyDown={(e) => e.key === 'Enter' && (markItemNotRelevant(item.id), setItems((prev) => prev.filter((it) => it.id !== item.id)), setMenuOpen(null))}
-                    >
-                      <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
-                    </div>
-                    <div
-                      role="menuitem"
-                      tabIndex={0}
-                      style={s.menuItem}
-                      onClick={async () => { await archiveItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      onKeyDown={(e) => e.key === 'Enter' && (archiveItem(item.id), setItems((prev) => prev.filter((it) => it.id !== item.id)), setMenuOpen(null))}
-                    >
-                      <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
-                    </div>
-                    <div
-                      role="menuitem"
-                      tabIndex={0}
-                      style={{ ...s.menuItem, color: '#e53e3e' }}
-                      onClick={async () => { await deleteItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      onKeyDown={(e) => e.key === 'Enter' && (deleteItem(item.id), setItems((prev) => prev.filter((it) => it.id !== item.id)), setMenuOpen(null))}
-                    >
-                      <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
-                    </div>
+                {src && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
+                    {src.name}
                   </div>
                 )}
-              </div>
-            </div>
-          )
-        })}
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>
+                  {item.title}
+                </div>
+                {item.summary && (
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 }}>
+                    {item.summary}
+                  </div>
+                )}
+                {item.keyFacts && item.keyFacts.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
+                    {item.keyFacts.slice(0, 4).map((f, i) => (
+                      <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="btn btn-ghost btn-sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      aria-label={`Artikel öffnen: ${item.title}`}
+                    >
+                      <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
+                    </a>
+                  )}
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: item.isSaved ? 'var(--accent)' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      await toggleItemSaved(item.id, !item.isSaved)
+                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it))
+                    }}
+                    aria-pressed={item.isSaved}
+                    aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
+                  >
+                    <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'regular'} aria-hidden="true" />
+                    {item.isSaved ? 'Gespeichert' : 'Merken'}
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      await markItemRead(item.id)
+                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: 'read' } : it))
+                    }}
+                    aria-label="Als gelesen markieren"
+                  >
+                    <CheckCircle size={13} weight="bold" aria-hidden="true" /> Abhaken
+                  </button>
+                  <button
+                    className="btn-icon"
+                    style={{ marginLeft: 'auto' }}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
+                    aria-label="Weitere Aktionen"
+                    aria-haspopup="true"
+                    aria-expanded={menuOpen === item.id}
+                  >
+                    <DotsThree size={16} weight="bold" aria-hidden="true" />
+                  </button>
 
-        {items.length < total && (
-          <button
-            className="btn btn-ghost"
-            style={{ alignSelf: 'center', marginTop: 8 }}
-            onClick={() => loadItems(items.length, false)}
-          >
-            Mehr laden ({total - items.length} weitere)
-          </button>
-        )}
+                  {menuOpen === item.id && (
+                    <div
+                      className="dropdown"
+                      style={{ position: 'absolute' as const, right: 12, top: 44, zIndex: 10, minWidth: 180 }}
+                      role="menu"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        role="menuitem"
+                        className="dropdown-item"
+                        onClick={async () => { await markItemNotRelevant(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
+                      >
+                        <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
+                      </button>
+                      <button
+                        role="menuitem"
+                        className="dropdown-item"
+                        onClick={async () => { await archiveItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
+                      >
+                        <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
+                      </button>
+                      <div className="dropdown-divider" />
+                      <button
+                        role="menuitem"
+                        className="dropdown-item dropdown-item--danger"
+                        onClick={async () => { await deleteItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
+                      >
+                        <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {items.length < total && (
+            <button
+              className="btn btn-ghost"
+              style={{ alignSelf: 'center', marginTop: 8 }}
+              onClick={() => loadItems(items.length, false)}
+            >
+              Mehr laden ({total - items.length} weitere)
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

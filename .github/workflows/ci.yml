@@ -34,6 +34,15 @@ jobs:
 
       # ── Qualitäts-Checks ──────────────────────────────────────────
 
+      - name: Security Audit
+        run: pnpm audit --audit-level=critical
+
+      - name: Design System Lint
+        run: node scripts/ci/lint-design-system.mjs
+
+      - name: Dependency Check
+        run: pnpm lint:deps
+
       - name: TypeScript Typecheck
         id: typecheck
         run: pnpm typecheck
@@ -48,6 +57,27 @@ jobs:
           LANGSMITH_TRACING: 'false'
           LANGSMITH_API_KEY: ''
 
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build für E2E
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          UPSTASH_REDIS_REST_URL: ''
+          UPSTASH_REDIS_REST_TOKEN: ''
+
+      - name: E2E Tests
+        id: e2e_tests
+        run: pnpm exec playwright test --reporter=list,json --output=test-results/e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          UPSTASH_REDIS_REST_URL: ''
+          UPSTASH_REDIS_REST_TOKEN: ''
+
       # ── Test-Ergebnisse in Supabase schreiben ────────────────────
 
       - name: Write Test Results to Supabase
@@ -60,6 +90,7 @@ jobs:
           CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
           UNIT_TEST_OUTCOME: ${{ steps.unit_tests.outcome }}
+          E2E_TEST_OUTCOME: ${{ steps.e2e_tests.outcome }}
 
       # ── Artefakte ────────────────────────────────────────────────
 
@@ -70,6 +101,14 @@ jobs:
           name: test-results-${{ github.sha }}
           path: test-results/
           retention-days: 30
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: playwright-report/
+          retention-days: 14
 
       # ── Deploy (nur main) ────────────────────────────────────────
 

@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
+const log = createLogger('admin/branding')
 
 async function getAdminUser() {
   const supabase = await createClient()
@@ -21,13 +23,13 @@ export async function GET() {
 
   const { data } = await supabaseAdmin
     .from('organization_settings')
-    .select('logo_url, primary_color, organization_display_name, ai_guide_name, ai_guide_description')
+    .select('logo_url, primary_color, organization_display_name, ai_guide_name, ai_guide_description, members_see_models')
     .eq('organization_id', me.organization_id)
     .maybeSingle()
 
   return NextResponse.json(data ?? {
     logo_url: null,
-    primary_color: '#a3b554',
+    primary_color: 'var(--accent)',
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
@@ -45,7 +47,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 })
   }
 
-  const allowed = ['logo_url', 'primary_color', 'organization_display_name', 'ai_guide_name', 'ai_guide_description']
+  const allowed = ['logo_url', 'primary_color', 'organization_display_name', 'ai_guide_name', 'ai_guide_description', 'members_see_models']
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const key of allowed) {
     if (key in body) update[key] = body[key]
@@ -59,7 +61,7 @@ export async function PATCH(request: Request) {
     )
 
   if (error) {
-    console.error('Branding PATCH error:', error)
+    log.error('Branding PATCH error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 

@@ -96,7 +96,7 @@ export default function ChatInput({ input, setInput, sending, onSubmit, activeAg
             <div className="cinput-agent-drop">
               <div className="cinput-agent-drop-none">
                 <button
-                  className={`cinput-agent-option${!activeAnyAgent ? ' cinput-agent-option--active' : ''}`}
+                  className={`cinput-agent-option${activeAnyAgent ? '' : ' cinput-agent-option--active'}`}
                   onClick={() => { onSetActiveAgentId(null); setDropOpen(false) }}
                 >
                   Kein Agent
@@ -167,7 +167,7 @@ export default function ChatInput({ input, setInput, sending, onSubmit, activeAg
           disabled={sending}
           autoFocus
         />
-        <button className="cinput-send" type="submit" disabled={sending || !input.trim()}>
+        <button className="cinput-send" type="submit" disabled={sending || !input.trim()} aria-label={sending ? 'Nachricht wird gesendet…' : 'Nachricht senden'}>
           {sending
             ? <span className="cinput-sending">…</span>
             : <PaperPlaneRight size={20} weight="fill" />

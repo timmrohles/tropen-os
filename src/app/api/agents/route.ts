@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { validateBody } from '@/lib/validators'
+import { createAgentSchema } from '@/lib/validators/agents'
 
 export async function GET() {
   const supabase = await createClient()
@@ -37,8 +39,8 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, description, system_prompt, visibility } = await req.json()
-  if (!name?.trim()) return NextResponse.json({ error: 'name erforderlich' }, { status: 400 })
+  const { data: body, error: validationError } = await validateBody(req, createAgentSchema)
+  if (validationError) return validationError
 
   const { data: profile } = await supabaseAdmin
     .from('users')
@@ -51,10 +53,10 @@ export async function POST(req: Request) {
     .insert({
       user_id: user.id,
       organization_id: profile?.organization_id ?? null,
-      name: name.trim(),
-      description: description?.trim() ?? null,
-      system_prompt: system_prompt?.trim() ?? null,
-      visibility: visibility ?? 'private',
+      name: body.name,
+      description: body.description ?? null,
+      system_prompt: body.system_prompt ?? null,
+      visibility: body.visibility,
     })
     .select()
     .single()

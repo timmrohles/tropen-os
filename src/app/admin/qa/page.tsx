@@ -406,7 +406,7 @@ function RoutingPanel({
             </thead>
             <tbody>
               {(data?.log ?? []).map((r) => (
-                <tr key={r.id} className={`border-t border-white/5 ${r.status !== 'success' ? 'opacity-60' : ''}`}>
+                <tr key={r.id} className={`border-t border-white/5 ${r.status === 'success' ? '' : 'opacity-60'}`}>
                   <td className="py-3 px-3 text-xs text-white/30 font-mono">{r.time}</td>
                   <td className="py-3 px-3 text-sm text-white/80">{r.taskType}</td>
                   <td className={`py-3 px-3 text-sm ${modelTextColor(r.model)}`}>{r.model}</td>
@@ -417,11 +417,11 @@ function RoutingPanel({
                   </td>
                   <td
                     className={`py-3 px-3 text-sm ${
-                      r.status !== 'success'
-                        ? 'text-red-400'
-                        : r.latencyMs !== null && r.latencyMs < 400
+                      r.status === 'success'
+                        ? r.latencyMs !== null && r.latencyMs < 400
                           ? 'text-emerald-400'
                           : 'text-yellow-400'
+                        : 'text-red-400'
                     }`}
                   >
                     {r.status === 'success' && r.latencyMs !== null ? `${r.latencyMs}ms` : r.status}

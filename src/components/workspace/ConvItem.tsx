@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import { type Conversation, formatDate } from '@/hooks/useWorkspaceState'
+import { type Conversation } from '@/hooks/useWorkspaceState'
+import { formatDate } from '@/lib/workspace-types'
 
 interface ConvItemProps {
   conv: Conversation

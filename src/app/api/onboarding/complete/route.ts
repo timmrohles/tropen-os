@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
+const log = createLogger('onboarding')
 
 interface CompleteBody {
   full_name: string
@@ -69,20 +71,20 @@ export async function POST(request: Request) {
     { onConflict: 'id' }
   )
   if (userErr) {
-    console.error('users upsert error:', userErr)
+    log.error('users upsert error:', userErr)
     return NextResponse.json({ error: 'Profil konnte nicht gespeichert werden' }, { status: 500 })
   }
 
   // 3. Workspace-Mitgliedschaft sicherstellen (falls noch nicht vorhanden)
   const { data: orgWorkspaces } = await supabaseAdmin
-    .from('workspaces')
+    .from('departments')
     .select('id')
     .eq('organization_id', organizationId)
 
   if (orgWorkspaces?.length) {
     const wsRole = role === 'viewer' ? 'viewer' : role === 'member' ? 'member' : 'admin'
     await supabaseAdmin
-      .from('workspace_members')
+      .from('department_members')
       .upsert(
         orgWorkspaces.map((ws) => ({ workspace_id: ws.id, user_id: user.id, role: wsRole })),
         { onConflict: 'workspace_id,user_id' }
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
     { onConflict: 'user_id' }
   )
   if (prefErr) {
-    console.error('user_preferences upsert error:', prefErr)
+    log.error('user_preferences upsert error:', prefErr)
     return NextResponse.json({ error: 'Präferenzen konnten nicht gespeichert werden' }, { status: 500 })
   }
 
@@ -114,7 +116,7 @@ export async function POST(request: Request) {
         organization_id: organizationId,
         organization_display_name: body.org_name?.trim() || null,
         logo_url: body.logo_url || null,
-        primary_color: body.primary_color ?? '#a3b554',
+        primary_color: body.primary_color ?? 'var(--accent)',
         ai_guide_name: body.guide_name?.trim() || 'Toro',
         onboarding_completed: true,
       },
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
     )
     if (orgErr) {
       // Non-fatal: Tabelle existiert eventuell noch nicht (Migration 007 ausstehend)
-      console.error('organization_settings upsert error:', orgErr)
+      log.error('organization_settings upsert error:', orgErr)
     }
 
     // 6. Einladungen versenden (best-effort)
@@ -135,7 +137,7 @@ export async function POST(request: Request) {
           redirectTo: `${siteUrl}/auth/callback`,
         })
       } catch (e) {
-        console.error('Invite error for', email, e)
+        log.error('Invite error for', email, e)
       }
     }
   }

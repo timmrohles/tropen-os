@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 import Parrot from '@/components/Parrot'
 import { CheckSquare } from '@phosphor-icons/react'
 
@@ -43,11 +44,12 @@ export function MergeModal({
   onSetMergeProjectId,
   onSetMergeProjectDropOpen,
 }: MergeModalProps) {
+  const trapRef = useFocusTrap<HTMLDivElement>(!!mergeModal)
   if (!mergeModal) return null
 
   return (
     <div className="modal-overlay" onClick={() => { if (!mergeLoading) onClose() }}>
-      <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+      <div ref={trapRef} className="modal" role="dialog" aria-modal="true" aria-label="Chats zusammenführen" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <Parrot size={28} />
           <span className="modal-title">Chats zusammenführen</span>
@@ -135,7 +137,7 @@ export function MergeModal({
           <div className="modal-footer">
             <button className="modal-btn-secondary" onClick={onClose}>Abbrechen</button>
             <button
-              className={`modal-btn-primary${!mergeTitle.trim() ? ' modal-btn-primary--invalid' : ''}`}
+              className={`modal-btn-primary${mergeTitle.trim() ? '' : ' modal-btn-primary--invalid'}`}
               disabled={!mergeTitle.trim()}
               onClick={onApply}
             >

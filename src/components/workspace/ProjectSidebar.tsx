@@ -329,7 +329,7 @@ export default function ProjectSidebar({
                     return next
                   })}
                 >{isCollapsed ? <CaretRight size={10} /> : <CaretDown size={10} />}</button>
-                <span className="ps-project-icon"><Folder size={13} weight="duotone" /></span>
+                <span className="ps-project-icon"><Folder size={13} weight="fill" /></span>
                 {editingProjectId === project.id ? (
                   <input
                     ref={projectRenameInputRef}
@@ -410,9 +410,9 @@ export default function ProjectSidebar({
       <div className="ps-media-teaser-section">
         <div className="ps-media-teaser-label">── Automatische Ordner ──</div>
         {[
-          { icon: <ImageIcon size={13} weight="duotone" />, label: 'Bilder' },
-          { icon: <FileText size={13} weight="duotone" />, label: 'Dokumente' },
-          { icon: <CodeIcon size={13} weight="duotone" />, label: 'Code' },
+          { icon: <ImageIcon size={13} weight="fill" />, label: 'Bilder' },
+          { icon: <FileText size={13} weight="fill" />, label: 'Dokumente' },
+          { icon: <CodeIcon size={13} weight="fill" />, label: 'Code' },
         ].map((item) => (
           <div
             key={item.label}

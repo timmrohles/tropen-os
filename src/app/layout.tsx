@@ -1,10 +1,12 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Suspense } from 'react'
 import ConditionalNavBar from '@/components/ConditionalNavBar'
 import ImpersonationBanner from '@/components/ImpersonationBanner'
+import AppFooter from '@/components/AppFooter'
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import './globals.css'
-import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
+import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,10 +15,9 @@ const inter = Inter({
   display: 'swap',
 })
 
-const instrumentSerif = Instrument_Serif({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400'],
-  style: ['normal', 'italic'],
+  weight: ['700', '800'],
   variable: '--font-display',
   display: 'swap',
 })
@@ -30,18 +31,33 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Tropen OS',
-  description: 'Responsible AI Department für den Mittelstand'
+  description: 'Responsible AI Department für den Mittelstand',
+  manifest: '/manifest.json',
+  themeColor: 'var(--accent)',   // var(--accent) — war var(--accent) (altes Grün)
+  appleWebApp: {
+    capable: true,
+    title: 'Tropen OS',
+    statusBarStyle: 'black-translucent',
+  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',    // Pflicht für env(safe-area-inset-*) auf iOS
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="de">
-      <body className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`} style={{ minHeight: '100vh' }}>
+      <body className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <ServiceWorkerRegistrar />
         <ConditionalNavBar />
         <Suspense>
           <ImpersonationBanner />
         </Suspense>
-        <main>{children}</main>
+        <main style={{ flex: 1 }}>{children}</main>
+        <AppFooter />
       </body>
     </html>
   )

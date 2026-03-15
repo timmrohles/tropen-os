@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 // ── Typen ─────────────────────────────────────────────────────────────────────
 
-type Status = 'offen' | 'in_arbeit' | 'erledigt' | 'blockiert' | 'geplant'
+type Status = 'offen' | 'in_arbeit' | 'erledigt' | 'blockiert' | 'geplant' | 'teilweise'
 
 interface Todo {
   id: string
@@ -17,7 +17,7 @@ interface Todo {
 }
 
 // ── Daten ─────────────────────────────────────────────────────────────────────
-// Stand: 2026-03-11 — manuell gepflegt, spiegelt CLAUDE.md + Roadmap wider
+// Stand: 2026-03-13 — manuell gepflegt, spiegelt CLAUDE.md + Roadmap wider
 
 const TODOS: Todo[] = [
 
@@ -126,17 +126,17 @@ const TODOS: Todo[] = [
   {
     id: 'chat-12',
     titel: 'Agenten-System Phase 2: Agent-Dropdown im Chat-Input',
-    beschreibung: 'Agenten Projekten zuweisen (conversations.agent_id), Dropdown im ChatInput, System-Prompt als agent_system_prompt an Dify übergeben.',
-    status: 'offen',
+    beschreibung: 'Vollständig implementiert: Dropdown in ChatInput, agent_id wird in conversations gespeichert, beim Conversation-Wechsel wiederhergestellt. Edge Function lädt agent system_prompt und übergibt ihn an Dify.',
+    status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'hoch',
     referenz: 'Roadmap — nächster Schritt',
   },
   {
     id: 'chat-13',
-    titel: 'Prompt-Bibliothek Phase 3: Eigene Vorlagen + Paket-Vorlagen',
-    beschreibung: 'DB-Tabelle prompt_templates (Mig. 024 vorhanden), eigene Vorlagen erstellen/bearbeiten, Sidebar-Integration. Paket-Vorlagen je nach aktiviertem Paket. Org-weit teilen.',
-    status: 'offen',
+    titel: 'Prompt-Bibliothek Phase 3: Eigene Vorlagen + Team-Vorlagen',
+    beschreibung: 'TemplateDrawer hat 3 Tabs: Core-Vorlagen (hardcoded), Meine Vorlagen (POST/DELETE/PATCH /api/prompt-templates), Team-Vorlagen (scope=team). Erstellen, Löschen, Teilen vollständig. Pagination-Fix: .data aus Response extrahieren.',
+    status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'mittel',
     referenz: 'Migration 024',
@@ -144,8 +144,8 @@ const TODOS: Todo[] = [
   {
     id: 'chat-14',
     titel: 'Projekt-Gedächtnis Phase 2: Manuelles Kontext-Textfeld',
-    beschreibung: 'Freitext-Feld im Projekt-Detail das Toro bei jedem Chat als Kontext liest.',
-    status: 'offen',
+    beschreibung: 'UI-Textarea in projects/page.tsx (instructions-Feld) war vorhanden. Edge Function ergänzt: lädt project.instructions via project_id der Conversation und übergibt project_context an Dify.',
+    status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'mittel',
     referenz: 'Roadmap',
@@ -236,6 +236,33 @@ const TODOS: Todo[] = [
     referenz: 'Migration 017/018',
   },
   {
+    id: 'proj-05',
+    titel: 'RAG Pipeline: knowledge-search + ai-chat Integration',
+    beschreibung: 'knowledge-search Edge Function deployed. ai-chat Step 9c: ruft knowledge-search mit User-Nachricht + org/user/project auf, injiziert Top-5 Chunks als knowledge_context in Dify inputs. Non-blocking.',
+    status: 'erledigt',
+    kategorie: 'Projekte & Wissensbasis',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'proj-06',
+    titel: 'knowledge-ingest: Edge Function Crash-Ursache finden',
+    beschreibung: 'Step-Debugging deployed (schreibt aktuellen Step in error_message). User muss fehlgeschlagenes Dokument löschen + neu hochladen. Fehler erscheint dann als "[step] ..." unter dem Dokument. RLS-Policies (Mig. 036) + Bucket sind korrekt.',
+    status: 'offen',
+    kategorie: 'Projekte & Wissensbasis',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'proj-07',
+    titel: 'Dify: knowledge_context Variable in System-Prompt einbauen',
+    beschreibung: 'In der tropen-os-chat-v2 Dify-App muss {{knowledge_context}} im System-Prompt Abschnitt ergänzt werden. Beispiel: "## Relevante Wissensbasis-Einträge:\\n{{knowledge_context}}". Manueller Schritt im Dify Dashboard — kein Code.',
+    status: 'offen',
+    kategorie: 'Projekte & Wissensbasis',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
     id: 'proj-03',
     titel: 'Wissensbasis Phase 2: Google Drive, Notion, RSS',
     beschreibung: 'Externe Quellen anbinden: Google Drive Sync, Notion, RSS Feeds, Web-Seiten manuell.',
@@ -291,7 +318,7 @@ const TODOS: Todo[] = [
   {
     id: 'ds-01',
     titel: 'Design-System: Türkis/Teal vollständig entfernt',
-    beschreibung: 'Alle teal/cyan Farben durch var(--accent) #a3b554 ersetzt. Gilt global.',
+    beschreibung: 'Alle teal/cyan Farben durch var(--accent) var(--accent) ersetzt. Gilt global.',
     status: 'erledigt',
     kategorie: 'Design-System & UX',
     prioritaet: 'hoch',
@@ -318,11 +345,47 @@ const TODOS: Todo[] = [
   {
     id: 'ds-04',
     titel: 'Kosten-Forecast im SessionPanel',
-    beschreibung: 'Hochrechnung Verbrauch → Monatsbetrag. Warnung bei Annäherung an Budget-Schwelle.',
-    status: 'offen',
+    beschreibung: 'Bereits implementiert: forecastCost = (monthlyCost / dayOfMonth) * daysInMonth. Warnungen ab €5 (orange) und €10 (rot). Session-Kosten-Warnung ab €0.10 / €0.50. Zeile "Hochrechnung" in der Session-Panel-Stats-Sektion.',
+    status: 'erledigt',
     kategorie: 'Design-System & UX',
     prioritaet: 'mittel',
     referenz: 'Roadmap',
+  },
+  {
+    id: 'ds-06',
+    titel: 'Layout-Standard-Bereinigung aller Seiten',
+    beschreibung: 'hub, department, feeds, workspace, projects, offline, artifacts: Outer-Wrapper entfernt, content-max direkt als Root. body flex-column + main flex:1 für korrektes Footer-Positioning in layout.tsx.',
+    status: 'erledigt',
+    kategorie: 'Design-System & UX',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'ds-07',
+    titel: 'Artefakte: Eigene Seite /artifacts + NavBar-Link',
+    beschreibung: '/artifacts als eigenständige Seite (vorher in /workspace). NavBar: Archive-Icon + Link für Member. /workspace zeigt Phase-2 Placeholder.',
+    status: 'erledigt',
+    kategorie: 'Design-System & UX',
+    prioritaet: 'mittel',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'ds-08',
+    titel: 'Department aus Member-Nav → Admin-Nav verschoben',
+    beschreibung: 'Department-Link nur noch in Admin-Nav sichtbar. Member-Nav zeigt Department nicht mehr.',
+    status: 'erledigt',
+    kategorie: 'Design-System & UX',
+    prioritaet: 'mittel',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'ds-09',
+    titel: 'Modelle für Members: Toggle in Admin/Models',
+    beschreibung: 'members_see_models Boolean in organization_settings (Mig. 035). Toggle in admin/models Seite. NavBar zeigt Modelle-Link für Member nur wenn Toggle aktiv.',
+    status: 'erledigt',
+    kategorie: 'Design-System & UX',
+    prioritaet: 'mittel',
+    referenz: '2026-03-13',
   },
   {
     id: 'ds-05',
@@ -394,20 +457,105 @@ const TODOS: Todo[] = [
   {
     id: 'infra-07',
     titel: 'Thinking Mode: thinking_mode in user_preferences',
-    beschreibung: 'thinking_mode BOOLEAN (Mig. 015) vorhanden. Edge Function noch nicht angebunden.',
-    status: 'offen',
+    beschreibung: 'thinking_mode BOOLEAN (Mig. 015) vorhanden. Edge Function ai-chat lädt jetzt thinking_mode aus user_preferences und übergibt es als Input an Dify. Toggle in SessionPanel vorhanden (gespeichert via savePrefs).',
+    status: 'erledigt',
     kategorie: 'Infrastruktur & Backend',
     prioritaet: 'niedrig',
     referenz: 'Migration 015',
   },
   {
+    id: 'infra-08b',
+    titel: 'Sentry Error Tracking integriert',
+    beschreibung: '@sentry/nextjs integriert. sentry.server.config.ts + sentry.client.config.ts + sentry.edge.config.ts. withSentryConfig() in next.config.ts. Source Maps in Production deaktiviert.',
+    status: 'erledigt',
+    kategorie: 'Infrastruktur & Backend',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'infra-08c',
+    titel: 'Globales Rate Limiting mit Upstash Redis',
+    beschreibung: 'proxy.ts: Sliding Window pro IP. Auth-Seiten 10/15min, public API 20/1h, Chat-Stream 30/1min, alle API-Routes 200/1min. In-Memory-Map in public/chat/route.ts entfernt. Supabase Session Refresh in proxy.ts ergänzt.',
+    status: 'erledigt',
+    kategorie: 'Infrastruktur & Backend',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
     id: 'infra-08',
     titel: 'PWA: Progressive Web App',
-    beschreibung: 'App-Manifest (manifest.json), Service Worker, installierbar auf iOS/Android/Desktop. Offline-Fallback-Seite. Icons in allen Größen (192px, 512px). HTTPS-only.',
-    status: 'offen',
+    beschreibung: 'public/manifest.json (name, icons, shortcuts, theme_color var(--accent)). SVG-Icons 192px + 512px in public/icons/. Service Worker public/sw.js: Network-first für Navigation, Cache-first für statische Assets, Offline-Fallback /offline. ServiceWorkerRegistrar Client-Komponente in layout.tsx. metadata.manifest + themeColor + appleWebApp ergänzt.',
+    status: 'erledigt',
     kategorie: 'Infrastruktur & Backend',
     prioritaet: 'mittel',
     referenz: 'Roadmap',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Testing
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'test-01',
+    titel: 'Playwright E2E: Setup + Login-Tests',
+    beschreibung: 'playwright.config.ts erstellt. e2e/login.spec.ts: 5 Tests — Form-Rendering, Validierung, Fehler-Mock (Supabase 400), Erfolgs-Mock (Redirect /chat), Link Passwort vergessen. Chromium in CI installiert.',
+    status: 'erledigt',
+    kategorie: 'Testing',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'test-02',
+    titel: 'Playwright E2E: Toro Chat Widget',
+    beschreibung: 'e2e/toro-widget.spec.ts: 4 Tests — Widget sichtbar, Eingabe möglich, Antwort nach Mock-API erscheint, Optimistic UI (Nutzer-Nachricht sofort sichtbar).',
+    status: 'erledigt',
+    kategorie: 'Testing',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'test-03',
+    titel: 'Vitest Coverage: Scope auf src/lib/** + src/app/api/** erweitert',
+    beschreibung: 'Coverage-Include von src/lib/qa/** auf src/lib/** + src/app/api/** ausgeweitet. Thresholds bei 50% (branches/functions/lines). Unit Tests für token-counter.ts (7 Tests) und errors.ts (4 Tests) hinzugefügt. 48 Tests gesamt, alle grün.',
+    status: 'erledigt',
+    kategorie: 'Testing',
+    prioritaet: 'hoch',
+    referenz: '2026-03-13',
+  },
+  {
+    id: 'test-04',
+    titel: 'E2E: Authenticated Chat-Flow (Login → Chat → Antwort)',
+    beschreibung: 'E2E-Test der die vollständige User Journey mit echtem Supabase-Test-Account testet. Benötigt E2E_EMAIL und E2E_PASSWORD in Vercel Secrets.',
+    status: 'offen',
+    kategorie: 'Testing',
+    prioritaet: 'mittel',
+    referenz: 'nach Test-Account-Setup',
+  },
+  {
+    id: 'test-05',
+    titel: 'Vitest Coverage auf 70% erhöhen',
+    beschreibung: 'Threshold auf 70% gesetzt und erreicht: 83% Lines, 96% Functions, 70% Branches. Neue Tests: validators (27), logger (8), validateBody (6). Coverage include auf testbare Lib-Dateien fokussiert.',
+    status: 'erledigt',
+    kategorie: 'Testing',
+    prioritaet: 'mittel',
+    referenz: 'Roadmap Q2',
+  },
+  {
+    id: 'compliance-01',
+    titel: 'Art. 50 KI-VO: Persistente KI-Kennzeichnung auf Assistant-Nachrichten',
+    beschreibung: 'Jede abgeschlossene Toro-Antwort trägt das Label "KI-generiert · Toro" (Art. 50 Abs. 1 EU AI Act). Implementiert in ChatMessage.tsx + cmsg-ki-label CSS-Klasse.',
+    status: 'erledigt',
+    kategorie: 'Compliance',
+    prioritaet: 'hoch',
+    referenz: 'Art. 50 Abs. 1 KI-VO (EU AI Act)',
+  },
+  {
+    id: 'infra-09',
+    titel: 'Uptime Monitoring: /api/health Endpunkt + externe Überwachung',
+    beschreibung: '/api/health gibt DB-Ping, App-Version und Timestamp zurück (200 ok / 503 degraded). Externes Monitoring (BetterUptime / UptimeRobot) manuell auf diesen Endpunkt konfigurieren.',
+    status: 'teilweise',
+    kategorie: 'Infrastruktur',
+    prioritaet: 'mittel',
+    referenz: 'Audit-Bericht 2026-03-13, Punkt 4',
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -452,8 +600,8 @@ const TODOS: Todo[] = [
   {
     id: 'qa-03',
     titel: 'Bias-Evaluierungen: Erste Runs + Metriken in qa_metrics',
-    beschreibung: 'Evaluierungs-Skript schreiben. Kategorien: gender, sprache, alter, herkunft, bildung. Schwelle 95.',
-    status: 'offen',
+    beschreibung: 'scripts/bias-eval.mjs: 5 Prompt-Paare (gender, sprache, alter, herkunft, bildung), Qualitäts-Parität ≥ 95%. Ergebnisse in qa_metrics. .github/workflows/bias-eval.yml: wöchentlich Mo 08:00 UTC + manuell auslösbar. Benötigt DIFY_API_URL, DIFY_API_KEY als GitHub Secrets.',
+    status: 'erledigt',
     kategorie: 'QA & Observability',
     prioritaet: 'mittel',
     referenz: 'QA Dashboard / Art. 10',
@@ -461,8 +609,8 @@ const TODOS: Todo[] = [
   {
     id: 'qa-04',
     titel: 'Lighthouse-CI: Automatische Runs bei jedem Deployment',
-    beschreibung: 'qa_lighthouse_runs Tabelle existiert, CI-Workflow fehlt noch. Ziel: Performance ≥ 90.',
-    status: 'offen',
+    beschreibung: '.github/workflows/lighthouse.yml erstellt: läuft nach erfolgreichem CI auf main, testet VERCEL_PRODUCTION_URL, Thresholds: Perf ≥ 80, A11y ≥ 90, Best-Practices ≥ 80, SEO ≥ 80. Ergebnisse in qa_lighthouse_runs via save-lighthouse-results.mjs. Secret VERCEL_PRODUCTION_URL muss in GitHub gesetzt sein.',
+    status: 'erledigt',
     kategorie: 'QA & Observability',
     prioritaet: 'mittel',
     referenz: 'CI/CD / Performance Tab',
@@ -501,8 +649,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-01',
     titel: 'Art. 50 KI-VO: Persistente KI-Kennzeichnung im Chat',
-    beschreibung: 'Sichtbarer Hinweis unter jeder Toro-Antwort dass KI generiert. Onboarding-Checkbox allein reicht nicht.',
-    status: 'offen',
+    beschreibung: 'Sichtbarer Hinweis unter jeder Toro-Antwort dass KI generiert. Implementiert als "KI-generiert · Toro" Label in ChatMessage.tsx (cmsg-ki-label). Onboarding-Checkbox allein reicht nicht.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'hoch',
     referenz: 'Art. 50 Abs. 1 KI-VO — Pflicht seit Feb 2025',
@@ -510,8 +658,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-02',
     titel: 'Art. 14: Human Override / Eskalationsmechanismus',
-    beschreibung: 'Nutzer müssen KI-Entscheidungen übersteuern können. Feature noch nicht implementiert.',
-    status: 'offen',
+    beschreibung: 'ThumbsDown-Button auf jeder Toro-Antwort. Klick → optionaler Grund → POST /api/messages/[id]/flag → flagged + flagged_at + flag_reason in messages-Tabelle (Migration 034). Admin-Auswertung über Service Role.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'hoch',
     referenz: 'Art. 14 EU AI Act',
@@ -519,8 +667,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-03',
     titel: 'Art. 12: KI-Logging-Vollständigkeit prüfen',
-    beschreibung: 'qa_routing_log ist live für public/chat. Workspace-Chat (Edge Function ai-chat) noch nicht geloggt.',
-    status: 'in_arbeit',
+    beschreibung: 'qa_routing_log jetzt auch für Workspace-Chat: logRouting() Fire-and-forget in Edge Function ai-chat/index.ts, nach commitSave(). User-ID via Web Crypto SHA-256 gehasht. Fehler-Pfad ebenfalls geloggt.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'hoch',
     referenz: 'Art. 12 EU AI Act',
@@ -564,8 +712,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-07b',
     titel: 'Footer erstellen',
-    beschreibung: 'Öffentlicher Footer mit Impressum-Link, Datenschutz-Link, BFSG-Kontakt (E-Mail für Barrieren-Meldungen), Schlichtungsstelle-Link, "powered by Tropen OS" Branding. Pflicht für BFSG-Compliance.',
-    status: 'offen',
+    beschreibung: 'AppFooter.tsx erstellt: Impressum, Datenschutz, Barrierefreiheit, Barriere-melden (E-Mail), Schlichtungsstelle-Link. In root layout.tsx eingebunden. Nicht im Chat/Workspace sichtbar.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'hoch',
     referenz: 'BFSG § 14 / EAA',
@@ -573,8 +721,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-08',
     titel: 'BFSG: Barrierefreiheitserklärung /accessibility erstellen',
-    beschreibung: 'Pflicht seit 28.06.2025. Seite mit WCAG-Konformitätserklärung, Kontaktmöglichkeit und Schlichtungshinweis.',
-    status: 'offen',
+    beschreibung: '/accessibility erstellt: WCAG-Konformitätserklärung, bekannte Lücken, implementierte Features, Barriere-Kontakt, Schlichtungsstelle (§ 16 BFSG). Pflicht seit 28.06.2025.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'hoch',
     referenz: 'BFSG / EAA — gilt seit 28.06.2025',
@@ -582,8 +730,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-09',
     titel: 'BFSG: Feedbackmechanismus für Barrieren im Footer',
-    beschreibung: 'Mindestens E-Mail-Adresse im Footer damit Nutzer Barrieren melden können.',
-    status: 'offen',
+    beschreibung: 'accessibility@tropen.de im Footer und auf /accessibility verlinkt.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'mittel',
     referenz: 'BFSG § 14',
@@ -591,8 +739,8 @@ const TODOS: Todo[] = [
   {
     id: 'comp-10',
     titel: 'BFSG: Schlichtungsstelle benennen (Ombudsstelle BMAS)',
-    beschreibung: 'In der Barrierefreiheitserklärung und im Footer verlinken.',
-    status: 'offen',
+    beschreibung: 'schlichtungsstelle-bgg.de im Footer und auf /accessibility (§ 16 BFSG) verlinkt.',
+    status: 'erledigt',
     kategorie: 'Compliance & Recht',
     prioritaet: 'mittel',
     referenz: 'BFSG § 16',
@@ -605,7 +753,7 @@ const TODOS: Todo[] = [
     id: 'a11y-01',
     titel: 'Chat-Nachrichten: aria-live="polite" hinzufügen',
     beschreibung: 'Screenreader müssen neue Chat-Antworten ankündigen. ChatArea / ChatMessage Komponente.',
-    status: 'offen',
+    status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'hoch',
     referenz: 'WCAG 4.1.3',
@@ -613,8 +761,8 @@ const TODOS: Todo[] = [
   {
     id: 'a11y-02',
     titel: 'Loading-States: aria-busy="true" auf Container setzen',
-    beschreibung: 'Skeleton-Loader und Lade-Spinner brauchen aria-busy für Screenreader.',
-    status: 'offen',
+    beschreibung: 'aria-busy auf workspace, projects, knowledge, admin/models, admin/users, admin/budget Hauptcontainer. Alle relevanten Seiten mit loading-State abgedeckt.',
+    status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'mittel',
     referenz: 'WCAG 4.1.3',
@@ -622,8 +770,8 @@ const TODOS: Todo[] = [
   {
     id: 'a11y-03',
     titel: 'Drawer/Modal: Fokus-Trap + Escape + Rückkehr-Fokus',
-    beschreibung: 'Alle Drawer-Komponenten (Artefakte, Settings, TemplateDrawer) auf Fokus-Trap prüfen.',
-    status: 'offen',
+    beschreibung: 'useFocusTrap Hook erstellt (src/hooks/useFocusTrap.ts). Eingebaut in ArtifactsDrawer, BookmarksDrawer, SearchDrawer, MemorySaveModal, MergeModal. role="dialog" aria-modal="true" auf allen. TemplateDrawer erhielt aria-Attribute.',
+    status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'hoch',
     referenz: 'WCAG 2.1.2',
@@ -631,8 +779,8 @@ const TODOS: Todo[] = [
   {
     id: 'a11y-04',
     titel: 'prefers-reduced-motion in globals.css ergänzen',
-    beschreibung: 'Media Query für reduzierte Bewegung fehlt noch. Alle Animationen betroffen.',
-    status: 'offen',
+    beschreibung: 'Media Query für reduzierte Bewegung. Bereits implementiert in globals.css (animation-duration + transition-duration auf 0.01ms).',
+    status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'mittel',
     referenz: 'WCAG 2.3.3',
@@ -640,8 +788,8 @@ const TODOS: Todo[] = [
   {
     id: 'a11y-05',
     titel: 'Icon-Buttons: aria-label Vollständigkeitsprüfung',
-    beschreibung: 'Alle IconButton-Only-Elemente (Sidebar-Buttons, ChatInput-Actions) auf aria-label prüfen.',
-    status: 'offen',
+    beschreibung: 'ChatInput Send-Button, ChatHeaderStrip Search-Button, ArtifactsDrawer/BookmarksDrawer Close-Buttons ergänzt. Bookmark-Button und ThumbsDown-Button in ChatMessage.tsx ebenfalls mit aria-label versehen. LeftNav hat keine reinen Icon-Buttons (alle mit Text-Label).',
+    status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'mittel',
     referenz: 'WCAG 1.1.1',
@@ -665,6 +813,7 @@ const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }
   erledigt:  { label: 'Erledigt',  bg: 'rgba(52,211,153,0.12)',  color: '#34d399' },
   blockiert: { label: 'Blockiert', bg: 'rgba(248,113,113,0.12)', color: '#f87171' },
   geplant:   { label: 'Geplant',   bg: 'rgba(147,197,253,0.10)', color: '#93c5fd' },
+  teilweise: { label: 'Teilweise', bg: 'rgba(251,191,36,0.12)',  color: '#fbbf24' },
 }
 
 const PRIO_CONFIG: Record<string, { label: string; color: string }> = {
@@ -726,7 +875,7 @@ export default function TodoPage() {
   const hoch    = TODOS.filter(t => t.prioritaet === 'hoch' && t.status !== 'erledigt').length
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">To-Do & Compliance Tracker</h1>

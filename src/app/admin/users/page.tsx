@@ -50,7 +50,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max" aria-busy={loading}>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">User-Verwaltung</h1>
@@ -104,7 +104,7 @@ export default function UsersPage() {
       )}
 
       {loading ? (
-        <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+        <div className="content-max" aria-busy="true">
           <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
         </div>
       ) : (

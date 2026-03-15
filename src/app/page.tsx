@@ -15,12 +15,12 @@ const cardStyle: React.CSSProperties = {
 // Features für das Grid
 const features = [
   {
-    icon: <Scales size={28} weight="duotone" style={{ color: 'var(--active-bg)' }} />,
+    icon: <Scales size={28} weight="fill" style={{ color: 'var(--active-bg)' }} />,
     title: 'Responsible AI',
     text: 'Jedes Modell, jede Anfrage, jeder Cent – vollständig sichtbar. Budgets setzen, Modelle freigeben, Kosten kontrollieren. AI ohne Blackbox.'
   },
   {
-    icon: <Buildings size={28} weight="duotone" style={{ color: 'var(--text-tertiary)' }} />,
+    icon: <Buildings size={28} weight="fill" style={{ color: 'var(--text-tertiary)' }} />,
     title: 'Team Department',
     text: 'Departments für Teams, Projekte und Abteilungen. Rollen, Einladungen, Zugriffskontrollen – alles auf einer Plattform.'
   },
@@ -46,7 +46,7 @@ export default async function HomePage() {
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium mb-8 tracking-wide"
           style={{ ...cardStyle, color: 'var(--active-bg)' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#a3b554] inline-block" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] inline-block" />
           Verantwortungsvolle KI für den Mittelstand
         </div>
 
@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div className="flex gap-3">
             <Link
               href="/workspaces"
-              className="bg-[#a3b554] hover:bg-[#b3c664] text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
+              className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-6 py-3 rounded-lg text-sm transition-colors no-underline"
             >
               Zum Chat →
             </Link>
@@ -99,7 +99,7 @@ export default async function HomePage() {
         ) : (
           <Link
             href="/login"
-            className="bg-[#a3b554] hover:bg-[#b3c664] text-black font-semibold px-7 py-3 rounded-lg text-sm transition-colors no-underline"
+            className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-7 py-3 rounded-lg text-sm transition-colors no-underline"
           >
             Anmelden →
           </Link>
@@ -143,7 +143,7 @@ export default async function HomePage() {
           style={{ ...cardStyle, borderTop: '1px solid var(--border)' }}
         >
           <div className="flex items-start gap-4">
-            <Plant size={18} weight="duotone" style={{ color: 'var(--active-bg)', marginTop: 2, flexShrink: 0 }} />
+            <Plant size={18} weight="fill" style={{ color: 'var(--active-bg)', marginTop: 2, flexShrink: 0 }} />
             <div>
               <h3
                 className="text-sm font-semibold mb-3"

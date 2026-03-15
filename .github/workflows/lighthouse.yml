@@ -1,0 +1,62 @@
+name: Lighthouse CI
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Lighthouse CI
+        id: lhci
+        run: |
+          pnpm dlx @lhci/cli@0.14 autorun \
+            --collect.url="${{ secrets.VERCEL_PRODUCTION_URL }}" \
+            --collect.numberOfRuns=1 \
+            --upload.target=temporary-public-storage \
+            --assert.preset=lighthouse:no-pwa \
+            --assert.assertions.categories:performance.minScore=0.8 \
+            --assert.assertions.categories:accessibility.minScore=0.9 \
+            --assert.assertions.categories:best-practices.minScore=0.8 \
+            --assert.assertions.categories:seo.minScore=0.8 \
+            2>&1 | tee lhci-output.txt || true
+
+      - name: Parse and save Lighthouse results
+        if: always()
+        run: node scripts/ci/save-lighthouse-results.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CI_COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          LHCI_OUTPUT_FILE: lhci-output.txt
+
+      - name: Upload LHCI artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results-${{ github.event.workflow_run.head_sha }}
+          path: .lighthouseci/
+          retention-days: 30

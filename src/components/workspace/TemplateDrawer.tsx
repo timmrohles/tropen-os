@@ -47,9 +47,9 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
   useEffect(() => {
     if (!activeCore) return
     const initial: Record<string, string> = {}
-    activeCore.fields.forEach((f) => {
+    for (const f of activeCore.fields) {
       initial[f.id] = f.type === 'select' && 'options' in f ? f.options[0] : ''
-    })
+    }
     setValues(initial)
   }, [activeCore?.id])
 
@@ -58,8 +58,8 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
     if (tab !== 'mine') return
     setLoadingSaved(true)
     fetch('/api/prompt-templates')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setSaved(Array.isArray(data) ? data : []))
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(json => setSaved(Array.isArray(json) ? json : (json.data ?? [])))
       .finally(() => setLoadingSaved(false))
   }, [tab])
 
@@ -68,8 +68,8 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
     if (tab !== 'team') return
     setLoadingTeam(true)
     fetch('/api/prompt-templates?scope=team')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setTeam(Array.isArray(data) ? data : []))
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(json => setTeam(Array.isArray(json) ? json : (json.data ?? [])))
       .finally(() => setLoadingTeam(false))
   }, [tab])
 
@@ -133,7 +133,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
   const preview = activeCore && requiredFilled ? activeCore.assemble(values) : null
 
   return (
-    <div className="tdrawer">
+    <div className="tdrawer" role="dialog" aria-modal="true" aria-label="Prompt-Vorlagen">
       <div className="tdrawer-header">
         <span className="tdrawer-title">Prompt-Vorlagen</span>
         <button className="tdrawer-close" onClick={onClose} title="Schließen">
@@ -336,7 +336,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
           {loadingTeam ? (
             <p className="tdrawer-empty">Laden…</p>
           ) : team.length === 0 ? (
-            <p className="tdrawer-empty">Noch keine Team-Vorlagen. Teile eigene Vorlagen unter „Meine Vorlagen".</p>
+            <p className="tdrawer-empty">Noch keine Team-Vorlagen. Teile eigene Vorlagen unter &bdquo;Meine Vorlagen&ldquo;.</p>
           ) : (
             <div className="tdrawer-saved-list">
               {team.map((t) => (

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { PaperPlaneTilt } from '@phosphor-icons/react'
 import Link from 'next/link'
+import ParrotIcon from './ParrotIcon'
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 
@@ -172,7 +173,7 @@ export default function ToroChatWidget() {
   return (
     <div className="ptoro-wrap">
       <div className="ptoro-heading">
-        <p className="ptoro-heading-title">Frag Toro 🦜</p>
+        <p className="ptoro-heading-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ParrotIcon size={22} /> Frag Toro</p>
         <p className="ptoro-heading-sub">Kein Login. Kein Aufwand. Einfach fragen.</p>
       </div>
 
@@ -181,7 +182,7 @@ export default function ToroChatWidget() {
           {msgs.map((msg, i) => (
             <div key={i} className={`cmsg${msg.role === 'user' ? ' cmsg--user' : ' cmsg--assistant'}`}>
               {msg.role === 'assistant' && (
-                <div className="cmsg-avatar-toro">🦜</div>
+                <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
               )}
 
               <div className={`cmsg-bubble${msg.role === 'user' ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>

@@ -97,7 +97,7 @@ export default function Co2Card({ co2Min, co2Max, periodLabel }: Co2CardProps) {
 
       <Leaf
         size={18}
-        weight="duotone"
+        weight="fill"
         style={{ position: 'absolute', top: 16, right: 16, opacity: 0.3, color: 'var(--active-bg)' }}
       />
     </div>

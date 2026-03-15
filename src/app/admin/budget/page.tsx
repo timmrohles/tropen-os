@@ -47,13 +47,13 @@ export default function BudgetPage() {
   }
 
   if (loading) return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max" aria-busy="true">
       <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
     </div>
   )
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Budget-Limits</h1>
@@ -147,7 +147,7 @@ function BudgetRow({
   saving: boolean
   onSave: (v: string) => void
 }) {
-  const [val, setVal] = useState(currentLimit != null ? String(currentLimit) : '')
+  const [val, setVal] = useState(currentLimit == null ? '' : String(currentLimit))
 
   return (
     <tr>

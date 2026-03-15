@@ -18,7 +18,7 @@ export default async function LogsPage() {
     .range(0, 99)
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Usage Logs</h1>

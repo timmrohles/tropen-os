@@ -11,9 +11,8 @@ export async function createClient() {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            for (const { name, value, options } of cookiesToSet) cookieStore.set(name, value, options)
+            
           } catch {
             // In Server Components können keine Cookies gesetzt werden – nur in Middleware/Actions
           }

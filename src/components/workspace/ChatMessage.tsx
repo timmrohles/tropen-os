@@ -8,9 +8,10 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
   CheckCircle, Warning, Lightbulb, Leaf,
   ChartBar, Wrench, ArrowRight,
-  BookmarkSimple, FloppyDisk,
+  BookmarkSimple, FloppyDisk, ThumbsDown,
 } from '@phosphor-icons/react'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
+import ParrotIcon from '@/components/ParrotIcon'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -111,7 +112,7 @@ function renderAssistantContent(
     mdBuffer = []
   }
 
-  lines.forEach((line, i) => {
+  for (const [i, line] of lines.entries()) {
     if (line.startsWith('```')) inCodeBlock = !inCodeBlock
 
     if (!inCodeBlock) {
@@ -125,12 +126,12 @@ function renderAssistantContent(
             <span>{text}</span>
           </div>
         )
-        return
+        continue
       }
     }
 
     mdBuffer.push(line)
-  })
+  }
 
   flushMd()
   return result
@@ -276,6 +277,8 @@ export default function ChatMessage({
   const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [saveModal, setSaveModal] = useState<{ content: string; language: string | null } | null>(null)
+  const [flagState, setFlagState] = useState<'idle' | 'confirm' | 'done'>('idle')
+  const [flagReason, setFlagReason] = useState('')
 
   const showActions = !isUser && !msg.pending && !!conversationId && !!msg.id
 
@@ -307,6 +310,17 @@ export default function ChatMessage({
     }
   }
 
+  async function handleFlag() {
+    if (!msg.id || flagState !== 'confirm') return
+    await fetch(`/api/messages/${msg.id}/flag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: flagReason }),
+    })
+    setFlagState('done')
+    setFlagReason('')
+  }
+
   function handleSaveArtifact(content: string, language: string | null) {
     if (!conversationId || !organizationId) return
     setSaveModal({ content, language })
@@ -320,7 +334,7 @@ export default function ChatMessage({
     <>
       <div className={`cmsg${isUser ? ' cmsg--user' : ' cmsg--assistant'}`}>
         {!isUser && (
-          <div className="cmsg-avatar-toro">🦜</div>
+          <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
         )}
 
         <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
@@ -336,6 +350,11 @@ export default function ChatMessage({
           {!isUser && !msg.pending && msg.cost_eur != null && (
             <div className="cmsg-meta">€{msg.cost_eur.toFixed(4)} · {msg.model_used}</div>
           )}
+          {!isUser && !msg.pending && (
+            <div className="cmsg-ki-label" aria-label="KI-generierter Inhalt gemäß Art. 50 KI-VO">
+              KI-generiert · Toro
+            </div>
+          )}
 
           {showActions && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
@@ -343,6 +362,7 @@ export default function ChatMessage({
                 onClick={handleBookmark}
                 disabled={bookmarkLoading}
                 title={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
+                aria-label={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -355,11 +375,94 @@ export default function ChatMessage({
                   transition: 'color 150ms',
                 }}
               >
-                <BookmarkSimple
-                  size={14}
-                  weight={isBookmarked ? 'fill' : 'regular'}
-                />
+                <BookmarkSimple size={14} weight={isBookmarked ? 'fill' : 'regular'} />
               </button>
+
+              {flagState === 'done' ? (
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 2 }}>Gemeldet</span>
+              ) : (
+                <button
+                  onClick={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
+                  title="Antwort als fehlerhaft melden (Art. 14 KI-VO)"
+                  aria-label="Antwort als fehlerhaft melden"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: flagState === 'confirm' ? '#f87171' : 'var(--text-muted)',
+                    padding: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'color 150ms',
+                  }}
+                >
+                  <ThumbsDown size={14} weight={flagState === 'confirm' ? 'fill' : 'regular'} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {flagState === 'confirm' && showActions && (
+            <div style={{
+              marginTop: 8,
+              background: 'rgba(248,113,113,0.06)',
+              border: '1px solid rgba(248,113,113,0.2)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+                Diese Antwort als fehlerhaft oder unangemessen melden (Art. 14 EU AI Act)?
+              </p>
+              <input
+                placeholder="Grund (optional)"
+                value={flagReason}
+                onChange={e => setFlagReason(e.target.value)}
+                style={{
+                  background: 'var(--bg-input, var(--bg-base))',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '6px 8px',
+                  color: 'var(--text-primary)',
+                  fontSize: 12,
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={handleFlag}
+                  style={{
+                    background: '#ef4444',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '5px 12px',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Melden
+                </button>
+                <button
+                  onClick={() => { setFlagState('idle'); setFlagReason('') }}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    padding: '5px 12px',
+                    color: 'var(--text-secondary)',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Abbrechen
+                </button>
+              </div>
             </div>
           )}
         </div>

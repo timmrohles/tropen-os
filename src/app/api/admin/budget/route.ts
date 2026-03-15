@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+const log = createLogger('admin/budget')
 
 async function getAdminUser() {
   const supabase = await createClient()
@@ -30,17 +32,17 @@ export async function GET() {
       .select('id, name, slug, plan, budget_limit')
       .order('name'),
     supabaseAdmin
-      .from('workspaces')
+      .from('departments')
       .select('id, name, budget_limit, organizations(name)')
       .order('name')
   ])
 
   if (orgs.error) {
-    console.error('DB Error:', orgs.error)
+    log.error('DB Error:', orgs.error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   if (workspaces.error) {
-    console.error('DB Error:', workspaces.error)
+    log.error('DB Error:', workspaces.error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 
@@ -72,7 +74,7 @@ export async function PATCH(req: NextRequest) {
     .single()
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return NextResponse.json(data)

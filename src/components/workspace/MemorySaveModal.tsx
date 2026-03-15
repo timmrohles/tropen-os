@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface MemorySaveModalProps {
   open: boolean
@@ -28,6 +29,7 @@ const IMPORTANCE_LABELS: Record<Importance, string> = {
 
 export default function MemorySaveModal({ open, onClose, projectId, conversationId }: MemorySaveModalProps) {
   const [tab, setTab] = useState<Tab>('ai')
+  const trapRef = useFocusTrap<HTMLDivElement>(open)
 
   // Manual tab state
   const [type, setType] = useState<MemoryType>('insight')
@@ -136,6 +138,7 @@ export default function MemorySaveModal({ open, onClose, projectId, conversation
       onClick={onClose}
     >
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="memory-modal-title"

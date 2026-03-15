@@ -3,24 +3,6 @@ import { openai, DEFAULT_MODEL } from '@/lib/llm/openai'
 import { routeRequest } from '@/lib/llm/router'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
 
-// ─── Rate Limiting (in-memory, per IP) ────────────────────────────────────────
-const RATE_LIMIT = 20
-const RATE_WINDOW_MS = 60 * 60 * 1000
-
-const rateMap = new Map<string, { count: number; resetAt: number }>()
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return true
-  }
-  if (entry.count >= RATE_LIMIT) return false
-  entry.count++
-  return true
-}
-
 // ─── Prompt Injection Detection ───────────────────────────────────────────────
 const INJECTION_PATTERNS = [
   /ignore (all |previous |above )?(instructions|rules|prompts)/i,
@@ -53,18 +35,6 @@ Regeln:
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    req.headers.get('x-real-ip') ??
-    'unknown'
-
-  if (!checkRateLimit(ip)) {
-    return new Response(
-      JSON.stringify({ error: 'Zu viele Anfragen. Bitte später nochmal versuchen.' }),
-      { status: 429, headers: { 'Content-Type': 'application/json' } }
-    )
-  }
-
   let message: string
   let history: { role: 'user' | 'assistant'; content: string }[]
   try {

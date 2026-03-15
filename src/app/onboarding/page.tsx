@@ -20,7 +20,7 @@ type ModelPref = 'cheapest' | 'eu_only' | 'auto'
 type TeamSize = 'solo' | 'small' | 'large'
 type IconNode = React.ReactNode
 
-const PRESET_COLORS = ['#a3b554', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
+const PRESET_COLORS = ['var(--accent)', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
 
 // ─────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
   const [orgName, setOrgName] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [primaryColor, setPrimaryColor] = useState('#a3b554')
+  const [primaryColor, setPrimaryColor] = useState('var(--accent)')
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [guideName, setGuideName] = useState('Toro')
   const [dragging, setDragging] = useState(false)
@@ -317,9 +317,9 @@ export default function OnboardingPage() {
 
             <div style={s.cardRow}>
               {([
-                { value: 'solo',  icon: <User size={24} weight="duotone" />, title: 'Nur ich',       sub: 'Solo-Nutzung' },
-                { value: 'small', icon: <Users size={24} weight="duotone" />, title: 'Kleines Team',   sub: '2–10 Personen' },
-                { value: 'large', icon: <Buildings size={24} weight="duotone" />, title: 'Größeres Team',  sub: '10+ Personen' },
+                { value: 'solo',  icon: <User size={24} weight="fill" />, title: 'Nur ich',       sub: 'Solo-Nutzung' },
+                { value: 'small', icon: <Users size={24} weight="fill" />, title: 'Kleines Team',   sub: '2–10 Personen' },
+                { value: 'large', icon: <Buildings size={24} weight="fill" />, title: 'Größeres Team',  sub: '10+ Personen' },
               ] as { value: TeamSize; icon: IconNode; title: string; sub: string }[]).map((opt) => (
                 <button
                   key={opt.value}
@@ -393,9 +393,9 @@ export default function OnboardingPage() {
               <label style={s.label}>Antwortstil</label>
               <div style={s.cardRow}>
                 {([
-                  { value: 'clear',      icon: <Lightning size={24} weight="duotone" />, title: 'Klar & Direkt',  sub: 'Kurze, präzise Antworten. Kein Overhead.' },
-                  { value: 'structured', icon: <ListBullets size={24} weight="duotone" />, title: 'Strukturiert',   sub: 'Abschnitte, Listen, klare Übersichten.' },
-                  { value: 'detailed',   icon: <Article size={24} weight="duotone" />, title: 'Ausführlich',     sub: 'Tiefe Analysen, viel Kontext, vollständige Erklärungen.' },
+                  { value: 'clear',      icon: <Lightning size={24} weight="fill" />, title: 'Klar & Direkt',  sub: 'Kurze, präzise Antworten. Kein Overhead.' },
+                  { value: 'structured', icon: <ListBullets size={24} weight="fill" />, title: 'Strukturiert',   sub: 'Abschnitte, Listen, klare Übersichten.' },
+                  { value: 'detailed',   icon: <Article size={24} weight="fill" />, title: 'Ausführlich',     sub: 'Tiefe Analysen, viel Kontext, vollständige Erklärungen.' },
                 ] as { value: ChatStyle; icon: IconNode; title: string; sub: string }[]).map((opt) => (
                   <button
                     key={opt.value}
@@ -414,9 +414,9 @@ export default function OnboardingPage() {
               <label style={s.label}>Modell-Präferenz</label>
               <div style={s.chipRow}>
                 {([
-                  { value: 'cheapest', icon: <Lightning size={13} weight="duotone" />, label: 'Immer günstigstes Modell' },
-                  { value: 'eu_only',  icon: <Globe size={13} weight="duotone" />, label: 'Nur europäische Modelle' },
-                  { value: 'auto',     icon: <Robot size={13} weight="duotone" />, label: 'Automatisch (empfohlen)' },
+                  { value: 'cheapest', icon: <Lightning size={13} weight="fill" />, label: 'Immer günstigstes Modell' },
+                  { value: 'eu_only',  icon: <Globe size={13} weight="fill" />, label: 'Nur europäische Modelle' },
+                  { value: 'auto',     icon: <Robot size={13} weight="fill" />, label: 'Automatisch (empfohlen)' },
                 ] as { value: ModelPref; icon: IconNode; label: string }[]).map((opt) => (
                   <button
                     key={opt.value}
@@ -438,7 +438,7 @@ export default function OnboardingPage() {
                 <button style={s.btnSecondary} onClick={() => goTo(2)}>← Zurück</button>
               )}
               <button
-                style={{ ...s.btnPrimary, ...(!userName.trim() ? s.btnDisabled : {}) }}
+                style={{ ...s.btnPrimary, ...(userName.trim() ? {} : s.btnDisabled) }}
                 disabled={!userName.trim()}
                 onClick={() => goTo(4)}
               >
@@ -497,7 +497,7 @@ export default function OnboardingPage() {
               </p>
               <p style={{ ...s.academyText, marginBottom: 12 }}>
                 Unser Einstiegskurs:{' '}
-                <strong style={{ color: 'var(--text-primary)' }}>"KI-Dschungel Survival Pass"</strong>
+                <strong style={{ color: 'var(--text-primary)' }}>&bdquo;KI-Dschungel Survival Pass&ldquo;</strong>
                 {' '}– für alle die KI sicher, effektiv und verantwortungsvoll einsetzen wollen.
               </p>
               <a
@@ -530,7 +530,7 @@ export default function OnboardingPage() {
             <div style={s.btnRow}>
               <button style={s.btnSecondary} onClick={() => goTo(3)}>← Zurück</button>
               <button
-                style={{ ...s.btnPrimary, ...(!aiActAcknowledged ? s.btnDisabled : {}) }}
+                style={{ ...s.btnPrimary, ...(aiActAcknowledged ? {} : s.btnDisabled) }}
                 disabled={!aiActAcknowledged}
                 onClick={() => goTo(5)}
               >
@@ -558,9 +558,9 @@ export default function OnboardingPage() {
 
             <div style={s.featureRow}>
               {[
-                { icon: <ChatCircle size={26} weight="duotone" style={{ color: 'var(--accent)' }} />, title: 'Departments',    sub: 'Team-Chats & Projekte' },
-                { icon: <ChartBar size={26} weight="duotone" style={{ color: 'var(--accent)' }} />, title: 'Dashboard',      sub: 'Kosten & Nutzung' },
-                { icon: <Scales size={26} weight="duotone" style={{ color: 'var(--accent)' }} />, title: 'Responsible AI', sub: 'Transparenz & Kontrolle' },
+                { icon: <ChatCircle size={26} weight="fill" style={{ color: 'var(--accent)' }} />, title: 'Departments',    sub: 'Team-Chats & Projekte' },
+                { icon: <ChartBar size={26} weight="fill" style={{ color: 'var(--accent)' }} />, title: 'Dashboard',      sub: 'Kosten & Nutzung' },
+                { icon: <Scales size={26} weight="fill" style={{ color: 'var(--accent)' }} />, title: 'Responsible AI', sub: 'Transparenz & Kontrolle' },
               ].map((f) => (
                 <div key={f.title} style={s.featureCard}>
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</span>
@@ -669,10 +669,10 @@ const s: Record<string, React.CSSProperties> = {
   dropZoneActive: { borderColor: 'var(--accent)', background: 'var(--accent-subtle)' },
   dropZoneHasLogo: { borderColor: 'var(--border-medium)', padding: '16px', background: 'var(--bg-surface)' },
   logoPreview: { maxHeight: 64, maxWidth: '100%', objectFit: 'contain' },
-  dropHint: { fontSize: 13, color: '#555' },
-  dropSub: { fontSize: 11, color: '#333' },
+  dropHint: { fontSize: 13, color: 'var(--text-secondary)' },
+  dropSub: { fontSize: 11, color: 'var(--text-tertiary)' },
   removeLogo: {
-    background: 'none', border: 'none', color: '#444',
+    background: 'none', border: 'none', color: 'var(--text-secondary)',
     fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
     textAlign: 'left', padding: '4px 0', width: 'fit-content',
   },
@@ -781,7 +781,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   accordionBody: {
     marginTop: 10, padding: '12px 14px',
-    background: '#0e0e0e', border: '1px solid #1e1e1e',
-    borderRadius: 6, fontSize: 13, color: '#666', lineHeight: 1.7,
+    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+    borderRadius: 6, fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.7,
   },
 }

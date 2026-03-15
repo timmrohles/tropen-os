@@ -163,7 +163,7 @@ export default function SettingsPage() {
             ))}
           </select>
           <span style={s.hint}>Wie Toro seine Antworten aufbaut — kurz & direkt, strukturiert mit Überschriften, oder ausführlich mit Beispielen.</span>
-          <span style={s.hintBest}>Best Practice: „Strukturiert" eignet sich für die meisten Aufgaben. Wechsel zu „Klar" wenn du schnelle Antworten willst.</span>
+          <span style={s.hintBest}>Best Practice: &bdquo;Strukturiert&ldquo; eignet sich für die meisten Aufgaben. Wechsel zu &bdquo;Klar&ldquo; wenn du schnelle Antworten willst.</span>
         </div>
 
         <div style={s.row}>

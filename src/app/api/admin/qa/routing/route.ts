@@ -1,7 +1,9 @@
+import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { RoutingResponse } from '@/types/qa'
+const log = createLogger('admin/qa/routing')
 
 export const dynamic = 'force-dynamic'
 
@@ -54,9 +56,9 @@ export async function GET(request: NextRequest) {
 
     // Modell-Verteilung (als BarList-Format: name + value)
     const modelCounts: Record<string, number> = {}
-    allStats.forEach(r => {
+    for (const r of allStats) {
       modelCounts[r.model_selected] = (modelCounts[r.model_selected] ?? 0) + 1
-    })
+    }
     const total = allStats.length
     const modelDistribution = Object.entries(modelCounts)
       .map(([name, count]) => ({
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (err) {
-    console.error('[qa/routing]', err)
+    log.error('[qa/routing]', err)
     return NextResponse.json(
       { error: 'Interner Fehler', code: 'QA_ROUTING_ERROR' },
       { status: 500 }

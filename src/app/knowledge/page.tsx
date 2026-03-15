@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
   CloudArrowUp, File, FilePdf, FileDoc, FileText, FileCsv,
-  Trash, CheckCircle, Warning, Spinner, Books, FolderOpen, Users,
+  Trash, CheckCircle, Warning, Spinner, Books, FolderOpen, Users, ArrowClockwise,
 } from '@phosphor-icons/react'
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export default function KnowledgePage() {
           .select('id')
           .single()
 
-        if (srcErr || !source) throw new Error(srcErr?.message ?? 'Source-Fehler')
+        if (srcErr || !source) throw new Error(`knowledge_sources: ${srcErr?.message ?? 'Unbekannter Fehler'}`)
 
         // 2. Dokument-Eintrag anlegen
         const { data: doc, error: docErr } = await supabase
@@ -157,7 +157,7 @@ export default function KnowledgePage() {
           .select('id')
           .single()
 
-        if (docErr || !doc) throw new Error(docErr?.message ?? 'Dokument-Fehler')
+        if (docErr || !doc) throw new Error(`knowledge_documents: ${docErr?.message ?? 'Unbekannter Fehler'}`)
 
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 30 } : u))
 
@@ -166,7 +166,7 @@ export default function KnowledgePage() {
           .from('knowledge-files')
           .upload(`${orgId}/${source.id}/${safeName}`, file, { upsert: true })
 
-        if (storageErr) throw new Error(storageErr.message)
+        if (storageErr) throw new Error(`storage: ${storageErr.message}`)
 
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 70 } : u))
 
@@ -175,7 +175,22 @@ export default function KnowledgePage() {
           body: { document_id: doc.id },
         })
 
-        if (fnErr) throw new Error(fnErr.message)
+        if (fnErr) {
+          // Fehlertext direkt aus der DB lesen — die Function schreibt ihn dort selbst hin
+          const { data: errDoc } = await supabase
+            .from('knowledge_documents')
+            .select('error_message, status')
+            .eq('id', doc.id)
+            .maybeSingle()
+          // Falls die Function den Status nicht auf 'error' gesetzt hat (unerwarteter Crash)
+          if (errDoc?.status !== 'error') {
+            await supabase
+              .from('knowledge_documents')
+              .update({ status: 'error', error_message: fnErr.message })
+              .eq('id', doc.id)
+          }
+          throw new Error(`ingest: ${errDoc?.error_message ?? fnErr.message}`)
+        }
 
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 100 } : u))
         setTimeout(() => {
@@ -199,6 +214,21 @@ export default function KnowledgePage() {
     loadDocs()
   }
 
+  async function retryDoc(id: string) {
+    // Reset status to processing and re-trigger ingest
+    await supabase
+      .from('knowledge_documents')
+      .update({ status: 'processing', error_message: null })
+      .eq('id', id)
+    await supabase.functions.invoke('knowledge-ingest', { body: { document_id: id } })
+    loadDocs()
+  }
+
+  function isStuck(doc: KnowledgeDoc): boolean {
+    if (doc.status !== 'processing') return false
+    return Date.now() - new Date(doc.created_at).getTime() > 10 * 60 * 1000
+  }
+
   const TABS: { id: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { id: 'user', label: 'Meine Dokumente', icon: <File size={16} weight="fill" /> },
     { id: 'org',  label: 'Org-Wissen',      icon: <Users size={16} weight="fill" />, adminOnly: true },
@@ -206,13 +236,13 @@ export default function KnowledgePage() {
   ]
 
   if (loading && docs.length === 0) return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max" aria-busy="true" aria-live="polite">
       <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
     </div>
   )
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max" aria-busy={loading}>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Wissensbasis</h1>
@@ -251,7 +281,7 @@ export default function KnowledgePage() {
             onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files) }}
             onClick={() => fileInputRef.current?.click()}
           >
-            <div className="kb-drop-icon"><CloudArrowUp size={36} weight="duotone" /></div>
+            <div className="kb-drop-icon"><CloudArrowUp size={36} weight="fill" /></div>
             <p className="kb-drop-title">Datei hierher ziehen oder klicken</p>
             <p className="kb-drop-sub">PDF, DOCX, TXT, MD, CSV · max. {MAX_SIZE_MB} MB</p>
             <input
@@ -283,7 +313,7 @@ export default function KnowledgePage() {
             </div>
           ) : docs.length === 0 ? (
             <div className="kb-empty">
-              <div className="kb-empty-icon"><Books size={40} weight="duotone" /></div>
+              <div className="kb-empty-icon"><Books size={40} weight="fill" /></div>
               <p className="kb-empty-text">Noch keine Dokumente. Lade dein erstes Dokument hoch.</p>
             </div>
           ) : (
@@ -298,6 +328,11 @@ export default function KnowledgePage() {
                       {doc.chunk_count > 0 && ` · ${doc.chunk_count} Chunks`}
                       {` · ${new Date(doc.created_at).toLocaleDateString('de-DE')}`}
                     </div>
+                    {(doc.status === 'error' || isStuck(doc)) && doc.error_message && (
+                      <div style={{ fontSize: 11, color: 'var(--error)', marginTop: 3 }}>
+                        {doc.error_message}
+                      </div>
+                    )}
                   </div>
                   <div className="kb-doc-status">
                     {doc.status === 'ready' && (
@@ -305,9 +340,14 @@ export default function KnowledgePage() {
                         <CheckCircle size={11} weight="fill" /> Bereit
                       </span>
                     )}
-                    {doc.status === 'processing' && (
+                    {doc.status === 'processing' && !isStuck(doc) && (
                       <span className="kb-badge kb-badge--processing">
                         <Spinner size={11} className="animate-spin" /> Verarbeitung
+                      </span>
+                    )}
+                    {doc.status === 'processing' && isStuck(doc) && (
+                      <span className="kb-badge kb-badge--error" title="Verarbeitung dauert ungewöhnlich lang">
+                        <Warning size={11} weight="fill" /> Hängt fest
                       </span>
                     )}
                     {doc.status === 'error' && (
@@ -316,6 +356,11 @@ export default function KnowledgePage() {
                       </span>
                     )}
                   </div>
+                  {(doc.status === 'error' || isStuck(doc)) && (
+                    <button className="kb-doc-delete" onClick={() => retryDoc(doc.id)} aria-label="Erneut versuchen" title="Ingest neu starten">
+                      <ArrowClockwise size={16} weight="bold" />
+                    </button>
+                  )}
                   <button className="kb-doc-delete" onClick={() => deleteDoc(doc.id)} aria-label="Löschen">
                     <Trash size={16} weight="fill" />
                   </button>

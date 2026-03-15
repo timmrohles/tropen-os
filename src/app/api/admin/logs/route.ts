@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+const log = createLogger('admin/logs')
 
 async function getAdminUser() {
   const supabase = await createClient()
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query
 
   if (error) {
-    console.error('DB Error:', error)
+    log.error('DB Error:', error)
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { validateBody } from '@/lib/validators'
+import { createPromptTemplateSchema } from '@/lib/validators/prompt-templates'
 
 export async function GET(req: Request) {
   const supabase = await createClient()
@@ -9,38 +11,41 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const scope = searchParams.get('scope') // 'team' = org-geteilte Vorlagen anderer User
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
+  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10), 0)
 
   if (scope === 'team') {
-    // Eigene Org ermitteln
     const { data: profile } = await supabaseAdmin
       .from('users')
       .select('organization_id')
       .eq('id', user.id)
       .maybeSingle()
 
-    if (!profile?.organization_id) return NextResponse.json([])
+    if (!profile?.organization_id) return NextResponse.json({ data: [], total: 0, limit, offset })
 
-    const { data, error } = await supabaseAdmin
+    const { data, error, count } = await supabaseAdmin
       .from('prompt_templates')
-      .select('id, name, content, is_shared, created_at, user_id')
+      .select('id, name, content, is_shared, created_at, user_id', { count: 'exact' })
       .eq('organization_id', profile.organization_id)
       .eq('is_shared', true)
-      .neq('user_id', user.id) // nur fremde (eigene sieht man im "Meine"-Tab)
+      .neq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data ?? [])
+    return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
   }
 
   // Standard: eigene Vorlagen
-  const { data, error } = await supabaseAdmin
+  const { data, error, count } = await supabaseAdmin
     .from('prompt_templates')
-    .select('id, name, content, is_shared, created_at')
+    .select('id, name, content, is_shared, created_at', { count: 'exact' })
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
 export async function POST(req: Request) {
@@ -48,9 +53,8 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, content, is_shared } = await req.json()
-  if (!name?.trim() || !content?.trim())
-    return NextResponse.json({ error: 'name und content erforderlich' }, { status: 400 })
+  const { data: body, error: validationError } = await validateBody(req, createPromptTemplateSchema)
+  if (validationError) return validationError
 
   const { data: profile } = await supabaseAdmin
     .from('users')
@@ -63,9 +67,9 @@ export async function POST(req: Request) {
     .insert({
       user_id: user.id,
       organization_id: profile?.organization_id ?? null,
-      name: name.trim(),
-      content: content.trim(),
-      is_shared: is_shared ?? false,
+      name: body.name,
+      content: body.content,
+      is_shared: body.is_shared,
     })
     .select()
     .single()

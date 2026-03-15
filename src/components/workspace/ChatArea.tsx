@@ -96,15 +96,7 @@ export default function ChatArea({
 
   return (
     <div className="carea">
-      {!activeConvId ? (
-        <EmptyState
-          onNewConversation={onNewConversation}
-          input={input}
-          setInput={onSetInput}
-          sending={sending}
-          onSubmit={onSendMessage}
-        />
-      ) : (
+      {activeConvId ? (
         <>
           <ChatHeaderStrip
             ref={headerRef}
@@ -139,7 +131,7 @@ export default function ChatArea({
             </div>
           )}
 
-          <div className="carea-messages">
+          <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log">
             {messages.map((msg, i) => (
               <ChatMessage
                 key={msg.id ?? i}
@@ -199,6 +191,14 @@ export default function ChatArea({
             />
           )}
         </>
+      ) : (
+        <EmptyState
+          onNewConversation={onNewConversation}
+          input={input}
+          setInput={onSetInput}
+          sending={sending}
+          onSubmit={onSendMessage}
+        />
       )}
     </div>
   )

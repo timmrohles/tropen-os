@@ -1,6 +1,8 @@
+import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+const log = createLogger('superadmin/clients')
 
 async function requireSuperadmin() {
   const supabase = await createClient()
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   // Step 2: Insert workspace
   const { data: workspace, error: workspaceError } = await supabaseAdmin
-    .from('workspaces')
+    .from('departments')
     .insert({
       organization_id: org.id,
       name: workspace_name,
@@ -105,7 +107,7 @@ export async function POST(req: NextRequest) {
     .from('organization_settings')
     .insert({
       organization_id: org.id,
-      primary_color: '#a3b554',
+      primary_color: 'var(--accent)',
       ai_guide_name: 'Toro',
       ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
       onboarding_completed: false,
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
 
   if (settingsError) {
     // Cleanup: delete workspace + org
-    await supabaseAdmin.from('workspaces').delete().eq('id', workspace.id)
+    await supabaseAdmin.from('departments').delete().eq('id', workspace.id)
     await supabaseAdmin.from('organizations').delete().eq('id', org.id)
     return NextResponse.json(
       { error: `Einstellungen konnten nicht gespeichert werden: ${settingsError.message}` },
@@ -132,7 +134,7 @@ export async function POST(req: NextRequest) {
 
   if (inviteError) {
     // Org + Workspace wurden angelegt, nur E-Mail fehlgeschlagen → trotzdem erfolgreich zurückgeben
-    console.error('Invite email failed:', inviteError.message)
+    log.error('Invite email failed:', inviteError.message)
     return NextResponse.json(
       { organization: org, workspace, invited: false, invite_error: inviteError.message },
       { status: 201 }

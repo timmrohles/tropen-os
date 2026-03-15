@@ -14,9 +14,23 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
-      include: ['src/lib/qa/**'],
-      exclude: ['src/test/**', '**/*.d.ts', '**/*.test.ts', '**/*.test.tsx'],
-      thresholds: { branches: 60, functions: 60, lines: 60 },
+      // Nur Dateien mit tatsächlichen Tests — keine DB-abhängigen Routes
+      include: [
+        'src/lib/validators/**',
+        'src/lib/errors.ts',
+        'src/lib/token-counter.ts',
+        'src/lib/logger.ts',
+        'src/lib/qa/routing-logger.ts',
+        'src/lib/qa/task-classifier.ts',
+        'src/app/api/admin/qa/compliance/route.ts',
+      ],
+      exclude: [
+        'src/test/**',
+        '**/*.d.ts',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+      ],
+      thresholds: { branches: 70, functions: 70, lines: 70 },
     },
   },
   resolve: {

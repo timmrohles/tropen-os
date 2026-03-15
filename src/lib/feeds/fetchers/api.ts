@@ -6,7 +6,7 @@ const log = createLogger('feeds:fetchers:api')
 
 function extractByPath(obj: unknown, path: string): unknown {
   return path.split('.').reduce((cur: unknown, key) => {
-    if (cur == null) return undefined
+    if (cur == null) return
     return (cur as Record<string, unknown>)[key]
   }, obj)
 }

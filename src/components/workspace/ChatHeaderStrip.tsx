@@ -86,7 +86,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
               }}
             >
               <Paperclip size={13} />
-              <span>{artifactCount} Artefakt{artifactCount !== 1 ? 'e' : ''}</span>
+              <span>{artifactCount} Artefakt{artifactCount === 1 ? '' : 'e'}</span>
             </button>
           )}
 
@@ -114,6 +114,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
               padding: 4, borderRadius: 4,
             }}
             title="Nachrichten durchsuchen"
+            aria-label="Nachrichten durchsuchen"
           >
             <MagnifyingGlass size={13} />
           </button>

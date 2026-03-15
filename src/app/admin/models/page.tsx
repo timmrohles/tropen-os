@@ -16,6 +16,26 @@ export default function ModelsPage() {
   })
   const [showNew, setShowNew] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [membersCanSee, setMembersCanSee] = useState(false)
+  const [accessSaving, setAccessSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/branding')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setMembersCanSee(!!d.members_see_models))
+  }, [])
+
+  async function toggleMembersAccess() {
+    setAccessSaving(true)
+    const next = !membersCanSee
+    await fetch('/api/admin/branding', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ members_see_models: next }),
+    })
+    setMembersCanSee(next)
+    setAccessSaving(false)
+  }
 
   async function load() {
     const res = await fetch('/api/admin/models')
@@ -80,7 +100,7 @@ export default function ModelsPage() {
   const providers = ['openai', 'anthropic', 'mistral', 'google']
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max" aria-busy={loading}>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Modelle</h1>
@@ -91,6 +111,41 @@ export default function ModelsPage() {
             {showNew ? 'Abbrechen' : '+ Neues Modell'}
           </button>
         </div>
+      </div>
+
+      {/* Mitglieder-Zugang */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg-surface)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 16px', marginBottom: 24,
+      }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+            Modelle für Members sichtbar
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+            Members können die Modell-Übersicht im Menü sehen (nur lesend)
+          </div>
+        </div>
+        <button
+          onClick={toggleMembersAccess}
+          disabled={accessSaving}
+          style={{
+            position: 'relative', width: 44, height: 24, borderRadius: 999,
+            background: membersCanSee ? 'var(--accent)' : 'var(--border-medium)',
+            border: 'none', cursor: 'pointer', flexShrink: 0,
+            transition: 'background 0.2s',
+          }}
+          aria-checked={membersCanSee}
+          role="switch"
+          aria-label="Modelle für Members freischalten"
+        >
+          <span style={{
+            position: 'absolute', top: 3, left: membersCanSee ? 23 : 3,
+            width: 18, height: 18, borderRadius: '50%', background: '#fff',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left 0.2s',
+          }} />
+        </button>
       </div>
 
       {showNew && (

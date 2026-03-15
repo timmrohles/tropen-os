@@ -1,0 +1,734 @@
+'use client'
+
+/**
+ * _DESIGN_REFERENCE.tsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Tropen OS — Lebende Design-Referenz
+ *
+ * ZWECK: Diese Datei ist die einzige Quelle der Wahrheit für alle UI-Patterns.
+ * Claude Code liest diese Datei bevor es neue Komponenten oder Seiten baut.
+ *
+ * ROUTE: /design-reference (nur sichtbar wenn NEXT_PUBLIC_SHOW_DESIGN_REF=true)
+ * NICHT für Produktion — nur für Entwicklung und Claude Code als Referenz.
+ *
+ * WIE MAN DIESE DATEI BENUTZT (für Claude Code):
+ * Bevor du eine neue Seite oder Komponente baust:
+ * 1. Lies diese Datei
+ * 2. Identifiziere welche Patterns du brauchst
+ * 3. Kopiere das Pattern exakt — ändere nur Inhalte, nie die Klassen
+ *
+ * WIE MAN DIESE DATEI UPDATED (für Claude Code):
+ * - Neues Pattern: neuen Abschnitt mit <Section> ergänzen
+ * - Bestehendes Pattern ändern: nur wenn globals.css sich geändert hat
+ * - Niemals Patterns entfernen ohne explizite Anweisung von Timm
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import {
+  House, Gear, Plus, Trash, Download, BookmarkSimple,
+  MagnifyingGlass, Bell, User, ArrowRight, Check,
+  Warning, Info, X, CaretDown, DotsThree,
+  FolderOpen, ChatCircle, Brain, Leaf, Buildings,
+  Sparkle, List, GridFour,
+} from '@phosphor-icons/react'
+
+// ─── Guard: nur in Entwicklung sichtbar ──────────────────────────────────────
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PUBLIC_SHOW_DESIGN_REF !== 'true'
+) {
+  // Seite existiert im Build, ist aber nicht erreichbar
+}
+
+// ─── Hilfskomponenten für die Referenz-Darstellung ───────────────────────────
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: 64 }}>
+      <div style={{
+        borderBottom: '2px solid var(--accent)',
+        paddingBottom: 8,
+        marginBottom: 32,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}>
+        <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: 'var(--accent)' }}>
+          {title}
+        </h2>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <p className="t-label" style={{ marginBottom: 10 }}>{label}</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Code({ children }: { children: string }) {
+  return (
+    <pre className="t-mono" style={{
+      background: 'var(--bg-surface-2)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-sm)',
+      padding: '8px 12px',
+      fontSize: 11,
+      color: 'var(--text-secondary)',
+      margin: '8px 0 0',
+      overflowX: 'auto',
+      whiteSpace: 'pre-wrap',
+    }}>
+      {children}
+    </pre>
+  )
+}
+
+// ─── Haupt-Komponente ─────────────────────────────────────────────────────────
+
+export default function DesignReference() {
+  return (
+    <div className="content-max">
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="page-header">
+        <div className="page-header-text">
+          <h1 className="page-header-title">
+            <Sparkle size={22} color="var(--text-primary)" weight="fill" />
+            Design Reference
+          </h1>
+          <p className="page-header-sub">
+            Lebende Dokumentation aller UI-Patterns — Quelle der Wahrheit für Claude Code
+          </p>
+        </div>
+        <div className="page-header-actions">
+          <button className="btn btn-ghost">
+            <Gear size={14} weight="bold" /> Einstellungen
+          </button>
+          <button className="btn btn-primary">
+            <Plus size={14} weight="bold" /> Neu
+          </button>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          1. PAGE LAYOUT
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="1. Page Layout — Content-Breiten">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header">
+            <span className="card-header-label">Verbindliche Regel</span>
+          </div>
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+              Jede Seite verwendet genau eine content-Klasse. Kein manuelles
+              paddingTop/paddingBottom — das ist automatisch enthalten.
+              Kein background auf dem Wrapper — der Body-Gradient muss durchscheinen.
+            </p>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Klasse', 'Max-Width', 'Verwenden für'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '6px 12px 6px 0',
+                      color: 'var(--text-tertiary)', fontWeight: 600, fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['content-max',    '1200px', 'Dashboard, Settings, Knowledge, Projects, Feeds'],
+                  ['content-narrow', '720px',  'Login, Onboarding, Forgot-Password'],
+                  ['content-wide',   '1400px', 'Superadmin-Seiten'],
+                  ['content-full',   '100%',   'Chat-Interface, Full-Bleed-Layouts'],
+                ].map(([cls, width, usage]) => (
+                  <tr key={cls} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px 8px 0' }}>
+                      <code className="t-mono" style={{ color: 'var(--accent)' }}>.{cls}</code>
+                    </td>
+                    <td style={{ padding: '8px 12px 8px 0', color: 'var(--text-secondary)' }}>{width}</td>
+                    <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>{usage}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <Code>{`// ✅ RICHTIG
+<div className="content-max">
+  <div className="page-header">…</div>
+  {/* content */}
+</div>
+
+// ❌ FALSCH — nie manuelles padding, nie background
+<div className="content-max" style={{ paddingTop: 32, background: 'var(--bg-base)' }}>
+  …
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          2. PAGE HEADER
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="2. Page Header — Pflicht auf jeder Seite">
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            {/* Beispiel: Standard */}
+            <p className="t-label" style={{ marginBottom: 12 }}>Standard</p>
+            <div className="page-header" style={{ marginBottom: 0 }}>
+              <div className="page-header-text">
+                <h1 className="page-header-title">
+                  <FolderOpen size={22} color="var(--text-primary)" weight="fill" />
+                  Projekte
+                </h1>
+                <p className="page-header-sub">Alle deine Projekte auf einen Blick</p>
+              </div>
+              <div className="page-header-actions">
+                <button className="btn btn-ghost">
+                  <Gear size={14} weight="bold" /> Einstellungen
+                </button>
+                <button className="btn btn-primary">
+                  <Plus size={14} weight="bold" /> Neu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Code>{`<div className="page-header">
+  <div className="page-header-text">
+    <h1 className="page-header-title">
+      {/* Icon: size=22, color="var(--text-primary)", weight="fill" */}
+      {/* ❌ KEIN var(--accent) für H1-Icons */}
+      <FolderOpen size={22} color="var(--text-primary)" weight="fill" />
+      Seitentitel
+    </h1>
+    <p className="page-header-sub">Untertitel</p>
+  </div>
+  <div className="page-header-actions">
+    <button className="btn btn-ghost">Einstellungen</button>
+    <button className="btn btn-primary">+ Neu</button>
+  </div>
+</div>
+{/* page-header hat automatisch margin-bottom: 32px */}`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          3. BUTTONS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="3. Buttons">
+        <Row label="Varianten">
+          <button className="btn btn-primary">
+            <Plus size={14} weight="bold" /> Primary
+          </button>
+          <button className="btn btn-ghost">
+            <Gear size={14} weight="bold" /> Ghost
+          </button>
+          <button className="btn btn-danger">
+            <Trash size={14} weight="bold" /> Danger
+          </button>
+          <button className="btn btn-primary" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+            Disabled
+          </button>
+        </Row>
+        <Row label="Größen">
+          <button className="btn btn-primary">Standard (13px)</button>
+          <button className="btn btn-sm btn-ghost">Small (12px)</button>
+          <button className="btn-icon" aria-label="Einstellungen">
+            <Gear size={16} weight="bold" />
+          </button>
+          <button className="btn-icon" aria-label="Mehr Optionen">
+            <DotsThree size={16} weight="bold" />
+          </button>
+        </Row>
+        <Code>{`<button className="btn btn-primary">
+  <Plus size={14} weight="bold" /> Neu
+</button>
+<button className="btn btn-ghost">Ghost</button>
+<button className="btn btn-danger">Löschen</button>
+<button className="btn btn-sm btn-ghost">Klein</button>
+<button className="btn-icon" aria-label="Einstellungen">
+  <Gear size={16} weight="bold" />
+</button>
+
+{/* ❌ FALSCH — nie eigene button-styles */}
+<button style={{ background: '#2D7A50', color: '#fff', padding: '8px 16px' }}>
+  Falsch
+</button>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          4. CARDS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="4. Cards">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {/* Standard Card mit Header */}
+          <div>
+            <p className="t-label" style={{ marginBottom: 10 }}>Mit Header</p>
+            <div className="card">
+              <div className="card-header">
+                <span className="card-header-label">
+                  <Brain size={12} weight="bold" /> Quellen
+                </span>
+                <button className="btn btn-sm btn-ghost">
+                  <Plus size={12} weight="bold" /> Hinzufügen
+                </button>
+              </div>
+              <div className="card-body">
+                <span className="card-section-label">Aktiv</span>
+                <button className="list-row list-row--active">
+                  Produkthandbuch 2026
+                  <span className="badge">42</span>
+                </button>
+                <button className="list-row">
+                  Markenrichtlinien
+                  <span className="badge">18</span>
+                </button>
+                <div className="card-divider" />
+                <span className="card-section-label">Archiviert</span>
+                <button className="list-row">
+                  Alte Preisliste 2024
+                  <span className="badge">7</span>
+                </button>
+                <button className="list-row list-row--add">
+                  <Plus size={14} weight="bold" /> Neue Quelle
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Flat Card */}
+          <div>
+            <p className="t-label" style={{ marginBottom: 10 }}>Ohne Header (flat content)</p>
+            <div className="card">
+              <div className="card-body" style={{ padding: 16 }}>
+                <h3 style={{ margin: '0 0 8px' }}>Projekt-Gedächtnis</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.6 }}>
+                  Akkumuliert automatisch Key Insights aus deinen Chats.
+                  Warnung bei 85% Context-Auslastung.
+                </p>
+                <button className="btn btn-ghost" style={{ width: '100%' }}>
+                  <Download size={14} weight="bold" /> Zusammenfassung exportieren
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Code>{`{/* ✅ RICHTIG — immer className="card" */}
+<div className="card">
+  <div className="card-header">
+    <span className="card-header-label">Titel</span>
+    <button className="btn btn-sm btn-ghost">Aktion</button>
+  </div>
+  <div className="card-body">
+    <span className="card-section-label">Abschnitt</span>
+    {/* list-rows */}
+    <div className="card-divider" />
+  </div>
+</div>
+
+{/* ❌ FALSCH — nie eigene box-styles */}
+<div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 12, border: '1px solid ...' }}>
+  …
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          5. LIST ROWS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="5. List Rows">
+        <div style={{ maxWidth: 360 }}>
+          <div className="card">
+            <div className="card-body">
+              <button className="list-row list-row--active">
+                <ChatCircle size={14} weight="fill" />
+                Aktiver Eintrag
+                <span className="badge">3</span>
+              </button>
+              <button className="list-row">
+                <FolderOpen size={14} weight="bold" />
+                Normaler Eintrag
+              </button>
+              <button className="list-row">
+                Nur Text
+                <span className="badge">12</span>
+              </button>
+              <div className="card-divider" />
+              <button className="list-row list-row--add">
+                <Plus size={14} weight="bold" /> Hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+        <Code>{`<button className="list-row list-row--active">
+  <Icon size={14} weight="fill" />
+  Aktiver Eintrag
+  <span className="badge">3</span>
+</button>
+<button className="list-row">Normaler Eintrag</button>
+<button className="list-row list-row--add">
+  <Plus size={14} weight="bold" /> Hinzufügen
+</button>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          6. CHIPS / FILTER-PILLS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="6. Chips / Filter-Pills">
+        <Row label="Zustände">
+          <div className="chip chip--active">Alle</div>
+          <div className="chip">Entwurf</div>
+          <div className="chip">Aktiv</div>
+          <div className="chip">Archiviert</div>
+        </Row>
+        <Row label="Als Tabs / Filter-Leiste">
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div className="chip chip--active">
+              <List size={12} weight="bold" style={{ marginRight: 4 }} /> Liste
+            </div>
+            <div className="chip">
+              <GridFour size={12} weight="bold" style={{ marginRight: 4 }} /> Kacheln
+            </div>
+          </div>
+        </Row>
+        <Code>{`<div className="chip chip--active">Aktiv</div>
+<div className="chip">Inaktiv</div>
+
+{/* Mit Icon */}
+<div className="chip chip--active">
+  <List size={12} weight="bold" /> Liste
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          7. BADGES (Status)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="7. Badges — Status-Labels">
+        <Row label="Semantische Varianten">
+          <span className="badge badge--success">Aktiv</span>
+          <span className="badge badge--warning">Ausstehend</span>
+          <span className="badge badge--error">Fehler</span>
+          <span className="badge badge--info">Info</span>
+          <span className="badge badge--neutral">Archiviert</span>
+          <span className="badge">Standard</span>
+        </Row>
+        <Code>{`<span className="badge badge--success">Aktiv</span>
+<span className="badge badge--warning">Ausstehend</span>
+<span className="badge badge--error">Fehler</span>
+<span className="badge badge--info">Info</span>
+<span className="badge badge--neutral">Archiviert</span>
+<span className="badge">Standard (Zähler)</span>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          8. INPUTS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="8. Inputs">
+        <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label htmlFor="ref-input-1" style={{ fontSize: 13, fontWeight: 500,
+              color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+              Standard Input
+            </label>
+            <input
+              id="ref-input-1"
+              className="input"
+              placeholder="Placeholder-Text…"
+              type="text"
+            />
+          </div>
+          <div>
+            <label htmlFor="ref-input-2" style={{ fontSize: 13, fontWeight: 500,
+              color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+              Disabled
+            </label>
+            <input
+              id="ref-input-2"
+              className="input"
+              placeholder="Nicht editierbar"
+              disabled
+            />
+          </div>
+          <div>
+            <label htmlFor="ref-textarea" style={{ fontSize: 13, fontWeight: 500,
+              color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+              Textarea
+            </label>
+            <textarea
+              id="ref-textarea"
+              className="input"
+              placeholder="Mehrzeiliger Text…"
+              rows={3}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+        </div>
+        <Code>{`{/* Label + Input immer zusammen — für Accessibility */}
+<label htmlFor="field-id" style={{ fontSize: 13, fontWeight: 500,
+  color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+  Label
+</label>
+<input id="field-id" className="input" placeholder="…" type="text" />
+
+{/* Textarea */}
+<textarea className="input" rows={3} style={{ resize: 'vertical' }} />
+
+{/* ❌ FALSCH — nie eigene input-styles */}
+<input style={{ border: '1px solid #ccc', borderRadius: 8, padding: '8px 12px' }} />`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          9. DROPDOWN
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="9. Dropdown">
+        <div style={{ maxWidth: 240 }}>
+          <div className="dropdown animate-dropdown">
+            <button className="dropdown-item">
+              <User size={14} weight="bold" /> Profil bearbeiten
+            </button>
+            <button className="dropdown-item dropdown-item--active">
+              <Bell size={14} weight="bold" /> Benachrichtigungen
+            </button>
+            <div className="dropdown-divider" />
+            <button className="dropdown-item">
+              <Download size={14} weight="bold" /> Exportieren
+            </button>
+            <div className="dropdown-divider" />
+            <button className="dropdown-item dropdown-item--danger">
+              <Trash size={14} weight="bold" /> Löschen
+            </button>
+          </div>
+        </div>
+        <Code>{`<div className="dropdown">
+  <button className="dropdown-item">
+    <Icon size={14} weight="bold" /> Aktion
+  </button>
+  <button className="dropdown-item dropdown-item--active">Aktiv</button>
+  <div className="dropdown-divider" />
+  <button className="dropdown-item dropdown-item--danger">
+    <Trash size={14} weight="bold" /> Löschen
+  </button>
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          10. ICONS — REGELN
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="10. Icons — Regeln">
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Kontext', 'Größe', 'Weight', 'Farbe'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '6px 12px 6px 0',
+                      color: 'var(--text-tertiary)', fontWeight: 600, fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['NavBar', '18px', 'bold', 'var(--text-secondary)'],
+                  ['Page-Header H1', '22px', 'fill', 'var(--text-primary) ← nie var(--accent)'],
+                  ['Cards / Listen', '16px', 'bold oder fill', 'var(--text-secondary)'],
+                  ['Inline / Button', '14px', 'bold', 'erbt vom Parent'],
+                  ['Status / CTA', '16px', 'fill', 'var(--accent) oder semantisch'],
+                ].map(([ctx, size, weight, color]) => (
+                  <tr key={ctx} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px 8px 0', color: 'var(--text-primary)', fontWeight: 500 }}>{ctx}</td>
+                    <td style={{ padding: '8px 12px 8px 0', color: 'var(--text-secondary)' }}>{size}</td>
+                    <td style={{ padding: '8px 12px 8px 0', color: 'var(--text-secondary)' }}>{weight}</td>
+                    <td style={{ padding: '8px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>{color}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <Row label="Erlaubte Weights (bold + fill)">
+          <House size={20} weight="bold" color="var(--text-primary)" />
+          <House size={20} weight="fill" color="var(--accent)" />
+          <Gear size={20} weight="bold" color="var(--text-secondary)" />
+          <Brain size={20} weight="fill" color="var(--accent)" />
+          <Leaf size={20} weight="fill" color="var(--active-bg)" />
+        </Row>
+        <Code>{`{/* ✅ RICHTIG */}
+import { House, Gear } from '@phosphor-icons/react'
+
+<House size={22} color="var(--text-primary)" weight="fill" />  // H1
+<Gear  size={16} color="var(--text-secondary)" weight="bold" /> // Card
+
+{/* ❌ FALSCH */}
+import { HomeIcon } from '@heroicons/react/24/outline'  // verbotene Library
+<House size={22} weight="duotone" />                    // verbotenes Weight
+<House size={22} color="#2D7A50" />                     // Hex statt CSS-Variable`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          11. FARBEN — CSS VARIABLEN
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="11. Farben — CSS-Variablen (nie Hex hardcoden)">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+          {[
+            { var: '--bg-base',       hex: '#EAE9E5',             label: 'Background' },
+            { var: '--bg-surface',    hex: 'rgba(255,255,255,.8)', label: 'Surface / Card' },
+            { var: '--text-primary',  hex: '#1A1714',             label: 'Text Primary' },
+            { var: '--text-secondary',hex: '#4A4540',             label: 'Text Secondary' },
+            { var: '--text-tertiary', hex: '#6B6560',             label: 'Text Tertiary' },
+            { var: '--accent',        hex: '#2D7A50',             label: 'Akzent Grün' },
+            { var: '--accent-light',  hex: '#D4EDDE',             label: 'Akzent Hell' },
+            { var: '--active-bg',     hex: '#1A2E23',             label: 'Active / Selected' },
+            { var: '--error',         hex: '#C0392B',             label: 'Error' },
+            { var: '--warning',       hex: '#C07A2A',             label: 'Warning' },
+          ].map(({ var: v, hex, label }) => (
+            <div key={v} style={{ display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 12px', background: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 'var(--radius-sm)',
+                background: `var(${v})`,
+                border: '1px solid var(--border-medium)',
+                flexShrink: 0,
+              }} />
+              <div>
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {label}
+                </p>
+                <code className="t-mono" style={{ color: 'var(--text-tertiary)', fontSize: 10 }}>
+                  var({v})
+                </code>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Code>{`{/* ✅ RICHTIG — immer CSS-Variablen */}
+style={{ color: 'var(--text-primary)' }}
+style={{ background: 'var(--accent)' }}
+style={{ borderColor: 'var(--border-medium)' }}
+
+{/* ❌ VERBOTEN — nie Hex-Werte */}
+style={{ color: '#1A1714' }}           // verwende var(--text-primary)
+style={{ background: '#2D7A50' }}      // verwende var(--accent)
+style={{ background: '#a3b554' }}      // altes Grün — komplett abgelöst
+className="bg-[#a3b554]"              // auch in Tailwind verboten`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          12. TYPOGRAFIE
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="12. Typografie">
+        <div className="card">
+          <div className="card-body" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>Display / H1 (page-header-title)</p>
+              <h1 className="page-header-title" style={{ margin: 0 }}>Seitentitel Display</h1>
+            </div>
+            <div className="card-divider" />
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>H2</p>
+              <h2 style={{ margin: 0 }}>Abschnittstitel H2</h2>
+            </div>
+            <div className="card-divider" />
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>H3</p>
+              <h3 style={{ margin: 0 }}>Unterabschnitt H3</h3>
+            </div>
+            <div className="card-divider" />
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>Body (14px) + t-secondary</p>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                Fließtext in der Standardgröße. Zeilenhöhe 1.6. Mindestgröße 12px.
+              </p>
+            </div>
+            <div className="card-divider" />
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>Label-Klasse (.t-label)</p>
+              <span className="t-label">Abschnittsbezeichnung</span>
+            </div>
+            <div className="card-divider" />
+            <div>
+              <p className="t-label" style={{ marginBottom: 6 }}>Mono (.t-mono)</p>
+              <span className="t-mono">const value = 42 // JetBrains Mono</span>
+            </div>
+          </div>
+        </div>
+        <Code>{`<h1 className="page-header-title">Seitentitel</h1>  // Plus Jakarta Sans 800
+<h2>Abschnittstitel</h2>                              // Inter 500
+<h3>Unterabschnitt</h3>                               // Inter 500
+<p style={{ color: 'var(--text-secondary)' }}>Text</p>
+<span className="t-label">Label</span>                // 11px uppercase
+<span className="t-mono">code</span>                  // JetBrains Mono 12px`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          13. SKELETON LOADING
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="13. Skeleton Loading">
+        <div style={{ maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="skeleton" style={{ height: 20, borderRadius: 'var(--radius-sm)' }} />
+          <div className="skeleton" style={{ height: 16, width: '70%', borderRadius: 'var(--radius-sm)' }} />
+          <div className="skeleton" style={{ height: 16, width: '50%', borderRadius: 'var(--radius-sm)' }} />
+        </div>
+        <Code>{`{/* Loading-State mit Skeleton */}
+{isLoading ? (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="skeleton" style={{ height: 20 }} />
+    <div className="skeleton" style={{ height: 16, width: '70%' }} />
+  </div>
+) : (
+  <p>{content}</p>
+)}`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          14. ANIMATIONS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="14. Animationen">
+        <Row label="Einblenden (.animate-in)">
+          <div className="card animate-in" style={{ padding: 16 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+              fadeIn — 200ms ease
+            </p>
+          </div>
+        </Row>
+        <Row label="Dropdown (.animate-dropdown)">
+          <div className="dropdown animate-dropdown" style={{ padding: 8, maxWidth: 200 }}>
+            <button className="dropdown-item">slideDown — 150ms</button>
+          </div>
+        </Row>
+        <Code>{`{/* Einblenden */}
+<div className="animate-in">Erscheint beim Mount</div>
+
+{/* Dropdown */}
+{isOpen && (
+  <div className="dropdown animate-dropdown">
+    …
+  </div>
+)}
+
+{/* Drawer — immer 200ms ease-out */}
+style={{ transition: 'transform 200ms ease-out' }}`}
+        </Code>
+      </Section>
+
+    </div>
+  )
+}

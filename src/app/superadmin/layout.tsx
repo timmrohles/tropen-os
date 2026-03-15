@@ -7,7 +7,7 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
 
   return (
     <div style={{ background: 'transparent', minHeight: '100vh' }}>
-      <div className="content-wide" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="content-wide">
         <header style={{
           borderBottom: '1px solid var(--border)',
           marginBottom: 24, paddingBottom: 14,

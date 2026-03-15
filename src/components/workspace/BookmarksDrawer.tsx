@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { X, BookmarkSimple, Trash, ArrowRight } from '@phosphor-icons/react'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface Bookmark {
   id: string
@@ -26,6 +27,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const trapRef = useFocusTrap<HTMLDivElement>(open)
 
   const fetchBookmarks = useCallback(async () => {
     setLoading(true)
@@ -77,7 +79,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, animation: 'fadeIn 200ms ease-out' }}
       />
-      <div style={{
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Lesezeichen" style={{
         position: 'fixed', top: 52, left: 0, right: 0, zIndex: 201,
         background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -90,7 +92,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
             <BookmarkSimple size={16} weight="fill" color="var(--accent)" />
             Lesezeichen
           </span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
+          <button onClick={onClose} aria-label="Schließen" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
             <X size={18} />
           </button>
         </div>

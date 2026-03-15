@@ -2,7 +2,9 @@
 
 export type Plan = 'free' | 'pro' | 'enterprise'
 export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'
-export type WorkspaceRole = 'admin' | 'member' | 'viewer'
+export type DepartmentRole = 'admin' | 'member' | 'viewer'
+/** @deprecated use DepartmentRole */
+export type WorkspaceRole = DepartmentRole
 export type MessageRole = 'user' | 'assistant'
 export type Provider = 'openai' | 'anthropic' | 'mistral' | 'google'
 export type ModelClass = 'fast' | 'deep' | 'safe'
@@ -28,7 +30,7 @@ export interface User {
   created_at: string
 }
 
-export interface Workspace {
+export interface Department {
   id: string
   organization_id: string
   name: string
@@ -38,11 +40,16 @@ export interface Workspace {
   created_at: string
 }
 
-export interface WorkspaceMember {
-  workspace_id: string
+export interface DepartmentMember {
+  workspace_id: string  // FK column name unchanged in DB
   user_id: string
-  role: WorkspaceRole
+  role: DepartmentRole
 }
+
+/** @deprecated use Department */
+export type Workspace = Department
+/** @deprecated use DepartmentMember */
+export type WorkspaceMember = DepartmentMember
 
 export interface Conversation {
   id: string
@@ -113,15 +120,15 @@ export interface Database {
         Update: Partial<Omit<Organization, 'id'>>
       }
       users: { Row: User; Insert: Omit<User, 'created_at'>; Update: Partial<Omit<User, 'id'>> }
-      workspaces: {
-        Row: Workspace
-        Insert: Omit<Workspace, 'id' | 'created_at'>
-        Update: Partial<Omit<Workspace, 'id'>>
+      departments: {
+        Row: Department
+        Insert: Omit<Department, 'id' | 'created_at'>
+        Update: Partial<Omit<Department, 'id'>>
       }
-      workspace_members: {
-        Row: WorkspaceMember
-        Insert: WorkspaceMember
-        Update: Partial<WorkspaceMember>
+      department_members: {
+        Row: DepartmentMember
+        Insert: DepartmentMember
+        Update: Partial<DepartmentMember>
       }
       conversations: {
         Row: Conversation

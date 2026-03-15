@@ -41,11 +41,11 @@ export default function NewClientPage() {
         }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'Fehler beim Anlegen.')
-      } else {
+      if (res.ok) {
         setSuccess(true)
         setTimeout(() => router.push('/superadmin/clients'), 2000)
+      } else {
+        setError(data.error ?? 'Fehler beim Anlegen.')
       }
     } catch {
       setError('Netzwerkfehler. Bitte erneut versuchen.')
@@ -56,7 +56,7 @@ export default function NewClientPage() {
 
   if (success) {
     return (
-      <div className="content-narrow" style={{ paddingTop: 32, paddingBottom: 48 }}>
+      <div className="content-narrow">
         <div style={s.successBox}>
           <div style={s.successIcon}>🦜</div>
           <h2 style={s.successHeading}>Client angelegt!</h2>
@@ -69,7 +69,7 @@ export default function NewClientPage() {
   }
 
   return (
-    <div className="content-narrow" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-narrow">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Neuer Client</h1>

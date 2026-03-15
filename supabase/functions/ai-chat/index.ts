@@ -55,6 +55,42 @@ function detectTask(message: string): TaskRouterResult {
 }
 
 // ─────────────────────────────────────────
+// Art. 12 KI-Logging (DSGVO-konform)
+// ─────────────────────────────────────────
+
+async function hashUserId(userId: string): Promise<string> {
+  const data = new TextEncoder().encode(userId);
+  const buf  = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+
+function logRouting(
+  supabase: ReturnType<typeof createClient>,
+  entry: {
+    task_type: string;
+    model_selected: string;
+    routing_reason: string;
+    latency_ms: number | null;
+    status: "success" | "error";
+    error_message?: string;
+    user_id_hashed: string | null;
+  }
+): void {
+  // Fire-and-forget — darf nie den Request blockieren
+  supabase.from("qa_routing_log").insert({
+    task_type:      entry.task_type,
+    model_selected: entry.model_selected,
+    routing_reason: entry.routing_reason,
+    latency_ms:     entry.latency_ms,
+    status:         entry.status,
+    error_message:  entry.error_message ?? null,
+    user_id:        entry.user_id_hashed,
+  }).then(({ error }) => {
+    if (error) console.warn("[qa_routing_log] insert fehlgeschlagen:", error.message);
+  });
+}
+
+// ─────────────────────────────────────────
 // Konstanten
 // ─────────────────────────────────────────
 
@@ -102,6 +138,8 @@ serve(async (req) => {
   }
 
   try {
+    const requestStart = Date.now();
+
     // 1. Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return errorResponse("Nicht autorisiert", 401);
@@ -142,7 +180,7 @@ serve(async (req) => {
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
       supabase
         .from("user_preferences")
-        .select("chat_style, memory_window, proactive_hints")
+        .select("chat_style, memory_window, proactive_hints, thinking_mode")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -155,6 +193,7 @@ serve(async (req) => {
     const chatStyle      = userPrefs?.chat_style      ?? "structured";
     const memorySize     = userPrefs?.memory_window   ?? 20;
     const proactiveHints = userPrefs?.proactive_hints ?? true;
+    const thinkingMode   = userPrefs?.thinking_mode   ?? false;
     const aiGuideName    = orgSettings?.ai_guide_name ?? "Toro";
 
     // 5b. Agent-System-Prompt laden (wenn agent_id übergeben)
@@ -171,7 +210,7 @@ serve(async (req) => {
     // 6. Workspace-Zugang + Policy Check
     console.log("Step 6: Workspace-Zugang prüfen");
     const { data: membership } = await supabase
-      .from("workspace_members")
+      .from("department_members")
       .select("role")
       .eq("workspace_id", workspace_id)
       .eq("user_id", user.id)
@@ -182,7 +221,7 @@ serve(async (req) => {
     }
 
     const { data: workspace, error: wsError } = await supabase
-      .from("workspaces")
+      .from("departments")
       .select("*")
       .eq("id", workspace_id)
       .eq("organization_id", userProfile.organization_id)
@@ -237,10 +276,10 @@ serve(async (req) => {
       .gte("created_at", startOfMonth.toISOString());
     const totalSpent = usageThisMonth?.reduce((s, r) => s + (r.cost_eur || 0), 0) ?? 0;
 
-    // 9. dify_conversation_id laden – mit IDOR-Schutz
+    // 9. dify_conversation_id + project_id laden – mit IDOR-Schutz
     const { data: convData, error: convError } = await supabase
       .from("conversations")
-      .select("dify_conversation_id")
+      .select("dify_conversation_id, project_id")
       .eq("id", conversation_id)
       .eq("workspace_id", workspace_id)
       .eq("user_id", user.id)
@@ -249,6 +288,42 @@ serve(async (req) => {
     if (convError || !convData) return errorResponse("Unterhaltung nicht gefunden", 404);
 
     const difyConversationId = convData.dify_conversation_id ?? null;
+
+    // 9b. Projekt-Kontext laden (instructions = manuelles Kontext-Textfeld, chat-14)
+    let projectContext: string | null = null;
+    const projectId = (convData as { project_id?: string | null }).project_id ?? null;
+    if (projectId) {
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("instructions")
+        .eq("id", projectId)
+        .is("deleted_at", null)
+        .single();
+      projectContext = projectData?.instructions ?? null;
+    }
+
+    // 9c. Knowledge-Search: relevante Chunks für User-Nachricht laden (non-blocking)
+    console.log("Step 9c: Knowledge-Search");
+    let knowledgeContext = "";
+    try {
+      const { data: ksData, error: ksError } = await supabase.functions.invoke("knowledge-search", {
+        body: {
+          query: message,
+          org_id: userProfile.organization_id,
+          user_id: user.id,
+          project_id: projectId,
+        },
+      });
+      if (!ksError && ksData?.chunks?.length > 0) {
+        const chunks = ksData.chunks as Array<{ content: string; citation: string }>;
+        knowledgeContext = chunks
+          .map((c, i) => `[${i + 1}] ${c.citation}\n${c.content}`)
+          .join("\n\n");
+        console.log(`Knowledge-Search: ${chunks.length} Chunks gefunden`);
+      }
+    } catch (ksErr) {
+      console.warn("Knowledge-Search fehlgeschlagen (non-blocking):", String(ksErr));
+    }
 
     // 10. User-Nachricht speichern
     const { error: msgError } = await supabase.from("messages").insert({
@@ -276,6 +351,9 @@ serve(async (req) => {
         proactive_hints: proactiveHints,
         mark_uncertainty: true,
         agent_system_prompt: agentSystemPrompt ?? "",
+        project_context: projectContext ?? "",
+        knowledge_context: knowledgeContext,
+        thinking_mode: thinkingMode,
       },
       query: message,
       response_mode: "streaming",
@@ -317,6 +395,8 @@ serve(async (req) => {
         function send(obj: Record<string, unknown>) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         }
+
+        const hashedUserId = await hashUserId(user.id);
 
         async function commitSave(difyConvId: string, tokensInput: number, tokensOutput: number) {
           const costEur = calculateCost(tokensInput, tokensOutput, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
@@ -362,6 +442,16 @@ serve(async (req) => {
               spent_this_month: Math.round((totalSpent + costEur) * 100) / 100,
               limit: organization.budget_limit ?? null,
             },
+          });
+
+          // Art. 12 KI-VO: Logging des Routing-Entscheids (fire-and-forget)
+          logRouting(supabase, {
+            task_type,
+            model_selected: modelData.name,
+            routing_reason: `${effectiveClass}/${agent}`,
+            latency_ms: Date.now() - requestStart,
+            status: "success",
+            user_id_hashed: hashedUserId,
           });
         }
 
@@ -456,6 +546,17 @@ serve(async (req) => {
 
   } catch (err) {
     console.error("Unerwarteter Fehler:", err);
+    // Best-effort error log (kein user context hier)
+    const supabaseForLog = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    logRouting(supabaseForLog, {
+      task_type: "unknown",
+      model_selected: "unknown",
+      routing_reason: "error",
+      latency_ms: null,
+      status: "error",
+      error_message: String(err).slice(0, 500),
+      user_id_hashed: null,
+    });
     return errorResponse("Interner Serverfehler", 500);
   }
 });

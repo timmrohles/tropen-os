@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { validateBody } from '@/lib/validators'
+import { createArtifactSchema } from '@/lib/validators/artifacts'
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -15,44 +17,42 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
   const organizationId = searchParams.get('organizationId')
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
+  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10), 0)
 
   let query = supabaseAdmin
     .from('artifacts')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (conversationId) {
     query = query.eq('conversation_id', conversationId)
   } else if (organizationId) {
     query = query.eq('organization_id', organizationId)
   } else {
-    // Fallback: all artifacts for this user
     query = query.eq('user_id', user.id)
   }
 
-  const { data, error } = await query
+  const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json(data ?? [])
+  return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const { conversationId, organizationId, name, type, language, content, messageId } = body
-
-  if (!conversationId || !organizationId || !name || !type || !content) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
+  const { data: body, error: validationError } = await validateBody(req, createArtifactSchema)
+  if (validationError) return validationError
 
   // Verify user belongs to the org
   const { data: membership } = await supabaseAdmin
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
-    .eq('organization_id', organizationId)
+    .eq('organization_id', body.organizationId)
     .single()
 
   if (!membership) {
@@ -62,14 +62,14 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('artifacts')
     .insert({
-      message_id: messageId ?? null,
-      conversation_id: conversationId,
-      organization_id: organizationId,
+      message_id: body.messageId ?? null,
+      conversation_id: body.conversationId,
+      organization_id: body.organizationId,
       user_id: user.id,
-      name,
-      type,
-      language: language ?? null,
-      content,
+      name: body.name,
+      type: body.type,
+      language: body.language ?? null,
+      content: body.content,
     })
     .select()
     .single()

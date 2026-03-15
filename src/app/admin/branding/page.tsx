@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
-const PRESET_COLORS = ['#a3b554', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
+const PRESET_COLORS = ['var(--accent)', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
 interface BrandingData {
   logo_url: string | null
@@ -19,7 +19,7 @@ export default function BrandingPage() {
 
   const [data, setData] = useState<BrandingData>({
     logo_url: null,
-    primary_color: '#a3b554',
+    primary_color: 'var(--accent)',
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
@@ -105,7 +105,7 @@ export default function BrandingPage() {
   }
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Co-Branding</h1>
@@ -236,7 +236,7 @@ export default function BrandingPage() {
               <div style={s.premiumSub}>
                 Eigenes vollständiges Branding, eigene Domain (z.B.{' '}
                 <span style={s.domainExample}>ai.mustermann.de</span>
-                ), kein „powered by Tropen OS", vollständig anpassbare Oberfläche.
+                ), kein &bdquo;powered by Tropen OS&ldquo;, vollständig anpassbare Oberfläche.
               </div>
             </div>
           </div>
@@ -283,7 +283,7 @@ const s: Record<string, React.CSSProperties> = {
   colorBar: { height: 5, borderRadius: 3, transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px' },
 
   errorBox: { fontSize: 13, color: '#ef4444', background: '#1f0a0a', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
-  successBox: { fontSize: 13, color: '#a3b554', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
+  successBox: { fontSize: 13, color: 'var(--accent)', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
 
   // ── Premium Section ──
   lockRow: { display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 },

@@ -27,7 +27,7 @@ export default function LoginPage() {
     }
 
     const { data: membership } = await supabase
-      .from('workspace_members')
+      .from('department_members')
       .select('workspace_id')
       .order('created_at', { ascending: true })
       .limit(1)

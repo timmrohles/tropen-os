@@ -117,7 +117,7 @@ export default function LeftNav({
   const canAct = selectedArr.length >= 1
 
   return (
-    <nav className="lnav" aria-label="Workspace-Navigation">
+    <nav className="lnav" aria-label="Chat-Navigation">
       {/* Logo */}
       <div className="lnav-logo">
         <TreePalm size={22} color="var(--accent)" weight="fill" />
@@ -213,7 +213,7 @@ export default function LeftNav({
           )}
           {activeAction === 'delete' && !deleteConfirm && (
             <div className="lnav-delete-confirm">
-              <span className="lnav-delete-confirm-label">{selectedArr.length} Chat{selectedArr.length !== 1 ? 's' : ''} löschen?</span>
+              <span className="lnav-delete-confirm-label">{selectedArr.length} Chat{selectedArr.length === 1 ? '' : 's'} löschen?</span>
               <button className="lnav-delete-confirm-yes" onClick={handleConfirmDelete}>Ja</button>
               <button className="lnav-delete-confirm-no" onClick={() => setActiveAction(null)}>Nein</button>
             </div>

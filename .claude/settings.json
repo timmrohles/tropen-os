@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"/c/Users/timmr/tropen OS\" && pnpm typecheck 2>&1 | grep -E 'error TS|Found [0-9]+ error' | head -20 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

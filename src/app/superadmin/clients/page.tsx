@@ -144,9 +144,9 @@ export default function ClientsPage() {
     setEditForm({
       org_name: org.name,
       plan: org.plan,
-      org_budget_limit: org.budget_limit != null ? String(org.budget_limit) : '',
+      org_budget_limit: org.budget_limit == null ? '' : String(org.budget_limit),
       workspace_name: ws?.name ?? '',
-      workspace_budget_limit: ws?.budget_limit != null ? String(ws.budget_limit) : '',
+      workspace_budget_limit: ws?.budget_limit == null ? '' : String(ws.budget_limit),
       owner_email: owner(org),
     })
     setEditOrg(org)
@@ -207,7 +207,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="content-wide" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-wide">
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Clients</h1>
@@ -252,7 +252,7 @@ export default function ClientsPage() {
                       </span>
                     </td>
                     <td style={s.td}>
-                      {org.budget_limit != null ? `€${org.budget_limit}/Mo` : '–'}
+                      {org.budget_limit == null ? '–' : `€${org.budget_limit}/Mo`}
                     </td>
                     <td style={s.td}>
                       {ws ? (
@@ -306,8 +306,8 @@ export default function ClientsPage() {
                       <button
                         style={s.expandBtn}
                         onClick={() => {
-                          if (!orgPackages[org.id]) loadOrgPackages(org.id)
-                          else setOrgPackages(prev => { const n = { ...prev }; delete n[org.id]; return n })
+                          if (orgPackages[org.id]) {setOrgPackages(prev => { const n = { ...prev }; delete n[org.id]; return n })}
+                          else {loadOrgPackages(org.id)}
                         }}
                       >
                         📦 Pakete
