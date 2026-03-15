@@ -40,3 +40,4 @@ tsconfig.tsbuildinfo
 test-results/*.json
 coverage/
 .vercel
+.claude/worktrees/
