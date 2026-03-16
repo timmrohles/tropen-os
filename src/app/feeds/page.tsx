@@ -100,15 +100,11 @@ export default function FeedsPage() {
   )).slice(0, 20)
 
   return (
-    <div
-      className="content-full"
-      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}
-      onClick={() => setMenuOpen(null)}
-    >
+    <div className="content-max" onClick={() => setMenuOpen(null)}>
       {/* Page Header */}
-      <div className="page-header" style={{ flexShrink: 0, padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'var(--bg-nav)' }}>
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 className="page-header-title">
             <Rss size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
             Newscenter
           </h1>
@@ -120,17 +116,15 @@ export default function FeedsPage() {
       </div>
 
       {/* Body: Sidebar + Stream */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 24, minHeight: 0 }}>
         {/* Left Sidebar */}
         <div
           className="sidebar-scroll"
-          style={{ width: 220, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '12px 0', background: 'rgba(255,255,255,0.45)' }}
+          style={{ width: 200, flexShrink: 0, overflowY: 'auto' }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ padding: '0 8px 6px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
-              Quellen
-            </div>
+          <div style={{ padding: '0 0 6px' }}>
+            <span className="card-section-label">Quellen</span>
             <button
               className={`list-row${selectedSource === null ? ' list-row--active' : ''}`}
               onClick={() => setSelectedSource(null)}
@@ -154,10 +148,8 @@ export default function FeedsPage() {
           </div>
 
           {allTags.length > 0 && (
-            <div style={{ padding: '12px 8px 0' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
-                Themen
-              </div>
+            <div style={{ padding: '12px 0 0' }}>
+              <span className="card-section-label">Themen</span>
               {allTags.map((tag) => (
                 <button
                   key={tag}
@@ -173,7 +165,7 @@ export default function FeedsPage() {
         </div>
 
         {/* Main Stream */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {/* Search + count */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <div style={{ flex: 1, position: 'relative' as const }}>
