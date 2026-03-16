@@ -48,7 +48,7 @@ export default function DepartmentPage() {
 
   const s: Record<string, React.CSSProperties> = {
     cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 },
-    card: { background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: 10 },
+    card: { padding: '20px 22px', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: 10 },
     cardTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 },
     cardSub: { fontSize: 12, color: 'var(--text-tertiary)' },
     stat: { fontSize: 28, fontWeight: 800, color: 'var(--accent)', letterSpacing: '-0.02em' },
@@ -68,18 +68,18 @@ export default function DepartmentPage() {
 
         {!loading && dept && (
           <div style={s.cards}>
-            <div style={{ ...s.card, cursor: 'default' }}>
+            <div className="card" style={{ ...s.card, cursor: 'default' }}>
               <div style={s.cardTitle}><Users size={16} weight="fill" color="var(--accent)" /> Mitglieder</div>
               <div style={s.stat}>{dept.memberCount}</div>
               <div style={s.cardSub}>Aktive Mitglieder in diesem Department</div>
             </div>
 
-            <Link href="/admin/users" style={s.card}>
+            <Link href="/admin/users" className="card" style={s.card}>
               <div style={s.cardTitle}><Users size={16} weight="fill" /> User-Verwaltung</div>
               <div style={s.cardSub}>Mitglieder einladen, Rollen verwalten</div>
             </Link>
 
-            <Link href="/admin/budget" style={s.card}>
+            <Link href="/admin/budget" className="card" style={s.card}>
               <div style={s.cardTitle}><Gear size={16} weight="fill" /> Budget & Einstellungen</div>
               <div style={s.cardSub}>Budget-Limits und Department-Einstellungen</div>
             </Link>

@@ -137,7 +137,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
       <div className="tdrawer-header">
         <span className="tdrawer-title">Prompt-Vorlagen</span>
         <button className="tdrawer-close" onClick={onClose} title="Schließen">
-          <X size={16} />
+          <X size={16} weight="bold" />
         </button>
       </div>
 
@@ -279,7 +279,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
             </div>
           ) : (
             <button className="tdrawer-new-btn" onClick={() => setCreating(true)}>
-              <Plus size={14} /> Neue Vorlage
+              <Plus size={14} weight="bold" /> Neue Vorlage
             </button>
           )}
 
@@ -304,7 +304,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
                       onClick={() => { onAccept(t.content); onClose() }}
                       title="Verwenden"
                     >
-                      <BookmarkSimple size={14} /> Verwenden
+                      <BookmarkSimple size={14} weight="bold" /> Verwenden
                     </button>
                     <button
                       className={`tdrawer-share-btn${t.is_shared ? ' tdrawer-share-btn--active' : ''}`}
@@ -312,7 +312,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
                       disabled={togglingId === t.id}
                       title={t.is_shared ? 'Nicht mehr teilen' : 'Mit Team teilen'}
                     >
-                      <ShareNetwork size={13} />
+                      <ShareNetwork size={13} weight="bold" />
                     </button>
                     <button
                       className="tdrawer-del-btn"
@@ -320,7 +320,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
                       disabled={deletingId === t.id}
                       title="Löschen"
                     >
-                      <Trash size={13} />
+                      <Trash size={13} weight="bold" />
                     </button>
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
                       onClick={() => { onAccept(t.content); onClose() }}
                       title="Verwenden"
                     >
-                      <BookmarkSimple size={14} /> Verwenden
+                      <BookmarkSimple size={14} weight="bold" /> Verwenden
                     </button>
                   </div>
                 </div>

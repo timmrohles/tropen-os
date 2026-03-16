@@ -85,7 +85,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
                 padding: 0,
               }}
             >
-              <Paperclip size={13} />
+              <Paperclip size={13} weight="bold" />
               <span>{artifactCount} Artefakt{artifactCount === 1 ? '' : 'e'}</span>
             </button>
           )}
@@ -99,7 +99,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
                 color: 'var(--text-muted)', fontSize: 12, padding: 0,
               }}
             >
-              <BookmarkSimple size={13} />
+              <BookmarkSimple size={13} weight="bold" />
               <span>{bookmarkCount} Lesezeichen</span>
             </button>
           )}
@@ -116,7 +116,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
             title="Nachrichten durchsuchen"
             aria-label="Nachrichten durchsuchen"
           >
-            <MagnifyingGlass size={13} />
+            <MagnifyingGlass size={13} weight="bold" />
           </button>
 
           <Link

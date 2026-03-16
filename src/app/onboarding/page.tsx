@@ -195,7 +195,7 @@ export default function OnboardingPage() {
 
   // ── Render ───────────────────────────────────────────────
   return (
-    <div style={s.page}>
+    <div className="content-narrow" style={s.page}>
       {/* Fortschrittsbalken */}
       {userId && (
         <div style={s.progressTrack}>
@@ -247,7 +247,7 @@ export default function OnboardingPage() {
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileInput} />
               {logoPreview && (
-                <button style={s.removeLogo} onClick={() => { setLogoPreview(null); setLogoUrl(null) }}>
+                <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={() => { setLogoPreview(null); setLogoUrl(null) }}>
                   Logo entfernen
                 </button>
               )}
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
             {error && <div style={s.error}>{error}</div>}
 
             <div style={s.btnRow}>
-              <button style={s.btnSecondary} onClick={() => goTo(1)}>← Zurück</button>
+              <button className="btn btn-ghost" style={{ marginTop: 24 }} onClick={() => goTo(1)}>← Zurück</button>
               <button
                 style={{ ...s.btnPrimary, ...(teamSize === null ? s.btnDisabled : {}) }}
                 disabled={teamSize === null}
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
 
             <div style={s.btnRow}>
               {isAdmin && (
-                <button style={s.btnSecondary} onClick={() => goTo(2)}>← Zurück</button>
+                <button className="btn btn-ghost" style={{ marginTop: 24 }} onClick={() => goTo(2)}>← Zurück</button>
               )}
               <button
                 style={{ ...s.btnPrimary, ...(userName.trim() ? {} : s.btnDisabled) }}
@@ -528,7 +528,7 @@ export default function OnboardingPage() {
             {error && <div style={s.error}>{error}</div>}
 
             <div style={s.btnRow}>
-              <button style={s.btnSecondary} onClick={() => goTo(3)}>← Zurück</button>
+              <button className="btn btn-ghost" style={{ marginTop: 24 }} onClick={() => goTo(3)}>← Zurück</button>
               <button
                 style={{ ...s.btnPrimary, ...(aiActAcknowledged ? {} : s.btnDisabled) }}
                 disabled={!aiActAcknowledged}
@@ -580,7 +580,7 @@ export default function OnboardingPage() {
               {saving ? 'Wird gespeichert…' : 'Ersten Chat starten →'}
             </button>
 
-            <button style={s.skipLink} onClick={() => goTo(4)}>
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 14 }} onClick={() => goTo(4)}>
               ← Zurück
             </button>
           </div>
@@ -601,7 +601,6 @@ const s: Record<string, React.CSSProperties> = {
     background: 'var(--bg-surface-solid)',
     display: 'flex',
     flexDirection: 'column',
-    margin: '-32px',
   },
   progressTrack: {
     height: 3,
@@ -671,11 +670,6 @@ const s: Record<string, React.CSSProperties> = {
   logoPreview: { maxHeight: 64, maxWidth: '100%', objectFit: 'contain' },
   dropHint: { fontSize: 13, color: 'var(--text-secondary)' },
   dropSub: { fontSize: 11, color: 'var(--text-tertiary)' },
-  removeLogo: {
-    background: 'none', border: 'none', color: 'var(--text-secondary)',
-    fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
-    textAlign: 'left', padding: '4px 0', width: 'fit-content',
-  },
 
   // ── Color Picker ─────────────────────────────────────────
   colorRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 },
@@ -733,17 +727,7 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 15, fontWeight: 700, marginTop: 24,
     transition: 'opacity 0.15s',
   },
-  btnSecondary: {
-    background: 'none', color: 'var(--text-secondary)', border: '1px solid var(--border)',
-    padding: '13px 20px', borderRadius: 8, cursor: 'pointer',
-    fontSize: 14, marginTop: 24, transition: 'color 0.15s',
-  },
   btnDisabled: { opacity: 0.4, cursor: 'not-allowed' },
-  skipLink: {
-    background: 'none', border: 'none', color: '#444',
-    fontSize: 13, cursor: 'pointer', marginTop: 14,
-    textDecoration: 'underline',
-  },
 
   // ── AI Act ────────────────────────────────────────────────
   aiActPara: {

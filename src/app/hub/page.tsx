@@ -104,27 +104,18 @@ export default function HubPage() {
 
   const s: Record<string, React.CSSProperties> = {
     tabs: { display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 },
-    tab: { padding: '8px 16px', borderRadius: '8px 8px 0 0', fontSize: 14, fontWeight: 500, cursor: 'pointer', border: 'none', background: 'none', color: 'var(--text-secondary)' },
-    tabActive: { padding: '8px 16px', borderRadius: '8px 8px 0 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '2px solid var(--accent)' },
     layout: { display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 },
     sidebar: { display: 'flex', flexDirection: 'column', gap: 8 },
-    item: { padding: '10px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid transparent', background: 'none', textAlign: 'left' as const, width: '100%' },
-    itemActive: { padding: '10px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--bg-surface)', textAlign: 'left' as const, width: '100%' },
     itemTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
     itemSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: 0, marginTop: 2 },
-    addBtn: { padding: '8px 14px', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 },
-    card: { background: 'var(--bg-surface)', borderRadius: 12, padding: 24, border: '1px solid var(--border)' },
+    card: { padding: 24 },
     label: { fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6, display: 'block' },
     row: { marginBottom: 16 },
     actions: { display: 'flex', gap: 8, marginTop: 20 },
-    saveBtn: { padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 },
-    cancelBtn: { padding: '8px 16px', background: 'none', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', fontSize: 13 },
-    deleteBtn: { padding: '8px 16px', background: 'none', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 8, cursor: 'pointer', fontSize: 13, marginLeft: 'auto' },
-    confirmDelete: { padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, marginLeft: 'auto' },
     empty: { color: 'var(--text-tertiary)', fontSize: 13, padding: '40px 0', textAlign: 'center' as const },
     comingSoon: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 12, padding: '48px 0', color: 'var(--text-tertiary)' },
     tplGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 },
-    tplCard: { background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', cursor: 'pointer' },
+    tplCard: { padding: '14px 16px', cursor: 'pointer' },
     tplTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
     tplSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: 0, marginTop: 4 },
     badge: { background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600, marginLeft: 8 },
@@ -141,7 +132,7 @@ export default function HubPage() {
 
         <div style={s.tabs}>
           {(['agents', 'community', 'templates'] as Tab[]).map(t => (
-            <button key={t} style={tab === t ? s.tabActive : s.tab} onClick={() => setTab(t)}>
+            <button key={t} className={tab === t ? 'chip chip--active' : 'chip'} onClick={() => setTab(t)}>
               {t === 'agents' ? <Robot size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
               {t === 'community' ? <Users size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
               {t === 'templates' ? <BookOpen size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
@@ -153,7 +144,7 @@ export default function HubPage() {
         {tab === 'agents' && (
           <div style={s.layout}>
             <div style={s.sidebar}>
-              <button style={s.addBtn} onClick={() => { setCreatingAgent(true); setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM) }}>
+              <button className="btn btn-primary" onClick={() => { setCreatingAgent(true); setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM) }}>
                 <Plus size={14} weight="bold" /> Neuer Agent
               </button>
               {agentsLoading ? (
@@ -162,7 +153,7 @@ export default function HubPage() {
                 <p style={s.empty}>Noch keine Agenten</p>
               ) : (
                 agents.map(a => (
-                  <button key={a.id} style={selectedAgent?.id === a.id ? s.itemActive : s.item} onClick={() => selectAgent(a)}>
+                  <button key={a.id} className={selectedAgent?.id === a.id ? 'list-row list-row--active' : 'list-row'} onClick={() => selectAgent(a)}>
                     <p style={s.itemTitle}>{a.name}</p>
                     {a.description && <p style={s.itemSub}>{a.description}</p>}
                   </button>
@@ -171,7 +162,7 @@ export default function HubPage() {
             </div>
             <div>
               {(selectedAgent || creatingAgent) ? (
-                <div style={s.card}>
+                <div className="card" style={s.card}>
                   <div style={s.row}>
                     <label style={s.label}>Name</label>
                     <input style={inp} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="Agent-Name" />
@@ -192,18 +183,18 @@ export default function HubPage() {
                     </select>
                   </div>
                   <div style={s.actions}>
-                    <button style={s.saveBtn} onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
+                    <button className="btn btn-primary" onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
                       <FloppyDisk size={14} weight="bold" /> {agentSaving ? 'Speichere…' : 'Speichern'}
                     </button>
                     {selectedAgent && (
                       agentDeleteConfirm ? (
                         <>
                           <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center' }}>Sicher löschen?</span>
-                          <button style={s.confirmDelete} onClick={handleAgentDelete}>Ja, löschen</button>
-                          <button style={s.cancelBtn} onClick={() => setAgentDeleteConfirm(false)}>Abbrechen</button>
+                          <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleAgentDelete}>Ja, löschen</button>
+                          <button className="btn btn-ghost" onClick={() => setAgentDeleteConfirm(false)}>Abbrechen</button>
                         </>
                       ) : (
-                        <button style={s.deleteBtn} onClick={() => setAgentDeleteConfirm(true)}>
+                        <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setAgentDeleteConfirm(true)}>
                           <Trash size={14} weight="bold" /> Löschen
                         </button>
                       )
@@ -236,7 +227,7 @@ export default function HubPage() {
             </div>
             <div style={s.tplGrid}>
               {TEMPLATES.map(tpl => (
-                <div key={tpl.id} style={s.tplCard}>
+                <div key={tpl.id} className="card" style={s.tplCard}>
                   <p style={s.tplTitle}>
                     {tpl.label}
                     <span style={s.badge}>{tpl.taskType}</span>

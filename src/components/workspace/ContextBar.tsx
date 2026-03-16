@@ -10,7 +10,7 @@ export default function ContextBar({ percent }: ContextBarProps) {
   if (percent < 5) return null
   const filled = Math.round(percent / 5)  // 0-20 blocks
   const bar = '█'.repeat(filled) + '░'.repeat(20 - filled)
-  const color = percent >= 85 ? 'var(--error, #dc2626)' : percent >= 60 ? '#f59e0b' : 'var(--accent)'
+  const color = percent >= 85 ? 'var(--error)' : percent >= 60 ? 'var(--warning)' : 'var(--accent)'
   return (
     <div style={{
       padding: '3px 16px',

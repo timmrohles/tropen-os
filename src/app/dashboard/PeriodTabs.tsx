@@ -30,20 +30,8 @@ export default function PeriodTabs() {
         return (
           <button
             key={p.value}
+            className={active ? 'chip chip--active' : 'chip'}
             onClick={() => router.push(`/dashboard?period=${p.value}`)}
-            style={{
-              fontSize: 12,
-              fontWeight: active ? 600 : 400,
-              padding: '5px 14px',
-              borderRadius: 8,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-              background: active ? 'var(--active-bg)' : 'transparent',
-              color: active ? 'var(--active-text)' : 'var(--text-secondary)',
-              boxShadow: active ? '0 2px 8px rgba(26,46,35,0.25)' : 'none',
-              fontFamily: 'inherit',
-            }}
           >
             {p.label}
           </button>

@@ -32,7 +32,7 @@ export default function Papierkorb({
   return (
     <div className="papierkorb">
       <button className="papierkorb-toggle" onClick={onToggle}>
-        <Trash size={13} />
+        <Trash size={13} weight="bold" />
         Papierkorb{trashCount > 0 ? ` (${trashCount})` : ''}
         {' '}{trashOpen ? '▴' : '▾'}
       </button>
@@ -48,8 +48,8 @@ export default function Papierkorb({
               {trashConvs.map((conv) => (
                 <div key={conv.id} className="papierkorb-item">
                   <span className="papierkorb-item-title t-secondary">{conv.title ?? 'Unterhaltung'}</span>
-                  <button className="papierkorb-restore" onClick={() => onRestore(conv.id)} title="Wiederherstellen"><ArrowCounterClockwise size={12} /></button>
-                  <button className="papierkorb-delete" onClick={() => onHardDelete(conv.id)} title="Endgültig löschen"><X size={12} /></button>
+                  <button className="papierkorb-restore" onClick={() => onRestore(conv.id)} title="Wiederherstellen"><ArrowCounterClockwise size={12} weight="bold" /></button>
+                  <button className="papierkorb-delete" onClick={() => onHardDelete(conv.id)} title="Endgültig löschen"><X size={12} weight="bold" /></button>
                 </div>
               ))}
             </>

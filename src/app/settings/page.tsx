@@ -32,7 +32,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   inputReadonly: { opacity: 0.5, cursor: 'not-allowed' },
   select: {
-    background: '#fff', border: '1px solid var(--border-medium)',
+    background: 'var(--bg-surface-solid)', border: '1px solid var(--border-medium)',
     color: 'var(--text-primary)', borderRadius: 8,
     padding: '8px 32px 8px 12px', fontSize: 14, outline: 'none',
     width: '100%', cursor: 'pointer',
@@ -50,7 +50,6 @@ const s: Record<string, React.CSSProperties> = {
   hint: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, lineHeight: 1.5, display: 'block' },
   hintBest: { fontSize: 11, color: 'rgba(163,181,84,0.8)', marginTop: 3, display: 'block' },
   hintWarn: { fontSize: 11, color: 'rgba(251,191,36,0.8)', marginTop: 3, display: 'block' },
-  expertToggle: { display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '8px 0', marginTop: 4 },
 }
 
 export default function SettingsPage() {
@@ -121,7 +120,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="content-narrow" style={s.page}>
+    <div className="content-max" style={s.page}>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Einstellungen</h1>
@@ -195,20 +194,20 @@ export default function SettingsPage() {
             style={{
               width: 36, height: 20, borderRadius: 10,
               border: 'none', cursor: 'pointer', flexShrink: 0,
-              background: proactiveHints ? 'var(--accent)' : '#252525',
+              background: proactiveHints ? 'var(--accent)' : 'var(--toggle-off)',
               position: 'relative', transition: 'background 0.2s', marginLeft: 12,
             }}
           >
             <span style={{
               position: 'absolute', top: 2, width: 16, height: 16,
-              borderRadius: '50%', background: '#fff',
+              borderRadius: '50%', background: 'var(--bg-surface-solid)',
               transition: 'left 0.2s', left: proactiveHints ? 18 : 2,
             }} />
           </button>
         </div>
 
         {/* Expert Mode Toggle */}
-        <button style={s.expertToggle} onClick={() => setExpertMode(v => !v)}>
+        <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={() => setExpertMode(v => !v)}>
           {expertMode ? '▾' : '▸'} {expertMode ? 'Experten-Einstellungen ausblenden' : 'Experten-Einstellungen anzeigen'}
         </button>
 
@@ -225,13 +224,13 @@ export default function SettingsPage() {
             style={{
               width: 36, height: 20, borderRadius: 10,
               border: 'none', cursor: 'pointer', flexShrink: 0,
-              background: thinkingMode ? 'var(--accent)' : '#252525',
+              background: thinkingMode ? 'var(--accent)' : 'var(--toggle-off)',
               position: 'relative', transition: 'background 0.2s', marginLeft: 12,
             }}
           >
             <span style={{
               position: 'absolute', top: 2, width: 16, height: 16,
-              borderRadius: '50%', background: '#fff',
+              borderRadius: '50%', background: 'var(--bg-surface-solid)',
               transition: 'left 0.2s', left: thinkingMode ? 18 : 2,
             }} />
           </button>
@@ -264,13 +263,13 @@ export default function SettingsPage() {
             style={{
               width: 36, height: 20, borderRadius: 10,
               border: 'none', cursor: 'pointer', flexShrink: 0,
-              background: supportAccess ? 'var(--accent)' : '#252525',
+              background: supportAccess ? 'var(--accent)' : 'var(--toggle-off)',
               position: 'relative', transition: 'background 0.2s', marginLeft: 12,
             }}
           >
             <span style={{
               position: 'absolute', top: 2, width: 16, height: 16,
-              borderRadius: '50%', background: '#fff',
+              borderRadius: '50%', background: 'var(--bg-surface-solid)',
               transition: 'left 0.2s', left: supportAccess ? 18 : 2,
             }} />
           </button>

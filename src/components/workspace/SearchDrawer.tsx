@@ -92,7 +92,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
       }}>
         {/* Search Input */}
         <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <MagnifyingGlass size={18} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+          <MagnifyingGlass size={18} weight="bold" color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
@@ -100,8 +100,8 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
             placeholder="Nachrichten und Chats durchsuchen…"
             style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 15 }}
           />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
-            <X size={18} />
+          <button className="btn-icon" onClick={onClose} aria-label="Schließen">
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -128,7 +128,7 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <ChatCircle size={12} color="var(--text-muted)" />
+                    <ChatCircle size={12} weight="bold" color="var(--text-muted)" />
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
                       {r.conversation_title ?? 'Untitled'}
                     </span>

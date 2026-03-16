@@ -207,7 +207,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="content-wide">
+    <div>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Clients</h1>

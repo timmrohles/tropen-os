@@ -11,8 +11,8 @@ import {
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
-  email: '#7C6FF7',
-  api:   '#F7A44A',
+  email: 'var(--tropen-process)',
+  api:   'var(--tropen-output)',
   url:   'var(--text-tertiary)',
 }
 
@@ -101,6 +101,7 @@ export default function FeedsPage() {
 
   return (
     <div
+      className="content-full"
       style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}
       onClick={() => setMenuOpen(null)}
     >
@@ -229,7 +230,7 @@ export default function FeedsPage() {
                   </span>
                 )}
                 {src && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: 'var(--text-inverse)', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
                     {src.name}
                   </div>
                 )}
@@ -272,7 +273,7 @@ export default function FeedsPage() {
                     aria-pressed={item.isSaved}
                     aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
                   >
-                    <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'regular'} aria-hidden="true" />
+                    <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'bold'} aria-hidden="true" />
                     {item.isSaved ? 'Gespeichert' : 'Merken'}
                   </button>
                   <button

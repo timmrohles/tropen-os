@@ -90,7 +90,7 @@ const s: Record<string, React.CSSProperties> = {
     outline: 'none',
     marginBottom: 8,
   },
-  error: { fontSize: 13, color: '#ef4444', margin: '0 0 4px' },
+  error: { fontSize: 13, color: 'var(--error)', margin: '0 0 4px' },
   success: { display: 'flex', flexDirection: 'column', gap: 16 },
   successText: { fontSize: 14, color: 'var(--accent)', margin: 0 },
   backLink: {

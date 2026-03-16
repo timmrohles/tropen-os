@@ -187,7 +187,7 @@ function ArtifactsPageInner() {
             }
             style={s.backBtn}
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft size={14} weight="bold" />
             Zurück zum Chat
           </button>
         )}
@@ -207,7 +207,7 @@ function ArtifactsPageInner() {
 
         <div style={s.filterBar}>
           <div style={s.searchWrap}>
-            <span style={s.searchIcon}><MagnifyingGlass size={14} /></span>
+            <span style={s.searchIcon}><MagnifyingGlass size={14} weight="bold" /></span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -265,7 +265,7 @@ function ArtifactsPageInner() {
                   <span style={s.cardDate}>{formatDate(art.created_at)}</span>
                   <div style={s.cardActions}>
                     <button onClick={() => downloadArtifact(art)} title="Herunterladen" className="btn-icon">
-                      <DownloadSimple size={15} />
+                      <DownloadSimple size={15} weight="bold" />
                     </button>
                     <button
                       onClick={() => handleDelete(art.id)}
@@ -274,7 +274,7 @@ function ArtifactsPageInner() {
                       className="btn-icon"
                       style={{ opacity: deletingId === art.id ? 0.4 : 1 }}
                     >
-                      <Trash size={15} />
+                      <Trash size={15} weight="bold" />
                     </button>
                   </div>
                 </div>

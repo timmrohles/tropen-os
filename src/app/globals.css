@@ -38,6 +38,13 @@
   --info:           #2D7A50;
   --info-bg:        #D4EDDE;
 
+  /* ─── Tropen Theme (dunkle Features) ──────────────── */
+  --tropen-process: #7C6FF7;
+  --tropen-output:  #F7A44A;
+
+  /* ─── Toggle / UI ─────────────────────────────────── */
+  --toggle-off:     #C5C2BC;
+
   /* ─── Borders ───────────────────────────────────────── */
   --border:         rgba(26, 23, 20, 0.08);
   --border-medium:  rgba(26, 23, 20, 0.13);

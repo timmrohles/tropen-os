@@ -49,10 +49,13 @@ const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
   clear: 'Klar', structured: 'Strukturiert', detailed: 'Ausführlich',
 }
 
+/* Graduated severity colors for budget warnings — intentional inline values
+   because these need distinct bg/border/text per level. Uses semantic CSS vars
+   for the text color and derives muted tints for bg/border. */
 const WARN_COLORS = {
-  amber: { bg: '#1a1400', border: '#3a2a00', color: '#fbbf24' },
-  orange: { bg: '#1a0e00', border: '#3a1e00', color: '#f97316' },
-  red:    { bg: '#1a0000', border: '#3a0000', color: '#ef4444' },
+  amber:  { bg: 'var(--warning-bg)', border: 'var(--warning)',  color: 'var(--warning)' },
+  orange: { bg: 'var(--warning-bg)', border: 'var(--warning)',  color: 'var(--warning)' },
+  red:    { bg: 'var(--error-bg)',   border: 'var(--error)',    color: 'var(--error)' },
 }
 
 // ─────────────────────────────────────────────────────────
@@ -222,7 +225,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     return (
       <div className="sp-collapsed">
         <button className="sp-collapse-btn" onClick={() => setCollapsed(false)} title="Panel öffnen">
-          <CaretRight size={13} />
+          <CaretRight size={13} weight="bold" />
         </button>
         <div className="sp-parrot" title="Toro ist hier">
           <ParrotIcon size={20} />
@@ -240,13 +243,13 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
       <div className="sp-header">
         <span className="sp-header-label t-dezent">SESSION</span>
         <button className="sp-header-btn" onClick={() => setCollapsed(true)} title="Panel einklappen">
-          <CaretLeft size={14} />
+          <CaretLeft size={14} weight="bold" />
         </button>
       </div>
 
       {/* ── Sektion: Aktuelle Session ── */}
       <div className="sp-section">
-        <SectionLabel icon={<Cpu size={10} />}>Aktuelle Session</SectionLabel>
+        <SectionLabel icon={<Cpu size={10} weight="bold" />}>Aktuelle Session</SectionLabel>
 
         {routing ? (
           <>
@@ -268,7 +271,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       {/* ── Sektion: Diese Session ── */}
       <div className="sp-section">
-        <SectionLabel icon={<ChartBar size={10} />}>Diese Session</SectionLabel>
+        <SectionLabel icon={<ChartBar size={10} weight="bold" />}>Diese Session</SectionLabel>
         <Row label="Nachrichten" value={msgCount > 0 ? String(msgCount) : '—'} />
         <Row label="Tokens" value={fmtTokens(sessionTokens)} />
         <Row label="Kosten Session" value={sessionCost > 0 ? `€${sessionCost.toFixed(4)}` : '—'} />
@@ -300,7 +303,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       {/* ── Sektion: Anpassen ── */}
       <div className="sp-section">
-        <SectionLabel icon={<Sliders size={10} />}>Anpassen</SectionLabel>
+        <SectionLabel icon={<Sliders size={10} weight="bold" />}>Anpassen</SectionLabel>
 
         {/* Gedächtnis-Slider */}
         <div className="sp-field">
@@ -329,7 +332,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
               onClick={() => setStyleDropOpen((v) => !v)}
             >
               {STYLE_LABELS[prefs.chat_style]}
-              <CaretDown size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+              <CaretDown size={14} weight="bold" style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
             </button>
             {styleDropOpen && (
               <div className="sp-select-menu">
@@ -371,7 +374,7 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         <div className="sp-field">
           <div className="sp-toggle-row">
             <span className="sp-toggle-label">
-              <Brain size={15} /> Toro denkt laut nach
+              <Brain size={15} weight="bold" /> Toro denkt laut nach
             </span>
             <button
               className={`sp-toggle-btn${prefs.thinking_mode ? ' sp-toggle-btn--on' : ''}`}

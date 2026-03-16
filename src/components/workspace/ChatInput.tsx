@@ -76,9 +76,9 @@ export default function ChatInput({ input, setInput, sending, onSubmit, activeAg
             onClick={() => setDropOpen(v => !v)}
             title="Agent wählen"
           >
-            <Robot size={13} weight={activeAnyAgent ? 'fill' : 'regular'} />
+            <Robot size={13} weight={activeAnyAgent ? 'fill' : 'bold'} />
             <span>{activeAnyAgent ? activeAnyAgent.name : 'Kein Agent'}</span>
-            <CaretDown size={11} style={{ opacity: 0.5 }} />
+            <CaretDown size={11} weight="bold" style={{ opacity: 0.5 }} />
           </button>
 
           {activeAnyAgent && (
@@ -88,7 +88,7 @@ export default function ChatInput({ input, setInput, sending, onSubmit, activeAg
               onClick={() => onSetActiveAgentId(null)}
               title="Agent entfernen"
             >
-              <X size={11} />
+              <X size={11} weight="bold" />
             </button>
           )}
 

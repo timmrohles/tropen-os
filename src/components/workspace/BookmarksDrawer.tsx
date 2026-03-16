@@ -92,8 +92,8 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
             <BookmarkSimple size={16} weight="fill" color="var(--accent)" />
             Lesezeichen
           </span>
-          <button onClick={onClose} aria-label="Schließen" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
-            <X size={18} />
+          <button className="btn-icon" onClick={onClose} aria-label="Schließen">
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -132,7 +132,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
                         title="Als Prompt verwenden"
                         style={{ background: 'var(--accent-subtle)', border: '1px solid rgba(45,122,80,0.2)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--accent)' }}
                       >
-                        <ArrowRight size={12} /> Verwenden
+                        <ArrowRight size={12} weight="bold" /> Verwenden
                       </button>
                     )}
                     <button
@@ -141,7 +141,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
                       disabled={deletingId === bm.id}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center', opacity: deletingId === bm.id ? 0.4 : 1 }}
                     >
-                      <Trash size={14} />
+                      <Trash size={14} weight="bold" />
                     </button>
                   </div>
                 </div>

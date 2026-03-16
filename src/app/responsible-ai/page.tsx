@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function ResponsibleAIPage() {
   return (
-    <div style={s.page}>
+    <div className="content-max" style={s.page}>
 
       {/* ── 1. HERO ── */}
       <div style={s.hero}>
