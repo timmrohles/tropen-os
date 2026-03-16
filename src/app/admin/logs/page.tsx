@@ -1,4 +1,5 @@
 import React from 'react'
+import { ClipboardText } from '@phosphor-icons/react/dist/ssr'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export default async function LogsPage() {
@@ -18,10 +19,13 @@ export default async function LogsPage() {
     .range(0, 99)
 
   return (
-    <div className="content-max">
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-wide">
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Usage Logs</h1>
+          <h1 className="page-header-title">
+            <ClipboardText size={22} color="var(--text-primary)" weight="bold" />
+            Usage Logs
+          </h1>
           <p className="page-header-sub">{count ?? 0} Einträge gesamt · Zeige die letzten 100</p>
         </div>
       </div>
@@ -97,9 +101,25 @@ const s: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--border)',
     fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: '0.06em'
+    letterSpacing: '0.06em',
   },
-  td: { fontSize: 13, color: 'var(--text-primary)', padding: '10px 14px', borderBottom: '1px solid var(--border)' },
-  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 32, textAlign: 'center' },
-  badge: { fontSize: 11, padding: '2px 8px', borderRadius: 4, color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }
+  td: {
+    fontSize: 13,
+    color: 'var(--text-primary)',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--border)',
+  },
+  empty: {
+    fontSize: 13,
+    color: 'var(--text-tertiary)',
+    padding: 32,
+    textAlign: 'center',
+  },
+  badge: {
+    fontSize: 11,
+    padding: '2px 8px',
+    borderRadius: 4,
+    color: 'var(--text-secondary)',
+    border: '1px solid var(--border-medium)',
+  },
 }

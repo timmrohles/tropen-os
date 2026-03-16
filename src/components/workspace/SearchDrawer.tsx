@@ -25,7 +25,7 @@ function highlight(text: string, query: string): React.ReactNode {
   const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
   const parts = text.split(regex)
   return parts.map((part, i) =>
-    regex.test(part) ? <mark key={i} style={{ background: 'rgba(163,181,84,0.35)', color: 'inherit', borderRadius: 2, padding: '0 1px' }}>{part}</mark> : part
+    regex.test(part) ? <mark key={i} style={{ background: 'var(--accent-light)', color: 'inherit', borderRadius: 2, padding: '0 1px' }}>{part}</mark> : part
   )
 }
 

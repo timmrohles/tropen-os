@@ -130,7 +130,7 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
                       <button
                         onClick={() => { onUseAsPrompt(bm.content_preview!); onClose() }}
                         title="Als Prompt verwenden"
-                        style={{ background: 'rgba(163,181,84,0.12)', border: '1px solid rgba(163,181,84,0.25)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--accent)' }}
+                        style={{ background: 'var(--accent-subtle)', border: '1px solid rgba(45,122,80,0.2)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--accent)' }}
                       >
                         <ArrowRight size={12} /> Verwenden
                       </button>

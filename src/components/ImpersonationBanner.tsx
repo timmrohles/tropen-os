@@ -80,18 +80,18 @@ export default function ImpersonationBanner() {
   return (
     <div style={{
       position: 'fixed', top: 52, left: 0, right: 0, zIndex: 200,
-      background: '#1a2d0e', borderBottom: '1px solid var(--accent)',
+      background: 'var(--active-bg)', borderBottom: '1px solid var(--accent)',
       display: 'flex', alignItems: 'center', gap: 12, padding: '0 24px',
       height: 40, fontSize: 13,
     }}>
-      <span style={{ color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.05em', fontSize: 11 }}>
+      <span style={{ color: 'var(--accent-light)', fontWeight: 700, letterSpacing: '0.05em', fontSize: 11 }}>
         READ-ONLY
       </span>
-      <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+      <span style={{ color: '#fff' }}>
         Du siehst Tropen OS als{' '}
-        <strong style={{ color: '#fff' }}>{session.targetEmail}</strong>
+        <strong>{session.targetEmail}</strong>
         {session.ticketRef && (
-          <> · Support-Ticket <strong style={{ color: '#fff' }}>{session.ticketRef}</strong></>
+          <> · Support-Ticket <strong>{session.ticketRef}</strong></>
         )}
         {' '}· {remaining} verbleibend
       </span>
@@ -99,8 +99,8 @@ export default function ImpersonationBanner() {
         onClick={endSession}
         style={{
           marginLeft: 'auto', background: 'transparent',
-          border: '1px solid rgba(255,255,255,0.2)',
-          color: 'rgba(255,255,255,0.6)', borderRadius: 5,
+          border: '1px solid rgba(255,255,255,0.3)',
+          color: '#fff', borderRadius: 5,
           padding: '3px 12px', fontSize: 12, cursor: 'pointer',
         }}
       >

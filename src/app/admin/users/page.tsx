@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Users as UsersIcon } from '@phosphor-icons/react'
 import type { User } from '@/lib/types'
 
 type OrgUser = Pick<User, 'id' | 'email' | 'full_name' | 'role' | 'is_active' | 'created_at'>
@@ -50,10 +51,13 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="content-max" aria-busy={loading}>
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-wide" aria-busy={loading}>
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">User-Verwaltung</h1>
+          <h1 className="page-header-title">
+            <UsersIcon size={22} color="var(--text-primary)" weight="bold" />
+            User-Verwaltung
+          </h1>
           <p className="page-header-sub">Teammitglieder einladen und Rollen verwalten</p>
         </div>
         <div className="page-header-actions">
@@ -91,12 +95,12 @@ export default function UsersPage() {
                 ))}
               </select>
               <button className="btn btn-primary" type="submit" disabled={sending}>
-                {sending ? 'Sende…' : 'Einladung senden'}
+                {sending ? 'Sende...' : 'Einladung senden'}
               </button>
             </form>
             {feedback && <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{feedback}</p>}
             <p style={s.hint}>
-              Der User erhält eine E-Mail mit einem Magic Link. Beim ersten Login gibt er seinen Namen
+              Der User erhaelt eine E-Mail mit einem Magic Link. Beim ersten Login gibt er seinen Namen
               ein.
             </p>
           </div>
@@ -104,8 +108,8 @@ export default function UsersPage() {
       )}
 
       {loading ? (
-        <div className="content-max" aria-busy="true">
-          <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
+        <div aria-busy="true">
+          <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade...</p>
         </div>
       ) : (
         <div className="card">
@@ -123,7 +127,7 @@ export default function UsersPage() {
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id}>
-                    <td style={s.td}>{u.full_name ?? <span style={{ color: 'var(--text-tertiary)' }}>—</span>}</td>
+                    <td style={s.td}>{u.full_name ?? <span style={{ color: 'var(--text-tertiary)' }}>---</span>}</td>
                     <td style={s.td}>{u.email}</td>
                     <td style={s.td}>
                       <span style={{ ...s.badge, ...roleBadgeStyle(u.role) }}>{u.role}</span>
@@ -132,8 +136,8 @@ export default function UsersPage() {
                       <span
                         style={{
                           ...s.badge,
-                          background: u.is_active ? '#1a3a1a' : '#2a1a1a',
-                          color: u.is_active ? '#22c55e' : '#ef4444'
+                          background: u.is_active ? 'var(--success-bg)' : 'var(--error-bg)',
+                          color: u.is_active ? 'var(--success)' : 'var(--error)'
                         }}
                       >
                         {u.is_active ? 'Aktiv' : 'Inaktiv'}
@@ -153,10 +157,10 @@ export default function UsersPage() {
 
 function roleBadgeStyle(role: string): React.CSSProperties {
   const map: Record<string, React.CSSProperties> = {
-    owner: { background: '#2a1a3a', color: '#a855f7' },
-    admin: { background: '#1a2a3a', color: '#60a5fa' },
-    member: { background: '#2a2a2a', color: '#888' },
-    viewer: { background: '#1a1a1a', color: '#555' }
+    owner: { background: 'var(--info-bg)', color: 'var(--info)' },
+    admin: { background: 'var(--info-bg)', color: 'var(--info)' },
+    member: { background: 'var(--accent-subtle)', color: 'var(--text-secondary)' },
+    viewer: { background: 'var(--accent-subtle)', color: 'var(--text-tertiary)' }
   }
   return map[role] ?? map.member
 }

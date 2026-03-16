@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ListChecks } from '@phosphor-icons/react'
 
 // ── Typen ─────────────────────────────────────────────────────────────────────
 
@@ -808,17 +809,17 @@ const TODOS: Todo[] = [
 // ── Konstanten & Helpers ───────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
-  offen:     { label: 'Offen',     bg: 'var(--accent-subtle)',   color: 'var(--accent)' },
-  in_arbeit: { label: 'In Arbeit', bg: 'var(--accent-subtle)',   color: 'var(--accent)' },
-  erledigt:  { label: 'Erledigt',  bg: 'rgba(52,211,153,0.12)',  color: '#34d399' },
-  blockiert: { label: 'Blockiert', bg: 'rgba(248,113,113,0.12)', color: '#f87171' },
-  geplant:   { label: 'Geplant',   bg: 'rgba(147,197,253,0.10)', color: '#93c5fd' },
-  teilweise: { label: 'Teilweise', bg: 'rgba(251,191,36,0.12)',  color: '#fbbf24' },
+  offen:     { label: 'Offen',     bg: 'var(--accent-subtle)',  color: 'var(--accent)' },
+  in_arbeit: { label: 'In Arbeit', bg: 'var(--accent-subtle)',  color: 'var(--accent)' },
+  erledigt:  { label: 'Erledigt',  bg: 'var(--success-bg)',     color: 'var(--success)' },
+  blockiert: { label: 'Blockiert', bg: 'var(--error-bg)',       color: 'var(--error)' },
+  geplant:   { label: 'Geplant',   bg: 'var(--info-bg)',        color: 'var(--info)' },
+  teilweise: { label: 'Teilweise', bg: 'var(--warning-bg)',     color: 'var(--warning)' },
 }
 
 const PRIO_CONFIG: Record<string, { label: string; color: string }> = {
-  hoch:     { label: 'Hoch',     color: '#f87171' },
-  mittel:   { label: 'Mittel',   color: '#fbbf24' },
+  hoch:     { label: 'Hoch',     color: 'var(--error)' },
+  mittel:   { label: 'Mittel',   color: 'var(--warning)' },
   niedrig:  { label: 'Niedrig',  color: 'var(--text-tertiary)' },
 }
 
@@ -875,10 +876,13 @@ export default function TodoPage() {
   const hoch    = TODOS.filter(t => t.prioritaet === 'hoch' && t.status !== 'erledigt').length
 
   return (
-    <div className="content-max">
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-wide">
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">To-Do & Compliance Tracker</h1>
+          <h1 className="page-header-title">
+            <ListChecks size={22} color="var(--text-primary)" weight="bold" />
+            To-Do & Compliance Tracker
+          </h1>
           <p className="page-header-sub">Alle Tasks aus CLAUDE.md + Roadmap · {total} Einträge gesamt · {erled} erledigt</p>
         </div>
       </div>
@@ -888,8 +892,8 @@ export default function TodoPage() {
         {[
           { value: offen,  label: 'Offen',     color: 'var(--text-secondary)' },
           { value: arbeit, label: 'In Arbeit',  color: 'var(--accent)' },
-          { value: erled,  label: 'Erledigt',   color: '#34d399' },
-          { value: hoch,   label: '⚠ Hohe Prio', color: '#f87171' },
+          { value: erled,  label: 'Erledigt',   color: 'var(--success)' },
+          { value: hoch,   label: 'Hohe Prio',  color: 'var(--error)' },
         ].map(stat => (
           <div key={stat.label} style={s.statCard}>
             <div style={{ ...s.statValue, color: stat.color }}>{stat.value}</div>

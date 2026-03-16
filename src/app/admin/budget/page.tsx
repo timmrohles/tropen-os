@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Wallet } from '@phosphor-icons/react'
 
 interface OrgRow {
   id: string
@@ -47,21 +48,24 @@ export default function BudgetPage() {
   }
 
   if (loading) return (
-    <div className="content-max" aria-busy="true">
+    <div className="content-wide" aria-busy="true">
       <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', paddingTop: 48 }}>Lade…</p>
     </div>
   )
 
   return (
-    <div className="content-max">
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-wide">
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Budget-Limits</h1>
+          <h1 className="page-header-title">
+            <Wallet size={22} color="var(--text-primary)" weight="bold" />
+            Budget-Limits
+          </h1>
           <p className="page-header-sub">Monatliches Ausgaben-Limit pro Organisation und Department. Leer lassen = kein Limit.</p>
         </div>
       </div>
 
-      <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Organisationen</h2>
+      <h2 style={s.sectionLabel}>Organisationen</h2>
       <div className="card" style={{ marginBottom: 32 }}>
         <div className="table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -69,7 +73,7 @@ export default function BudgetPage() {
               <tr>
                 <th style={s.th}>Organisation</th>
                 <th style={s.th}>Plan</th>
-                <th style={s.th}>Budget / Monat (€)</th>
+                <th style={s.th}>Budget / Monat</th>
                 <th style={s.th}></th>
               </tr>
             </thead>
@@ -96,7 +100,7 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Departments</h2>
+      <h2 style={s.sectionLabel}>Departments</h2>
       <div className="card">
         <div className="table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -104,7 +108,7 @@ export default function BudgetPage() {
               <tr>
                 <th style={s.th}>Department</th>
                 <th style={s.th}>Organisation</th>
-                <th style={s.th}>Budget / Monat (€)</th>
+                <th style={s.th}>Budget / Monat</th>
                 <th style={s.th}></th>
               </tr>
             </thead>
@@ -178,9 +182,36 @@ function BudgetRow({
 }
 
 const s: Record<string, React.CSSProperties> = {
-  th: { textAlign: 'left', fontSize: 12, color: 'var(--text-tertiary)', padding: '10px 14px', borderBottom: '1px solid var(--border)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
-  td: { fontSize: 13, color: 'var(--text-primary)', padding: '10px 14px', borderBottom: '1px solid var(--border)' },
-  empty: { fontSize: 13, color: 'var(--text-tertiary)', padding: 32, textAlign: 'center' as const },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.08em',
+    marginBottom: 12,
+  },
+  th: {
+    textAlign: 'left' as const,
+    fontSize: 12,
+    color: 'var(--text-tertiary)',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--border)',
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.06em',
+  },
+  td: {
+    fontSize: 13,
+    color: 'var(--text-primary)',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--border)',
+  },
+  empty: {
+    fontSize: 13,
+    color: 'var(--text-tertiary)',
+    padding: 32,
+    textAlign: 'center' as const,
+  },
   input: {
     background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
@@ -189,6 +220,6 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     fontSize: 13,
     outline: 'none',
-    width: 140
+    width: 140,
   },
 }
