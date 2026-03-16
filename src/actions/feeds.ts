@@ -270,6 +270,16 @@ export async function deleteDistribution(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Send digest (called by cron/feed-digest)
+// ---------------------------------------------------------------------------
+
+export async function sendDigestNow(distributionId: string): Promise<{ sent: number }> {
+  // TODO: implement digest email sending via Resend
+  log.info('[sendDigestNow] stub called', { distributionId })
+  return { sent: 0 }
+}
+
+// ---------------------------------------------------------------------------
 // Trigger fetch (called by cron + manual "sync now")
 // ---------------------------------------------------------------------------
 

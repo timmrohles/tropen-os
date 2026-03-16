@@ -302,24 +302,67 @@ serve(async (req) => {
       projectContext = projectData?.instructions ?? null;
     }
 
-    // 9c. Knowledge-Search: relevante Chunks für User-Nachricht laden (non-blocking)
-    console.log("Step 9c: Knowledge-Search");
+    // 9c. Knowledge-Search: relevante Chunks direkt per RPC + OpenAI (kein Edge-zu-Edge-Aufruf)
+    console.log("Step 9c: Knowledge-Search (inline)");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+    const SIMILARITY_THRESHOLD = 0.3;
+    const TOP_K = 5;
     let knowledgeContext = "";
     try {
-      const { data: ksData, error: ksError } = await supabase.functions.invoke("knowledge-search", {
-        body: {
-          query: message,
-          org_id: userProfile.organization_id,
-          user_id: user.id,
-          project_id: projectId,
-        },
+      // 1. Query-Embedding erstellen
+      const embRes = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "text-embedding-3-small", input: message }),
       });
-      if (!ksError && ksData?.chunks?.length > 0) {
-        const chunks = ksData.chunks as Array<{ content: string; citation: string }>;
-        knowledgeContext = chunks
-          .map((c, i) => `[${i + 1}] ${c.citation}\n${c.content}`)
-          .join("\n\n");
-        console.log(`Knowledge-Search: ${chunks.length} Chunks gefunden`);
+      if (!embRes.ok) throw new Error(`Embedding Fehler: ${embRes.status}`);
+      const embData = await embRes.json() as { data: [{ embedding: number[] }] };
+      const queryEmbedding = embData.data[0].embedding;
+      const embeddingStr = `[${queryEmbedding.join(",")}]`;
+
+      // 2. Chunks per RPC suchen
+      const { data: ksResults, error: ksErr } = await supabase.rpc("search_knowledge_chunks", {
+        query_embedding:  embeddingStr,
+        match_org_id:     userProfile.organization_id,
+        match_user_id:    user.id,
+        match_project_id: projectId,
+        match_threshold:  SIMILARITY_THRESHOLD,
+        match_count:      TOP_K * 3,
+      });
+      if (ksErr) throw new Error(ksErr.message);
+
+      if (ksResults && ksResults.length > 0) {
+        // Prioritäts-Scoring: Projekt > User > Org
+        const scored = ksResults.map((r: {
+          id: string; content: string; similarity: number;
+          document_id: string; user_id: string | null; project_id: string | null;
+          metadata: Record<string, string>;
+        }) => ({
+          ...r,
+          score: r.similarity + (r.project_id ? 0.2 : r.user_id ? 0.1 : 0),
+        }));
+        scored.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+        const topChunks = scored.slice(0, TOP_K);
+
+        // Dokument-Metadaten laden
+        const docIds = [...new Set(topChunks.map((c: { document_id: string }) => c.document_id))];
+        const { data: docs } = await supabase
+          .from("knowledge_documents")
+          .select("id, title, created_at")
+          .in("id", docIds);
+        const docMap = new Map((docs ?? []).map((d: { id: string; title: string; created_at: string }) => [d.id, d]));
+
+        knowledgeContext = topChunks.map((c: { content: string; document_id: string }, i: number) => {
+          const doc = docMap.get(c.document_id) as { title: string; created_at: string } | undefined;
+          const citation = doc
+            ? `Quelle: ${doc.title} · ${new Date(doc.created_at).toLocaleDateString("de-DE")}`
+            : "Quelle: Wissensbasis";
+          return `[${i + 1}] ${citation}\n${c.content}`;
+        }).join("\n\n");
+
+        console.log(`Knowledge-Search: ${topChunks.length} Chunks gefunden`);
+      } else {
+        console.log("Knowledge-Search: keine relevanten Chunks gefunden");
       }
     } catch (ksErr) {
       console.warn("Knowledge-Search fehlgeschlagen (non-blocking):", String(ksErr));
@@ -355,7 +398,11 @@ serve(async (req) => {
         knowledge_context: knowledgeContext,
         thinking_mode: thinkingMode,
       },
-      query: message,
+      // Knowledge-Context direkt in Query injizieren — Dify-Input-Variablen werden
+      // nur genutzt wenn sie im System-Prompt referenziert sind; die Query ist immer sichtbar.
+      query: knowledgeContext
+        ? `[Relevante Wissensbasis-Inhalte]\n${knowledgeContext}\n\n[Anfrage]\n${message}`
+        : message,
       response_mode: "streaming",
       user: user.id,
     };
@@ -363,7 +410,13 @@ serve(async (req) => {
       difyBody.conversation_id = difyConversationId;
     }
 
-    console.log("Dify Request:", { conversation_id: difyConversationId, query: message });
+    console.log("Dify Request:", {
+      conversation_id: difyConversationId,
+      knowledgeContextLength: knowledgeContext.length,
+      hasKnowledge: knowledgeContext.length > 0,
+      queryLength: (difyBody.query as string).length,
+      queryPrefix: (difyBody.query as string).slice(0, 80),
+    });
 
     const difyResponse = await fetch(`${DIFY_API_URL}/chat-messages`, {
       method: "POST",
@@ -375,9 +428,13 @@ serve(async (req) => {
     });
 
     if (!difyResponse.ok) {
-      const difyError = await difyResponse.text();
-      console.error("Dify Fehler:", difyError);
-      return errorResponse(`Dify: ${difyError}`, 502);
+      const difyErrorText = await difyResponse.text();
+      console.error("Dify Fehler:", difyResponse.status, difyErrorText.slice(0, 200));
+      const isHtml = difyErrorText.trimStart().startsWith("<");
+      const difyMsg = isHtml
+        ? `Dify nicht erreichbar (HTTP ${difyResponse.status}). Bitte in wenigen Minuten erneut versuchen.`
+        : `Dify: ${difyErrorText}`;
+      return errorResponse(difyMsg, 502);
     }
 
     // 12. SSE-Stream aufbauen und an Client weiterleiten

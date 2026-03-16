@@ -1,5 +1,29 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import type { Card } from '@/db/schema'
 import type { CardHistoryEntry } from '@/types/workspace-plan-c.types'
+
+// ---------------------------------------------------------------------------
+// Mapper: snake_case DB row → camelCase Card
+// ---------------------------------------------------------------------------
+export function mapCard(row: Record<string, unknown>): Card {
+  return {
+    id: row.id as string,
+    workspaceId: row.workspace_id as string,
+    type: row.type as Card['type'],
+    title: row.title as string,
+    description: (row.description as string) ?? null,
+    status: row.status as Card['status'],
+    model: (row.model as string) ?? null,
+    positionX: (row.position_x as number) ?? 0,
+    positionY: (row.position_y as number) ?? 0,
+    fields: (row.fields as unknown[]) ?? [],
+    sortOrder: (row.sort_order as number) ?? 0,
+    createdBy: (row.created_by as string) ?? null,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string),
+    deletedAt: row.deleted_at ? new Date(row.deleted_at as string) : null,
+  }
+}
 
 // Internal helper — NOT exported for client use.
 // card_history is APPEND ONLY: never update, never delete.

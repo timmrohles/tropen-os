@@ -65,7 +65,7 @@ export default function NewFeedPage() {
     if (type === 'url') { config.css_selector = cssSelector; config.disclaimer_acknowledged = true }
     const result = await createFeedSource({ name, type, url: url || undefined, config, keywordsInclude, keywordsExclude, minScore })
     setSaving(false)
-    if ('error' in result) { setError(result.error); return }
+    if ('error' in result) { setError(result.error ?? ''); return }
     router.push('/feeds')
   }
 

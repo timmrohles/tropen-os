@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { triggerFeedFetch } from '@/actions/feeds'
+import { triggerFetch } from '@/actions/feeds'
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
 
     for (const source of sources ?? []) {
       try {
-        const result = await triggerFeedFetch(source.id)
+        const result = await triggerFetch(source.id)
         totalItemsFound += result.itemsFound ?? 0
         totalItemsSaved += result.itemsSaved ?? 0
         if (result.errors?.length) {

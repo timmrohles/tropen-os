@@ -197,7 +197,7 @@ Antworte NUR mit JSON:
       result = {
         summary: String(parsed.summary ?? ''),
         keyFacts: Array.isArray(parsed.key_facts)
-          ? parsed.key_facts.filter((f): f is string => typeof f === 'string').slice(0, 5)
+          ? parsed.key_facts.filter((f: unknown): f is string => typeof f === 'string').slice(0, 5)
           : [],
       }
     }
