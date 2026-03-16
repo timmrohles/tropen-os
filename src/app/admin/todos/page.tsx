@@ -798,7 +798,7 @@ const TODOS: Todo[] = [
   {
     id: 'a11y-06',
     titel: 'Kontrast-Audit: Alle Farbkombinationen prüfen',
-    beschreibung: 'Erledigt 2026-03-16. Admin-Seiten (7) von Dark-Theme auf CSS-Variablen migriert, Modale (Jungle/Merge/Save) auf Light-Theme, Drawers + ChatMessage + ImpersonationBanner Kontrast-Fixes. ~35 deprecated #a3b554-Referenzen durch var(--accent) ersetzt. Alle Kombinationen ≥4.5:1 AA.',
+    beschreibung: 'Erledigt 2026-03-16. Admin-Seiten (7) von Dark-Theme auf CSS-Variablen migriert, Modale (Jungle/Merge/Save) auf Light-Theme, Drawers + ChatMessage + ImpersonationBanner Kontrast-Fixes. ~35 deprecated Alt-Grün-Referenzen durch var(--accent) ersetzt. Alle Kombinationen ≥4.5:1 AA.',
     status: 'erledigt',
     kategorie: 'Accessibility (WCAG 2.1 AA)',
     prioritaet: 'mittel',
