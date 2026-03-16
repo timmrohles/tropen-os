@@ -23,7 +23,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
     const [drawerOpen, setDrawerOpen] = useState(false)
 
     const fetchCounts = useCallback(async () => {
-      if (!conversationId) {
+      if (!conversationId || conversationId.startsWith('temp-')) {
         setArtifactCount(0)
         setBookmarkCount(0)
         return

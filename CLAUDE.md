@@ -87,10 +87,14 @@ Kein einziger Punkt ist optional.
 ```
 [ ] content-max / content-narrow / content-wide / content-full gesetzt?
 [ ] page-header mit page-header-title + page-header-actions vorhanden?
+[ ] H1-Icon: 22px, color="var(--text-primary)", weight="fill", aria-hidden="true"?
+[ ] Kein marginBottom/padding override auf page-header — CSS-Klasse regelt das?
+[ ] Chips: nur Text, KEINE Icons in Chips?
+[ ] Kein Sidebar-Layout — flaches Layout mit Card-Grid + Edit-Card darunter?
 [ ] Nur className="card" für Cards — nie eigene box-styles?
 [ ] Nur className="btn btn-*" für Buttons — nie eigene button-styles?
+[ ] "Neu erstellen"-Aktionen immer in page-header-actions — nie in Sidebar/Content?
 [ ] Nur Phosphor Icons (@phosphor-icons/react), weight="bold" oder weight="fill"?
-[ ] H1-Icons: color="var(--text-primary)" — KEIN var(--accent) in Überschriften?
 [ ] Ausschließlich CSS-Variablen für Farben — keine Hex-Werte im Code?
 [ ] Kein manuelles paddingTop/paddingBottom — content-Klassen enthalten das automatisch?
 [ ] Kein background auf Page-Wrapper — Body-Gradient muss durchscheinen?
@@ -98,6 +102,61 @@ Kein einziger Punkt ist optional.
 [ ] Alle interaktiven Elemente per Tastatur erreichbar, Fokus-Indikator sichtbar?
 [ ] Icons ohne sichtbaren Text haben aria-label oder aria-hidden="true"?
 ```
+
+### Verbindliches Seiten-Layout (Stand 2026-03-16)
+
+Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
+
+```tsx
+<div className="content-max">
+  {/* 1. Page Header — immer vorhanden */}
+  <div className="page-header">
+    <div className="page-header-text">
+      <h1 className="page-header-title">
+        <IconName size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+        Seitentitel
+      </h1>
+      <p className="page-header-sub">Kurzer Untertitel</p>
+    </div>
+    <div className="page-header-actions">
+      <button className="btn btn-primary">+ Neu</button>
+    </div>
+  </div>
+
+  {/* 2. Filter-Bar — optional, wenn Suche/Filter vorhanden */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+    <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+      {/* Suchfeld mit MagnifyingGlass-Icon */}
+    </div>
+    <div style={{ display: 'flex', gap: 6 }}>
+      <button className="chip chip--active">Alle</button>
+      <button className="chip">Filter</button>
+      {/* Chips: nur Text, KEINE Icons */}
+    </div>
+  </div>
+
+  {/* 3. Content — Cards in Grid oder Liste */}
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+    <button className="card" style={{ padding: '16px 18px', textAlign: 'left' }}>
+      Card-Inhalt
+    </button>
+  </div>
+
+  {/* 4. Edit-Card — bei Auswahl, UNTER dem Grid */}
+  {selected && (
+    <div className="card" style={{ padding: 24, marginTop: 16 }}>
+      Bearbeitungsformular
+    </div>
+  )}
+</div>
+```
+
+**Regeln:**
+- Kein Sidebar-Layout — immer flach (Header → Filter → Grid → Edit)
+- Chips enthalten nur Text — keine Icons
+- "Neu erstellen"-Button immer in `page-header-actions`
+- Kein `style`-Override auf `.page-header` (kein marginBottom, padding, background)
+- `.page-header-title` hat `display:flex; align-items:center; gap:10px` via CSS
 
 ---
 

@@ -103,12 +103,13 @@ export default function HubPage() {
   }
 
   const s: Record<string, React.CSSProperties> = {
-    tabs: { display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 },
-    layout: { display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 },
-    sidebar: { display: 'flex', flexDirection: 'column', gap: 8 },
-    itemTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
-    itemSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: 0, marginTop: 2 },
-    card: { padding: 24 },
+    chips: { display: 'flex', gap: 6, marginBottom: 24 },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 24 },
+    cardItem: { padding: '16px 18px', cursor: 'pointer', textAlign: 'left' as const, width: '100%' },
+    cardItemActive: { padding: '16px 18px', cursor: 'pointer', textAlign: 'left' as const, outline: '2px solid var(--accent)', outlineOffset: -2, width: '100%' },
+    itemTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
+    itemSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0' },
+    editCard: { padding: 24 },
     label: { fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6, display: 'block' },
     row: { marginBottom: 16 },
     actions: { display: 'flex', gap: 8, marginTop: 20 },
@@ -123,92 +124,90 @@ export default function HubPage() {
 
   return (
     <div className="content-max">
-        <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header">
           <div className="page-header-text">
-            <h1 className="page-header-title">Hub</h1>
+            <h1 className="page-header-title">
+              <LightbulbFilament size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+              Hub
+            </h1>
             <p className="page-header-sub">Agenten, Vorlagen und Community</p>
+          </div>
+          <div className="page-header-actions">
+            {tab === 'agents' && (
+              <button className="btn btn-primary" onClick={() => { setCreatingAgent(true); setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM) }}>
+                <Plus size={14} weight="bold" /> Neuer Agent
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={s.tabs}>
+        <div style={s.chips}>
           {(['agents', 'community', 'templates'] as Tab[]).map(t => (
             <button key={t} className={tab === t ? 'chip chip--active' : 'chip'} onClick={() => setTab(t)}>
-              {t === 'agents' ? <Robot size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
-              {t === 'community' ? <Users size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
-              {t === 'templates' ? <BookOpen size={14} style={{ marginRight: 6 }} weight="bold" /> : null}
               {t === 'agents' ? 'Meine Agenten' : t === 'community' ? 'Community' : 'Vorlagen'}
             </button>
           ))}
         </div>
 
         {tab === 'agents' && (
-          <div style={s.layout}>
-            <div style={s.sidebar}>
-              <button className="btn btn-primary" onClick={() => { setCreatingAgent(true); setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM) }}>
-                <Plus size={14} weight="bold" /> Neuer Agent
-              </button>
-              {agentsLoading ? (
-                <p style={s.empty}>Lade Agenten…</p>
-              ) : agents.length === 0 ? (
-                <p style={s.empty}>Noch keine Agenten</p>
-              ) : (
-                agents.map(a => (
-                  <button key={a.id} className={selectedAgent?.id === a.id ? 'list-row list-row--active' : 'list-row'} onClick={() => selectAgent(a)}>
+          <>
+            {agentsLoading ? (
+              <p style={s.empty}>Lade Agenten…</p>
+            ) : agents.length === 0 && !creatingAgent ? (
+              <p style={s.empty}>Noch keine Agenten — erstelle deinen ersten.</p>
+            ) : agents.length > 0 ? (
+              <div style={s.grid}>
+                {agents.map(a => (
+                  <button key={a.id} className="card" style={selectedAgent?.id === a.id ? s.cardItemActive : s.cardItem} onClick={() => selectAgent(a)}>
                     <p style={s.itemTitle}>{a.name}</p>
                     {a.description && <p style={s.itemSub}>{a.description}</p>}
                   </button>
-                ))
-              )}
-            </div>
-            <div>
-              {(selectedAgent || creatingAgent) ? (
-                <div className="card" style={s.card}>
-                  <div style={s.row}>
-                    <label style={s.label}>Name</label>
-                    <input style={inp} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="Agent-Name" />
-                  </div>
-                  <div style={s.row}>
-                    <label style={s.label}>Beschreibung</label>
-                    <input style={inp} value={agentForm.description} onChange={e => setAgentForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung" />
-                  </div>
-                  <div style={s.row}>
-                    <label style={s.label}>System-Prompt</label>
-                    <textarea style={{ ...textarea, minHeight: 120 }} value={agentForm.system_prompt} onChange={e => setAgentForm(f => ({ ...f, system_prompt: e.target.value }))} placeholder="Du bist ein hilfreicher Assistent der…" />
-                  </div>
-                  <div style={s.row}>
-                    <label style={s.label}>Sichtbarkeit</label>
-                    <select style={inp} value={agentForm.visibility} onChange={e => setAgentForm(f => ({ ...f, visibility: e.target.value as AgentVisibility }))}>
-                      <option value="private">Nur ich</option>
-                      <option value="org">Gesamte Organisation</option>
-                    </select>
-                  </div>
-                  <div style={s.actions}>
-                    <button className="btn btn-primary" onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
-                      <FloppyDisk size={14} weight="bold" /> {agentSaving ? 'Speichere…' : 'Speichern'}
-                    </button>
-                    {selectedAgent && (
-                      agentDeleteConfirm ? (
-                        <>
-                          <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center' }}>Sicher löschen?</span>
-                          <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleAgentDelete}>Ja, löschen</button>
-                          <button className="btn btn-ghost" onClick={() => setAgentDeleteConfirm(false)}>Abbrechen</button>
-                        </>
-                      ) : (
-                        <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setAgentDeleteConfirm(true)}>
-                          <Trash size={14} weight="bold" /> Löschen
-                        </button>
-                      )
-                    )}
-                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {(selectedAgent || creatingAgent) && (
+              <div className="card" style={s.editCard}>
+                <div style={s.row}>
+                  <label style={s.label}>Name</label>
+                  <input style={inp} value={agentForm.name} onChange={e => setAgentForm(f => ({ ...f, name: e.target.value }))} placeholder="Agent-Name" />
                 </div>
-              ) : (
-                <div style={s.empty}>
-                  <Robot size={40} color="var(--text-tertiary)" weight="bold" />
-                  <p>Wähle einen Agenten aus oder erstelle einen neuen</p>
+                <div style={s.row}>
+                  <label style={s.label}>Beschreibung</label>
+                  <input style={inp} value={agentForm.description} onChange={e => setAgentForm(f => ({ ...f, description: e.target.value }))} placeholder="Kurze Beschreibung" />
                 </div>
-              )}
-            </div>
-          </div>
+                <div style={s.row}>
+                  <label style={s.label}>System-Prompt</label>
+                  <textarea style={{ ...textarea, minHeight: 120 }} value={agentForm.system_prompt} onChange={e => setAgentForm(f => ({ ...f, system_prompt: e.target.value }))} placeholder="Du bist ein hilfreicher Assistent der…" />
+                </div>
+                <div style={s.row}>
+                  <label style={s.label}>Sichtbarkeit</label>
+                  <select style={inp} value={agentForm.visibility} onChange={e => setAgentForm(f => ({ ...f, visibility: e.target.value as AgentVisibility }))}>
+                    <option value="private">Nur ich</option>
+                    <option value="org">Gesamte Organisation</option>
+                  </select>
+                </div>
+                <div style={s.actions}>
+                  <button className="btn btn-primary" onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
+                    <FloppyDisk size={14} weight="bold" /> {agentSaving ? 'Speichere…' : 'Speichern'}
+                  </button>
+                  {selectedAgent && (
+                    agentDeleteConfirm ? (
+                      <>
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center' }}>Sicher löschen?</span>
+                        <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleAgentDelete}>Ja, löschen</button>
+                        <button className="btn btn-ghost" onClick={() => setAgentDeleteConfirm(false)}>Abbrechen</button>
+                      </>
+                    ) : (
+                      <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setAgentDeleteConfirm(true)}>
+                        <Trash size={14} weight="bold" /> Löschen
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {tab === 'community' && (

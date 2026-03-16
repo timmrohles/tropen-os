@@ -79,7 +79,7 @@ export default function FeedsPage() {
     }, { threshold: 0.5 })
     return () => {
       observerRef.current?.disconnect()
-      for (const t of readTimers.current) clearTimeout(t)
+      for (const [, t] of readTimers.current) clearTimeout(t)
     }
   }, [])
 
@@ -94,10 +94,6 @@ export default function FeedsPage() {
   }
 
   const getSource = (id: string) => sources.find((s) => s.id === id)
-
-  const allTags = Array.from(new Set(
-    items.flatMap((it) => it.keyFacts ?? []).filter(Boolean)
-  )).slice(0, 20)
 
   return (
     <div className="content-max" onClick={() => setMenuOpen(null)}>
@@ -115,80 +111,48 @@ export default function FeedsPage() {
         </div>
       </div>
 
-      {/* Body: Sidebar + Stream */}
-      <div style={{ display: 'flex', gap: 24, minHeight: 0 }}>
-        {/* Left Sidebar */}
-        <div
-          className="sidebar-scroll"
-          style={{ width: 200, flexShrink: 0, overflowY: 'auto' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div style={{ padding: '0 0 6px' }}>
-            <span className="card-section-label">Quellen</span>
-            <button
-              className={`list-row${selectedSource === null ? ' list-row--active' : ''}`}
-              onClick={() => setSelectedSource(null)}
-            >
-              Alle Quellen
-              {total > 0 && <span className="badge" style={{ marginLeft: 'auto' }}>{total}</span>}
-            </button>
-            {sources.map((src) => (
-              <button
-                key={src.id}
-                className={`list-row${selectedSource === src.id ? ' list-row--active' : ''}`}
-                onClick={() => setSelectedSource(src.id)}
-              >
-                <span
-                  style={{ width: 8, height: 8, borderRadius: '50%', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', flexShrink: 0 }}
-                  aria-hidden="true"
-                />
-                {src.name}
-              </button>
-            ))}
-          </div>
-
-          {allTags.length > 0 && (
-            <div style={{ padding: '12px 0 0' }}>
-              <span className="card-section-label">Themen</span>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  className="list-row"
-                  style={{ fontSize: 12, color: 'var(--accent)' }}
-                  onClick={() => { setSearch(tag); loadItems(0, true) }}
-                >
-                  #{tag}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
+        <div style={{ position: 'relative' as const, flex: 1, minWidth: 200 }}>
+          <MagnifyingGlass
+            size={14}
+            weight="bold"
+            color="var(--text-tertiary)"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' as const }}
+            aria-hidden="true"
+          />
+          <input
+            style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
+            placeholder="Feeds durchsuchen…"
+            value={search}
+            aria-label="Feed-Suche"
+            onChange={(e) => handleSearch(e.target.value)}
+          />
         </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          <button
+            className={`chip${selectedSource === null ? ' chip--active' : ''}`}
+            onClick={() => setSelectedSource(null)}
+          >
+            Alle {total > 0 && <span className="badge" style={{ marginLeft: 4 }}>{total}</span>}
+          </button>
+          {sources.map((src) => (
+            <button
+              key={src.id}
+              className={`chip${selectedSource === src.id ? ' chip--active' : ''}`}
+              onClick={() => setSelectedSource(src.id)}
+            >
+              {src.name}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const, marginLeft: 'auto' }}>
+          {total} Artikel
+        </span>
+      </div>
 
-        {/* Main Stream */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* Search + count */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ flex: 1, position: 'relative' as const }}>
-              <MagnifyingGlass
-                size={14}
-                weight="bold"
-                color="var(--text-tertiary)"
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
-                aria-hidden="true"
-              />
-              <input
-                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 14, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
-                placeholder="Suche in Feeds..."
-                value={search}
-                aria-label="Feed-Suche"
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
-            <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const }}>
-              {total} Artikel
-            </span>
-          </div>
-
+      {/* Stream */}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
           {loading && items.length === 0 && (
             <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
               Wird geladen…
@@ -336,7 +300,6 @@ export default function FeedsPage() {
               Mehr laden ({total - items.length} weitere)
             </button>
           )}
-        </div>
       </div>
     </div>
   )

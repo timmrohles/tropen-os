@@ -106,6 +106,10 @@ export default function KnowledgePage() {
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return
+    if (!orgId || !userId) {
+      setUploadError('Profil noch nicht geladen. Bitte kurz warten und erneut versuchen.')
+      return
+    }
     setUploadError(null)
 
     for (const file of Array.from(files)) {
@@ -171,25 +175,18 @@ export default function KnowledgePage() {
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 70 } : u))
 
         // 4. Ingest-Edge-Function triggern
-        const { error: fnErr } = await supabase.functions.invoke('knowledge-ingest', {
+        const { data: fnData, error: fnErr } = await supabase.functions.invoke('knowledge-ingest', {
           body: { document_id: doc.id },
         })
 
         if (fnErr) {
-          // Fehlertext direkt aus der DB lesen — die Function schreibt ihn dort selbst hin
-          const { data: errDoc } = await supabase
+          // Echten Fehler direkt aus dem Response-Body lesen (vermeidet Race Condition mit DB-Update)
+          const actualError = (fnData as { error?: string } | null)?.error ?? fnErr.message
+          await supabase
             .from('knowledge_documents')
-            .select('error_message, status')
+            .update({ status: 'error', error_message: actualError })
             .eq('id', doc.id)
-            .maybeSingle()
-          // Falls die Function den Status nicht auf 'error' gesetzt hat (unerwarteter Crash)
-          if (errDoc?.status !== 'error') {
-            await supabase
-              .from('knowledge_documents')
-              .update({ status: 'error', error_message: fnErr.message })
-              .eq('id', doc.id)
-          }
-          throw new Error(`ingest: ${errDoc?.error_message ?? fnErr.message}`)
+          throw new Error(`ingest: ${actualError}`)
         }
 
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 100 } : u))
@@ -229,10 +226,10 @@ export default function KnowledgePage() {
     return Date.now() - new Date(doc.created_at).getTime() > 10 * 60 * 1000
   }
 
-  const TABS: { id: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
-    { id: 'user', label: 'Meine Dokumente', icon: <File size={16} weight="fill" /> },
-    { id: 'org',  label: 'Org-Wissen',      icon: <Users size={16} weight="fill" />, adminOnly: true },
-    { id: 'project', label: 'Projekt-Wissen', icon: <FolderOpen size={16} weight="fill" /> },
+  const TABS: { id: Tab; label: string; adminOnly?: boolean }[] = [
+    { id: 'user', label: 'Meine Dokumente' },
+    { id: 'org',  label: 'Org-Wissen', adminOnly: true },
+    { id: 'project', label: 'Projekt-Wissen' },
   ]
 
   if (loading && docs.length === 0) return (
@@ -243,9 +240,12 @@ export default function KnowledgePage() {
 
   return (
     <div className="content-max" aria-busy={loading}>
-      <div className="page-header" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Wissensbasis</h1>
+          <h1 className="page-header-title">
+            <Books size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            Wissensbasis
+          </h1>
           <p className="page-header-sub">Dokumente für Toro – Org, User und Projekt-Ebene</p>
         </div>
       </div>
@@ -261,7 +261,6 @@ export default function KnowledgePage() {
               disabled={disabled}
               className={tab === t.id ? 'chip chip--active' : 'chip'}
             >
-              {t.icon}
               {t.label}
             </button>
           )

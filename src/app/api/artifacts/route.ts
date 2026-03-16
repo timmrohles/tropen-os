@@ -17,6 +17,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
   const organizationId = searchParams.get('organizationId')
+
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (conversationId && !uuidPattern.test(conversationId)) {
+    return NextResponse.json({ data: [], total: 0, limit: 50, offset: 0 })
+  }
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
   const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10), 0)
 

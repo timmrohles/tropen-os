@@ -56,10 +56,10 @@ export default function DepartmentPage() {
 
   return (
     <div className="content-max" aria-busy={loading}>
-        <div className="page-header" style={{ marginBottom: 32 }}>
+        <div className="page-header">
           <div className="page-header-text">
-            <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Buildings size={24} color="var(--accent)" weight="fill" />
+            <h1 className="page-header-title">
+              <Buildings size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
               {loading ? 'Department' : (dept?.name ?? 'Department')}
             </h1>
             <p className="page-header-sub">Organisatorische Einheit — Mitglieder und Einstellungen</p>

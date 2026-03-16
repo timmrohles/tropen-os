@@ -192,10 +192,10 @@ function ArtifactsPageInner() {
           </button>
         )}
 
-        <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header">
           <div className="page-header-text">
-            <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Archive size={24} color="var(--accent)" weight="fill" />
+            <h1 className="page-header-title">
+              <Archive size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
               Artefakte
             </h1>
             <p className="page-header-sub">Gespeicherte Code-Blöcke, Tabellen und Dokumente aus deinen Chats</p>

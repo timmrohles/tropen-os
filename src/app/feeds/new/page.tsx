@@ -10,7 +10,6 @@ import { Rss, Envelope, Plugs, Globe, Plus, ArrowLeft, ArrowRight } from '@phosp
 type Step = 1 | 2 | 3 | 4
 
 const s: Record<string, React.CSSProperties> = {
-  page:    { padding: '40px 24px' },
   types:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 },
   typeCard:{ padding: '20px 16px', border: '2px solid var(--border)', borderRadius: 10, cursor: 'pointer', textAlign: 'center' as const, transition: 'border-color 150ms', background: 'var(--bg-surface)' },
   typeCardActive: { borderColor: 'var(--accent)', background: 'var(--accent-subtle)' },
@@ -29,10 +28,10 @@ const s: Record<string, React.CSSProperties> = {
 }
 
 const TYPES: Array<{ type: FeedSourceType; icon: React.ReactNode; name: string; desc: string }> = [
-  { type: 'rss',   icon: <Rss size={28} weight="fill" color="var(--accent)" />,     name: 'RSS-Feed',   desc: 'Einfachste Option' },
-  { type: 'email', icon: <Envelope size={28} weight="fill" color="var(--tropen-process)" />,       name: 'Newsletter', desc: 'Über Inbound-Adresse' },
-  { type: 'api',   icon: <Plugs size={28} weight="fill" color="var(--tropen-output)" />,          name: 'API',        desc: 'Eigene Konfiguration' },
-  { type: 'url',   icon: <Globe size={28} weight="fill" color="var(--text-tertiary)" />, name: 'Website', desc: '⚠ Rechtl. beachten' },
+  { type: 'rss',   icon: <Rss size={28} weight="fill" color="var(--text-primary)" />,      name: 'RSS-Feed',   desc: 'Einfachste Option' },
+  { type: 'email', icon: <Envelope size={28} weight="fill" color="var(--text-primary)" />,  name: 'Newsletter', desc: 'Über Inbound-Adresse' },
+  { type: 'api',   icon: <Plugs size={28} weight="fill" color="var(--text-primary)" />,     name: 'API',        desc: 'Eigene Konfiguration' },
+  { type: 'url',   icon: <Globe size={28} weight="fill" color="var(--text-primary)" />,     name: 'Website',    desc: '⚠ Rechtl. beachten' },
 ]
 
 export default function NewFeedPage() {
@@ -75,9 +74,9 @@ export default function NewFeedPage() {
     : true
 
   return (
-    <div className="content-narrow" style={s.page}>
+    <div className="content-narrow">
       {/* Page Header */}
-      <div className="page-header" style={{ padding: 0 }}>
+      <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">Neue Feed-Quelle</h1>
           <p className="page-header-sub">Schritt {step} von 4</p>
@@ -104,7 +103,7 @@ export default function NewFeedPage() {
                 onKeyDown={(e) => e.key === 'Enter' && setType(t)}
                 aria-pressed={type === t}
               >
-                <div aria-hidden="true">{icon}</div>
+                <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center' }}>{icon}</div>
                 <div style={s.typeName}>{n}</div>
                 <div style={s.typeDesc}>{desc}</div>
               </div>

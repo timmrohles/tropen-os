@@ -125,11 +125,12 @@ export default function ProjectsPage() {
   const textarea: React.CSSProperties = { ...inp, minHeight: 80, resize: 'vertical' as const }
 
   const s: Record<string, React.CSSProperties> = {
-    layout: { display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 },
-    sidebar: { display: 'flex', flexDirection: 'column', gap: 8 },
-    itemTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
-    itemSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: 0, marginTop: 2 },
-    card: { padding: 24 },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 24 },
+    cardItem: { padding: '16px 18px', cursor: 'pointer', textAlign: 'left' as const, width: '100%' },
+    cardItemActive: { padding: '16px 18px', cursor: 'pointer', textAlign: 'left' as const, outline: '2px solid var(--accent)', outlineOffset: -2, width: '100%' },
+    itemTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
+    itemSub: { fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0' },
+    editCard: { padding: 24 },
     label: { fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6, display: 'block' },
     row: { marginBottom: 16 },
     actions: { display: 'flex', gap: 8, marginTop: 20 },
@@ -140,91 +141,86 @@ export default function ProjectsPage() {
 
   return (
     <div className="content-max" aria-busy={loading}>
-        <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header">
           <div className="page-header-text">
-            <h1 className="page-header-title">Projekte</h1>
+            <h1 className="page-header-title">
+              <FolderOpen size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+              Projekte
+            </h1>
             <p className="page-header-sub">Smarte Projektordner mit Gedächtnis</p>
           </div>
-        </div>
-
-        <div style={s.layout}>
-          <div style={s.sidebar}>
+          <div className="page-header-actions">
             <button className="btn btn-primary" onClick={() => { setCreating(true); setSelected(null) }}>
               <Plus size={14} weight="bold" /> Neues Projekt
             </button>
-
-            {creating && (
-              <div className="card" style={{ padding: 14 }}>
-                <input
-                  autoFocus
-                  placeholder="Projekttitel"
-                  value={newTitle}
-                  onChange={e => setNewTitle(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewTitle('') } }}
-                  style={s.newInput}
-                />
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={saving || !newTitle.trim()}>Erstellen</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setCreating(false); setNewTitle('') }}>Abbrechen</button>
-                </div>
-              </div>
-            )}
-
-            {loading ? (
-              <p style={s.empty}>Lade Projekte…</p>
-            ) : projects.length === 0 ? (
-              <p style={s.empty}>Noch keine Projekte</p>
-            ) : (
-              projects.map(p => (
-                <button key={p.id} className={selected?.id === p.id ? 'list-row list-row--active' : 'list-row'} onClick={() => selectProject(p)}>
-                  <p style={s.itemTitle}>{p.title}</p>
-                  {p.goal && <p style={s.itemSub}>{p.goal}</p>}
-                </button>
-              ))
-            )}
-          </div>
-
-          <div>
-            {selected ? (
-              <div className="card" style={s.card}>
-                <div style={s.row}>
-                  <label style={s.label}>Titel</label>
-                  <input style={inp} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-                </div>
-                <div style={s.row}>
-                  <label style={s.label}>Ziel (optional)</label>
-                  <input style={inp} value={form.goal} onChange={e => setForm(f => ({ ...f, goal: e.target.value }))} placeholder="Worum geht es in diesem Projekt?" />
-                </div>
-                <div style={s.row}>
-                  <label style={s.label}>Anweisungen für Toro (optional)</label>
-                  <textarea style={textarea} value={form.instructions} onChange={e => setForm(f => ({ ...f, instructions: e.target.value }))} placeholder="Wie soll Toro in diesem Projekt antworten?" />
-                </div>
-                {saveError && <p style={s.error}>{saveError}</p>}
-                <div style={s.actions}>
-                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                    <FloppyDisk size={14} weight="bold" /> {saving ? 'Speichere…' : 'Speichern'}
-                  </button>
-                  {deleteConfirm ? (
-                    <>
-                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center' }}>Sicher löschen?</span>
-                      <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleDelete}>Ja, löschen</button>
-                      <button className="btn btn-ghost" onClick={() => setDeleteConfirm(false)}>Abbrechen</button>
-                    </>
-                  ) : (
-                    <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setDeleteConfirm(true)}>
-                      <Trash size={14} weight="bold" /> Löschen
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : creating ? null : (
-              <div style={s.empty}>
-                <FolderOpen size={40} color="var(--text-tertiary)" weight="bold" />
-                <p>Wähle ein Projekt aus oder erstelle ein neues</p>
-              </div>
-            )}
           </div>
         </div>
+
+        {creating && (
+          <div className="card" style={{ padding: 14, marginBottom: 16 }}>
+            <input
+              autoFocus
+              placeholder="Projekttitel"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewTitle('') } }}
+              style={s.newInput}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={saving || !newTitle.trim()}>Erstellen</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setCreating(false); setNewTitle('') }}>Abbrechen</button>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <p style={s.empty}>Lade Projekte…</p>
+        ) : projects.length === 0 && !creating ? (
+          <p style={s.empty}>Noch keine Projekte — erstelle dein erstes.</p>
+        ) : projects.length > 0 ? (
+          <div style={s.grid}>
+            {projects.map(p => (
+              <button key={p.id} className="card" style={selected?.id === p.id ? s.cardItemActive : s.cardItem} onClick={() => selectProject(p)}>
+                <p style={s.itemTitle}>{p.title}</p>
+                {p.goal && <p style={s.itemSub}>{p.goal}</p>}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {selected && (
+          <div className="card" style={s.editCard}>
+            <div style={s.row}>
+              <label style={s.label}>Titel</label>
+              <input style={inp} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div style={s.row}>
+              <label style={s.label}>Ziel (optional)</label>
+              <input style={inp} value={form.goal} onChange={e => setForm(f => ({ ...f, goal: e.target.value }))} placeholder="Worum geht es in diesem Projekt?" />
+            </div>
+            <div style={s.row}>
+              <label style={s.label}>Anweisungen für Toro (optional)</label>
+              <textarea style={textarea} value={form.instructions} onChange={e => setForm(f => ({ ...f, instructions: e.target.value }))} placeholder="Wie soll Toro in diesem Projekt antworten?" />
+            </div>
+            {saveError && <p style={s.error}>{saveError}</p>}
+            <div style={s.actions}>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                <FloppyDisk size={14} weight="bold" /> {saving ? 'Speichere…' : 'Speichern'}
+              </button>
+              {deleteConfirm ? (
+                <>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center' }}>Sicher löschen?</span>
+                  <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={handleDelete}>Ja, löschen</button>
+                  <button className="btn btn-ghost" onClick={() => setDeleteConfirm(false)}>Abbrechen</button>
+                </>
+              ) : (
+                <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setDeleteConfirm(true)}>
+                  <Trash size={14} weight="bold" /> Löschen
+                </button>
+              )}
+            </div>
+          </div>
+        )}
     </div>
   )
 }

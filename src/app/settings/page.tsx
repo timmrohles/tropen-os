@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Gear } from '@phosphor-icons/react'
 
 type ChatStyle = 'clear' | 'structured' | 'detailed'
 
@@ -13,7 +14,6 @@ const STYLE_LABELS: Record<ChatStyle, string> = {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { paddingTop: 32, paddingBottom: 48 },
   section: {
     background: 'var(--bg-surface)', border: '1px solid var(--border-muted)',
     borderRadius: 10, padding: '20px 24px', marginBottom: 20,
@@ -120,10 +120,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="content-max" style={s.page}>
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-max">
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Einstellungen</h1>
+          <h1 className="page-header-title">
+            <Gear size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            Einstellungen
+          </h1>
           <p className="page-header-sub">Profil, Präferenzen und Datenschutz</p>
         </div>
       </div>
