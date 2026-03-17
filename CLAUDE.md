@@ -3,6 +3,67 @@
 
 ---
 
+# ⛔ STOP — Lies das als Erstes
+
+## Pflicht-Protokoll vor jedem Build
+
+**Keine Ausnahme. Kein optionaler Schritt.**
+
+```
+Schritt 1  cat docs/webapp-manifest/manifesto.md
+Schritt 2  cat docs/webapp-manifest/engineering-standard.md
+Schritt 3  cat docs/webapp-manifest/audit-system.md
+Schritt 4  cat docs/phase2-plans.md
+Schritt 5  cat ARCHITECT.md
+Schritt 6  ls supabase/migrations/ | tail -5 → letzte Migrations lesen
+Schritt 7  Architektur-Review durchführen (Template in ARCHITECT.md)
+Schritt 8  Ampel bestimmen → dann bauen oder fragen
+```
+
+Bei UI-Änderungen zusätzlich:
+```
+Schritt 9  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt 10 CLAUDE.md → Abschnitt "Code-Regeln" lesen
+```
+
+Bei AI-Features zusätzlich:
+```
+Schritt 11 cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
+Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
+```
+
+---
+
+## ⏸️ PAUSE — Nächster Build-Schritt (Stand 2026-03-17)
+
+> Diese Sektion nach Abschluss des nächsten Builds entfernen.
+
+**Wo wir aufgehört haben:**
+
+- ✅ Task 0: `src/db/schema.ts` — `outcomes` → `workspaceOutcomes` umbenannt, system-level `outcomes` Typ hinzugefügt, committed
+- ✅ Migration 039 eingespielt: `supabase/migrations/20260317000039_capability_outcome_system.sql`
+- ✅ Migration 040 eingespielt: `supabase/migrations/20260317000040_cards_capability.sql`
+- ⏸️ Migration 041 noch nicht angelegt (Guided Workflows Seed)
+
+**Nächste Schritte (in dieser Reihenfolge):**
+
+```
+1. Migration 041 anlegen + pushen  →  Guided Workflows Seed
+2. src/lib/capability-resolver.ts + Unit Tests
+3. src/lib/validators/capabilities.ts  (Zod)
+4. API Routes: GET /api/capabilities, POST /api/capabilities/resolve, PATCH settings + org-settings
+5. src/lib/guided-workflow-engine.ts + Unit Tests
+6. src/lib/validators/guided.ts  (Zod)
+7. API Routes: GET/POST /api/guided/*
+8. CLAUDE.md Migrations-Tabelle aktualisieren
+```
+
+**Pläne:**
+- `docs/superpowers/plans/2026-03-17-capability-outcome-system.md` — Plan 1 (Migrations + API + Resolver)
+- `docs/superpowers/plans/2026-03-17-guided-workflows.md` — Plan 1b (Guided Engine + API)
+
+---
+
 ## Wie dieses Dokument funktioniert
 
 CLAUDE.md ist ein lebendes Dokument. Claude Code darf und soll es aktuell halten —
@@ -194,6 +255,18 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: Anthropic SDK direkt (`ANTHROPIC_API_KEY`) — kein Dify für neue Features.
 
+### Dify — offene Entscheidung (⏸ 2026-03-17)
+
+<!-- TODO(timm): Dify komplett ablösen oder parallel weiterführen?
+  Stand 2026-03-16: ai-chat Edge Function wurde auf direktes Anthropic/OpenAI-Routing umgestellt.
+  Dify läuft noch, wird aber nicht mehr aktiv für Chat genutzt.
+  Optionen:
+  A) Dify vollständig abschalten (Instanz runterfahren, Env-Vars entfernen)
+  B) Dify als Fallback behalten für Jungle Order / komplexe Workflows
+  C) Dify komplett ersetzen (Workflows selbst bauen)
+  Entscheid ausstehend — bis dahin: Dify nicht aktiv einbinden, bestehende Instanz läuft weiter.
+-->
+
 ---
 
 ## Design System
@@ -369,6 +442,21 @@ Nicht ohne explizite Anweisung:
 
 ---
 
+## Engineering Standards
+
+### Claude.ai Feature-Parität
+
+Neue Claude.ai-Features werden regelmäßig geprüft und eingeordnet.
+Vollständige Governance-Regel: `docs/phase2-plans.md` →
+Abschnitt "Governance-Regel: Feature-Parität mit Claude.ai"
+
+Kurzregel für Claude Code:
+- Modell-Features: kommen automatisch via API
+- UI-Features: wir bauen KMU-optimierte Äquivalente
+- Anthropic-interne Features: eigene Lösung bereits vorhanden
+
+---
+
 ## Autonomie-Level: Hoch
 
 Wir arbeiten lokal. Kein Produktionssystem gefährdet.
@@ -410,6 +498,8 @@ Letzte relevante Migrationen:
 | 032_support_tables.sql | dept_settings, transformations, templates |
 | 033_feed_tables.sql | feed_sources, feed_items, feed_processing_log (APPEND ONLY) |
 | 20260314000036_feeds_v2.sql | Feeds v2-Schema mit keywords, min_score, content_hash UNIQUE |
+| 20260317000039_capability_outcome_system.sql | capabilities, outcomes, capability_outcomes, org/user settings, guided_workflows Schema |
+| 20260317000040_cards_capability.sql | cards Extension: capability_id, outcome_id, sources, last_run_at, next_run_at |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`
 
