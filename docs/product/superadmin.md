@@ -36,12 +36,17 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 
 ---
 
-## Superadmin To-Do (Stand 2026-03-14)
+## Superadmin To-Do (Stand 2026-03-16)
 
 | Priorität | Feature | Status |
 |-----------|---------|--------|
 | ✅ Fertig | Phase 2 Plan C — Workspaces + Card Engine (Backend) | ✅ 2026-03-14 |
 | ✅ Fertig | Phase 2 Plan G — Feeds | ✅ 2026-03-14 |
+| ✅ Fertig | Feeds Quellen-Verwaltung UI (edit, copy, delete, pause) | ✅ 2026-03-16 |
+| ✅ Fertig | Wissensbasis RAG-Fix (Knowledge-Search 401, direkte Einbettung in ai-chat) | ✅ 2026-03-16 |
+| ✅ Fertig | Multi-Provider LLM-Routing (Anthropic + OpenAI direkt, kein Dify-Relay) | ✅ 2026-03-16 |
+| ✅ Fertig | CodeQL Security-Fix + CI-Failures (file size, icon weight) | ✅ 2026-03-16 |
+| 🔴 Hoch | **Dify-Entscheidung** — Dify komplett ablösen oder parallel weiterführen? → Entscheid morgen | ⏸ Morgen |
 | 🔴 Hoch | Phase 2 Plan D — Chat & Context Integration | ⬜ Offen |
 | 🟡 Mittel | Phase 2 Plan E — Transformations-Engine | ⬜ Offen |
 | 🟡 Mittel | Phase 2 Plan F — UI (Projekte + Workspaces + Feeds-Settings) | ⬜ Offen |

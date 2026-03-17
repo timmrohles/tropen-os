@@ -13,6 +13,16 @@ const CHUNK_SIZE      = 800;
 const CHUNK_OVERLAP   = 100;
 const EMBEDDING_MODEL = "text-embedding-3-small";
 
+function stripXmlTagsStable(input: string): string {
+  let previous: string;
+  let current = input;
+  do {
+    previous = current;
+    current = current.replace(/<[^>]+>/g, "");
+  } while (current !== previous);
+  return current;
+}
+
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -64,7 +74,7 @@ async function extractText(content: Uint8Array, fileType: string): Promise<strin
         const xmlText = new TextDecoder("utf-8").decode(docXmlBytes);
         const xmlMatches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) ?? [];
         return xmlMatches
-          .map(m => m.replace(/<[^>]+>/g, ""))
+          .map(m => stripXmlTagsStable(m))
           .join(" ")
           .replace(/\s+/g, " ")
           .trim();

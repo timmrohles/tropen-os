@@ -2,12 +2,15 @@
 // src/app/feeds/page.tsx — Newscenter
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem } from '@/actions/feeds'
+import {
+  markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem,
+} from '@/actions/feeds'
 import type { FeedItem, FeedSource } from '@/types/feeds'
 import {
   BookmarkSimple, ArrowSquareOut, CheckCircle, DotsThree,
   ThumbsDown, Archive, Trash, Rss, MagnifyingGlass,
 } from '@phosphor-icons/react'
+import SourcesView from './SourcesView'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
@@ -18,8 +21,13 @@ const SOURCE_COLOR: Record<string, string> = {
 
 const PAGE_SIZE = 20
 
+type View = 'articles' | 'sources'
+
 export default function FeedsPage() {
   const supabase = createClient()
+  const [view, setView] = useState<View>('articles')
+
+  // ── Articles state ──────────────────────────────────────────────────────────
   const [sources, setSources] = useState<FeedSource[]>([])
   const [items, setItems] = useState<FeedItem[]>([])
   const [total, setTotal] = useState(0)
@@ -111,196 +119,165 @@ export default function FeedsPage() {
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
-        <div style={{ position: 'relative' as const, flex: 1, minWidth: 200 }}>
-          <MagnifyingGlass
-            size={14}
-            weight="bold"
-            color="var(--text-tertiary)"
-            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' as const }}
-            aria-hidden="true"
-          />
-          <input
-            style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
-            placeholder="Feeds durchsuchen…"
-            value={search}
-            aria-label="Feed-Suche"
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
-          <button
-            className={`chip${selectedSource === null ? ' chip--active' : ''}`}
-            onClick={() => setSelectedSource(null)}
-          >
-            Alle {total > 0 && <span className="badge" style={{ marginLeft: 4 }}>{total}</span>}
-          </button>
-          {sources.map((src) => (
-            <button
-              key={src.id}
-              className={`chip${selectedSource === src.id ? ' chip--active' : ''}`}
-              onClick={() => setSelectedSource(src.id)}
-            >
-              {src.name}
-            </button>
-          ))}
-        </div>
-        <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const, marginLeft: 'auto' }}>
-          {total} Artikel
-        </span>
+      {/* View Toggle */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+        <button
+          className={`chip${view === 'articles' ? ' chip--active' : ''}`}
+          onClick={() => setView('articles')}
+        >
+          Artikel {view === 'articles' && total > 0 && <span className="badge" style={{ marginLeft: 4 }}>{total}</span>}
+        </button>
+        <button
+          className={`chip${view === 'sources' ? ' chip--active' : ''}`}
+          onClick={() => setView('sources')}
+        >
+          Quellen verwalten
+        </button>
       </div>
 
-      {/* Stream */}
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-          {loading && items.length === 0 && (
-            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
-              Wird geladen…
+      {/* ── ARTICLES VIEW ────────────────────────────────────────────────────── */}
+      {view === 'articles' && (
+        <>
+          {/* Filter bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
+            <div style={{ position: 'relative' as const, flex: 1, minWidth: 200 }}>
+              <MagnifyingGlass
+                size={14} weight="bold" color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' as const }}
+                aria-hidden="true"
+              />
+              <input
+                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
+                placeholder="Feeds durchsuchen…"
+                value={search}
+                aria-label="Feed-Suche"
+                onChange={(e) => handleSearch(e.target.value)}
+              />
             </div>
-          )}
-
-          {!loading && items.length === 0 && (
-            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
-              Keine Artikel gefunden.
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+              <button className={`chip${selectedSource === null ? ' chip--active' : ''}`} onClick={() => setSelectedSource(null)}>
+                Alle
+              </button>
+              {sources.map((src) => (
+                <button key={src.id} className={`chip${selectedSource === src.id ? ' chip--active' : ''}`} onClick={() => setSelectedSource(src.id)}>
+                  {src.name}
+                </button>
+              ))}
             </div>
-          )}
+            <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const, marginLeft: 'auto' }}>
+              {total} Artikel
+            </span>
+          </div>
 
-          {items.map((item) => {
-            const src = getSource(item.sourceId)
-            const isUnread = item.status === 'unread'
-            return (
-              <div
-                key={item.id}
-                data-item-id={item.id}
-                ref={isUnread ? registerCard : undefined}
-                className="card"
-                style={{ padding: '14px 16px', borderLeft: isUnread ? '3px solid var(--accent)' : undefined, position: 'relative' as const }}
-                onClick={() => setMenuOpen(null)}
-              >
-                {item.score && (
-                  <span
-                    style={{ position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }}
-                    aria-label={`Relevanz: ${item.score} von 10`}
-                  >
-                    {item.score}/10
-                  </span>
-                )}
-                {src && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: 'var(--text-inverse)', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
-                    {src.name}
-                  </div>
-                )}
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>
-                  {item.title}
-                </div>
-                {item.summary && (
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 }}>
-                    {item.summary}
-                  </div>
-                )}
-                {item.keyFacts && item.keyFacts.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
-                    {item.keyFacts.slice(0, 4).map((f, i) => (
-                      <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
-                    ))}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="btn btn-ghost btn-sm"
-                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                      aria-label={`Artikel öffnen: ${item.title}`}
-                    >
-                      <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
-                    </a>
+          {/* Stream */}
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+            {loading && items.length === 0 && (
+              <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
+                Wird geladen…
+              </div>
+            )}
+            {!loading && items.length === 0 && (
+              <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
+                Keine Artikel gefunden.
+              </div>
+            )}
+            {items.map((item) => {
+              const src = getSource(item.sourceId)
+              const isUnread = item.status === 'unread'
+              return (
+                <div
+                  key={item.id}
+                  data-item-id={item.id}
+                  ref={isUnread ? registerCard : undefined}
+                  className="card"
+                  style={{ padding: '14px 16px', borderLeft: isUnread ? '3px solid var(--accent)' : undefined, position: 'relative' as const }}
+                  onClick={() => setMenuOpen(null)}
+                >
+                  {item.score && (
+                    <span style={{ position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }} aria-label={`Relevanz: ${item.score} von 10`}>
+                      {item.score}/10
+                    </span>
                   )}
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: item.isSaved ? 'var(--accent)' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await toggleItemSaved(item.id, !item.isSaved)
-                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it))
-                    }}
-                    aria-pressed={item.isSaved}
-                    aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
-                  >
-                    <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'bold'} aria-hidden="true" />
-                    {item.isSaved ? 'Gespeichert' : 'Merken'}
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await markItemRead(item.id)
-                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: 'read' } : it))
-                    }}
-                    aria-label="Als gelesen markieren"
-                  >
-                    <CheckCircle size={13} weight="bold" aria-hidden="true" /> Abhaken
-                  </button>
-                  <button
-                    className="btn-icon"
-                    style={{ marginLeft: 'auto' }}
-                    onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
-                    aria-label="Weitere Aktionen"
-                    aria-haspopup="true"
-                    aria-expanded={menuOpen === item.id}
-                  >
-                    <DotsThree size={16} weight="bold" aria-hidden="true" />
-                  </button>
-
-                  {menuOpen === item.id && (
-                    <div
-                      className="dropdown"
-                      style={{ position: 'absolute' as const, right: 12, top: 44, zIndex: 10, minWidth: 180 }}
-                      role="menu"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        role="menuitem"
-                        className="dropdown-item"
-                        onClick={async () => { await markItemNotRelevant(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
-                      </button>
-                      <button
-                        role="menuitem"
-                        className="dropdown-item"
-                        onClick={async () => { await archiveItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
-                      </button>
-                      <div className="dropdown-divider" />
-                      <button
-                        role="menuitem"
-                        className="dropdown-item dropdown-item--danger"
-                        onClick={async () => { await deleteItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
-                      </button>
+                  {src && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
+                      {src.name}
                     </div>
                   )}
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>{item.title}</div>
+                  {item.summary && (
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 }}>{item.summary}</div>
+                  )}
+                  {item.keyFacts && item.keyFacts.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
+                      {item.keyFacts.slice(0, 4).map((f, i) => (
+                        <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {item.url && (
+                      <a href={item.url} target="_blank" rel="noreferrer noopener" className="btn btn-ghost btn-sm"
+                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        aria-label={`Artikel öffnen: ${item.title}`}>
+                        <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
+                      </a>
+                    )}
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: item.isSaved ? 'var(--accent)' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      onClick={async (e) => { e.stopPropagation(); await toggleItemSaved(item.id, !item.isSaved); setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it)) }}
+                      aria-pressed={item.isSaved} aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
+                    >
+                      <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'bold'} aria-hidden="true" />
+                      {item.isSaved ? 'Gespeichert' : 'Merken'}
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      onClick={async (e) => { e.stopPropagation(); await markItemRead(item.id); setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: 'read' } : it)) }}
+                      aria-label="Als gelesen markieren"
+                    >
+                      <CheckCircle size={13} weight="bold" aria-hidden="true" /> Abhaken
+                    </button>
+                    <button
+                      className="btn-icon" style={{ marginLeft: 'auto' }}
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
+                      aria-label="Weitere Aktionen" aria-haspopup="true" aria-expanded={menuOpen === item.id}
+                    >
+                      <DotsThree size={16} weight="bold" aria-hidden="true" />
+                    </button>
+                    {menuOpen === item.id && (
+                      <div className="dropdown" style={{ position: 'absolute' as const, right: 12, top: 44, zIndex: 10, minWidth: 180 }} role="menu" onClick={(e) => e.stopPropagation()}>
+                        <button role="menuitem" className="dropdown-item"
+                          onClick={async () => { await markItemNotRelevant(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}>
+                          <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
+                        </button>
+                        <button role="menuitem" className="dropdown-item"
+                          onClick={async () => { await archiveItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}>
+                          <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
+                        </button>
+                        <div className="dropdown-divider" />
+                        <button role="menuitem" className="dropdown-item dropdown-item--danger"
+                          onClick={async () => { await deleteItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}>
+                          <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+            {items.length < total && (
+              <button className="btn btn-ghost" style={{ alignSelf: 'center', marginTop: 8 }} onClick={() => loadItems(items.length, false)}>
+                Mehr laden ({total - items.length} weitere)
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
-          {items.length < total && (
-            <button
-              className="btn btn-ghost"
-              style={{ alignSelf: 'center', marginTop: 8 }}
-              onClick={() => loadItems(items.length, false)}
-            >
-              Mehr laden ({total - items.length} weitere)
-            </button>
-          )}
-      </div>
+      {/* ── SOURCES VIEW ─────────────────────────────────────────────────────── */}
+      {view === 'sources' && <SourcesView />}
     </div>
   )
 }

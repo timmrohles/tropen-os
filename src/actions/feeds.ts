@@ -171,6 +171,37 @@ export async function deleteFeedSource(id: string) {
   return { ok: true }
 }
 
+export async function copyFeedSource(id: string) {
+  const me = await getAuthUser()
+  if (!me) return { error: 'Nicht autorisiert' }
+  const { data: src, error: fetchErr } = await supabaseAdmin
+    .from('feed_sources')
+    .select('*')
+    .eq('id', id)
+    .eq('organization_id', me.organization_id)
+    .single()
+  if (fetchErr || !src) return { error: 'Quelle nicht gefunden' }
+  const { data, error } = await supabaseAdmin
+    .from('feed_sources')
+    .insert({
+      organization_id: me.organization_id,
+      user_id: me.id,
+      name: `${src.name} (Kopie)`,
+      type: src.type,
+      url: src.url,
+      config: src.config ?? {},
+      keywords_include: src.keywords_include ?? [],
+      keywords_exclude: src.keywords_exclude ?? [],
+      domains_allow: src.domains_allow ?? [],
+      min_score: src.min_score,
+      schema_id: src.schema_id ?? null,
+      is_active: false,
+    })
+    .select().single()
+  if (error) return { error: error.message }
+  return { source: mapSource(data as Record<string, unknown>) }
+}
+
 // ---------------------------------------------------------------------------
 // Feed Items
 // ---------------------------------------------------------------------------
