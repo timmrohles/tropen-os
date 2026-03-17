@@ -3,6 +3,19 @@
 
 ---
 
+# ⚠️ System-Architekt
+
+**Lies vor jedem Build zuerst: `ARCHITECT.md`**
+
+Der System-Architekt ist der Bauleiter von Tropen OS.
+Kein Feature ohne Architektur-Review.
+Kein Build ohne abschließende CLAUDE.md-Aktualisierung.
+Kein Build ohne Eintrag in `docs/architect-log.md`.
+
+**Kurzregel:** Lesen → Review → Ampel → Bauen → Dokumentieren
+
+---
+
 # ⛔ STOP — Lies das als Erstes
 
 ## Pflicht-Protokoll vor jedem Build
