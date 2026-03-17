@@ -1,9 +1,7 @@
 // supabase/functions/ai-chat/index.ts
-// Tropen OS v2 – AI Chat Edge Function mit Task-Router + Streaming
+// Tropen OS v3 – Multi-Provider AI Chat (Anthropic / OpenAI)
 //
-// Pipeline: Anfrage → Task-Erkennung → Agent → Policy Check → Modellklasse → Modell → Dify Chatflow SSE → Stream
-// Dify App: tropen-os-chat-v2 (Chatflow, nicht Workflow)
-// Endpoint: /v1/chat-messages
+// Pipeline: Auth → Task-Router → Model-Routing → Budget → History → Knowledge → LLM → Stream
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -12,22 +10,41 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Typen
 // ─────────────────────────────────────────
 
-type TaskType = "chat" | "summarize" | "extract" | "research" | "create";
-type Agent = "general" | "knowledge" | "content" | "business";
+type TaskType   = "chat" | "summarize" | "extract" | "research" | "create";
+type Agent      = "general" | "knowledge" | "content" | "business";
 type ModelClass = "fast" | "deep" | "safe";
+type Provider   = "anthropic" | "openai" | "mistral" | "google";
+
+interface WorkflowPlanParam {
+  api_model_id:  string;   // e.g. "claude-sonnet-4-20250514"
+  provider:      string;   // "anthropic" | "openai"
+  system_prompt: string;   // merged capability + outcome prompt
+}
 
 interface ChatRequest {
-  workspace_id: string;
+  workspace_id:    string;
   conversation_id: string;
-  message: string;
-  agent_id?: string;
+  message:         string;
+  agent_id?:       string;
+  workflow_plan?:  WorkflowPlanParam;  // pre-resolved via /api/capabilities/resolve
 }
 
 interface TaskRouterResult {
-  task_type: TaskType;
-  agent: Agent;
+  task_type:   TaskType;
+  agent:       Agent;
   model_class: ModelClass;
 }
+
+interface HistoryMsg { role: "user" | "assistant"; content: string }
+
+// ─────────────────────────────────────────
+// Konstanten
+// ─────────────────────────────────────────
+
+const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANTHROPIC_API_KEY    = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const OPENAI_API_KEY       = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 // ─────────────────────────────────────────
 // Task-Router: Keyword-Matching
@@ -37,13 +54,13 @@ function detectTask(message: string): TaskRouterResult {
   const msg = message.toLowerCase();
 
   let task_type: TaskType = "chat";
-  if (/zusammenfass|summar|tl;dr|kürz|überblick/i.test(msg))              task_type = "summarize";
+  if (/zusammenfass|summar|tl;dr|kürz|überblick/i.test(msg))                task_type = "summarize";
   else if (/extrahier|extract|liste alle|finde alle|zähle|auflist/i.test(msg)) task_type = "extract";
   else if (/recherchier|research|analysier|vergleich|markt|wettbewerb/i.test(msg)) task_type = "research";
   else if (/schreib|erstell|generier|entwurf|kreier|verfass|formulier/i.test(msg)) task_type = "create";
 
   let agent: Agent = "general";
-  if (/dokument|pdf|artikel|text|bericht|protokoll|notiz/i.test(msg))      agent = "knowledge";
+  if (/dokument|pdf|artikel|text|bericht|protokoll|notiz/i.test(msg))       agent = "knowledge";
   else if (/email|brief|angebot|präsentation|vorlage|newsletter/i.test(msg)) agent = "content";
   else if (/rechnung|vertrag|lieferant|kunde|umsatz|kosten|budget|projekt/i.test(msg)) agent = "business";
 
@@ -55,49 +72,63 @@ function detectTask(message: string): TaskRouterResult {
 }
 
 // ─────────────────────────────────────────
-// Art. 12 KI-Logging (DSGVO-konform)
+// System-Prompt Builder
 // ─────────────────────────────────────────
 
-async function hashUserId(userId: string): Promise<string> {
-  const data = new TextEncoder().encode(userId);
-  const buf  = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
-}
+function buildSystemPrompt(p: {
+  aiGuideName:          string;
+  taskType:             string;
+  agent:                string;
+  chatStyle:            string;
+  proactiveHints:       boolean;
+  thinkingMode:         boolean;
+  agentSystemPrompt:    string | null;
+  workflowSystemPrompt: string | null;
+  projectContext:       string | null;
+  projectMemory:        string | null;
+  knowledgeContext:     string;
+}): string {
+  const lines: string[] = [];
 
-function logRouting(
-  supabase: ReturnType<typeof createClient>,
-  entry: {
-    task_type: string;
-    model_selected: string;
-    routing_reason: string;
-    latency_ms: number | null;
-    status: "success" | "error";
-    error_message?: string;
-    user_id_hashed: string | null;
+  lines.push(`Du bist ${p.aiGuideName}, ein intelligenter KI-Arbeitsassistent.`);
+  lines.push(`Antworte auf Deutsch, präzise und professionell.`);
+  lines.push(`Kennzeichne Unsicherheiten explizit. Du bist ein KI-System – weise darauf hin wenn relevant.`);
+
+  if (p.chatStyle === "concise")        lines.push("Antworte knapp und direkt – kein Fülltext.");
+  else if (p.chatStyle === "detailed")  lines.push("Antworte ausführlich mit klaren Abschnitten und Erklärungen.");
+  else                                   lines.push("Antworte strukturiert mit Markdown wenn sinnvoll.");
+
+  if (p.proactiveHints) lines.push("Gib proaktiv relevante Hinweise, Folgefragen oder Empfehlungen.");
+  if (p.thinkingMode)   lines.push("Erkläre deinen Denkprozess Schritt für Schritt bevor du antwortest.");
+
+  if (p.workflowSystemPrompt) {
+    lines.push("\n## Capability-Kontext");
+    lines.push(p.workflowSystemPrompt);
   }
-): void {
-  // Fire-and-forget — darf nie den Request blockieren
-  supabase.from("qa_routing_log").insert({
-    task_type:      entry.task_type,
-    model_selected: entry.model_selected,
-    routing_reason: entry.routing_reason,
-    latency_ms:     entry.latency_ms,
-    status:         entry.status,
-    error_message:  entry.error_message ?? null,
-    user_id:        entry.user_id_hashed,
-  }).then(({ error }) => {
-    if (error) console.warn("[qa_routing_log] insert fehlgeschlagen:", error.message);
-  });
+
+  if (p.agentSystemPrompt) {
+    lines.push("\n## Spezialisierung");
+    lines.push(p.agentSystemPrompt);
+  }
+
+  if (p.projectContext) {
+    lines.push("\n## Projekt-Kontext");
+    lines.push(p.projectContext);
+  }
+
+  if (p.projectMemory) {
+    lines.push("\n## Projekt-Gedächtnis (Erkenntnisse aus früheren Gesprächen)");
+    lines.push(p.projectMemory);
+  }
+
+  if (p.knowledgeContext) {
+    lines.push("\n## Wissensbasis (relevante Dokumente)");
+    lines.push(p.knowledgeContext);
+    lines.push("\nNutze diese Informationen um die Anfrage zu beantworten. Zitiere die Quelle wenn du Inhalte daraus verwendest.");
+  }
+
+  return lines.join("\n");
 }
-
-// ─────────────────────────────────────────
-// Konstanten
-// ─────────────────────────────────────────
-
-const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DIFY_API_URL        = (Deno.env.get("DIFY_API_URL") ?? "").trim();
-const DIFY_API_KEY        = (Deno.env.get("DIFY_API_KEY") ?? "").trim();  // Key der Chatflow-App tropen-os-chat-v2
 
 // ─────────────────────────────────────────
 // Hilfsfunktionen
@@ -117,15 +148,162 @@ function errorResponse(message: string, status = 400) {
   });
 }
 
-function calculateCost(
-  tokensInput: number,
-  tokensOutput: number,
-  costPer1kInput: number,
-  costPer1kOutput: number
-): number {
-  return Math.round(
-    ((tokensInput / 1000) * costPer1kInput + (tokensOutput / 1000) * costPer1kOutput) * 10000
-  ) / 10000;
+function calculateCost(tokensIn: number, tokensOut: number, costIn: number, costOut: number): number {
+  return Math.round(((tokensIn / 1000) * costIn + (tokensOut / 1000) * costOut) * 10000) / 10000;
+}
+
+/** Approximate token count: ~4 chars per token (conservative for German text) */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+async function hashUserId(userId: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+
+// ─────────────────────────────────────────
+// Provider API Calls
+// ─────────────────────────────────────────
+
+function callAnthropic(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string) {
+  const messages = [...history, { role: "user", content: userMessage }];
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ model: apiModelId, max_tokens: 4096, system: systemPrompt, messages, stream: true }),
+  });
+}
+
+function callOpenAI(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string) {
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history,
+    { role: "user", content: userMessage },
+  ];
+  return fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: apiModelId, messages, stream: true, stream_options: { include_usage: true } }),
+  });
+}
+
+// ─────────────────────────────────────────
+// Stream-Parser pro Provider
+// ─────────────────────────────────────────
+
+async function streamAnthropic(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  send: (obj: Record<string, unknown>) => void
+): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string }> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullAnswer = "";
+  let tokensIn = 0;
+  let tokensOut = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const raw = line.slice(6).trim();
+      if (!raw) continue;
+      let parsed: Record<string, unknown>;
+      try { parsed = JSON.parse(raw); } catch { continue; }
+
+      const type = parsed.type as string;
+
+      if (type === "content_block_delta") {
+        const delta = parsed.delta as { type?: string; text?: string } | undefined;
+        if (delta?.type === "text_delta" && delta.text) {
+          fullAnswer += delta.text;
+          send({ type: "chunk", content: delta.text });
+        }
+      } else if (type === "message_start") {
+        const usage = (parsed.message as { usage?: { input_tokens?: number } } | undefined)?.usage;
+        tokensIn = usage?.input_tokens ?? 0;
+      } else if (type === "message_delta") {
+        const usage = (parsed.usage as { output_tokens?: number } | undefined);
+        tokensOut = usage?.output_tokens ?? 0;
+      }
+    }
+  }
+  return { tokensIn, tokensOut, fullAnswer };
+}
+
+async function streamOpenAI(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  send: (obj: Record<string, unknown>) => void
+): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string }> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullAnswer = "";
+  let tokensIn = 0;
+  let tokensOut = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const raw = line.slice(6).trim();
+      if (!raw || raw === "[DONE]") continue;
+      let parsed: Record<string, unknown>;
+      try { parsed = JSON.parse(raw); } catch { continue; }
+
+      const choices = parsed.choices as Array<{ delta?: { content?: string } }> | undefined;
+      const chunk = choices?.[0]?.delta?.content;
+      if (chunk) {
+        fullAnswer += chunk;
+        send({ type: "chunk", content: chunk });
+      }
+
+      const usage = parsed.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined;
+      if (usage) {
+        tokensIn  = usage.prompt_tokens    ?? tokensIn;
+        tokensOut = usage.completion_tokens ?? tokensOut;
+      }
+    }
+  }
+  return { tokensIn, tokensOut, fullAnswer };
+}
+
+// ─────────────────────────────────────────
+// Art. 12 KI-Logging
+// ─────────────────────────────────────────
+
+function logRouting(
+  supabase: ReturnType<typeof createClient>,
+  entry: {
+    task_type: string; model_selected: string; routing_reason: string;
+    latency_ms: number | null; status: "success" | "error";
+    error_message?: string; user_id_hashed: string | null;
+  }
+): void {
+  supabase.from("qa_routing_log").insert({
+    task_type:      entry.task_type,
+    model_selected: entry.model_selected,
+    routing_reason: entry.routing_reason,
+    latency_ms:     entry.latency_ms,
+    status:         entry.status,
+    error_message:  entry.error_message ?? null,
+    user_id:        entry.user_id_hashed,
+  }).then(({ error }) => {
+    if (error) console.warn("[qa_routing_log] insert fehlgeschlagen:", error.message);
+  });
 }
 
 // ─────────────────────────────────────────
@@ -133,9 +311,7 @@ function calculateCost(
 // ─────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders() });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders() });
 
   try {
     const requestStart = Date.now();
@@ -150,443 +326,269 @@ serve(async (req) => {
     const user = authData?.user;
     if (authError || !user) return errorResponse("Ungültiger Token", 401);
 
-    // 2. Request Body
-    console.log("Step 2: Body parsen");
+    // 2. Body
     const body: ChatRequest = await req.json();
     const { workspace_id, conversation_id, message, agent_id } = body;
-    if (!workspace_id || !conversation_id || !message) {
-      return errorResponse("Fehlende Parameter");
-    }
+    if (!workspace_id || !conversation_id || !message) return errorResponse("Fehlende Parameter");
 
     // 3. Task-Router
-    console.log("Step 3: Task-Router");
     const { task_type, agent, model_class } = detectTask(message);
 
-    // 4. User-Profil + Organisation
-    console.log("Step 4: User-Profil laden");
+    // 4. User-Profil
     const { data: userProfile, error: profileError } = await supabase
-      .from("users")
-      .select("*, organizations(*)")
-      .eq("id", user.id)
-      .single();
-
+      .from("users").select("*, organizations(*)").eq("id", user.id).single();
     if (profileError || !userProfile) return errorResponse("User nicht gefunden", 404);
     if (!userProfile.is_active) return errorResponse("Account deaktiviert", 403);
-
     const organization = userProfile.organizations as { budget_limit: number | null };
 
-    // 5. User-Präferenzen + Org-Einstellungen laden
-    console.log("Step 5: User-Präferenzen laden");
+    // 5. Präferenzen + Org-Settings
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
-      supabase
-        .from("user_preferences")
-        .select("chat_style, memory_window, proactive_hints, thinking_mode")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("organization_settings")
-        .select("ai_guide_name")
-        .eq("organization_id", userProfile.organization_id)
-        .maybeSingle(),
+      supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode").eq("user_id", user.id).maybeSingle(),
+      supabase.from("organization_settings").select("ai_guide_name").eq("organization_id", userProfile.organization_id).maybeSingle(),
     ]);
-
     const chatStyle      = userPrefs?.chat_style      ?? "structured";
     const memorySize     = userPrefs?.memory_window   ?? 20;
     const proactiveHints = userPrefs?.proactive_hints ?? true;
     const thinkingMode   = userPrefs?.thinking_mode   ?? false;
     const aiGuideName    = orgSettings?.ai_guide_name ?? "Toro";
 
-    // 5b. Agent-System-Prompt laden (wenn agent_id übergeben)
+    // 5b. Agent-System-Prompt
     let agentSystemPrompt: string | null = null;
     if (agent_id) {
-      const { data: agentData } = await supabase
-        .from("agents")
-        .select("system_prompt, name")
-        .eq("id", agent_id)
-        .maybeSingle();
+      const { data: agentData } = await supabase.from("agents").select("system_prompt").eq("id", agent_id).maybeSingle();
       agentSystemPrompt = agentData?.system_prompt ?? null;
     }
 
-    // 6. Workspace-Zugang + Policy Check
-    console.log("Step 6: Workspace-Zugang prüfen");
+    // 6. Workspace-Zugang
     const { data: membership } = await supabase
-      .from("department_members")
-      .select("role")
-      .eq("workspace_id", workspace_id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership || membership.role === "viewer") {
-      return errorResponse("Kein Zugang zu diesem Workspace", 403);
-    }
+      .from("department_members").select("role").eq("workspace_id", workspace_id).eq("user_id", user.id).single();
+    if (!membership || membership.role === "viewer") return errorResponse("Kein Zugang zu diesem Workspace", 403);
 
     const { data: workspace, error: wsError } = await supabase
-      .from("departments")
-      .select("*")
-      .eq("id", workspace_id)
-      .eq("organization_id", userProfile.organization_id)
-      .single();
-
+      .from("departments").select("*").eq("id", workspace_id).eq("organization_id", userProfile.organization_id).single();
     if (wsError || !workspace) return errorResponse("Workspace nicht gefunden", 404);
 
     const allowedClasses: string[] = workspace.allowed_model_classes ?? ["fast"];
-    const effectiveClass: ModelClass = allowedClasses.includes(model_class)
-      ? model_class
-      : (allowedClasses[0] as ModelClass);
+    const effectiveClass: ModelClass = allowedClasses.includes(model_class) ? model_class : (allowedClasses[0] as ModelClass);
 
-    // 7. Günstigstes aktives Modell der Klasse wählen
-    console.log("Step 7: Modell wählen, Klasse:", effectiveClass);
+    // 7. Günstigstes Modell der Klasse
     const { data: models, error: modelError } = await supabase
-      .from("model_catalog")
-      .select("*")
-      .eq("model_class", effectiveClass)
-      .eq("is_active", true)
-      .order("cost_per_1k_input", { ascending: true })
-      .limit(1);
-
-    if (modelError || !models?.length) {
-      return errorResponse(`Kein aktives Modell für Klasse "${effectiveClass}"`, 400);
-    }
+      .from("model_catalog").select("*").eq("model_class", effectiveClass).eq("is_active", true)
+      .order("cost_per_1k_input", { ascending: true }).limit(1);
+    if (modelError || !models?.length) return errorResponse(`Kein aktives Modell für Klasse "${effectiveClass}"`, 400);
     const modelData = models[0];
+    let provider   = (modelData.provider  as Provider) ?? "anthropic";
+    let apiModelId = (modelData.api_model_id as string) ?? (modelData.name as string);
 
-    // 8. Budget-Kontrolle – atomisch via RPC
-    console.log("Step 8: Budget prüfen");
-    const estimatedCost = 0.01;
+    // 7b. workflow_plan override (pre-resolved via /api/capabilities/resolve)
+    const wp = body.workflow_plan;
+    if (wp) {
+      provider   = wp.provider as Provider;
+      apiModelId = wp.api_model_id;
+    }
+
+    console.log(`Modell: ${apiModelId} (${provider})${wp ? " [workflow_plan]" : ` | Klasse: ${effectiveClass}`}`);
+
+    // 8. Budget-Kontrolle
     const { data: budgetOk, error: budgetError } = await supabase.rpc(
       "check_and_reserve_budget",
-      { org_id: userProfile.organization_id, p_workspace_id: workspace_id, estimated_cost: estimatedCost }
+      { org_id: userProfile.organization_id, p_workspace_id: workspace_id, estimated_cost: 0.01 }
     );
+    if (budgetError) return errorResponse("Budget-Prüfung fehlgeschlagen", 500);
+    if (!budgetOk)   return errorResponse("Monatliches Budget erreicht. Bitte Admin kontaktieren.", 402);
 
-    if (budgetError) {
-      console.error("Budget RPC Fehler:", budgetError);
-      return errorResponse("Budget-Prüfung fehlgeschlagen", 500);
-    }
-    if (!budgetOk) {
-      return errorResponse("Monatliches Budget erreicht. Bitte Admin kontaktieren.", 402);
-    }
-
-    // Budget-Stand für done-Event
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const { data: usageThisMonth } = await supabase
-      .from("usage_logs")
-      .select("cost_eur")
-      .eq("organization_id", userProfile.organization_id)
+    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+    const { data: usageThisMonth } = await supabase.from("usage_logs")
+      .select("cost_eur").eq("organization_id", userProfile.organization_id)
       .gte("created_at", startOfMonth.toISOString());
     const totalSpent = usageThisMonth?.reduce((s, r) => s + (r.cost_eur || 0), 0) ?? 0;
 
-    // 9. dify_conversation_id + project_id laden – mit IDOR-Schutz
+    // 9. Konversation + Projekt-Kontext
     const { data: convData, error: convError } = await supabase
-      .from("conversations")
-      .select("dify_conversation_id, project_id")
-      .eq("id", conversation_id)
-      .eq("workspace_id", workspace_id)
-      .eq("user_id", user.id)
-      .single();
-
+      .from("conversations").select("project_id")
+      .eq("id", conversation_id).eq("workspace_id", workspace_id).eq("user_id", user.id).single();
     if (convError || !convData) return errorResponse("Unterhaltung nicht gefunden", 404);
 
-    const difyConversationId = convData.dify_conversation_id ?? null;
-
-    // 9b. Projekt-Kontext laden (instructions = manuelles Kontext-Textfeld, chat-14)
-    let projectContext: string | null = null;
     const projectId = (convData as { project_id?: string | null }).project_id ?? null;
+    let projectContext: string | null = null;
+    let projectMemory: string | null = null;
     if (projectId) {
-      const { data: projectData } = await supabase
-        .from("projects")
-        .select("instructions")
-        .eq("id", projectId)
-        .is("deleted_at", null)
-        .single();
+      const [{ data: projectData }, { data: memoryRows }] = await Promise.all([
+        supabase.from("projects")
+          .select("instructions").eq("id", projectId).is("deleted_at", null).single(),
+        supabase.from("project_memory")
+          .select("type, content")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
       projectContext = projectData?.instructions ?? null;
+      if (memoryRows && memoryRows.length > 0) {
+        projectMemory = (memoryRows as { type: string; content: string }[])
+          .map(m => `[${m.type}] ${m.content}`)
+          .join("\n");
+      }
     }
 
-    // 9c. Knowledge-Search: relevante Chunks direkt per RPC + OpenAI (kein Edge-zu-Edge-Aufruf)
-    console.log("Step 9c: Knowledge-Search (inline)");
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-    const SIMILARITY_THRESHOLD = 0.3;
-    const TOP_K = 5;
+    // 10. Knowledge-Search (inline — kein Edge-zu-Edge-Aufruf)
+    const OPENAI_KEY_FOR_EMBED = Deno.env.get("OPENAI_API_KEY")!;
     let knowledgeContext = "";
     try {
-      // 1. Query-Embedding erstellen
       const embRes = await fetch("https://api.openai.com/v1/embeddings", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        headers: { "Authorization": `Bearer ${OPENAI_KEY_FOR_EMBED}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "text-embedding-3-small", input: message }),
       });
-      if (!embRes.ok) throw new Error(`Embedding Fehler: ${embRes.status}`);
-      const embData = await embRes.json() as { data: [{ embedding: number[] }] };
-      const queryEmbedding = embData.data[0].embedding;
-      const embeddingStr = `[${queryEmbedding.join(",")}]`;
+      if (embRes.ok) {
+        const embData = await embRes.json() as { data: [{ embedding: number[] }] };
+        const embeddingStr = `[${embData.data[0].embedding.join(",")}]`;
 
-      // 2. Chunks per RPC suchen
-      const { data: ksResults, error: ksErr } = await supabase.rpc("search_knowledge_chunks", {
-        query_embedding:  embeddingStr,
-        match_org_id:     userProfile.organization_id,
-        match_user_id:    user.id,
-        match_project_id: projectId,
-        match_threshold:  SIMILARITY_THRESHOLD,
-        match_count:      TOP_K * 3,
-      });
-      if (ksErr) throw new Error(ksErr.message);
+        const { data: ksResults } = await supabase.rpc("search_knowledge_chunks", {
+          query_embedding:  embeddingStr,
+          match_org_id:     userProfile.organization_id,
+          match_user_id:    user.id,
+          match_project_id: projectId,
+          match_threshold:  0.3,
+          match_count:      15,
+        });
 
-      if (ksResults && ksResults.length > 0) {
-        // Prioritäts-Scoring: Projekt > User > Org
-        const scored = ksResults.map((r: {
-          id: string; content: string; similarity: number;
-          document_id: string; user_id: string | null; project_id: string | null;
-          metadata: Record<string, string>;
-        }) => ({
-          ...r,
-          score: r.similarity + (r.project_id ? 0.2 : r.user_id ? 0.1 : 0),
-        }));
-        scored.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
-        const topChunks = scored.slice(0, TOP_K);
+        if (ksResults && ksResults.length > 0) {
+          const scored = ksResults.map((r: {
+            id: string; content: string; similarity: number;
+            document_id: string; user_id: string | null; project_id: string | null;
+          }) => ({ ...r, score: r.similarity + (r.project_id ? 0.2 : r.user_id ? 0.1 : 0) }));
+          scored.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+          const topChunks = scored.slice(0, 5);
 
-        // Dokument-Metadaten laden
-        const docIds = [...new Set(topChunks.map((c: { document_id: string }) => c.document_id))];
-        const { data: docs } = await supabase
-          .from("knowledge_documents")
-          .select("id, title, created_at")
-          .in("id", docIds);
-        const docMap = new Map((docs ?? []).map((d: { id: string; title: string; created_at: string }) => [d.id, d]));
+          const docIds = [...new Set(topChunks.map((c: { document_id: string }) => c.document_id))];
+          const { data: docs } = await supabase.from("knowledge_documents")
+            .select("id, title, created_at").in("id", docIds);
+          const docMap = new Map((docs ?? []).map((d: { id: string; title: string; created_at: string }) => [d.id, d]));
 
-        knowledgeContext = topChunks.map((c: { content: string; document_id: string }, i: number) => {
-          const doc = docMap.get(c.document_id) as { title: string; created_at: string } | undefined;
-          const citation = doc
-            ? `Quelle: ${doc.title} · ${new Date(doc.created_at).toLocaleDateString("de-DE")}`
-            : "Quelle: Wissensbasis";
-          return `[${i + 1}] ${citation}\n${c.content}`;
-        }).join("\n\n");
-
-        console.log(`Knowledge-Search: ${topChunks.length} Chunks gefunden`);
-      } else {
-        console.log("Knowledge-Search: keine relevanten Chunks gefunden");
+          knowledgeContext = topChunks.map((c: { content: string; document_id: string }, i: number) => {
+            const doc = docMap.get(c.document_id) as { title: string; created_at: string } | undefined;
+            const citation = doc
+              ? `Quelle: ${doc.title} · ${new Date(doc.created_at).toLocaleDateString("de-DE")}`
+              : "Quelle: Wissensbasis";
+            return `[${i + 1}] ${citation}\n${c.content}`;
+          }).join("\n\n");
+          console.log(`Knowledge: ${topChunks.length} Chunks gefunden`);
+        }
       }
     } catch (ksErr) {
       console.warn("Knowledge-Search fehlgeschlagen (non-blocking):", String(ksErr));
     }
 
-    // 10. User-Nachricht speichern
-    const { error: msgError } = await supabase.from("messages").insert({
-      conversation_id,
-      role: "user",
-      content: message,
-      model_used: modelData.name,
-      task_type,
-      agent,
-      model_class: effectiveClass,
-    });
+    // 11. Konversations-History laden
+    const { data: historyRows } = await supabase
+      .from("messages").select("role, content")
+      .eq("conversation_id", conversation_id)
+      .order("created_at", { ascending: true })
+      .limit(memorySize);
+    const history: HistoryMsg[] = (historyRows ?? []).map((r: { role: string; content: string }) => ({
+      role: r.role as "user" | "assistant",
+      content: r.content,
+    }));
 
+    // 12. User-Nachricht speichern
+    const { error: msgError } = await supabase.from("messages").insert({
+      conversation_id, role: "user", content: message,
+      model_used: modelData.name, task_type, agent, model_class: effectiveClass,
+    });
     if (msgError) return errorResponse("Nachricht konnte nicht gespeichert werden", 500);
 
-    // 11. Dify Chatflow aufrufen – /chat-messages Endpoint
-    // conversation_id NUR mitschicken wenn vorhanden (null = neues Gespräch)
-    const difyBody: Record<string, unknown> = {
-      inputs: {
-        task_type,
-        agent,
-        model_class: effectiveClass,
-        chat_style: chatStyle,
-        memory_size: memorySize,
-        ai_guide_name: aiGuideName,
-        proactive_hints: proactiveHints,
-        mark_uncertainty: true,
-        agent_system_prompt: agentSystemPrompt ?? "",
-        project_context: projectContext ?? "",
-        knowledge_context: knowledgeContext,
-        thinking_mode: thinkingMode,
-      },
-      // Knowledge-Context direkt in Query injizieren — Dify-Input-Variablen werden
-      // nur genutzt wenn sie im System-Prompt referenziert sind; die Query ist immer sichtbar.
-      query: knowledgeContext
-        ? `[Relevante Wissensbasis-Inhalte]\n${knowledgeContext}\n\n[Anfrage]\n${message}`
-        : message,
-      response_mode: "streaming",
-      user: user.id,
-    };
-    if (difyConversationId) {
-      difyBody.conversation_id = difyConversationId;
-    }
-
-    console.log("Dify Request:", {
-      conversation_id: difyConversationId,
-      knowledgeContextLength: knowledgeContext.length,
-      hasKnowledge: knowledgeContext.length > 0,
-      queryLength: (difyBody.query as string).length,
-      queryPrefix: (difyBody.query as string).slice(0, 80),
+    // 13. System-Prompt bauen
+    const systemPrompt = buildSystemPrompt({
+      aiGuideName, taskType: task_type, agent, chatStyle,
+      proactiveHints, thinkingMode, agentSystemPrompt,
+      workflowSystemPrompt: wp?.system_prompt ?? null,
+      projectContext, projectMemory, knowledgeContext,
     });
 
-    const difyResponse = await fetch(`${DIFY_API_URL}/chat-messages`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${DIFY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(difyBody),
-    });
+    // 13b. Memory-Warnung: approximierter Kontext-Verbrauch
+    const contextWindow = (modelData.context_window as number | null) ?? 200000;
+    const historyText = history.map(m => m.content).join(" ");
+    const approxTokensUsed =
+      estimateTokens(systemPrompt) +
+      estimateTokens(historyText) +
+      estimateTokens(message);
+    const memoryUsageRatio = approxTokensUsed / contextWindow;
+    const memoryWarning = memoryUsageRatio > 0.85;
 
-    if (!difyResponse.ok) {
-      const difyErrorText = await difyResponse.text();
-      console.error("Dify Fehler:", difyResponse.status, difyErrorText.slice(0, 200));
-      const isHtml = difyErrorText.trimStart().startsWith("<");
-      const difyMsg = isHtml
-        ? `Dify nicht erreichbar (HTTP ${difyResponse.status}). Bitte in wenigen Minuten erneut versuchen.`
-        : `Dify: ${difyErrorText}`;
-      return errorResponse(difyMsg, 502);
+    // 14. LLM aufrufen
+    console.log(`LLM Call: ${provider}/${apiModelId}`);
+    let llmResponse: Response;
+    if (provider === "anthropic") {
+      llmResponse = await callAnthropic(apiModelId, systemPrompt, history, message);
+    } else if (provider === "openai") {
+      llmResponse = await callOpenAI(apiModelId, systemPrompt, history, message);
+    } else {
+      return errorResponse(`Provider "${provider}" wird noch nicht unterstützt.`, 400);
     }
 
-    // 12. SSE-Stream aufbauen und an Client weiterleiten
+    if (!llmResponse.ok) {
+      const errText = await llmResponse.text();
+      console.error(`${provider} Fehler ${llmResponse.status}:`, errText.slice(0, 300));
+      return errorResponse(`LLM-Fehler (${provider} HTTP ${llmResponse.status}): ${errText.slice(0, 200)}`, 502);
+    }
+
+    // 15. SSE-Stream aufbauen
     const encoder = new TextEncoder();
-
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = difyResponse.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let fullAnswer = "";
-        let streamEnded = false;
-        let wfTokens: number | null = null; // Tokens aus workflow_finished, Fallback für message_end
-
         function send(obj: Record<string, unknown>) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         }
 
+        const reader = llmResponse.body!.getReader();
         const hashedUserId = await hashUserId(user.id);
 
-        async function commitSave(difyConvId: string, tokensInput: number, tokensOutput: number) {
-          const costEur = calculateCost(tokensInput, tokensOutput, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
+        try {
+          let tokensIn = 0, tokensOut = 0, fullAnswer = "";
 
-          if (difyConvId && !difyConversationId) {
-            console.log("Speichere dify_conversation_id:", difyConvId);
-            await supabase.from("conversations")
-              .update({ dify_conversation_id: difyConvId })
-              .eq("id", conversation_id);
+          if (provider === "anthropic") {
+            ({ tokensIn, tokensOut, fullAnswer } = await streamAnthropic(reader, send));
+          } else {
+            ({ tokensIn, tokensOut, fullAnswer } = await streamOpenAI(reader, send));
           }
 
-          await supabase.from("messages").insert({
-            conversation_id,
-            role: "assistant",
-            content: fullAnswer,
-            model_used: modelData.name,
-            task_type,
-            agent,
-            model_class: effectiveClass,
-            tokens_input: tokensInput,
-            tokens_output: tokensOutput,
-            cost_eur: costEur,
-          });
+          const costEur = calculateCost(tokensIn, tokensOut, modelData.cost_per_1k_input, modelData.cost_per_1k_output);
 
+          // Antwort + Usage speichern
+          await supabase.from("messages").insert({
+            conversation_id, role: "assistant", content: fullAnswer,
+            model_used: modelData.name, task_type, agent, model_class: effectiveClass,
+            tokens_input: tokensIn, tokens_output: tokensOut, cost_eur: costEur,
+          });
           await supabase.from("usage_logs").insert({
-            organization_id: userProfile.organization_id,
-            workspace_id,
-            user_id: user.id,
-            model_id: modelData.id,
-            task_type,
-            agent,
-            model_class: effectiveClass,
-            tokens_input: tokensInput,
-            tokens_output: tokensOutput,
-            cost_eur: costEur,
+            organization_id: userProfile.organization_id, workspace_id,
+            user_id: user.id, model_id: modelData.id, task_type, agent,
+            model_class: effectiveClass, tokens_input: tokensIn, tokens_output: tokensOut, cost_eur: costEur,
           });
 
           send({
             type: "done",
-            routing: { task_type, agent, model_class: effectiveClass, model: modelData.name },
-            usage: { tokens_input: tokensInput, tokens_output: tokensOutput, cost_eur: costEur },
+            routing: { task_type, agent, model_class: effectiveClass, model: apiModelId },
+            usage: { tokens_input: tokensIn, tokens_output: tokensOut, cost_eur: costEur },
             budget: {
               spent_this_month: Math.round((totalSpent + costEur) * 100) / 100,
               limit: organization.budget_limit ?? null,
             },
+            memory_warning:      memoryWarning,
+            memory_usage_ratio:  Math.round(memoryUsageRatio * 100) / 100,
           });
 
-          // Art. 12 KI-VO: Logging des Routing-Entscheids (fire-and-forget)
           logRouting(supabase, {
-            task_type,
-            model_selected: modelData.name,
-            routing_reason: `${effectiveClass}/${agent}`,
-            latency_ms: Date.now() - requestStart,
-            status: "success",
+            task_type, model_selected: modelData.name,
+            routing_reason: `${effectiveClass}/${agent}/${provider}`,
+            latency_ms: Date.now() - requestStart, status: "success",
             user_id_hashed: hashedUserId,
           });
-        }
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              const raw = line.slice(6).trim();
-              if (!raw) continue;
-
-              let parsed: Record<string, unknown>;
-              try { parsed = JSON.parse(raw); }
-              catch { continue; }
-
-              // Nur Non-Message-Events loggen (kein Spam durch Chunks)
-              if (parsed.event !== "message" && parsed.event !== "text_chunk") {
-                console.log("=== NON-CHUNK EVENT ===", parsed.event, JSON.stringify(parsed).slice(0, 500));
-              }
-
-              if (parsed.event === "message") {
-                // Basic Chat App: Chunk via message event
-                const chunk = (parsed.answer as string) ?? "";
-                if (chunk) {
-                  fullAnswer += chunk;
-                  send({ type: "chunk", content: chunk });
-                }
-
-              } else if (parsed.event === "text_chunk") {
-                // Chatflow: Chunk via text_chunk event
-                const chunk = (parsed.data as { text?: string })?.text ?? "";
-                if (chunk) {
-                  fullAnswer += chunk;
-                  send({ type: "chunk", content: chunk });
-                }
-
-              } else if (parsed.event === "workflow_finished") {
-                // Chatflow: Workflow-internes Abschluss-Event
-                // KEIN conversation_id hier – kommt erst in message_end!
-                // Nur Tokens und Fallback-Antwort sammeln, KEIN streamEnded setzen.
-                const data = parsed.data as { total_tokens?: number; outputs?: { answer?: string } } | undefined;
-                wfTokens = data?.total_tokens ?? null;
-                if (!fullAnswer && data?.outputs?.answer) {
-                  fullAnswer = data.outputs.answer;
-                  send({ type: "chunk", content: fullAnswer });
-                }
-                console.log("workflow_finished: tokens =", wfTokens, "| fullAnswer =", fullAnswer.length, "Zeichen");
-
-              } else if (parsed.event === "message_end" && !streamEnded) {
-                // Chatflow-Terminal-Event: enthält conversation_id + usage
-                streamEnded = true;
-                const streamDifyConvId = (parsed.conversation_id as string) ?? "";
-                const usage = (parsed.metadata as { usage?: { prompt_tokens: number; completion_tokens: number } })?.usage;
-                const tokensInput  = usage?.prompt_tokens    ?? 0;
-                const tokensOutput = usage?.completion_tokens ?? wfTokens ?? 0;
-                console.log("message_end (terminal):", { streamDifyConvId, tokensInput, tokensOutput });
-                await commitSave(streamDifyConvId, tokensInput, tokensOutput);
-
-              } else if (parsed.event === "error") {
-                send({ type: "error", message: (parsed.message as string) ?? "Dify-Fehler" });
-              }
-            }
-          }
         } catch (err) {
           console.error("Stream-Fehler:", err);
           send({ type: "error", message: String(err) });
         } finally {
-          // Fallback: Nur workflow_finished empfangen, kein message_end (z.B. Basic Workflow App)
-          if (!streamEnded && fullAnswer) {
-            console.log("Fallback-Save: kein message_end empfangen, speichere via workflow_finished-Daten");
-            await commitSave("", 0, wfTokens ?? 0);
-          }
           controller.close();
         }
       },
@@ -603,16 +605,11 @@ serve(async (req) => {
 
   } catch (err) {
     console.error("Unerwarteter Fehler:", err);
-    // Best-effort error log (kein user context hier)
     const supabaseForLog = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     logRouting(supabaseForLog, {
-      task_type: "unknown",
-      model_selected: "unknown",
-      routing_reason: "error",
-      latency_ms: null,
-      status: "error",
-      error_message: String(err).slice(0, 500),
-      user_id_hashed: null,
+      task_type: "unknown", model_selected: "unknown", routing_reason: "error",
+      latency_ms: null, status: "error",
+      error_message: String(err).slice(0, 500), user_id_hashed: null,
     });
     return errorResponse("Interner Serverfehler", 500);
   }
