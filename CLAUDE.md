@@ -580,6 +580,7 @@ eslint src/           # keine Fehler
 | `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
+| `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
 
 ---
 
