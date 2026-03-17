@@ -1,22 +1,24 @@
-/**
- * NOTE: This file requires @anthropic-ai/sdk.
- * Install with: pnpm add @anthropic-ai/sdk
- * The package is not yet in package.json — add it before using this module.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
+import { resolveWorkflow } from '@/lib/capability-resolver'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+
 export async function POST(req: NextRequest) {
+  const me = await getAuthUser()
+  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   let body: {
-    workspaceId: string
-    cardId?: string
-    content: string
-    userId: string
+    workspaceId:   string
+    cardId?:       string
+    content:       string
+    capabilityId?: string
+    outcomeId?:    string
   }
 
   try {
@@ -25,11 +27,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { workspaceId, cardId, content, userId } = body
+  const { workspaceId, cardId, content, capabilityId, outcomeId } = body
+  const userId = me.id
 
-  if (!workspaceId || !content || !userId) {
+  if (!workspaceId || !content) {
     return NextResponse.json(
-      { error: 'workspaceId, content, and userId are required' },
+      { error: 'workspaceId and content are required' },
       { status: 400 },
     )
   }
@@ -51,10 +54,29 @@ export async function POST(req: NextRequest) {
       user_id: userId,
     })
 
+    // Capability + Outcome routing (optional — falls back to DEFAULT_MODEL)
+    let modelId = DEFAULT_MODEL
+    let capabilitySystemPrompt: string | null = null
+    if (capabilityId && outcomeId) {
+      try {
+        const plan = await resolveWorkflow(capabilityId, outcomeId, me.id, me.organization_id)
+        if (plan.available) {
+          modelId = plan.model_id
+          capabilitySystemPrompt = plan.system_prompt
+        }
+      } catch {
+        // non-blocking — fall back to default model
+      }
+    }
+
     // Build system prompt
-    const systemPrompt = cardId
+    const baseSystemPrompt = cardId
       ? await buildCardContext(cardId)
       : await buildWorkspaceContext(workspaceId)
+
+    const systemPrompt = capabilitySystemPrompt
+      ? `${capabilitySystemPrompt}\n\n${baseSystemPrompt}`
+      : baseSystemPrompt
 
     // Load history
     let historyQuery = supabaseAdmin
@@ -92,7 +114,7 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           const stream = anthropic.messages.stream({
-            model: 'claude-sonnet-4-6',
+            model: modelId,
             system: systemPrompt,
             messages: apiMessages,
             max_tokens: 2048,
