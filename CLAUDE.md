@@ -43,19 +43,18 @@ Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
 - ✅ Task 0: `src/db/schema.ts` — `outcomes` → `workspaceOutcomes` umbenannt, system-level `outcomes` Typ hinzugefügt, committed
 - ✅ Migration 039 eingespielt: `supabase/migrations/20260317000039_capability_outcome_system.sql`
 - ✅ Migration 040 eingespielt: `supabase/migrations/20260317000040_cards_capability.sql`
-- ⏸️ Migration 041 noch nicht angelegt (Guided Workflows Seed)
+- ✅ Migration 041 eingespielt: `supabase/migrations/20260317000041_guided_workflows_seed.sql`
 
 **Nächste Schritte (in dieser Reihenfolge):**
 
 ```
-1. Migration 041 anlegen + pushen  →  Guided Workflows Seed
-2. src/lib/capability-resolver.ts + Unit Tests
-3. src/lib/validators/capabilities.ts  (Zod)
-4. API Routes: GET /api/capabilities, POST /api/capabilities/resolve, PATCH settings + org-settings
-5. src/lib/guided-workflow-engine.ts + Unit Tests
-6. src/lib/validators/guided.ts  (Zod)
-7. API Routes: GET/POST /api/guided/*
-8. CLAUDE.md Migrations-Tabelle aktualisieren
+1. src/lib/capability-resolver.ts + Unit Tests
+2. src/lib/validators/capabilities.ts  (Zod)
+3. API Routes: GET /api/capabilities, POST /api/capabilities/resolve, PATCH settings + org-settings
+4. src/lib/guided-workflow-engine.ts + Unit Tests
+5. src/lib/validators/guided.ts  (Zod)
+6. API Routes: GET/POST /api/guided/*
+7. CLAUDE.md Migrations-Tabelle aktualisieren
 ```
 
 **Pläne:**
@@ -500,6 +499,7 @@ Letzte relevante Migrationen:
 | 20260314000036_feeds_v2.sql | Feeds v2-Schema mit keywords, min_score, content_hash UNIQUE |
 | 20260317000039_capability_outcome_system.sql | capabilities, outcomes, capability_outcomes, org/user settings, guided_workflows Schema |
 | 20260317000040_cards_capability.sql | cards Extension: capability_id, outcome_id, sources, last_run_at, next_run_at |
+| 20260317000041_guided_workflows_seed.sql | Guided Workflows: 7 System-Workflows + Marketing-Paket geseedet; capability_org_settings um guided_workflows_enabled + allowed_workflow_ids erweitert |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`
 
