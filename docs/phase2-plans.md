@@ -106,7 +106,7 @@ Bei jedem größeren Claude.ai-Release prüfen:
 | **Plan G** | Feeds — 3-stufige Pipeline, Cron, Newscenter UI | ✅ Fertig |
 | **Plan 1** | Capability + Outcome System (DB + API + Resolver) | ✅ Fertig |
 | **Plan D** | Chat & Context Integration | ✅ Fertig |
-| **Plan E** | Transformations-Engine | ⬜ Offen |
+| **Plan E** | Transformations-Engine | ✅ Fertig |
 | **Plan F** | UI (Projekte + Workspaces + Feeds-Settings) | ⬜ Offen |
 | **Plan J** | Geteilte Chats + Team-Antwort | ⬜ Geplant |
 
@@ -157,7 +157,13 @@ Capabilities beschreiben womit Toro arbeitet, Outcomes was rauskommt.
 - `POST /api/transformations` — analyze + suggest + build + link
 - Immer: Vorschau → Bestätigung → Ausführung (nie destruktiv)
 
-**Status:** ⬜ Plan noch zu schreiben
+**Status:** ✅ Fertig (2026-03-17)
+
+**Implementiert:**
+- `src/lib/validators/transformations.ts` — Zod-Schemas (analyze, create, execute)
+- `src/app/api/transformations/analyze/route.ts` — AI-Analyse via claude-haiku, gibt Suggestions zurück
+- `src/app/api/transformations/route.ts` — GET (list) + POST (create pending)
+- `src/app/api/transformations/[id]/route.ts` — GET (detail) + PATCH (execute → workspace oder feed + transformation_link)
 
 ---
 

@@ -497,6 +497,21 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Jeder Workflow hat immer eine `is_custom: true` Option als Escape
 - `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
+### Transformations-Engine (Plan E — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/validators/transformations.ts` | Zod-Schemas: `analyzeSchema`, `createTransformationSchema`, `executeTransformationSchema` |
+| `src/app/api/transformations/analyze/route.ts` | POST — AI-Analyse (claude-haiku), kein DB-Write, gibt max. 2 Suggestions zurück |
+| `src/app/api/transformations/route.ts` | GET (list by source) + POST (create pending) |
+| `src/app/api/transformations/[id]/route.ts` | GET (detail) + PATCH `{ action: 'execute' }` → baut workspace oder feed + transformation_link |
+
+**Regeln:**
+- Immer drei Schritte: `analyze` (kein DB-Write) → `create` (pending) → `execute` (baut target)
+- `execute` ist **nicht destruktiv** — der Source bleibt erhalten
+- `target_type`: nur `'workspace'` und `'feed'` implementiert (kein `'agent'` vorerst)
+- DB-Tabellen: `transformations`, `transformation_links` — aus Migration 032
+
 ### Chat & Context Integration (Plan D — Stand 2026-03-17)
 
 | Datei | Inhalt |
