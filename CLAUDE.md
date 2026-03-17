@@ -48,13 +48,10 @@ Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
 **Nächste Schritte (in dieser Reihenfolge):**
 
 ```
-1. src/lib/capability-resolver.ts + Unit Tests
-2. src/lib/validators/capabilities.ts  (Zod)
-3. API Routes: GET /api/capabilities, POST /api/capabilities/resolve, PATCH settings + org-settings
-4. src/lib/guided-workflow-engine.ts + Unit Tests
-5. src/lib/validators/guided.ts  (Zod)
-6. API Routes: GET/POST /api/guided/*
-7. CLAUDE.md Migrations-Tabelle aktualisieren
+1. src/lib/guided-workflow-engine.ts + Unit Tests
+2. src/lib/validators/guided.ts  (Zod)
+3. API Routes: GET/POST /api/guided/*
+4. CLAUDE.md Migrations-Tabelle aktualisieren
 ```
 
 **Pläne:**
