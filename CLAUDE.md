@@ -497,6 +497,20 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Jeder Workflow hat immer eine `is_custom: true` Option als Escape
 - `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
+### Chat & Context Integration (Plan D — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/functions/ai-chat/index.ts` | `workflow_plan` param, project_memory injection, memory_warning event |
+| `src/lib/project-context.ts` | `loadProjectContext()` — parallele Queries: `projects.instructions` + `project_memory` |
+| `src/app/api/chat/stream/route.ts` | Auth via `getAuthUser()`, Capability-Routing via `resolveWorkflow()`, `capabilityId`/`outcomeId` params |
+
+**Regeln:**
+- `chat/stream` holt `userId` immer via `getAuthUser()` — nie aus dem Request-Body
+- `workflow_plan` wird client-seitig via `/api/guided/resolve` aufgelöst (Deno-Edge kennt keinen Node.js-Resolver)
+- Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
+- `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
+
 ---
 
 ## Vor jedem Commit
