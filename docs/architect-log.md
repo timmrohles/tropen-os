@@ -105,3 +105,21 @@ Workspaces page: Server Component + separater WorkspacesList Client Component.
 - Feeds Pipeline globale Settings (org-weite min_score Defaults) — für Plan I
 
 **Neue Lernmuster:** keine
+
+---
+
+### 2026-03-17 — Dify-Ablösung (jungle-order)
+
+**Ampel:** 🟢
+**Prompt:** Dify komplett ablösen
+
+**Entscheidung:**
+Dify wird vollständig entfernt. `jungle-order` Edge Function ruft jetzt Anthropic direkt via fetch auf (`claude-haiku-4-5-20251001`).
+Kein SDK-Import nötig — gleicher Ansatz wie `ai-chat` (direktes fetch zur Anthropic API).
+
+**Anpassungen:** keine — Drop-in-Ersatz, gleiche Prompts, gleiche JSON-Extraktion
+
+**Offene Punkte:**
+- `DIFY_API_KEY` + `DIFY_API_URL` aus Supabase Edge Function Secrets entfernen (manuell im Dashboard)
+
+**Neue Lernmuster:** keine

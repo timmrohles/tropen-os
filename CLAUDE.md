@@ -240,7 +240,10 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: Anthropic SDK direkt (`ANTHROPIC_API_KEY`) — kein Dify für neue Features.
 
-### Dify — offene Entscheidung (⏸ 2026-03-17)
+### Dify — abgelöst (✅ 2026-03-17)
+
+Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`claude-haiku-4-5-20251001`).
+`DIFY_API_KEY` und `DIFY_API_URL` können aus den Supabase Edge Function Secrets entfernt werden.
 
 <!-- TODO(timm): Dify komplett ablösen oder parallel weiterführen?
   Stand 2026-03-16: ai-chat Edge Function wurde auf direktes Anthropic/OpenAI-Routing umgestellt.

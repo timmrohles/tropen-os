@@ -50,7 +50,7 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | Phase 2 Plan D — Chat & Context Integration | ✅ 2026-03-17 |
 | ✅ Fertig | Phase 2 Plan E — Transformations-Engine (analyze → preview → execute) | ✅ 2026-03-17 |
 | ✅ Fertig | Phase 2 Plan F — UI: Projekte Memory-Tab, Workspaces-Liste | ✅ 2026-03-17 |
-| 🔴 Hoch | **Dify-Entscheidung** — Dify komplett ablösen oder parallel weiterführen? | ⏸ Offen |
+| ✅ Fertig | **Dify abgelöst** — jungle-order auf Anthropic direkt umgestellt | ✅ 2026-03-17 |
 | 🟢 Niedrig | Agenten-System Phase 2 | ⬜ Offen |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
