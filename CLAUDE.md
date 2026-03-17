@@ -34,30 +34,6 @@ Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
 
 ---
 
-## ⏸️ PAUSE — Nächster Build-Schritt (Stand 2026-03-17)
-
-> Diese Sektion nach Abschluss des nächsten Builds entfernen.
-
-**Wo wir aufgehört haben:**
-
-- ✅ Task 0: `src/db/schema.ts` — `outcomes` → `workspaceOutcomes` umbenannt, system-level `outcomes` Typ hinzugefügt, committed
-- ✅ Migration 039 eingespielt: `supabase/migrations/20260317000039_capability_outcome_system.sql`
-- ✅ Migration 040 eingespielt: `supabase/migrations/20260317000040_cards_capability.sql`
-- ✅ Migration 041 eingespielt: `supabase/migrations/20260317000041_guided_workflows_seed.sql`
-
-**Nächste Schritte (in dieser Reihenfolge):**
-
-```
-1. src/lib/guided-workflow-engine.ts + Unit Tests
-2. src/lib/validators/guided.ts  (Zod)
-3. API Routes: GET/POST /api/guided/*
-4. CLAUDE.md Migrations-Tabelle aktualisieren
-```
-
-**Pläne:**
-- `docs/superpowers/plans/2026-03-17-capability-outcome-system.md` — Plan 1 (Migrations + API + Resolver)
-- `docs/superpowers/plans/2026-03-17-guided-workflows.md` — Plan 1b (Guided Engine + API)
-
 ---
 
 ## Wie dieses Dokument funktioniert
@@ -499,6 +475,27 @@ Letzte relevante Migrationen:
 | 20260317000041_guided_workflows_seed.sql | Guided Workflows: 7 System-Workflows + Marketing-Paket geseedet; capability_org_settings um guided_workflows_enabled + allowed_workflow_ids erweitert |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`
+
+### Guided Workflows (Stand 2026-03-17)
+
+Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen vor, User steuert. Maximal 3 Verschachtelungsebenen. Kein LLM-Call bei der Erkennung.
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/guided-workflow-engine.ts` | `detectWorkflow()`, `resolveOption()`, `buildWorkflowPrompt()` |
+| `src/lib/validators/guided.ts` | Zod-Schemas für alle Guided-API-Routes |
+| `src/app/api/guided/detect/route.ts` | POST — Workflow-Erkennung via Keywords + Context |
+| `src/app/api/guided/workflows/route.ts` | GET + POST — Workflows für User (system + org + user scope) |
+| `src/app/api/guided/workflows/[id]/route.ts` | PATCH — Workflow bearbeiten (ownership-guard) |
+| `src/app/api/guided/workflows/[id]/copy/route.ts` | POST — Workflow kopieren → user-scope |
+| `src/app/api/guided/settings/route.ts` | PATCH — User schaltet Guided Workflows ein/aus |
+| `src/app/api/guided/resolve/route.ts` | POST — Option auflösen → next_workflow / capability_plan / custom_input / save_artifact |
+
+**Regeln:**
+- `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
+- Maximal 3 Verschachtelungsebenen (next_workflow_id Chain)
+- Jeder Workflow hat immer eine `is_custom: true` Option als Escape
+- `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
 ---
 
