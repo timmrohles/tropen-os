@@ -497,6 +497,19 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Jeder Workflow hat immer eine `is_custom: true` Option als Escape
 - `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
+### UI — Projekte + Workspaces (Plan F — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/app/projects/page.tsx` | Memory-Count-Badge auf Projektkarten + Gedächtnis-Tab (zeigt project_memory Einträge) |
+| `src/app/workspaces/page.tsx` | Server Component — lädt Workspaces via workspace_participants, rendert WorkspacesList |
+| `src/components/workspaces/WorkspacesList.tsx` | Client Component — Workspace-Grid mit Status, Karten-Zähler, Create-Dialog |
+
+**Regeln:**
+- Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
+- project_memory count kommt vom List-Endpoint (kein Extra-Request per Karte)
+- Memory-Tab lädt lazy beim ersten Klick, nicht beim Seitenaufruf
+
 ### Transformations-Engine (Plan E — Stand 2026-03-17)
 
 | Datei | Inhalt |

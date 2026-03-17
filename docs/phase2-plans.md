@@ -107,7 +107,7 @@ Bei jedem größeren Claude.ai-Release prüfen:
 | **Plan 1** | Capability + Outcome System (DB + API + Resolver) | ✅ Fertig |
 | **Plan D** | Chat & Context Integration | ✅ Fertig |
 | **Plan E** | Transformations-Engine | ✅ Fertig |
-| **Plan F** | UI (Projekte + Workspaces + Feeds-Settings) | ⬜ Offen |
+| **Plan F** | UI (Projekte + Workspaces + Feeds-Settings) | ✅ Fertig |
 | **Plan J** | Geteilte Chats + Team-Antwort | ⬜ Geplant |
 
 ---
@@ -176,4 +176,10 @@ Capabilities beschreiben womit Toro arbeitet, Outcomes was rauskommt.
 - Workspaces-Seite: Karten-Graph-View, Outcome-Board
 - Feeds-Settings: Source-Management, Pipeline-Konfiguration
 
-**Status:** ⬜ Plan noch zu schreiben
+**Status:** ✅ Fertig (2026-03-17)
+
+**Implementiert:**
+- `GET /api/projects`: `project_memory(count)` in Liste
+- `src/app/projects/page.tsx`: Memory-Count-Badge + Gedächtnis-Tab
+- `src/app/workspaces/page.tsx`: Workspace-Liste (Server Component) statt redirect
+- `src/components/workspaces/WorkspacesList.tsx`: Karten mit Status + Karten-Zähler + Create
