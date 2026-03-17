@@ -51,7 +51,11 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | Phase 2 Plan E — Transformations-Engine (analyze → preview → execute) | ✅ 2026-03-17 |
 | ✅ Fertig | Phase 2 Plan F — UI: Projekte Memory-Tab, Workspaces-Liste | ✅ 2026-03-17 |
 | ✅ Fertig | **Dify abgelöst** — jungle-order auf Anthropic direkt umgestellt | ✅ 2026-03-17 |
-| 🟢 Niedrig | Agenten-System Phase 2 | ⬜ Offen |
+| ✅ Fertig | **Plan J spezifiziert** — Produktion: Dashboards, autonome Feeds, Agents | ✅ 2026-03-17 |
+| ✅ Fertig | **Agenten-Spec** — docs/plans/agents-spec.md (Plan J2 Grundlage) | ✅ 2026-03-17 |
+| 🔴 Hoch | **Plan J1** — Feeds autonom: Run-History, konfigurierbare Outputs | ⬜ Nächster Schritt |
+| 🔴 Hoch | **Plan J2** — Agenten-System: DB, Engine, API, Scheduled Runs | ⬜ Nach J1 |
+| 🟡 Mittel | **Plan K** — Geteilte Chats + Team-Antwort | ⬜ Offen |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
 

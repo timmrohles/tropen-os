@@ -555,6 +555,21 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
 - `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
 
+### Agenten-System (Plan J2 — Spec fertig, Build ausstehend)
+
+**Spec:** `docs/plans/agents-spec.md`
+
+| Datei | Status |
+|-------|--------|
+| `agents` Tabelle erweitern (neue Migration) | ⬜ Plan J2 |
+| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2 |
+| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2 |
+| `src/lib/agent-engine.ts` | ⬜ Plan J2 |
+| `/api/agents/**` Routes | ⬜ Plan J2 |
+| Vercel Cron `*/5 * * * *` → `/api/cron/agents/check` | ⬜ Plan J2 |
+
+**Nächster Build-Schritt: Plan J1 (Feeds autonom — Run-History, konfigurierbare Outputs)**
+
 ---
 
 ## Vor jedem Commit
