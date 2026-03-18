@@ -492,8 +492,12 @@ Letzte relevante Migrationen:
 | 20260317000042_feed_dismissed.sql | feed_items: dismissed_at + dismissed_by Spalten für Soft-Hide |
 | 20260317000043_feed_topics.sql | feed_topics + feed_topic_sources Tabellen mit RLS |
 | 20260317000044_feed_data_sources.sql | feed_data_sources + feed_data_records Tabellen (Daten-Tab) mit RLS |
+| 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
+| 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
+| 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
+| 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
 ### Guided Workflows (Stand 2026-03-17)
 
@@ -516,18 +520,26 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Jeder Workflow hat immer eine `is_custom: true` Option als Escape
 - `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
-### UI — Projekte + Workspaces (Plan F — Stand 2026-03-17)
+### UI — Projekte + Workspaces (Plan F — Stand 2026-03-18)
 
 | Datei | Inhalt |
 |-------|--------|
 | `src/app/projects/page.tsx` | Memory-Count-Badge auf Projektkarten + Gedächtnis-Tab (zeigt project_memory Einträge) |
 | `src/app/workspaces/page.tsx` | Server Component — lädt Workspaces via workspace_participants, rendert WorkspacesList |
 | `src/components/workspaces/WorkspacesList.tsx` | Client Component — Workspace-Grid mit Status, Karten-Zähler, Create-Dialog |
+| `src/app/workspaces/[id]/page.tsx` | Server Component — Auth + Workspace/Cards laden, rendert CanvasClient |
+| `src/app/workspaces/[id]/layout.tsx` | Full-screen fixed container (position:fixed, inset:0) für Canvas-Ansicht |
+| `src/app/workspaces/[id]/CanvasClient.tsx` | Client: Header, Tabs (Canvas/Silo-Chat/Einstellungen), Karten-Grid, CreateCardModal |
+| `src/components/workspaces/CardTile.tsx` | Karten-Kachel: Role-Badge, Status, Stale-Warning, Sources-Zähler |
 
-**Regeln:**
+**Canvas-Regeln:**
 - Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
 - project_memory count kommt vom List-Endpoint (kein Extra-Request per Karte)
 - Memory-Tab lädt lazy beim ersten Klick, nicht beim Seitenaufruf
+- Canvas `/workspaces/[id]` = Grid-Canvas (sort_order); Freeform-Canvas bei `/ws/[id]/canvas` bleibt unberührt
+- Karten-API: `POST /api/workspaces/[id]/cards` (createCardSchema: title + role required)
+- Workspace-API: `PATCH /api/workspaces/[id]` (updateWorkspacePlanCSchema)
+- Migration `20260318000049_conversations_workspace.sql`: conversations um workspace_id, card_id, conversation_type erweitert
 
 ### Transformations-Engine (Plan E — Stand 2026-03-17)
 
@@ -558,20 +570,54 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
 - `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
 
-### Agenten-System (Plan J2 — Spec fertig, Build ausstehend)
+### Skills-System (Plan J2a — Stand 2026-03-18)
+
+**Eigenständig von Capabilities** (Option C: Skills = Kontext für Agenten, Capabilities = Modell-Routing für Chat)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/migrations/20260318000047_skills.sql` | skills + agent_skills Tabellen + RLS + 6 System-Skill Seeds |
+| `src/types/agents.ts` | Skill, AgentSkill Interfaces + mapSkill(), mapAgentSkill() |
+| `src/lib/skill-resolver.ts` | getSkillsForUser(), getSkillsForAgent(), resolveSkill(), canAccessSkill(), canModifySkill(), getSystemSkills() |
+| `src/app/api/skills/route.ts` | GET (list with visibility filter) + POST (create) |
+| `src/app/api/skills/[id]/route.ts` | GET (single) + PATCH (update) + DELETE (soft delete) |
+
+**Skill-Sichtbarkeit:**
+- `scope='system'` → immer sichtbar
+- `scope='package'` → sichtbar, API-Layer filtert nach `requires_package`
+- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
+- `scope='user'` → nur eigener User
+
+### Agenten-System (Plan J2b+J2c — Stand 2026-03-18)
 
 **Spec:** `docs/plans/agents-spec.md`
 
-| Datei | Status |
+| Datei | Inhalt |
 |-------|--------|
-| `agents` Tabelle erweitern (neue Migration) | ⬜ Plan J2 |
-| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2 |
-| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2 |
-| `src/lib/agent-engine.ts` | ⬜ Plan J2 |
-| `/api/agents/**` Routes | ⬜ Plan J2 |
-| Vercel Cron `*/5 * * * *` → `/api/cron/agents/check` | ⬜ Plan J2 |
+| `supabase/migrations/20260318000048_agents_v2.sql` | agents ALTER: scope, trigger_type, trigger_config, capability_steps, input_sources, output_targets, requires_approval, max_cost_eur, emoji, is_active, deleted_at + agent_runs (APPEND ONLY) + 5 Marketing-Paket-Agenten |
+| `src/types/agents.ts` | Agent, AgentRun, AgentStep, AgentTriggerConfig, AgentInput, AgentOutput Interfaces + mapAgent(), mapAgentRun() |
+| `src/lib/agent-engine.ts` | runAgent(), executeStep(), checkBudget(), calculateNextRun(), checkScheduledTriggers() |
+| `src/app/api/agents/route.ts` | GET (list, scope-filter) + POST (create) |
+| `src/app/api/agents/[id]/route.ts` | GET (detail + letzten 5 Runs) + PATCH + DELETE (soft) |
+| `src/app/api/agents/[id]/copy/route.ts` | POST — als user-scope kopieren |
+| `src/app/api/agents/[id]/run/route.ts` | POST — manueller Run (gibt run_id zurück) |
+| `src/app/api/agents/[id]/runs/route.ts` | GET — Run-History mit Pagination |
+| `src/app/api/agents/runs/[run_id]/route.ts` | GET — einzelner Run |
+| `src/app/api/agents/webhook/[agent_id]/route.ts` | POST — eingehender Webhook (HMAC-SHA256) |
+| `src/app/api/cron/agents/route.ts` | GET — Vercel Cron (täglich 7 Uhr) → checkScheduledTriggers |
+| `vercel.json` | Cron: `/api/cron/agents` `"0 7 * * *"` |
 
-**Nächster Build-Schritt: Plan J1 (Feeds autonom — Run-History, konfigurierbare Outputs)**
+**Scope-Sichtbarkeit:**
+- `scope='system'` → alle Users
+- `scope='package'` → alle Users (API-Layer prüft requires_package)
+- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
+- `scope='user'` → nur eigener User
+
+**Agenten-Engine Regeln:**
+- Max 1 gleichzeitiger Run pro Agent (rate-limit via agent_runs.status='running')
+- Budget-Check vor jedem Run (30-Tage-Fenster)
+- Webhook-Runs erfordern webhook_secret (HMAC-SHA256)
+- agent_runs ist APPEND ONLY — kein UPDATE/DELETE
 
 ---
 

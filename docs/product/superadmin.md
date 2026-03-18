@@ -63,10 +63,10 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | CI/CD Pipeline vollständig grün — pnpm-Konflikt, OpenAI-Build, E2E-Server, Vercel-Deploy | ✅ 2026-03-18 |
 | ✅ Fertig | Lighthouse CI konfiguriert — VERCEL_PRODUCTION_URL, nicht-fataler DB-Save | ✅ 2026-03-18 |
 | ✅ Fertig | Rate-Limit Fix — Auth-Routes nur noch POST geblockt (kein Sperren beim Seitenaufruf) | ✅ 2026-03-18 |
-| 🔴 Hoch | **Plan J1** — Feeds autonom: Run-History (feed_runs), konfigurierbare Outputs, Vercel-Crons aktivieren | ⬜ Nächster Schritt |
-| 🔴 Hoch | **Plan J2a** — skills-Tabelle + RLS + Seed, agent_skills, skill-resolver | ⬜ Nach J1 |
-| 🔴 Hoch | **Plan J2b** — agents ALTER + agent_runs + agent-engine | ⬜ Nach J2a |
-| 🔴 Hoch | **Plan J2c** — Scheduled Trigger (Cron), Webhook, Paket-Seeds | ⬜ Nach J2b |
+| ✅ Fertig | **Plan J1** — Feeds autonom: feed_runs, feed_notifications, pause/resume, Cron via runFeedSource, Notification Bell | ✅ 2026-03-18 |
+| ✅ Fertig | **Plan J2a** — skills-Tabelle + RLS + Seed, agent_skills, skill-resolver, /api/skills/* | ✅ 2026-03-18 |
+| ✅ Fertig | **Plan J2b** — agents ALTER + agent_runs + agent-engine + /api/agents/** | ✅ 2026-03-18 |
+| ✅ Fertig | **Plan J2c** — Scheduled Trigger (Cron daily 7h), Webhook HMAC, vercel.json | ✅ 2026-03-18 |
 | 🟡 Mittel | **Plan K** — Geteilte Chats + Team-Antwort | ⬜ Offen |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |

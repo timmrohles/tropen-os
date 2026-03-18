@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Suspense } from 'react'
-import ConditionalNavBar from '@/components/ConditionalNavBar'
+import ConditionalAppShell from '@/components/layout/ConditionalAppShell'
 import ImpersonationBanner from '@/components/ImpersonationBanner'
-import AppFooter from '@/components/AppFooter'
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import './globals.css'
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
@@ -50,14 +49,16 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="de">
-      <body className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <body className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
         <ServiceWorkerRegistrar />
-        <ConditionalNavBar />
         <Suspense>
           <ImpersonationBanner />
         </Suspense>
-        <main style={{ flex: 1 }}>{children}</main>
-        <AppFooter />
+        <Suspense>
+          <ConditionalAppShell>
+            {children}
+          </ConditionalAppShell>
+        </Suspense>
       </body>
     </html>
   )

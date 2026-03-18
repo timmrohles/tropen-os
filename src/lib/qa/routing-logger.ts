@@ -4,6 +4,9 @@
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { createHash } from 'node:crypto'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('qa/routing-logger')
 
 export interface RoutingLogEntry {
   taskType: string           // z.B. 'chat', 'code', 'translation'
@@ -19,7 +22,7 @@ export function logRoutingDecision(entry: RoutingLogEntry): void {
   // Fire-and-forget: kein await, kein throw
   _writeToDb(entry).catch((err) => {
     // Nur warnen, nie den Request blockieren
-    console.warn('[RoutingLogger] DB-Write fehlgeschlagen:', err?.message ?? err)
+    log.warn('[RoutingLogger] DB-Write fehlgeschlagen:', err?.message ?? err)
   })
 }
 
