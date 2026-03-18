@@ -248,7 +248,7 @@ export default async function DashboardPage({
   // Render
   // ------------------------------------------------------------------
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 32 }}>
+    <div className="content-max">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Header */}

@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="content-narrow" style={{ textAlign: 'center', paddingTop: 80 }}>
+    <div className="content-narrow" style={{ textAlign: 'center' }}>
       <h2 style={{ color: 'var(--text-primary)', fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
         Seite nicht gefunden
       </h2>
