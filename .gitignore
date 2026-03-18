@@ -41,3 +41,7 @@ test-results/*.json
 coverage/
 .vercel
 .claude/worktrees/
+
+# ── npm lockfile (Projekt nutzt pnpm) ────────────────────
+package-lock.json
+package-lock.json
