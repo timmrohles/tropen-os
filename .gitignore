@@ -45,3 +45,4 @@ coverage/
 # ── npm lockfile (Projekt nutzt pnpm) ────────────────────
 package-lock.json
 package-lock.json
+.worktrees/
