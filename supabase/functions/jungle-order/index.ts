@@ -232,9 +232,8 @@ Antworte NUR mit validem JSON:
     })
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[jungle-order]', message)
-    return new Response(JSON.stringify({ error: message }), {
+    console.error('[jungle-order]', err instanceof Error ? err.message : String(err))
+    return new Response(JSON.stringify({ error: 'Verarbeitung fehlgeschlagen' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
