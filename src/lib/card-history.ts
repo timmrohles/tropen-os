@@ -51,9 +51,8 @@ export async function writeCardSnapshot(
     .single()
 
   if (error) {
-    // History write is non-critical — log but don't block card operations
     log.warn(`writeCardSnapshot failed: ${error.message}`)
-    return {} as CardHistoryEntry
+    throw new Error(`writeCardSnapshot failed: ${error.message}`)
   }
   return mapCardHistory(data)
 }
