@@ -48,7 +48,7 @@ describe('runFeedSource', () => {
   })
 
   it('returns error result when source not found', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: null }) as ReturnType<typeof supabaseAdmin.from>)
+    mockFrom.mockReturnValue(makeChain({ data: null }) as unknown as ReturnType<typeof supabaseAdmin.from>)
 
     const result = await runFeedSource('nonexistent-id')
 
@@ -60,7 +60,7 @@ describe('runFeedSource', () => {
   it('skips paused source', async () => {
     mockFrom.mockReturnValue(makeChain({
       data: { id: 'src-1', organization_id: 'org-1', status: 'paused', name: 'Test' },
-    }) as ReturnType<typeof supabaseAdmin.from>)
+    }) as unknown as ReturnType<typeof supabaseAdmin.from>)
 
     const result = await runFeedSource('src-1')
 
@@ -84,7 +84,7 @@ describe('runFeedSource', () => {
     mockFrom.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        return makeChain({ data: { id: 'src-1', organization_id: 'org-1', status: 'active', name: 'Test' } }) as ReturnType<typeof supabaseAdmin.from>
+        return makeChain({ data: { id: 'src-1', organization_id: 'org-1', status: 'active', name: 'Test' } }) as unknown as ReturnType<typeof supabaseAdmin.from>
       }
       if (callCount === 2) {
         // feed_runs insert → single

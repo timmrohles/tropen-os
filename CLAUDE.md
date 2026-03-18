@@ -492,8 +492,10 @@ Letzte relevante Migrationen:
 | 20260317000042_feed_dismissed.sql | feed_items: dismissed_at + dismissed_by Spalten für Soft-Hide |
 | 20260317000043_feed_topics.sql | feed_topics + feed_topic_sources Tabellen mit RLS |
 | 20260317000044_feed_data_sources.sql | feed_data_sources + feed_data_records Tabellen (Daten-Tab) mit RLS |
+| 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
+| 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`
 
 ### Guided Workflows (Stand 2026-03-17)
 
@@ -558,20 +560,36 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
 - `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
 
-### Agenten-System (Plan J2 — Spec fertig, Build ausstehend)
+### Skills-System (Plan J2a — Stand 2026-03-18)
+
+**Eigenständig von Capabilities** (Option C: Skills = Kontext für Agenten, Capabilities = Modell-Routing für Chat)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/migrations/20260318000047_skills.sql` | skills + agent_skills Tabellen + RLS + 6 System-Skill Seeds |
+| `src/types/agents.ts` | Skill, AgentSkill Interfaces + mapSkill(), mapAgentSkill() |
+| `src/lib/skill-resolver.ts` | getSkillsForUser(), getSkillsForAgent(), resolveSkill(), canAccessSkill(), canModifySkill(), getSystemSkills() |
+| `src/app/api/skills/route.ts` | GET (list with visibility filter) + POST (create) |
+| `src/app/api/skills/[id]/route.ts` | GET (single) + PATCH (update) + DELETE (soft delete) |
+
+**Skill-Sichtbarkeit:**
+- `scope='system'` → immer sichtbar
+- `scope='package'` → sichtbar, API-Layer filtert nach `requires_package`
+- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
+- `scope='user'` → nur eigener User
+
+### Agenten-System (Plan J2b/J2c — ausstehend)
 
 **Spec:** `docs/plans/agents-spec.md`
 
 | Datei | Status |
 |-------|--------|
-| `agents` Tabelle erweitern (neue Migration) | ⬜ Plan J2 |
-| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2 |
-| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2 |
-| `src/lib/agent-engine.ts` | ⬜ Plan J2 |
-| `/api/agents/**` Routes | ⬜ Plan J2 |
-| Vercel Cron `*/5 * * * *` → `/api/cron/agents/check` | ⬜ Plan J2 |
-
-**Nächster Build-Schritt: Plan J1 (Feeds autonom — Run-History, konfigurierbare Outputs)**
+| `agents` Tabelle erweitern (scope, trigger_type, etc.) | ⬜ Plan J2b |
+| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2b |
+| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2b |
+| `src/lib/agent-engine.ts` | ⬜ Plan J2b |
+| `/api/agents/**` Routes | ⬜ Plan J2b |
+| Scheduled Trigger (Cron), Webhook, Paket-Seeds | ⬜ Plan J2c |
 
 ---
 
