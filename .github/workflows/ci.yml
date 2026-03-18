@@ -70,6 +70,18 @@ jobs:
           UPSTASH_REDIS_REST_TOKEN: ''
           OPENAI_API_KEY: placeholder
 
+      - name: Start Server für E2E
+        run: pnpm start &
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          UPSTASH_REDIS_REST_URL: ''
+          UPSTASH_REDIS_REST_TOKEN: ''
+          OPENAI_API_KEY: placeholder
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000 --timeout 30000
+
       - name: E2E Tests
         id: e2e_tests
         run: pnpm exec playwright test --reporter=list,json --output=test-results/e2e
