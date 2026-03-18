@@ -79,10 +79,13 @@ export async function proxy(request: NextRequest) {
     const ip = getIP(request)
 
     if (
-      pathname === '/login' ||
-      pathname === '/forgot-password' ||
-      pathname === '/reset-password' ||
-      pathname.startsWith('/auth/')
+      request.method === 'POST' &&
+      (
+        pathname === '/login' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password' ||
+        pathname.startsWith('/auth/')
+      )
     ) {
       const { success, limit, reset } = await limiters.auth.limit(ip)
       if (!success) return tooManyRequests(limit, reset)
