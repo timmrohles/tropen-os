@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { AccountSwitcher, type AccountRole } from '@/components/AccountSwitcher'
+import type { AccountRole } from '@/components/AccountSwitcher'
 import { Bell, CaretDown, Gear, SignOut } from '@phosphor-icons/react'
 
 const VIEW_AS_KEY = 'tropen_view_as'
@@ -286,13 +286,47 @@ export default function TopBar() {
             </div>
           </div>
 
-          {/* AccountSwitcher for superadmin */}
+          {/* AccountSwitcher for superadmin — inline role list */}
           {isSuperadmin && (
-            <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ padding: '0 6px', marginBottom: 4, fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div style={{ padding: '6px 8px 8px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ padding: '0 6px', marginBottom: 6, fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Ansicht als
               </div>
-              <AccountSwitcher current={viewAs} onChange={handleViewAsChange} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {(['superadmin', 'org_admin', 'member', 'viewer'] as const).map((role) => {
+                  const labels: Record<string, { label: string; desc: string }> = {
+                    superadmin: { label: 'Superadmin', desc: 'Vollzugriff auf alle Organisationen' },
+                    org_admin:  { label: 'Admin',      desc: 'Organisations-Administrator' },
+                    member:     { label: 'Member',     desc: 'Normales Mitglied — Chat, Projekte' },
+                    viewer:     { label: 'Viewer',     desc: 'Lese-Zugriff, keine Erstellung' },
+                  }
+                  const active = viewAs === role
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => { handleViewAsChange(role); setAccountOpen(false) }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: '7px 10px', border: 'none', cursor: 'pointer',
+                        borderRadius: 8, textAlign: 'left',
+                        fontFamily: 'var(--font-sans, system-ui)',
+                        background: active ? 'var(--active-bg)' : 'transparent',
+                        color: active ? '#fff' : 'var(--text-primary)',
+                        transition: 'background var(--t-fast)',
+                      }}
+                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset)' }}
+                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500 }}>{labels[role].label}</div>
+                        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 1 }}>{labels[role].desc}</div>
+                      </div>
+                      {active && <span aria-hidden="true" style={{ fontSize: 12 }}>✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
