@@ -5,24 +5,35 @@
 -- ─── 1. Make user_id nullable (system/package agents have no owner) ──────────
 ALTER TABLE agents ALTER COLUMN user_id DROP NOT NULL;
 
--- ─── 2. Add scope column (replaces visibility) ───────────────────────────────
+-- ─── 2. Drop old visibility-dependent RLS policies FIRST ────────────────────
+-- (must happen before dropping visibility column)
+DROP POLICY IF EXISTS "agents_select"      ON agents;
+DROP POLICY IF EXISTS "agents_insert"      ON agents;
+DROP POLICY IF EXISTS "agents_update"      ON agents;
+DROP POLICY IF EXISTS "agents_delete"      ON agents;
+-- agent_skills policies from migration 047 reference agents.visibility
+DROP POLICY IF EXISTS "agent_skills_select" ON agent_skills;
+DROP POLICY IF EXISTS "agent_skills_insert" ON agent_skills;
+DROP POLICY IF EXISTS "agent_skills_delete" ON agent_skills;
+
+-- ─── 3. Add scope column (replaces visibility) ───────────────────────────────
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS scope TEXT DEFAULT 'user';
 
--- 2a. Migrate visibility → scope
+-- 3a. Migrate visibility → scope
 UPDATE agents SET scope = CASE
   WHEN visibility = 'org'  THEN 'org'
   ELSE 'user'
 END;
 
--- 2b. Drop old visibility column + constraint
+-- 3b. Drop old visibility column
 ALTER TABLE agents DROP COLUMN IF EXISTS visibility;
 
--- 2c. Add scope constraint
+-- 3c. Add scope constraint
 ALTER TABLE agents DROP CONSTRAINT IF EXISTS agents_scope_check;
 ALTER TABLE agents ADD CONSTRAINT agents_scope_check
   CHECK (scope IN ('system','package','org','user'));
 
--- ─── 3. Add new columns ───────────────────────────────────────────────────────
+-- ─── 4. Add new columns ───────────────────────────────────────────────────────
 ALTER TABLE agents
   ADD COLUMN IF NOT EXISTS emoji              TEXT DEFAULT '🤖',
   ADD COLUMN IF NOT EXISTS is_active          BOOLEAN DEFAULT true,
@@ -44,12 +55,7 @@ ALTER TABLE agents
   ADD COLUMN IF NOT EXISTS run_count          INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS deleted_at         TIMESTAMPTZ;
 
--- ─── 4. Replace RLS policies (visibility-based → scope-based) ────────────────
-DROP POLICY IF EXISTS "agents_select" ON agents;
-DROP POLICY IF EXISTS "agents_insert" ON agents;
-DROP POLICY IF EXISTS "agents_update" ON agents;
-DROP POLICY IF EXISTS "agents_delete" ON agents;
-
+-- ─── 5. New RLS policies for agents (scope-based) ────────────────────────────
 -- SELECT: system + package visible to all; org = same org; user = own rows
 CREATE POLICY agents_select ON agents FOR SELECT
   USING (
@@ -100,7 +106,42 @@ CREATE POLICY agents_delete ON agents FOR DELETE
     )
   );
 
--- ─── 5. CREATE agent_runs (APPEND ONLY) ──────────────────────────────────────
+-- ─── Recreate agent_skills RLS policies (scope-based) ───────────────────────
+CREATE POLICY "agent_skills_select" ON agent_skills FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM agents a
+      WHERE a.id = agent_skills.agent_id
+        AND (
+          a.scope IN ('system', 'package')
+          OR (a.scope = 'org' AND a.organization_id IN (
+            SELECT organization_id FROM users WHERE id = auth.uid()
+          ))
+          OR (a.scope = 'user' AND a.user_id = auth.uid())
+          OR EXISTS (
+            SELECT 1 FROM users WHERE id = auth.uid() AND role = 'superadmin'
+          )
+        )
+    )
+  );
+
+CREATE POLICY "agent_skills_insert" ON agent_skills FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM agents a
+      WHERE a.id = agent_skills.agent_id AND a.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "agent_skills_delete" ON agent_skills FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM agents a
+      WHERE a.id = agent_skills.agent_id AND a.user_id = auth.uid()
+    )
+  );
+
+-- ─── 6. CREATE agent_runs (APPEND ONLY) ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS agent_runs (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id            UUID REFERENCES agents(id) ON DELETE CASCADE,
@@ -151,7 +192,7 @@ CREATE POLICY agent_runs_insert ON agent_runs FOR INSERT
     OR user_id = auth.uid()
   );
 
--- ─── 6. Seed: 5 Marketing-Paket Agenten ──────────────────────────────────────
+-- ─── 7. Seed: 5 Marketing-Paket Agenten ──────────────────────────────────────
 -- Migriert aus package_agents (Migration 026) → agents als scope='package'
 DO $$
 BEGIN
