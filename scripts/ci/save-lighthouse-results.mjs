@@ -46,8 +46,8 @@ const row = {
 
 const { error } = await supabase.from('qa_lighthouse_runs').insert(row)
 if (error) {
-  console.error('Failed to save lighthouse results:', error.message)
-  process.exit(1)
+  console.warn('Could not save lighthouse results (non-fatal):', error.message)
+  process.exit(0)
 }
 
 console.log('Lighthouse results saved:', scores)
