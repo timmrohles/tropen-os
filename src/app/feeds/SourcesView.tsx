@@ -2,10 +2,10 @@
 // src/app/feeds/SourcesView.tsx — Quellen-Verwaltung Tab
 import { useState, useCallback, useEffect } from 'react'
 import {
-  listFeedSources, updateFeedSource, deleteFeedSource, copyFeedSource, triggerFetch,
+  listFeedSources, updateFeedSource, deleteFeedSource, copyFeedSource,
 } from '@/actions/feeds'
 import { toggleTopicSource } from '@/actions/feed-topics'
-import type { FeedSource, FeedTopic } from '@/types/feeds'
+import type { FeedSource, FeedRun, FeedTopic } from '@/types/feeds'
 import {
   estimateFeedCost, estimateArticlesPerWeek, formatCostPerWeek,
 } from '@/lib/feed-cost-estimator'
@@ -37,6 +37,8 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   const [editError, setEditError]       = useState('')
   const [fetchingId, setFetchingId]     = useState<string | null>(null)
   const [fetchMsg, setFetchMsg]         = useState<Record<string, string>>({})
+  const [runHistory, setRunHistory]     = useState<FeedRun[]>([])
+  const [loadingRuns, setLoadingRuns]   = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -47,9 +49,14 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
 
   useEffect(() => { load() }, [load])
 
-  const handleToggleActive = async (src: FeedSource) => {
-    const res = await updateFeedSource(src.id, { isActive: !src.isActive })
-    if (!res.error) setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, isActive: !s.isActive } : s))
+  const handlePause = async (src: FeedSource) => {
+    const res = await fetch(`/api/feeds/${src.id}/pause`, { method: 'POST' })
+    if (res.ok) setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, status: 'paused' as const } : s))
+  }
+
+  const handleResume = async (src: FeedSource) => {
+    const res = await fetch(`/api/feeds/${src.id}/resume`, { method: 'POST' })
+    if (res.ok) setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, status: 'active' as const } : s))
   }
 
   const handleCopy = async (src: FeedSource) => {
@@ -73,10 +80,11 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     setFetchingId(src.id)
     setFetchMsg((prev) => ({ ...prev, [src.id]: '' }))
     try {
-      const res = await triggerFetch(src.id)
-      const msg = res.itemsSaved > 0
-        ? `${res.itemsSaved} neue Artikel`
-        : res.errors.length > 0 ? `Fehler: ${res.errors[0]}` : 'Keine neuen Artikel'
+      const res = await fetch(`/api/feeds/${src.id}/run`, { method: 'POST' })
+      const data = await res.json() as { itemsFound?: number; itemsDistributed?: number; errors?: { message: string }[] }
+      const msg = (data.itemsFound ?? 0) > 0
+        ? `${data.itemsFound} Artikel gefunden, ${data.itemsDistributed ?? 0} verteilt`
+        : data.errors?.length ? `Fehler: ${data.errors[0].message}` : 'Keine neuen Artikel'
       setFetchMsg((prev) => ({ ...prev, [src.id]: msg }))
       setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, lastFetchedAt: new Date().toISOString() } : s))
     } finally {
@@ -84,13 +92,24 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     }
   }
 
-  const openEdit = (src: FeedSource) => {
+  const openEdit = async (src: FeedSource) => {
     setEditing(src)
     setEditName(src.name)
     setEditUrl(src.url ?? '')
     setEditMinScore(src.minScore)
     setEditError('')
     setMenuOpen(null)
+    setRunHistory([])
+    setLoadingRuns(true)
+    try {
+      const res = await fetch(`/api/feeds/${src.id}/runs?limit=5`)
+      if (res.ok) {
+        const data = await res.json() as { runs: FeedRun[] }
+        setRunHistory(data.runs)
+      }
+    } finally {
+      setLoadingRuns(false)
+    }
   }
 
   const handleSave = async () => {
@@ -143,8 +162,8 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
               className="card"
               style={{
                 padding: '16px 18px', cursor: 'pointer',
-                borderLeft: src.isActive ? '3px solid var(--accent)' : '3px solid var(--border)',
-                opacity: src.isActive ? 1 : 0.65,
+                borderLeft: src.status === 'active' ? '3px solid var(--accent)' : src.status === 'error' ? '3px solid #E53E3E' : '3px solid var(--border)',
+                opacity: src.status === 'active' ? 1 : 0.65,
                 outline: editing?.id === src.id ? '2px solid var(--accent)' : undefined,
                 position: 'relative',
               }}
@@ -155,10 +174,11 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                   {src.type.toUpperCase()}
                 </span>
                 <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                  <button className="btn-icon" title={src.isActive ? 'Pausieren' : 'Aktivieren'}
-                    aria-label={src.isActive ? 'Quelle pausieren' : 'Quelle aktivieren'}
-                    onClick={() => handleToggleActive(src)}>
-                    {src.isActive
+                  <button className="btn-icon"
+                    title={src.status === 'active' ? 'Pausieren' : 'Aktivieren'}
+                    aria-label={src.status === 'active' ? 'Quelle pausieren' : 'Quelle aktivieren'}
+                    onClick={() => src.status === 'active' ? handlePause(src) : handleResume(src)}>
+                    {src.status === 'active'
                       ? <PauseCircle size={16} weight="fill" color="var(--accent)" aria-hidden="true" />
                       : <PlayCircle  size={16} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />}
                   </button>
@@ -329,6 +349,33 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
               </div>
             </div>
           )}
+
+          {/* Run-History */}
+          <div style={{ marginTop: 24 }}>
+            <div className="card-divider" style={{ marginBottom: 16 }} />
+            <span className="card-section-label">Letzte Runs</span>
+            {loadingRuns ? (
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Wird geladen…</div>
+            ) : runHistory.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Noch keine Runs.</div>
+            ) : (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {runHistory.map((run) => {
+                  const statusColor = run.status === 'success' ? 'var(--accent)' : run.status === 'partial' ? '#F7A44A' : '#E53E3E'
+                  return (
+                    <div key={run.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--text-secondary)' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, flexShrink: 0 }} aria-hidden="true" />
+                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                        {new Date(run.startedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span>{run.itemsFound} gefunden · {run.itemsDistributed} verteilt</span>
+                      {run.durationMs && <span style={{ color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{(run.durationMs / 1000).toFixed(1)}s</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
             <button className="btn btn-ghost" onClick={() => setEditing(null)}>Abbrechen</button>

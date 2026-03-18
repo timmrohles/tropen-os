@@ -2,6 +2,8 @@
 
 export type FeedSourceType = 'rss' | 'email' | 'api' | 'url'
 export type FeedItemStatus = 'unread' | 'read' | 'saved' | 'archived' | 'deleted' | 'not_relevant'
+export type FeedSourceStatus = 'active' | 'paused' | 'error' | 'archived'
+export type FeedRunStatus = 'running' | 'success' | 'partial' | 'error'
 
 export interface FeedSource {
   id: string
@@ -17,11 +19,61 @@ export interface FeedSource {
   minScore: number
   schemaId: string | null
   isActive: boolean
+  status: FeedSourceStatus
+  pausedAt: string | null
+  pausedBy: string | null
+  pauseReason: string | null
   lastFetchedAt: string | null
   errorCount: number
   lastError: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface FeedRun {
+  id: string
+  sourceId: string
+  organizationId: string
+  startedAt: string
+  finishedAt: string | null
+  status: FeedRunStatus
+  itemsFound: number
+  itemsScored: number
+  itemsDistributed: number
+  errors: FeedRunError[] | null
+  durationMs: number | null
+  triggeredBy: 'cron' | 'manual' | 'webhook'
+  createdAt: string
+}
+
+export interface FeedRunError {
+  step: 'fetch' | 'score' | 'distribute'
+  message: string
+  itemId?: string
+}
+
+export interface FeedRunResult {
+  runId: string
+  status: FeedRunStatus
+  itemsFound: number
+  itemsScored: number
+  itemsDistributed: number
+  errors: FeedRunError[]
+  durationMs: number
+}
+
+export interface FeedNotification {
+  id: string
+  organizationId: string
+  userId: string | null
+  sourceId: string | null
+  itemId: string | null
+  type: 'new_item' | 'run_error' | 'threshold_reached'
+  title: string
+  body: string | null
+  isRead: boolean
+  readAt: string | null
+  createdAt: string
 }
 
 export interface FeedSchema {
@@ -74,7 +126,7 @@ export interface FeedTopic {
 export interface FeedDistribution {
   id: string
   sourceId: string
-  targetType: 'project' | 'workspace'
+  targetType: 'project' | 'workspace' | 'notification'
   targetId: string
   autoInject: boolean
   minScore: number
