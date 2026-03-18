@@ -29,6 +29,10 @@ interface ChatAreaProps {
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
   activeAgentId?: string | null
   onSetActiveAgentId?: (id: string | null) => void
+  activeCapabilityId?: string | null
+  onSetActiveCapabilityId?: (id: string | null) => void
+  activeOutcomeId?: string | null
+  onSetActiveOutcomeId?: (id: string | null) => void
   contextPercent: number
   activeConvProjectId: string | null
   showMemoryModal: boolean
@@ -53,6 +57,10 @@ export default function ChatArea({
   onAssignToProject: _onAssignToProject,
   activeAgentId,
   onSetActiveAgentId,
+  activeCapabilityId,
+  onSetActiveCapabilityId,
+  activeOutcomeId,
+  onSetActiveOutcomeId,
   contextPercent,
   activeConvProjectId,
   showMemoryModal,
@@ -167,6 +175,10 @@ export default function ChatArea({
               onSubmit={onSendMessage}
               activeAgentId={activeAgentId ?? null}
               onSetActiveAgentId={onSetActiveAgentId ?? null}
+              activeCapabilityId={activeCapabilityId ?? null}
+              onSetActiveCapabilityId={onSetActiveCapabilityId ?? null}
+              activeOutcomeId={activeOutcomeId ?? null}
+              onSetActiveOutcomeId={onSetActiveOutcomeId ?? null}
             />
           </div>
 

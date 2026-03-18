@@ -85,6 +85,10 @@ ${cardSummaries || '(keine Karten)'}
 Verbindungen:
 ${connectionSummaries || '(keine Verbindungen)'}
 
+Wenn der User explizit einen neuen Workspace erstellen möchte, füge am Ende deiner Antwort eine eigene Zeile mit folgendem Marker ein:
+[TORO:WORKSPACE:Passender Workspace-Titel]
+Nur verwenden wenn der User explizit einen neuen Workspace anlegen will — nicht bei allgemeinen Fragen.
+
 Antworte präzise und auf Deutsch. Beziehe dich auf konkrete Karten wenn du Empfehlungen gibst.`
 }
 

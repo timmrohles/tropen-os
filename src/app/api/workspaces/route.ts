@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     .insert({
       title: body.title.trim(),
       goal: body.goal?.trim() ?? null,
-      domain: body.domain?.trim() ?? null,
+      domain: body.domain?.trim() ?? 'custom',
       department_id: body.departmentId ?? null,
       organization_id: me.organization_id,
       created_by: me.id,

@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import React, { useEffect, useState } from 'react'
 import {
-  TreePalm, SignOut, Gear, Plus,
+  TreePalm, Plus,
   ArrowsMerge, FolderSimple, Trash,
 } from '@phosphor-icons/react'
 import ProjectSidebar from './ProjectSidebar'
@@ -12,10 +11,6 @@ import type { Project } from '@/hooks/useWorkspaceState'
 
 type LeftNavProps = {
   workspaceName: string
-  userInitial: string
-  userFullName: string
-  userEmail: string
-  handleLogout: () => void
   onNewConversation: () => void
   onNewProject: () => void
   trashCount: number
@@ -37,10 +32,6 @@ type LeftNavProps = {
 } & Omit<React.ComponentProps<typeof ProjectSidebar>, 'projects'>
 
 export default function LeftNav({
-  userInitial,
-  userFullName,
-  userEmail,
-  handleLogout,
   onNewConversation,
   onNewProject: _onNewProject,
   trashCount,
@@ -61,10 +52,8 @@ export default function LeftNav({
   projects,
   ...projectSidebarProps
 }: LeftNavProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [activeAction, setActiveAction] = useState<'merge' | 'move' | 'delete' | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   // Reset action state when exiting edit mode
   useEffect(() => {
@@ -73,17 +62,6 @@ export default function LeftNav({
       setDeleteConfirm(false)
     }
   }, [selectMode])
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
 
   function handleFertig() {
     onClearSelection()
@@ -227,28 +205,6 @@ export default function LeftNav({
         Neuer Chat
       </button>
 
-      {/* User bar with dropdown */}
-      <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
-        {menuOpen && (
-          <div className="lnav-user-menu">
-            <Link href="/settings" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-              <Gear size={15} weight="bold" /> Einstellungen
-            </Link>
-            <div className="lnav-menu-divider" />
-            <button className="lnav-menu-logout" onClick={() => { setMenuOpen(false); handleLogout() }}>
-              <SignOut size={15} weight="bold" /> Abmelden
-            </button>
-          </div>
-        )}
-        <button type="button" className="lnav-user-bar" onClick={() => setMenuOpen(v => !v)} aria-expanded={menuOpen} aria-haspopup="true">
-          <div className="lnav-user-avatar">{userInitial}</div>
-          <div className="lnav-user-info">
-            <span className="lnav-user-name">{userFullName || userEmail}</span>
-            <span className="lnav-user-sub">{userEmail}</span>
-          </div>
-          <span className="lnav-user-chevron">{menuOpen ? '▴' : '▾'}</span>
-        </button>
-      </div>
     </nav>
   )
 }

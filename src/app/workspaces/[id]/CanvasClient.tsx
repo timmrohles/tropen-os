@@ -139,7 +139,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
             </div>
             {cards.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
-                <SquaresFour size={40} weight="thin" style={{ marginBottom: 12, opacity: 0.4 }} aria-hidden="true" />
+                <SquaresFour size={40} weight="bold" style={{ marginBottom: 12, opacity: 0.4 }} aria-hidden="true" />
                 <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Noch keine Karten</p>
                 <p style={{ fontSize: 13 }}>Füge deine erste Karte hinzu um zu beginnen.</p>
               </div>

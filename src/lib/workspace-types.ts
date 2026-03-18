@@ -127,6 +127,10 @@ export interface WorkspaceState {
   setError: React.Dispatch<React.SetStateAction<string>>
   activeAgentId: string | null
   setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>
+  activeCapabilityId: string | null
+  setActiveCapabilityId: React.Dispatch<React.SetStateAction<string | null>>
+  activeOutcomeId: string | null
+  setActiveOutcomeId: React.Dispatch<React.SetStateAction<string | null>>
   projects: Project[]
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   collapsedProjects: Set<string>

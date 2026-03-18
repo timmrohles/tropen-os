@@ -1,11 +1,7 @@
 'use client'
 
 import React from 'react'
-import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
-import ContextMenu from './ContextMenu'
-import { JungleModal } from './modals/JungleModal'
-import { MergeModal } from './modals/MergeModal'
 import SessionPanel from './SessionPanel'
 import type { WorkspaceState } from '@/hooks/useWorkspaceState'
 
@@ -21,207 +17,48 @@ type WorkspaceLayoutProps = WorkspaceState
 
 export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   const {
-    // Core
     workspaceId,
-    workspaceName,
-    conversations,
     activeConvId,
-    setActiveConvId,
+    conversations,
     messages,
     input,
     setInput,
-    search,
-    setSearch,
-    periodFilter,
-    setPeriodFilter,
-    taskFilter,
-    setTaskFilter,
-    dropdownOpen,
-    setDropdownOpen,
-    hoveredId,
-    setHoveredId,
-    confirmDeleteId,
-    setConfirmDeleteId,
-    deleting,
-    routing,
     sending,
     error,
-
-    // Projects
-    projects,
-    collapsedProjects,
-    setCollapsedProjects,
-    editingConvId,
-    setEditingConvId,
-    editingTitle,
-    setEditingTitle,
-    contextMenuId,
-    setContextMenuId,
-    contextMenuSubmenu,
-    setContextMenuSubmenu,
-    dragConvId,
-    setDragConvId,
-    dragOverId,
-    setDragOverId,
-    creatingProject,
-    setCreatingProject,
-    newProjectName,
-    setNewProjectName,
-    editingProjectId,
-    setEditingProjectId,
-    editingProjectName,
-    setEditingProjectName,
-    menuAnchor,
-    setMenuAnchor,
-    hoveredProjectId,
-    setHoveredProjectId,
-
-    // Multi-select / Jungle
-    selectMode,
-    setSelectMode,
-    selectedIds,
-    setSelectedIds,
-    jungleLoading,
-
-    // Jungle modal
-    jungleModal,
-    jungleSummary,
-    jungleProjects,
-    setJungleProjects,
-    jungleEditName,
-    setJungleEditName,
-    jungleDragConv,
-    setJungleDragConv,
-    jungleSaving,
-    jungleAddConvOpen,
-    setJungleAddConvOpen,
-
-    // Merge modal
-    mergeModal,
-    mergeLoading,
-    mergeReady,
-    mergeTitle,
-    setMergeTitle,
-    mergeAfterAction,
-    setMergeAfterAction,
-    mergeProjectId,
-    setMergeProjectId,
-    mergeProjectDropOpen,
-    setMergeProjectDropOpen,
-
-    // Trash
-    trashOpen,
-    setTrashOpen,
-    trashConvs,
-    trashCount,
-    trashLoading,
-
-    // Toast
-    toastMsg,
-
-    // Refs
-    messagesEndRef,
-    searchWrapRef,
-    contextMenuRef,
-    renameInputRef,
-    projectRenameInputRef,
-    escapeEditRef,
-    escapeProjectEditRef,
-
-    // Computed
-    ungroupedCount,
-    jungleActive,
-    selectedArr,
-    filteredConvs,
-    activePeriodLabel,
-    hasActiveFilters,
-
-    // User
-    userEmail,
-    userFullName,
-    isAdmin,
-    userInitial,
-    organizationId,
-    handleLogout,
-
-    // Mobile
-    isMobile,
-    navOpen,
-    setNavOpen,
-
-    // Handlers
+    routing,
     newConversation,
-    deleteConversation,
-    createProject,
-    deleteProject,
-    renameProject,
-    renameConversation,
-    assignToProject,
-    loadTrash,
-    restoreConv,
-    hardDeleteConv,
-    openJungleModal,
-    jungleProjectName,
-    jungleMoveConv,
-    jungleRemoveConv,
-    jungleRemoveProject,
-    jungleApply,
-    openMergeModal,
-    applyMerge,
-    toggleSelect,
-    bulkSoftDelete,
     sendMessage,
-    logout,
+    userInitial,
+    projects,
+    organizationId,
+    assignToProject,
     activeAgentId,
     setActiveAgentId,
-
-    // Memory modal
+    activeCapabilityId,
+    setActiveCapabilityId,
+    activeOutcomeId,
+    setActiveOutcomeId,
+    messagesEndRef,
+    contextPercent,
     showMemoryModal,
     setShowMemoryModal,
+    isMobile,
+    toastMsg,
   } = props
 
   const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
 
-  // ── Panel resize ──────────────────────────────────────────
-  // Always start with defaults (matches SSR), then sync from localStorage after hydration
-  const [leftWidth, setLeftWidth] = React.useState(300)
+  // ── Right panel resize ─────────────────────────────────
   const [rightWidth, setRightWidth] = React.useState(340)
   const [spCollapsed, setSpCollapsed] = React.useState(false)
-  const leftWidthRef = React.useRef(leftWidth)
   const rightWidthRef = React.useRef(rightWidth)
-  React.useEffect(() => { leftWidthRef.current = leftWidth }, [leftWidth])
   React.useEffect(() => { rightWidthRef.current = rightWidth }, [rightWidth])
-  React.useEffect(() => {
-    const stored = localStorage.getItem('lnav-width')
-    if (stored) setLeftWidth(parseInt(stored))
-  }, [])
   React.useEffect(() => {
     const stored = localStorage.getItem('sp-width')
     if (stored) setRightWidth(parseInt(stored))
   }, [])
 
-  function persistLeft() { localStorage.setItem('lnav-width', String(leftWidthRef.current)) }
   function persistRight() { localStorage.setItem('sp-width', String(rightWidthRef.current)) }
-
-  function startLeftResize(e: React.MouseEvent) {
-    e.preventDefault()
-    const startX = e.clientX
-    const startW = leftWidthRef.current
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-    const onMove = (ev: MouseEvent) => {
-      setLeftWidth(Math.max(180, Math.min(420, startW + ev.clientX - startX)))
-    }
-    const onUp = () => {
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      persistLeft()
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }
 
   function startRightResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -244,143 +81,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   }
 
   return (
-    <div className={`wl-root${isMobile ? ' wl-root--mobile' : ''}`}>
-
-      {/* ── Mobile Header ── */}
-      {isMobile && (
-        <div className="wl-mobile-header">
-          <button className="wl-hamburger" onClick={() => setNavOpen(v => !v)}>☰</button>
-          <span className="wl-mobile-title">Tropen OS</span>
-          <button className="wl-mobile-new-chat" onClick={() => newConversation()}>+</button>
-        </div>
-      )}
-
-      {/* ── Mobile Overlay Backdrop ── */}
-      {isMobile && navOpen && (
-        <div className="wl-nav-overlay" onClick={() => setNavOpen(false)} />
-      )}
-
-      {/* ── Sidebar / LeftNav ── */}
-      <div
-        className={isMobile ? `wl-mobile-nav${navOpen ? ' wl-mobile-nav--open' : ' wl-mobile-nav--closed'}` : 'wl-panel-left'}
-        style={isMobile ? undefined : { width: leftWidth, flexShrink: 0 }}
-      >
-        <LeftNav
-          workspaceName={workspaceName}
-          userInitial={userInitial}
-          userFullName={userFullName}
-          userEmail={userEmail}
-          handleLogout={handleLogout}
-          trashCount={trashCount}
-          trashOpen={trashOpen}
-          trashConvs={trashConvs}
-          trashLoading={trashLoading}
-          onNewConversation={newConversation}
-          onNewProject={() => setCreatingProject(true)}
-          onToggleTrash={() => {
-            const next = !props.trashOpen
-            props.setTrashOpen(next)
-            if (next && props.trashConvs.length === 0) props.loadTrash()
-          }}
-          onRestoreConv={restoreConv}
-          onHardDeleteConv={hardDeleteConv}
-          conversations={conversations}
-          projects={projects}
-          filteredConvs={filteredConvs}
-          search={search}
-          periodFilter={periodFilter}
-          taskFilter={taskFilter}
-          dropdownOpen={dropdownOpen}
-          hasActiveFilters={hasActiveFilters}
-          activePeriodLabel={activePeriodLabel}
-          creatingProject={creatingProject}
-          newProjectName={newProjectName}
-          collapsedProjects={collapsedProjects}
-          editingProjectId={editingProjectId}
-          editingProjectName={editingProjectName}
-          hoveredProjectId={hoveredProjectId}
-          dragConvId={dragConvId}
-          dragOverId={dragOverId}
-          selectMode={selectMode}
-          searchWrapRef={searchWrapRef as unknown as React.RefObject<HTMLDivElement>}
-          projectRenameInputRef={projectRenameInputRef as unknown as React.RefObject<HTMLInputElement>}
-          escapeProjectEditRef={escapeProjectEditRef}
-          activeConvId={activeConvId}
-          hoveredId={hoveredId}
-          confirmDeleteId={confirmDeleteId}
-          deleting={deleting}
-          editingConvId={editingConvId}
-          editingTitle={editingTitle}
-          contextMenuId={contextMenuId}
-          selectedIds={selectedIds}
-          renameInputRef={renameInputRef as unknown as React.RefObject<HTMLInputElement>}
-          escapeEditRef={escapeEditRef}
-          onSetSearch={setSearch}
-          onSetPeriodFilter={setPeriodFilter}
-          onSetTaskFilter={setTaskFilter}
-          onSetDropdownOpen={setDropdownOpen}
-          onSetCreatingProject={setCreatingProject}
-          onSetNewProjectName={setNewProjectName}
-          onCreateProject={createProject}
-          onSetCollapsedProjects={(fn) => setCollapsedProjects(fn)}
-          onSetEditingProjectId={setEditingProjectId}
-          onSetEditingProjectName={setEditingProjectName}
-          onRenameProject={renameProject}
-          onDeleteProject={deleteProject}
-          onSetHoveredProjectId={setHoveredProjectId}
-          onSetDragConvId={setDragConvId}
-          onSetDragOverId={setDragOverId}
-          onAssignToProject={assignToProject}
-          onSetSelectMode={(fn) => setSelectMode(fn)}
-          onSetSelectedIds={(ids) => setSelectedIds(ids)}
-          selectedArr={selectedArr}
-          onEnterEditMode={() => setSelectMode(true)}
-          onClearSelection={() => { setSelectMode(false); setSelectedIds(new Set()) }}
-          onOpenMergeModal={openMergeModal}
-          onBulkSoftDelete={bulkSoftDelete}
-          onBulkAssignToProject={async (projectId) => {
-            await Promise.all(selectedArr.map((id) => assignToProject(id, projectId)))
-            setSelectMode(false)
-            setSelectedIds(new Set())
-          }}
-          onSetActiveConvId={setActiveConvId}
-          onSetHoveredId={setHoveredId}
-          onSetConfirmDeleteId={setConfirmDeleteId}
-          onDeleteConversation={deleteConversation}
-          onRenameConversation={renameConversation}
-          onStartEdit={(id, title) => {
-            setEditingConvId(id)
-            setEditingTitle(title)
-          }}
-          onCancelEdit={() => setEditingConvId(null)}
-          onToggleSelect={toggleSelect}
-          onSetContextMenuId={setContextMenuId}
-          onSetMenuAnchor={setMenuAnchor}
-          onSetContextMenuSubmenu={setContextMenuSubmenu}
-        />
-      </div>
-      {!isMobile && (
-        <div className="wl-resize-handle" onMouseDown={startLeftResize} aria-hidden="true" />
-      )}
-
-      {/* ── Fixed Context Menu ── */}
-      {contextMenuId && menuAnchor && (
-        <ContextMenu
-          contextMenuId={contextMenuId}
-          menuAnchor={menuAnchor}
-          conversations={conversations}
-          projects={projects}
-          contextMenuSubmenu={contextMenuSubmenu}
-          contextMenuRef={contextMenuRef}
-          onSetContextMenuId={setContextMenuId}
-          onSetMenuAnchor={setMenuAnchor}
-          onSetContextMenuSubmenu={setContextMenuSubmenu}
-          onSetEditingConvId={setEditingConvId}
-          onSetEditingTitle={setEditingTitle}
-          onSetConfirmDeleteId={setConfirmDeleteId}
-          onAssignToProject={assignToProject}
-        />
-      )}
+    <div className="wl-root">
 
       {/* ── Chat Area ── */}
       <ChatArea
@@ -401,7 +102,11 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onAssignToProject={assignToProject}
         activeAgentId={activeAgentId}
         onSetActiveAgentId={setActiveAgentId}
-        contextPercent={props.contextPercent}
+        activeCapabilityId={activeCapabilityId}
+        onSetActiveCapabilityId={setActiveCapabilityId}
+        activeOutcomeId={activeOutcomeId}
+        onSetActiveOutcomeId={setActiveOutcomeId}
+        contextPercent={contextPercent}
         activeConvProjectId={activeConvProjectId}
         showMemoryModal={showMemoryModal}
         onSetShowMemoryModal={setShowMemoryModal}
@@ -426,56 +131,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
 
       {/* ── Toast ── */}
       {toastMsg && <div className="wl-toast">{toastMsg}</div>}
-
-
-      {/* ── JungleModal ── */}
-      <JungleModal
-        jungleLoading={jungleLoading}
-        jungleModal={jungleModal}
-        jungleSummary={jungleSummary}
-        jungleProjects={jungleProjects}
-        jungleEditName={jungleEditName}
-        jungleSaving={jungleSaving}
-        jungleAddConvOpen={jungleAddConvOpen}
-        jungleDragConv={jungleDragConv}
-        conversations={conversations}
-        onClose={() => props.setJungleModal(false)}
-        onApply={jungleApply}
-        onEditName={(i: number, name: string) => setJungleEditName((prev) => ({ ...prev, [i]: name }))}
-        onMoveConv={jungleMoveConv}
-        onRemoveConv={jungleRemoveConv}
-        onRemoveProject={jungleRemoveProject}
-        onAddFolder={() => setJungleProjects((prev) => [
-          ...prev,
-          { name: 'Neuer Ordner', emoji: '', conversations: [], reason: '' }
-        ])}
-        onAddConvToFolder={(convId: string, i: number) => setJungleProjects((prev) =>
-          prev.map((p, idx) => idx === i ? { ...p, conversations: [...p.conversations, convId] } : p)
-        )}
-        onSetJungleDragConv={setJungleDragConv}
-        onSetJungleAddConvOpen={setJungleAddConvOpen}
-      />
-
-      {/* ── MergeModal ── */}
-      <MergeModal
-        mergeModal={mergeModal}
-        mergeLoading={mergeLoading}
-        mergeReady={mergeReady}
-        mergeTitle={mergeTitle}
-        mergeAfterAction={mergeAfterAction}
-        mergeProjectId={mergeProjectId}
-        mergeProjectDropOpen={mergeProjectDropOpen}
-        projects={projects}
-        selectedIds={selectedIds}
-        conversations={conversations}
-        selectedArr={selectedArr}
-        onClose={() => props.setMergeModal(false)}
-        onApply={applyMerge}
-        onSetMergeTitle={(v: string) => setMergeTitle(v)}
-        onSetMergeAfterAction={(v: 'trash' | 'keep' | 'delete') => setMergeAfterAction(v)}
-        onSetMergeProjectId={(id: string | null) => setMergeProjectId(id)}
-        onSetMergeProjectDropOpen={(v: boolean) => setMergeProjectDropOpen(v)}
-      />
 
     </div>
   )

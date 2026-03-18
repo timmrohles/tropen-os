@@ -35,6 +35,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const sendingRef = useRef(false)
   const [input, setInput] = useState('')
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
+  const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null)
+  const [activeOutcomeId, setActiveOutcomeId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<PeriodValue>('all')
   const [taskFilter, setTaskFilter] = useState<TaskValue>('all')
@@ -289,7 +291,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const chatActions = createChatActions({
     supabase, workspaceId,
-    activeConvId, activeAgentId, input, sending, conversations, sendingRef,
+    activeConvId, activeAgentId, activeCapabilityId, activeOutcomeId,
+    input, sending, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
     newConversation: convActions.newConversation,
   })
@@ -331,6 +334,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     deleting, routing, sending,
     error, setError,
     activeAgentId, setActiveAgentId,
+    activeCapabilityId, setActiveCapabilityId,
+    activeOutcomeId, setActiveOutcomeId,
     projects, setProjects,
     collapsedProjects, setCollapsedProjects,
     editingConvId, setEditingConvId,

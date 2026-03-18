@@ -168,7 +168,7 @@ export default function ChatPanel({ workspaceId, cardId, color, placeholder }: P
           body: JSON.stringify({
             workspaceId,
             cardId: cardId ?? null,
-            message: text,
+            content: text,
           }),
         })
 

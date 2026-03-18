@@ -79,7 +79,7 @@ export default function ConnectionLines({ connections, cards, selectedCardId }: 
         const isHighlighted =
           conn.fromCardId === selectedCardId || conn.toCardId === selectedCardId
 
-        const isDashed = toCard.status === 'waiting'
+        const isDashed = toCard.status === 'draft'
 
         return (
           <path

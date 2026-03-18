@@ -3,207 +3,150 @@
 import type { WorkspaceWithDetails } from '@/types/workspace'
 import type { WorkspaceMeta } from '@/types/workspace'
 
-const MONO = "'DM Mono', 'Courier New', monospace"
-
-const s: Record<string, React.CSSProperties> = {
-  panel: {
-    width: 280,
-    height: '100%',
-    background: '#0e0e0e',
-    borderLeft: '1px solid #1e1e1e',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: MONO,
-    color: '#e0e0e0',
-    flexShrink: 0,
-    overflowY: 'auto' as const,
-    scrollbarWidth: 'thin' as const,
-  },
-  header: {
-    padding: '14px 16px',
-    borderBottom: '1px solid #1e1e1e',
-    flexShrink: 0,
-  },
-  panelTitle: {
-    fontSize: 11,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.1em',
-  },
-  section: {
-    padding: '12px 16px',
-    borderBottom: '1px solid #1e1e1e',
-  },
-  fieldLabel: {
-    fontSize: 10,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-    marginBottom: 4,
-    display: 'block',
-  },
-  fieldValue: {
-    fontSize: 12,
-    color: '#e0e0e0',
-    fontFamily: MONO,
-    lineHeight: 1.5,
-  },
-  fieldEmpty: {
-    fontSize: 12,
-    color: '#1e1e1e',
-    fontFamily: MONO,
-    fontStyle: 'italic' as const,
-  },
-  domainBadge: {
-    fontSize: 10,
-    padding: '2px 8px',
-    borderRadius: 3,
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-    border: '1px solid #1e1e1e',
-    color: '#444444',
-    display: 'inline-block',
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 8,
-  },
-  stat: {
-    background: '#080808',
-    border: '1px solid #1e1e1e',
-    borderRadius: 4,
-    padding: '8px 10px',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 600,
-    color: '#e0e0e0',
-    fontFamily: MONO,
-    lineHeight: 1,
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.06em',
-  },
+interface Props {
+  workspace: WorkspaceWithDetails
 }
 
-function MetaField({ label, value }: { label: string; value?: string }) {
+function InfoRow({ label, value }: { label: string; value?: string }) {
+  if (!value) return null
   return (
-    <div style={{ marginBottom: 12 }}>
-      <span style={s.fieldLabel}>{label}</span>
-      {value ? (
-        <p style={s.fieldValue}>{value}</p>
-      ) : (
-        <p style={s.fieldEmpty}>—</p>
-      )}
+    <div style={{ marginBottom: 10 }}>
+      <span style={{
+        display: 'block',
+        fontSize: 10, fontWeight: 700,
+        color: 'var(--text-tertiary)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.07em',
+        marginBottom: 2,
+      }}>
+        {label}
+      </span>
+      <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>
+        {value}
+      </p>
     </div>
   )
 }
 
-interface Props {
-  workspace: WorkspaceWithDetails
+function StatBox({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div style={{
+      background: 'var(--bg-base)',
+      border: '1px solid var(--border-medium)',
+      borderRadius: 8,
+      padding: '10px 12px',
+    }}>
+      <p style={{
+        fontSize: 22, fontWeight: 700,
+        color: color ?? 'var(--text-primary)',
+        lineHeight: 1, marginBottom: 2,
+      }}>
+        {value}
+      </p>
+      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {label}
+      </p>
+    </div>
+  )
 }
 
 export default function SiloPanel({ workspace }: Props) {
   const meta = (workspace.meta ?? {}) as WorkspaceMeta
 
-  const totalCards = workspace.cards.length
-  const activeCards = workspace.cards.filter((c) => c.status === 'active').length
-  const doneCards = workspace.cards.filter((c) => c.status === 'done').length
-  const waitingCards = workspace.cards.filter((c) => c.status === 'waiting').length
+  const totalCards   = workspace.cards.length
+  const activeCards  = workspace.cards.filter((c) => c.status === 'processing').length
+  const doneCards    = workspace.cards.filter((c) => c.status === 'ready').length
+  const waitingCards = workspace.cards.filter((c) => c.status === 'draft').length
+
+  const hasContext = workspace.goal || meta.context || meta.tone || meta.language || meta.target_audience
+  const hasParticipants = workspace.participants.length > 0
 
   return (
     <aside
-      style={s.panel}
       role="complementary"
-      aria-label="Workspace-Silo"
+      aria-label="Workspace-Info"
+      style={{
+        width: 280,
+        height: '100%',
+        background: 'var(--bg-surface-solid)',
+        borderLeft: '1px solid var(--border-medium)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+      }}
     >
-      <div style={s.header}>
-        <p style={s.panelTitle}>Silo</p>
+      {/* Header */}
+      <div style={{
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border)',
+        flexShrink: 0,
+      }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Workspace-Info
+        </p>
       </div>
 
-      {/* Overview */}
-      <div style={s.section}>
-        <span style={s.fieldLabel}>Workspace</span>
-        <p style={{ ...s.fieldValue, marginBottom: 8, fontWeight: 500 }}>
+      {/* Workspace title */}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>
+          Workspace
+        </span>
+        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.35 }}>
           {workspace.title}
         </p>
-        {workspace.domain && (
-          <span style={s.domainBadge}>{workspace.domain}</span>
-        )}
       </div>
 
       {/* Stats */}
-      <div style={s.section}>
-        <span style={s.fieldLabel}>Karten-Übersicht</span>
-        <div style={s.statsGrid}>
-          <div style={s.stat}>
-            <p style={s.statValue}>{totalCards}</p>
-            <p style={s.statLabel}>Gesamt</p>
-          </div>
-          <div style={s.stat}>
-            <p style={{ ...s.statValue, color: '#00C9A7' }}>{activeCards}</p>
-            <p style={s.statLabel}>Aktiv</p>
-          </div>
-          <div style={s.stat}>
-            <p style={{ ...s.statValue, color: '#7C6FF7' }}>{doneCards}</p>
-            <p style={s.statLabel}>Fertig</p>
-          </div>
-          <div style={s.stat}>
-            <p style={{ ...s.statValue, color: '#444444' }}>{waitingCards}</p>
-            <p style={s.statLabel}>Wartend</p>
-          </div>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+        <span className="card-section-label" style={{ padding: 0, marginBottom: 10 }}>
+          Karten-Übersicht
+        </span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <StatBox label="Gesamt"  value={totalCards} />
+          <StatBox label="Aktiv"   value={activeCards}  color="var(--tropen-process, #8B5CF6)" />
+          <StatBox label="Fertig"  value={doneCards}    color="var(--accent)" />
+          <StatBox label="Wartend" value={waitingCards} color="var(--text-tertiary)" />
         </div>
       </div>
 
-      {/* Meta */}
-      <div style={s.section}>
-        <span style={s.fieldLabel}>Kontext</span>
-        <div style={{ marginTop: 8 }}>
-          <MetaField label="Ziel" value={workspace.goal ?? undefined} />
-          <MetaField label="Kontext" value={meta.context} />
-          <MetaField label="Ton" value={meta.tone} />
-          <MetaField label="Sprache" value={meta.language} />
-          <MetaField label="Zielgruppe" value={meta.target_audience} />
+      {/* Context */}
+      {hasContext && (
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+          <span className="card-section-label" style={{ padding: 0, marginBottom: 10 }}>
+            Kontext
+          </span>
+          <InfoRow label="Ziel"        value={workspace.goal ?? undefined} />
+          <InfoRow label="Kontext"     value={meta.context} />
+          <InfoRow label="Ton"         value={meta.tone} />
+          <InfoRow label="Sprache"     value={meta.language} />
+          <InfoRow label="Zielgruppe"  value={meta.target_audience} />
         </div>
-      </div>
+      )}
 
       {/* Participants */}
-      {workspace.participants.length > 0 && (
-        <div style={s.section}>
-          <span style={s.fieldLabel}>
+      {hasParticipants && (
+        <div style={{ padding: '12px 16px' }}>
+          <span className="card-section-label" style={{ padding: 0, marginBottom: 10 }}>
             Teilnehmer ({workspace.participants.length})
           </span>
           {workspace.participants.map((p) => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <div style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: '#1e1e1e',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                color: '#444444',
-                fontFamily: MONO,
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'var(--accent-light)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700, color: 'var(--accent)',
                 flexShrink: 0,
               }}>
                 {(p.user.name ?? p.user.email ?? '?').charAt(0).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 11, color: '#e0e0e0', fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.user.name ?? p.user.email ?? p.userId}
                 </p>
-                <p style={{ fontSize: 10, color: '#444444', fontFamily: MONO }}>
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                   {p.role}
                 </p>
               </div>
