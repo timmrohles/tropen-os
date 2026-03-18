@@ -35,14 +35,16 @@ export function computeContentHash(url: string, title: string): string {
 export function runStage1(
   item: RawFeedItem,
   source: FeedSource,
+  options?: { maxAgeDays?: number },
 ): { passed: boolean; reason: string } {
   const text = `${item.title} ${item.content ?? ''}`.toLowerCase()
+  const maxAge = options?.maxAgeDays ?? 7
 
-  // 1. Age check — older than 7 days → out
+  // 1. Age check — older than maxAgeDays → out (default 7, first fetch uses 30)
   if (item.publishedAt) {
     const ageDays = (Date.now() - item.publishedAt.getTime()) / 86_400_000
-    if (ageDays > 7) {
-      return { passed: false, reason: `Item is ${Math.floor(ageDays)} days old (max 7)` }
+    if (ageDays > maxAge) {
+      return { passed: false, reason: `Item is ${Math.floor(ageDays)} days old (max ${maxAge})` }
     }
   }
 
@@ -197,7 +199,7 @@ Antworte NUR mit JSON:
       result = {
         summary: String(parsed.summary ?? ''),
         keyFacts: Array.isArray(parsed.key_facts)
-          ? parsed.key_facts.filter((f): f is string => typeof f === 'string').slice(0, 5)
+          ? parsed.key_facts.filter((f: unknown): f is string => typeof f === 'string').slice(0, 5)
           : [],
       }
     }
@@ -227,7 +229,7 @@ Antworte NUR mit JSON:
 // Returns the feed_item id (or null on critical error)
 // ---------------------------------------------------------------------------
 
-export async function processItem(item: RawFeedItem, source: FeedSource): Promise<string | null> {
+export async function processItem(item: RawFeedItem, source: FeedSource, options?: { maxAgeDays?: number }): Promise<string | null> {
   const contentHash = computeContentHash(item.url, item.title)
 
   const { data: existing } = await supabaseAdmin
@@ -237,7 +239,7 @@ export async function processItem(item: RawFeedItem, source: FeedSource): Promis
     .maybeSingle()
   if (existing) return existing.id as string
 
-  const s1 = runStage1(item, source)
+  const s1 = runStage1(item, source, options)
 
   const { data: row, error: insertErr } = await supabaseAdmin
     .from('feed_items')
@@ -267,11 +269,9 @@ export async function processItem(item: RawFeedItem, source: FeedSource): Promis
 
   const s2 = await runStage2(itemId, item, source)
   if (s2.error && s2.score === 0) {
-    // Stage 2 failed entirely — don't mark as processed so it can be retried
-    // Reset content_hash to allow reprocessing (delete and let next run re-insert)
-    await supabaseAdmin.from('feed_items').update({ status: 'deleted' }).eq('id', itemId)
-    log.warn('[processItem] Stage 2 failed, item marked deleted for retry', { itemId })
-    return null
+    // Stage 2 failed — leave item at stage=1 so it stays visible and can be retried
+    log.warn('[processItem] Stage 2 failed, item stays at stage=1', { itemId })
+    return itemId
   }
   const updates: Record<string, unknown> = {
     stage: 2,

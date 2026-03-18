@@ -225,22 +225,24 @@ export default function ProjectSidebar({
 
       {/* Suchfeld mit Filter-Dropdown */}
       <div className="ps-search-section" ref={searchWrapRef}>
-        <div className="ps-search-box" onClick={() => onSetDropdownOpen(true)}>
+        <div className="ps-search-box" role="group" onClick={() => onSetDropdownOpen(true)}>
           {activePeriodLabel && (
-            <span
+            <button
+              type="button"
               className="ps-active-badge"
               onClick={(e) => { e.stopPropagation(); onSetPeriodFilter('all') }}
             >
               {activePeriodLabel} <span className="ps-badge-x">×</span>
-            </span>
+            </button>
           )}
           {taskFilter !== 'all' && (
-            <span
+            <button
+              type="button"
               className="ps-active-badge"
               onClick={(e) => { e.stopPropagation(); onSetTaskFilter('all') }}
             >
               {taskFilter} <span className="ps-badge-x">×</span>
-            </span>
+            </button>
           )}
           <input
             className="ps-search-input"
@@ -328,7 +330,7 @@ export default function ProjectSidebar({
                     else next.add(project.id)
                     return next
                   })}
-                >{isCollapsed ? <CaretRight size={10} /> : <CaretDown size={10} />}</button>
+                >{isCollapsed ? <CaretRight size={10} weight="bold" /> : <CaretDown size={10} weight="bold" />}</button>
                 <span className="ps-project-icon"><Folder size={13} weight="fill" /></span>
                 {editingProjectId === project.id ? (
                   <input
@@ -364,13 +366,13 @@ export default function ProjectSidebar({
                       onSetEditingProjectName(project.title)
                     }}
                     title="Umbenennen"
-                  ><PencilSimple size={11} /></button>
+                  ><PencilSimple size={11} weight="bold" /></button>
                 )}
                 <button
                   className="ps-project-delete-btn"
                   onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id) }}
                   title="Projekt löschen"
-                ><X size={12} /></button>
+                ><X size={12} weight="bold" /></button>
               </div>
               {!isCollapsed && projectConvs.map((conv) => renderConvItem(conv, true))}
             </div>
@@ -419,7 +421,7 @@ export default function ProjectSidebar({
             className="ps-media-teaser-item"
             title="Sobald Datei-Upload verfügbar, sortiert Toro deine Chats automatisch nach Medientypen."
           >
-            <span className="ps-media-teaser-lock"><Lock size={11} /></span>
+            <span className="ps-media-teaser-lock"><Lock size={11} weight="bold" /></span>
             <span className="ps-media-teaser-icon">{item.icon}</span>
             <span className="ps-media-teaser-name">{item.label}</span>
             <span className="ps-media-teaser-soon">coming soon</span>
@@ -434,7 +436,7 @@ export default function ProjectSidebar({
           onClick={() => { onSetSelectMode((v) => !v); onSetSelectedIds(new Set()) }}
           title="Chats auswählen"
         >
-          <CheckSquare size={15} weight={selectMode ? 'fill' : 'regular'} />
+          <CheckSquare size={15} weight={selectMode ? 'fill' : 'bold'} />
         </button>
       </div>
     </>

@@ -18,7 +18,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   input: {
     width: '100%',
-    background: '#fff',
+    background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
     borderRadius: 4,
     padding: '8px 12px',
@@ -30,7 +30,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   textarea: {
     width: '100%',
-    background: '#fff',
+    background: 'var(--bg-surface-solid)',
     border: '1px solid var(--border-medium)',
     borderRadius: 4,
     padding: '8px 12px',

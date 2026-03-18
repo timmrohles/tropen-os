@@ -158,7 +158,7 @@ export default function LeftNav({
               disabled={!canMerge}
               onClick={handleMergeClick}
             >
-              <ArrowsMerge size={14} />
+              <ArrowsMerge size={14} weight="bold" />
               Zusammenführen
             </button>
           )}
@@ -168,7 +168,7 @@ export default function LeftNav({
               disabled={!canAct}
               onClick={handleMoveClick}
             >
-              <FolderSimple size={14} />
+              <FolderSimple size={14} weight="bold" />
               Verschieben
             </button>
           )}
@@ -205,7 +205,7 @@ export default function LeftNav({
                   disabled={!canAct}
                   onClick={handleDeleteClick}
                 >
-                  <Trash size={14} />
+                  <Trash size={14} weight="bold" />
                   Löschen
                 </button>
               )}
@@ -232,22 +232,22 @@ export default function LeftNav({
         {menuOpen && (
           <div className="lnav-user-menu">
             <Link href="/settings" className="lnav-menu-link" onClick={() => setMenuOpen(false)}>
-              <Gear size={15} /> Einstellungen
+              <Gear size={15} weight="bold" /> Einstellungen
             </Link>
             <div className="lnav-menu-divider" />
             <button className="lnav-menu-logout" onClick={() => { setMenuOpen(false); handleLogout() }}>
-              <SignOut size={15} /> Abmelden
+              <SignOut size={15} weight="bold" /> Abmelden
             </button>
           </div>
         )}
-        <div className="lnav-user-bar" onClick={() => setMenuOpen(v => !v)}>
+        <button type="button" className="lnav-user-bar" onClick={() => setMenuOpen(v => !v)} aria-expanded={menuOpen} aria-haspopup="true">
           <div className="lnav-user-avatar">{userInitial}</div>
           <div className="lnav-user-info">
             <span className="lnav-user-name">{userFullName || userEmail}</span>
             <span className="lnav-user-sub">{userEmail}</span>
           </div>
           <span className="lnav-user-chevron">{menuOpen ? '▴' : '▾'}</span>
-        </div>
+        </button>
       </div>
     </nav>
   )

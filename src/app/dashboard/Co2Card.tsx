@@ -19,14 +19,9 @@ export default function Co2Card({ co2Min, co2Max, periodLabel }: Co2CardProps) {
 
   return (
     <div
+      className="card"
       style={{
-        background: 'rgba(255,255,255,0.72)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        border: '1px solid rgba(255,255,255,0.65)',
-        borderRadius: 12,
         padding: '16px 20px',
-        boxShadow: '0 2px 12px rgba(26,23,20,0.06)',
         position: 'relative',
       }}
     >

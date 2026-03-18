@@ -1,9 +1,9 @@
 'use client'
 
 import React from 'react'
-import { PencilSimple, FolderSimple, CaretRight, Trash } from '@phosphor-icons/react'
 import LeftNav from './LeftNav'
 import ChatArea from './ChatArea'
+import ContextMenu from './ContextMenu'
 import { JungleModal } from './modals/JungleModal'
 import { MergeModal } from './modals/MergeModal'
 import SessionPanel from './SessionPanel'
@@ -364,70 +364,23 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
       )}
 
       {/* ── Fixed Context Menu ── */}
-      {contextMenuId && menuAnchor && (() => {
-        const menuConv = conversations.find((c) => c.id === contextMenuId)
-        if (!menuConv) return null
-        return (
-          <div
-            ref={contextMenuRef}
-            className="wl-ctx-menu"
-            style={{ position: 'fixed', top: menuAnchor.top, right: menuAnchor.right }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="wl-ctx-item" onMouseDown={(e) => {
-              e.stopPropagation()
-              setContextMenuId(null)
-              setMenuAnchor(null)
-              setEditingConvId(menuConv.id)
-              setEditingTitle(menuConv.title ?? 'Unterhaltung')
-            }}>
-              <PencilSimple size={15} className="wl-ctx-icon" />
-              Umbenennen
-            </button>
-            <button className="wl-ctx-item" onMouseDown={(e) => {
-              e.stopPropagation()
-              setContextMenuSubmenu((v) => !v)
-            }}>
-              <FolderSimple size={15} className="wl-ctx-icon" />
-              Zu Projekt
-              <CaretRight size={13} className="wl-ctx-caret" style={{ transform: contextMenuSubmenu ? 'rotate(90deg)' : undefined, transition: 'transform 0.15s' }} />
-            </button>
-            {contextMenuSubmenu && (
-              <div className="wl-ctx-submenu">
-                {projects.length === 0 ? (
-                  <div className="wl-ctx-item wl-ctx-item--disabled">Keine Projekte</div>
-                ) : projects.map((p) => (
-                  <button key={p.id} className="wl-ctx-item" onMouseDown={(e) => {
-                    e.stopPropagation()
-                    setMenuAnchor(null)
-                    assignToProject(menuConv.id, p.id)
-                  }}>{p.title}</button>
-                ))}
-              </div>
-            )}
-            {menuConv.project_id && (
-              <button className="wl-ctx-item" onMouseDown={(e) => {
-                e.stopPropagation()
-                setMenuAnchor(null)
-                assignToProject(menuConv.id, null)
-              }}>
-                <FolderSimple size={15} className="wl-ctx-icon" />
-                Aus Projekt entfernen
-              </button>
-            )}
-            <div className="wl-ctx-divider" />
-            <button className="wl-ctx-item wl-ctx-item--danger" onMouseDown={(e) => {
-              e.stopPropagation()
-              setContextMenuId(null)
-              setMenuAnchor(null)
-              setConfirmDeleteId(menuConv.id)
-            }}>
-              <Trash size={15} />
-              Löschen
-            </button>
-          </div>
-        )
-      })()}
+      {contextMenuId && menuAnchor && (
+        <ContextMenu
+          contextMenuId={contextMenuId}
+          menuAnchor={menuAnchor}
+          conversations={conversations}
+          projects={projects}
+          contextMenuSubmenu={contextMenuSubmenu}
+          contextMenuRef={contextMenuRef}
+          onSetContextMenuId={setContextMenuId}
+          onSetMenuAnchor={setMenuAnchor}
+          onSetContextMenuSubmenu={setContextMenuSubmenu}
+          onSetEditingConvId={setEditingConvId}
+          onSetEditingTitle={setEditingTitle}
+          onSetConfirmDeleteId={setConfirmDeleteId}
+          onAssignToProject={assignToProject}
+        />
+      )}
 
       {/* ── Chat Area ── */}
       <ChatArea

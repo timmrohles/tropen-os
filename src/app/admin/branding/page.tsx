@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { PaintBrush } from '@phosphor-icons/react'
 
 const PRESET_COLORS = ['var(--accent)', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
@@ -33,7 +34,6 @@ export default function BrandingPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Org-ID aus User laden (mit Fallback aus users-Tabelle für Owner ohne invite metadata)
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       const meta = user.user_metadata as { organization_id?: string }
@@ -49,7 +49,6 @@ export default function BrandingPage() {
       }
     })
 
-    // Branding laden
     fetch('/api/admin/branding')
       .then((r) => r.json())
       .then((d: BrandingData) => {
@@ -60,7 +59,7 @@ export default function BrandingPage() {
   }, [])
 
   async function uploadLogo(file: File) {
-    if (!file.type.startsWith('image/')) { setError('Bitte ein Bild auswählen.'); return }
+    if (!file.type.startsWith('image/')) { setError('Bitte ein Bild auswaehlen.'); return }
     if (file.size > 2 * 1024 * 1024) { setError('Logo max. 2 MB.'); return }
     setUploading(true)
     setError('')
@@ -70,7 +69,7 @@ export default function BrandingPage() {
       .from('organization-logos')
       .upload(path, file, { upsert: true })
     if (uploadError) {
-      setError('Upload fehlgeschlagen. Prüfe ob Bucket "organization-logos" existiert.')
+      setError('Upload fehlgeschlagen. Pruefe ob Bucket "organization-logos" existiert.')
       setUploading(false)
       return
     }
@@ -97,7 +96,6 @@ export default function BrandingPage() {
     if (res.ok) {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-      // CSS-Variable aktualisieren
       document.documentElement.style.setProperty('--primary-color', data.primary_color)
     } else {
       setError('Speichern fehlgeschlagen.')
@@ -105,15 +103,18 @@ export default function BrandingPage() {
   }
 
   return (
-    <div className="content-max">
-      <div className="page-header" style={{ marginBottom: 24 }}>
+    <div className="content-wide">
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Co-Branding</h1>
+          <h1 className="page-header-title">
+            <PaintBrush size={22} color="var(--text-primary)" weight="bold" />
+            Co-Branding
+          </h1>
           <p className="page-header-sub">Passe Logo, Farbe und den Namen deines KI-Assistenten an.</p>
         </div>
       </div>
 
-      {/* ── Branding-Einstellungen ── */}
+      {/* Branding-Einstellungen */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ padding: '20px 24px' }}>
 
@@ -121,18 +122,19 @@ export default function BrandingPage() {
           <div style={s.field}>
             <label style={s.label}>Logo</label>
             <div style={s.logoRow}>
-              <div
+              <button
+                type="button"
                 style={s.dropZone}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" style={s.logoImg} />
                 ) : uploading ? (
-                  <span style={s.dropHint}>Wird hochgeladen…</span>
+                  <span style={s.dropHint}>Wird hochgeladen...</span>
                 ) : (
-                  <span style={s.dropHint}>Klicken zum Hochladen · PNG · SVG · JPG · max. 2 MB</span>
+                  <span style={s.dropHint}>Klicken zum Hochladen -- PNG -- SVG -- JPG -- max. 2 MB</span>
                 )}
-              </div>
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -162,24 +164,32 @@ export default function BrandingPage() {
             />
           </div>
 
-          {/* Primärfarbe */}
+          {/* Primaerfarbe */}
           <div style={s.field}>
-            <label style={s.label}>Primärfarbe</label>
+            <label style={s.label}>Primaerfarbe</label>
             <div style={s.colorRow}>
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
-                  style={{ ...s.colorSwatch, background: c, ...(data.primary_color === c ? s.colorSwatchActive : {}) }}
+                  style={{
+                    ...s.colorSwatch,
+                    background: c,
+                    ...(data.primary_color === c ? s.colorSwatchActive : {})
+                  }}
                   onClick={() => { setData((d) => ({ ...d, primary_color: c })); setShowColorPicker(false) }}
                   title={c}
                 />
               ))}
               <button
-                style={{ ...s.colorSwatch, background: '#1e1e1e', border: '1px dashed #555' }}
+                style={{
+                  ...s.colorSwatch,
+                  background: 'var(--bg-surface)',
+                  border: '1px dashed var(--border-medium)'
+                }}
                 onClick={() => setShowColorPicker((v) => !v)}
                 title="Eigene Farbe"
               >
-                <span style={{ fontSize: 12, color: '#888' }}>+</span>
+                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>+</span>
               </button>
               {showColorPicker && (
                 <input
@@ -191,7 +201,9 @@ export default function BrandingPage() {
               )}
             </div>
             <div style={{ ...s.colorBar, background: data.primary_color }}>
-              <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>{data.primary_color}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                {data.primary_color}
+              </span>
             </div>
           </div>
 
@@ -218,25 +230,25 @@ export default function BrandingPage() {
           </div>
 
           {error && <div style={s.errorBox}>{error}</div>}
-          {success && <div style={s.successBox}>Einstellungen gespeichert ✓</div>}
+          {success && <div style={s.successBox}>Einstellungen gespeichert</div>}
 
           <button className="btn btn-primary" onClick={save} disabled={saving || uploading} style={{ marginTop: 8 }}>
-            {saving ? 'Speichern…' : 'Änderungen speichern'}
+            {saving ? 'Speichern...' : 'Aenderungen speichern'}
           </button>
         </div>
       </div>
 
-      {/* ── White-Label Premium (gesperrt) ── */}
+      {/* White-Label Premium (gesperrt) */}
       <div className="card">
         <div style={{ padding: '20px 24px' }}>
           <div style={s.lockRow}>
-            <span style={s.lockIcon}>🔒</span>
+            <span style={s.lockIcon} aria-hidden="true">&#128274;</span>
             <div>
-              <div style={s.premiumTitle}>White-Label – Tropen OS Premium</div>
+              <div style={s.premiumTitle}>White-Label -- Tropen OS Premium</div>
               <div style={s.premiumSub}>
-                Eigenes vollständiges Branding, eigene Domain (z.B.{' '}
+                Eigenes vollstaendiges Branding, eigene Domain (z.B.{' '}
                 <span style={s.domainExample}>ai.mustermann.de</span>
-                ), kein &bdquo;powered by Tropen OS&ldquo;, vollständig anpassbare Oberfläche.
+                ), kein &bdquo;powered by Tropen OS&ldquo;, vollstaendig anpassbare Oberflaeche.
               </div>
             </div>
           </div>
@@ -244,7 +256,7 @@ export default function BrandingPage() {
             href="mailto:hello@tropen.de?subject=Anfrage%20White-Label%20Tropen%20OS"
             className="btn btn-ghost"
           >
-            Jetzt anfragen →
+            Jetzt anfragen
           </a>
         </div>
       </div>
@@ -254,41 +266,47 @@ export default function BrandingPage() {
 
 const s: Record<string, React.CSSProperties> = {
   field: { display: 'flex', flexDirection: 'column', marginBottom: 20 },
-  label: { fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
-
-  input: {
-    background: 'var(--bg-surface-solid)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
-    padding: '9px 14px', borderRadius: 7, fontSize: 13, outline: 'none',
-    width: '100%', boxSizing: 'border-box',
+  label: {
+    fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600,
+    marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em'
   },
-
+  input: {
+    background: 'var(--bg-surface-solid)', border: '1px solid var(--border-medium)',
+    color: 'var(--text-primary)', padding: '9px 14px', borderRadius: 7,
+    fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box',
+  },
   logoRow: { display: 'flex', alignItems: 'center', gap: 12 },
   dropZone: {
-    flex: 1, border: '1px dashed #2a2a2a', borderRadius: 8,
-    padding: '14px 20px', cursor: 'pointer', background: '#1a1a1a',
+    flex: 1, border: '1px dashed var(--border-medium)', borderRadius: 8,
+    padding: '14px 20px', cursor: 'pointer', background: 'var(--bg-surface)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: 54,
+    minHeight: 54, font: 'inherit',
   },
-  logoImg: { maxHeight: 36, maxWidth: '100%', objectFit: 'contain' },
-  dropHint: { fontSize: 12, color: '#444' },
-
+  logoImg: { maxHeight: 36, maxWidth: '100%', objectFit: 'contain' } as React.CSSProperties,
+  dropHint: { fontSize: 12, color: 'var(--text-tertiary)' },
   colorRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 },
   colorSwatch: {
     width: 26, height: 26, borderRadius: '50%', border: '2px solid transparent',
     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'transform 0.1s',
   },
-  colorSwatchActive: { border: '2px solid #fff', transform: 'scale(1.2)' },
+  colorSwatchActive: { border: '2px solid var(--text-primary)', transform: 'scale(1.2)' },
   colorInput: { width: 26, height: 26, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0 },
-  colorBar: { height: 5, borderRadius: 3, transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px' },
-
-  errorBox: { fontSize: 13, color: '#ef4444', background: '#1f0a0a', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
-  successBox: { fontSize: 13, color: 'var(--accent)', background: '#1e3818', padding: '10px 14px', borderRadius: 6, marginBottom: 12 },
-
-  // ── Premium Section ──
+  colorBar: {
+    height: 5, borderRadius: 3, transition: 'background 0.2s',
+    display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 6px'
+  },
+  errorBox: {
+    fontSize: 13, color: 'var(--error)', background: 'var(--error-bg)',
+    padding: '10px 14px', borderRadius: 6, marginBottom: 12
+  },
+  successBox: {
+    fontSize: 13, color: 'var(--success)', background: 'var(--success-bg)',
+    padding: '10px 14px', borderRadius: 6, marginBottom: 12
+  },
   lockRow: { display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 },
   lockIcon: { fontSize: 20, flexShrink: 0, marginTop: 2 },
-  premiumTitle: { fontSize: 15, fontWeight: 700, color: '#ccc', marginBottom: 6 },
-  premiumSub: { fontSize: 13, color: '#555', lineHeight: 1.6 },
-  domainExample: { color: '#888', fontFamily: 'monospace' },
+  premiumTitle: { fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 },
+  premiumSub: { fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 },
+  domainExample: { color: 'var(--text-tertiary)', fontFamily: 'monospace' },
 }

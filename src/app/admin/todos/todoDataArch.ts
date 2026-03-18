@@ -1,0 +1,98 @@
+import type { Todo } from './todo.types'
+
+// Architektur-Entscheidungen (Review 2026-03-17)
+// Vollständige Analyse: docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md
+
+export const TODOS_ARCH: Todo[] = [
+
+  {
+    id: 'arch-d1',
+    titel: 'D1: Zeitdimension (getMessagesAt) — in D2 oder Plan K?',
+    beschreibung: 'Plan D2 (Workspace Chat Context) kann getMessagesAt() / getContextSnapshot(at) enthalten für "Zeig mir den Stand von letzter Woche". Erhöht Scope von D2. Alternative: auf Plan K (Geteilte Chats) verschieben wo Zeitdimension ohnehin nötig ist.',
+    status: 'blockiert',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'niedrig',
+    referenz: 'docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md',
+  },
+  {
+    id: 'arch-j1',
+    titel: 'J1: Skills vs. Capabilities — Abgrenzung definieren',
+    beschreibung: 'capabilities-Tabelle (Migration 039) hat scope/package-System + system_prompt. Skills-Spec hat identisches scope-System + instructions. Überschneidung ungeklärt. Optionen: A) Skills ergänzen (capabilities.system_prompt deprecated) · B) Skills ersetzen capabilities.system_prompt (Breaking Change) · C) Skills eigenständig, keine Verbindung zu capabilities. Empfehlung: Option C.',
+    status: 'blockiert',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'hoch',
+    referenz: 'docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md',
+  },
+  {
+    id: 'arch-j2',
+    titel: 'J2: Plan-Nummern-Konflikt synchronisieren',
+    beschreibung: 'ARCHITECT.md: Plan J = "Geteilte Chats + Team-Antwort". phase2-plans.md: Plan J = "Produktion (Feeds, Dashboards, Agents)". Beide Dokumente müssen synchronisiert werden bevor J2 gebaut wird. Empfehlung: ARCHITECT.md anpassen — phase2-plans.md ist die neuere Quelle.',
+    status: 'offen',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'hoch',
+    referenz: 'ARCHITECT.md + docs/phase2-plans.md',
+  },
+  {
+    id: 'arch-j3',
+    titel: 'J3: Cron-Runner — Supabase pg_cron oder Vercel Cron Jobs?',
+    beschreibung: 'Supabase pg_cron: keine Extra-Kosten, DB-nah, braucht HTTP-Call zu Next.js API, weniger Debugging. Vercel Cron: einfacher in Next.js, gutes Logging, braucht Vercel Pro (~$20/mo). Entscheidung nötig vor Plan J2b (Agent-Engine).',
+    status: 'blockiert',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'hoch',
+    referenz: 'docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md',
+  },
+  {
+    id: 'arch-j4',
+    titel: 'J4: agents ALTER — Marketing-Agents bekommen scope="package"?',
+    beschreibung: 'Die agents-Tabelle (Migration 025) hat ~10–20 Marketing-Paket-Agenten ohne scope-Spalte. Nach ALTER TABLE muss Migration-Plan festlegen: bestehende Rows bekommen DEFAULT "user", dann UPDATE auf "package" für Marketing-Paket-Agents. Namen der betroffenen Rows aus Migration 041 prüfen. Bestätigung nötig.',
+    status: 'blockiert',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'hoch',
+    referenz: 'supabase/migrations/025_agents.sql + 041',
+  },
+  {
+    id: 'arch-j5',
+    titel: 'J5: Toro-Vorschlag — opt-in DEFAULT false bestätigt?',
+    beschreibung: 'Toro soll nach erkannten Mustern Skills und Agenten vorschlagen. Spec: user_preferences: agent_suggestions + skill_suggestions DEFAULT false (opt-in). Alternative: opt-out DEFAULT true. Entscheidung vor Plan J2c.',
+    status: 'offen',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'niedrig',
+    referenz: 'docs/plans/agents-spec.md',
+  },
+  {
+    id: 'arch-build-d2',
+    titel: 'Plan D2 bauen — Workspace Chat Context',
+    beschreibung: 'buildWorkspaceContext + buildCardContext + workspace_messages ALTER (+skill_id, +cost_eur, +model_used) + streamWorkspaceMessage + /api/workspaces/[id]/chat/*. Voraussetzung: D1 entschieden. Ampel: 🟡 Gelbes Licht (5 Anpassungen im Prompt nötig, details im Review-Dokument).',
+    status: 'geplant',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'hoch',
+    referenz: 'docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md',
+  },
+  {
+    id: 'arch-build-j2a',
+    titel: 'Plan J2a bauen — Skills-Fundament',
+    beschreibung: 'skills-Tabelle + RLS + System-Skill-Seeds, agent_skills Junction, skill-resolver.ts, /api/skills/*. Voraussetzung: D2 fertig + J1/J2 entschieden.',
+    status: 'geplant',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'mittel',
+    referenz: 'docs/plans/agents-spec.md',
+  },
+  {
+    id: 'arch-build-j2b',
+    titel: 'Plan J2b bauen — Agent-Engine',
+    beschreibung: 'agents ALTER + Migration für existing rows, agent_runs (APPEND ONLY), agent-engine.ts (run/step/budget-check), /api/agents/*. Voraussetzung: J2a fertig + J3/J4 entschieden.',
+    status: 'geplant',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'mittel',
+    referenz: 'docs/plans/agents-spec.md',
+  },
+  {
+    id: 'arch-build-j2c',
+    titel: 'Plan J2c bauen — Autonomie (Cron + Webhook + Toro-Vorschlag)',
+    beschreibung: 'Scheduled Trigger (pg_cron oder Vercel Cron), Webhook-Endpoint + HMAC, n8n bidirektional, Toro-Vorschlag-Logik, Marketing-Paket-Seeds. Voraussetzung: J2b fertig + J5 entschieden + Retention-Policy für agent_runs definiert.',
+    status: 'geplant',
+    kategorie: 'Architektur-Entscheidungen',
+    prioritaet: 'mittel',
+    referenz: 'docs/plans/agents-spec.md',
+  },
+]

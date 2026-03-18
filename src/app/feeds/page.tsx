@@ -1,93 +1,108 @@
 'use client'
 // src/app/feeds/page.tsx — Newscenter
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem } from '@/actions/feeds'
-import type { FeedItem, FeedSource } from '@/types/feeds'
+import {
+  listFeedItems, listFeedSources,
+  markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem,
+  dismissItem, restoreItem,
+} from '@/actions/feeds'
+import { listTopics, createTopic, deleteTopic } from '@/actions/feed-topics'
+import type { FeedItem, FeedSource, FeedTopic } from '@/types/feeds'
 import {
   BookmarkSimple, ArrowSquareOut, CheckCircle, DotsThree,
   ThumbsDown, Archive, Trash, Rss, MagnifyingGlass,
+  EyeSlash, ArrowCounterClockwise, Tag, Plus, X,
 } from '@phosphor-icons/react'
+import SourcesView from './SourcesView'
+import DataView from './DataView'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
-  email: '#7C6FF7',
-  api:   '#F7A44A',
+  email: 'var(--tropen-process)',
+  api:   'var(--tropen-output)',
   url:   'var(--text-tertiary)',
 }
 
 const PAGE_SIZE = 20
 
+type View = 'articles' | 'saved' | 'dismissed' | 'data' | 'sources'
+
 export default function FeedsPage() {
-  const supabase = createClient()
-  const [sources, setSources] = useState<FeedSource[]>([])
-  const [items, setItems] = useState<FeedItem[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [selectedSource, setSelectedSource] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [menuOpen, setMenuOpen] = useState<string | null>(null)
+  const [view, setView]               = useState<View>('articles')
+  const [sources, setSources]         = useState<FeedSource[]>([])
+  const [topics, setTopics]           = useState<FeedTopic[]>([])
+  const [items, setItems]             = useState<FeedItem[]>([])
+  const [total, setTotal]             = useState(0)
+  const [loading, setLoading]         = useState(true)
+  const [activeTopic, setActiveTopic] = useState<string | null>(null)
+  const [search, setSearch]           = useState('')
+  const [menuOpen, setMenuOpen]       = useState<string | null>(null)
+
+  // Topic modal state
+  const [topicModal, setTopicModal]         = useState(false)
+  const [newTopicName, setNewTopicName]     = useState('')
+  const [topicSourceSel, setTopicSourceSel] = useState<string[]>([])
+  const [savingTopic, setSavingTopic]       = useState(false)
+  const [topicError, setTopicError]         = useState('')
+
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
-  const readTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  // Stable refs so loadItems reads current values without being in its deps
+  const viewRef         = useRef<View>('articles')
+  const activeTopicRef  = useRef<string | null>(null)
+  const searchRef       = useRef('')
+  viewRef.current        = view
+  activeTopicRef.current = activeTopic
+  searchRef.current      = search
 
   useEffect(() => {
-    supabase.from('feed_sources').select('*').eq('is_active', true).order('name')
-      .then(({ data }) => { if (data) setSources(data.map(mapSource)) })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    listFeedSources().then((data) => setSources(data))
+    listTopics().then((data) => setTopics(data))
   }, [])
 
+  // Truly stable — all values read from refs
   const loadItems = useCallback(async (offset = 0, replace = true) => {
     setLoading(true)
-    let q = supabase
-      .from('feed_items')
-      .select('*', { count: 'exact' })
-      .neq('status', 'deleted')
-      .order('fetched_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+    const currentView  = viewRef.current
+    const currentTopic = activeTopicRef.current
+    const opts: Parameters<typeof listFeedItems>[0] = {
+      topicId: currentTopic ?? undefined,
+      search:  searchRef.current.length > 2 ? searchRef.current : undefined,
+      limit:   PAGE_SIZE,
+      offset,
+    }
+    if (currentView === 'articles')  opts.status    = 'unread'
+    if (currentView === 'saved')     opts.isSaved   = true
+    if (currentView === 'dismissed') opts.dismissed = true
 
-    if (selectedSource) q = q.eq('source_id', selectedSource)
-    if (search.length > 2) q = q.or(`title.ilike.%${search}%,summary.ilike.%${search}%`)
-
-    const { data, count } = await q
-    const mapped = (data ?? []).map(mapItem)
-    setItems((prev) => replace ? mapped : [...prev, ...mapped])
-    setTotal(count ?? 0)
+    const { items: data, total: count } = await listFeedItems(opts)
+    setItems((prev) => replace ? data : [...prev, ...data])
+    setTotal(count)
     setLoading(false)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSource, search])
+  }, [])
 
   useEffect(() => { loadItems(0, true) }, [loadItems])
 
-  // IntersectionObserver — auto-mark as read after 2s in viewport
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const id = (entry.target as HTMLElement).dataset.itemId
-        if (!id) continue
-        if (entry.isIntersecting) {
-          const timer = setTimeout(async () => {
-            await markItemRead(id)
-            setItems((prev) => prev.map((it) => it.id === id && it.status === 'unread' ? { ...it, status: 'read' } : it))
-          }, 2000)
-          readTimers.current.set(id, timer)
-        } else {
-          const timer = readTimers.current.get(id)
-          if (timer) { clearTimeout(timer); readTimers.current.delete(id) }
-        }
-      }
-    }, { threshold: 0.5 })
-    return () => {
-      observerRef.current?.disconnect()
-      for (const t of readTimers.current) clearTimeout(t)
-    }
-  }, [])
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const registerCard = useCallback((el: HTMLDivElement | null) => {
-    if (el && observerRef.current) observerRef.current.observe(el)
-  }, [])
+  const handleViewChange = (newView: View) => {
+    viewRef.current = newView
+    setView(newView)
+    setItems([])
+    setTotal(0)
+    loadItems(0, true)
+  }
+
+  const handleTopicChange = (topicId: string | null) => {
+    activeTopicRef.current = topicId
+    setActiveTopic(topicId)
+    setItems([])
+    setTotal(0)
+    loadItems(0, true)
+  }
 
   const handleSearch = (val: string) => {
+    searchRef.current = val
     setSearch(val)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => loadItems(0, true), 300)
@@ -95,19 +110,194 @@ export default function FeedsPage() {
 
   const getSource = (id: string) => sources.find((s) => s.id === id)
 
-  const allTags = Array.from(new Set(
-    items.flatMap((it) => it.keyFacts ?? []).filter(Boolean)
-  )).slice(0, 20)
+  // ── Topic modal ───────────────────────────────────────────────────────────
+
+  const openTopicModal = () => {
+    setNewTopicName('')
+    setTopicSourceSel([])
+    setTopicError('')
+    setTopicModal(true)
+  }
+
+  const handleCreateTopic = async () => {
+    if (!newTopicName.trim()) { setTopicError('Name ist erforderlich'); return }
+    setSavingTopic(true)
+    setTopicError('')
+    const res = await createTopic(newTopicName.trim(), topicSourceSel)
+    setSavingTopic(false)
+    if (res.error) { setTopicError(res.error); return }
+    if (res.topic) setTopics((prev) => [...prev, res.topic!])
+    setTopicModal(false)
+  }
+
+  const handleDeleteTopic = async (topicId: string) => {
+    await deleteTopic(topicId)
+    setTopics((prev) => prev.filter((t) => t.id !== topicId))
+    if (activeTopic === topicId) handleTopicChange(null)
+  }
+
+  useEffect(() => {
+    if (!topicModal) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setTopicModal(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [topicModal])
+
+  // ── Shared item card renderer ─────────────────────────────────────────────
+
+  const renderItem = (item: FeedItem) => {
+    const src          = getSource(item.sourceId)
+    const isUnread     = item.status === 'unread'
+    const isDismissed  = view === 'dismissed'
+
+    return (
+      <div
+        key={item.id}
+        className="card"
+        style={{
+          padding: '14px 16px',
+          borderLeft: isUnread && !isDismissed ? '3px solid var(--accent)' : undefined,
+          position: 'relative' as const,
+        }}
+        onClick={() => setMenuOpen(null)}
+      >
+        {item.score && (
+          <span style={{ position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }}
+            aria-label={`Relevanz: ${item.score} von 10`}>
+            {item.score}/10
+          </span>
+        )}
+        {src && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
+            {src.name}
+          </div>
+        )}
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>{item.title}</div>
+        {item.summary && (
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 }}>{item.summary}</div>
+        )}
+        {item.keyFacts && item.keyFacts.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
+            {item.keyFacts.slice(0, 4).map((f, i) => (
+              <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {item.url && (
+            <a href={item.url} target="_blank" rel="noreferrer noopener" className="btn btn-ghost btn-sm"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              aria-label={`Artikel öffnen: ${item.title}`}>
+              <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
+            </a>
+          )}
+
+          {isDismissed ? (
+            // Dismissed view: restore only
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--accent)' }}
+              onClick={async (e) => {
+                e.stopPropagation()
+                await restoreItem(item.id)
+                setItems((prev) => prev.filter((it) => it.id !== item.id))
+                setTotal((prev) => Math.max(0, prev - 1))
+              }}
+              aria-label="Artikel wiederherstellen"
+            >
+              <ArrowCounterClockwise size={13} weight="bold" aria-hidden="true" /> Wiederherstellen
+            </button>
+          ) : (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ color: item.isSaved ? 'var(--accent)' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  await toggleItemSaved(item.id, !item.isSaved)
+                  setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it))
+                }}
+                aria-pressed={item.isSaved}
+                aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
+              >
+                <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'bold'} aria-hidden="true" />
+                {item.isSaved ? 'Gespeichert' : 'Merken'}
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  await markItemRead(item.id)
+                  setItems((prev) => prev.filter((it) => it.id !== item.id))
+                  setTotal((prev) => Math.max(0, prev - 1))
+                }}
+                aria-label="Als gelesen markieren"
+              >
+                <CheckCircle size={13} weight="bold" aria-hidden="true" /> Abhaken
+              </button>
+              <button
+                className="btn-icon" style={{ marginLeft: 'auto' }}
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
+                aria-label="Weitere Aktionen" aria-haspopup="true" aria-expanded={menuOpen === item.id}
+              >
+                <DotsThree size={16} weight="bold" aria-hidden="true" />
+              </button>
+              {menuOpen === item.id && (
+                <div className="dropdown" style={{ position: 'absolute' as const, right: 12, top: 44, zIndex: 10, minWidth: 180 }}
+                  role="menu" onClick={(e) => e.stopPropagation()}>
+                  <button role="menuitem" className="dropdown-item"
+                    onClick={async () => {
+                      await dismissItem(item.id)
+                      setItems((prev) => prev.filter((it) => it.id !== item.id))
+                      setTotal((prev) => Math.max(0, prev - 1))
+                      setMenuOpen(null)
+                    }}>
+                    <EyeSlash size={14} weight="bold" aria-hidden="true" /> Ausblenden
+                  </button>
+                  <button role="menuitem" className="dropdown-item"
+                    onClick={async () => {
+                      await markItemNotRelevant(item.id)
+                      setItems((prev) => prev.filter((it) => it.id !== item.id))
+                      setMenuOpen(null)
+                    }}>
+                    <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
+                  </button>
+                  <button role="menuitem" className="dropdown-item"
+                    onClick={async () => {
+                      await archiveItem(item.id)
+                      setItems((prev) => prev.filter((it) => it.id !== item.id))
+                      setMenuOpen(null)
+                    }}>
+                    <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
+                  </button>
+                  <div className="dropdown-divider" />
+                  <button role="menuitem" className="dropdown-item dropdown-item--danger"
+                    onClick={async () => {
+                      await deleteItem(item.id)
+                      setItems((prev) => prev.filter((it) => it.id !== item.id))
+                      setMenuOpen(null)
+                    }}>
+                    <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}
-      onClick={() => setMenuOpen(null)}
-    >
+    <div className="content-max" onClick={() => setMenuOpen(null)}>
+
       {/* Page Header */}
-      <div className="page-header" style={{ flexShrink: 0, padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'var(--bg-nav)' }}>
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 className="page-header-title">
             <Rss size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
             Newscenter
           </h1>
@@ -118,265 +308,198 @@ export default function FeedsPage() {
         </div>
       </div>
 
-      {/* Body: Sidebar + Stream */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left Sidebar */}
-        <div
-          className="sidebar-scroll"
-          style={{ width: 220, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '12px 0', background: 'rgba(255,255,255,0.45)' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div style={{ padding: '0 8px 6px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
-              Quellen
-            </div>
-            <button
-              className={`list-row${selectedSource === null ? ' list-row--active' : ''}`}
-              onClick={() => setSelectedSource(null)}
-            >
-              Alle Quellen
-              {total > 0 && <span className="badge" style={{ marginLeft: 'auto' }}>{total}</span>}
-            </button>
-            {sources.map((src) => (
-              <button
-                key={src.id}
-                className={`list-row${selectedSource === src.id ? ' list-row--active' : ''}`}
-                onClick={() => setSelectedSource(src.id)}
-              >
-                <span
-                  style={{ width: 8, height: 8, borderRadius: '50%', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', flexShrink: 0 }}
-                  aria-hidden="true"
-                />
-                {src.name}
-              </button>
-            ))}
-          </div>
-
-          {allTags.length > 0 && (
-            <div style={{ padding: '12px 8px 0' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em', padding: '0 4px', marginBottom: 4 }}>
-                Themen
-              </div>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  className="list-row"
-                  style={{ fontSize: 12, color: 'var(--accent)' }}
-                  onClick={() => { setSearch(tag); loadItems(0, true) }}
-                >
-                  #{tag}
-                </button>
-              ))}
-            </div>
+      {/* View Toggle */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+        <button className={`chip${view === 'articles'  ? ' chip--active' : ''}`} onClick={() => handleViewChange('articles')}>
+          Artikel
+          {view === 'articles' && total > 0 && (
+            <span style={{ marginLeft: 5, background: 'rgba(255,255,255,0.25)', color: '#fff', borderRadius: 4, fontSize: 11, fontWeight: 700, padding: '1px 5px' }}>
+              {total}
+            </span>
           )}
-        </div>
 
-        {/* Main Stream */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* Search + count */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ flex: 1, position: 'relative' as const }}>
+        </button>
+        <button className={`chip${view === 'saved'     ? ' chip--active' : ''}`} onClick={() => handleViewChange('saved')}>Gespeichert</button>
+        <button className={`chip${view === 'dismissed' ? ' chip--active' : ''}`} onClick={() => handleViewChange('dismissed')}>Ausgeblendet</button>
+        <button className={`chip${view === 'data'      ? ' chip--active' : ''}`} onClick={() => handleViewChange('data')}>Daten</button>
+        <button className={`chip${view === 'sources'   ? ' chip--active' : ''}`} onClick={() => handleViewChange('sources')}>Quellen verwalten</button>
+      </div>
+
+      {/* ── ARTICLES / SAVED / DISMISSED ──────────────────────────────────── */}
+      {(view === 'articles' || view === 'saved' || view === 'dismissed') && (
+        <>
+          {/* Search — full width row */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ position: 'relative' as const }}>
               <MagnifyingGlass
-                size={14}
-                weight="bold"
-                color="var(--text-tertiary)"
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
+                size={14} weight="bold" color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' as const }}
                 aria-hidden="true"
               />
               <input
-                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 14, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
-                placeholder="Suche in Feeds..."
+                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
+                placeholder="Feeds durchsuchen…"
                 value={search}
                 aria-label="Feed-Suche"
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            <span style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' as const }}>
-              {total} Artikel
-            </span>
           </div>
 
-          {loading && items.length === 0 && (
-            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
-              Wird geladen…
-            </div>
-          )}
-
-          {!loading && items.length === 0 && (
-            <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
-              Keine Artikel gefunden.
-            </div>
-          )}
-
-          {items.map((item) => {
-            const src = getSource(item.sourceId)
-            const isUnread = item.status === 'unread'
-            return (
-              <div
-                key={item.id}
-                data-item-id={item.id}
-                ref={isUnread ? registerCard : undefined}
-                className="card"
-                style={{ padding: '14px 16px', borderLeft: isUnread ? '3px solid var(--accent)' : undefined, position: 'relative' as const }}
-                onClick={() => setMenuOpen(null)}
-              >
-                {item.score && (
+          {/* Topic filter pills — scrollable row (not on dismissed) */}
+          {view !== 'dismissed' && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto' as const, scrollbarWidth: 'none' as const, paddingBottom: 2 }}>
+              <button className={`chip${activeTopic === null ? ' chip--active' : ''}`} onClick={() => handleTopicChange(null)}>
+                Alle
+              </button>
+              {topics.map((t) => (
+                <button
+                  key={t.id}
+                  className={`chip${activeTopic === t.id ? ' chip--active' : ''}`}
+                  onClick={() => handleTopicChange(t.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                >
+                  {t.name}
                   <span
-                    style={{ position: 'absolute' as const, top: 10, right: 12, fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }}
-                    aria-label={`Relevanz: ${item.score} von 10`}
+                    style={{ display: 'inline-flex', alignItems: 'center', opacity: 0.6, marginLeft: 2 }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteTopic(t.id) }}
+                    title={`Thema "${t.name}" löschen`}
+                    role="button"
+                    aria-label={`Thema ${t.name} löschen`}
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleDeleteTopic(t.id)}
                   >
-                    {item.score}/10
+                    <X size={10} weight="bold" aria-hidden="true" />
                   </span>
-                )}
-                {src && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', marginBottom: 6 }}>
-                    {src.name}
-                  </div>
-                )}
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.4 }}>
-                  {item.title}
-                </div>
-                {item.summary && (
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 8 }}>
-                    {item.summary}
-                  </div>
-                )}
-                {item.keyFacts && item.keyFacts.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
-                    {item.keyFacts.slice(0, 4).map((f, i) => (
-                      <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
-                    ))}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="btn btn-ghost btn-sm"
-                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                      aria-label={`Artikel öffnen: ${item.title}`}
-                    >
-                      <ArrowSquareOut size={13} weight="bold" aria-hidden="true" /> Quelle
-                    </a>
-                  )}
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: item.isSaved ? 'var(--accent)' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await toggleItemSaved(item.id, !item.isSaved)
-                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, isSaved: !it.isSaved } : it))
-                    }}
-                    aria-pressed={item.isSaved}
-                    aria-label={item.isSaved ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen'}
-                  >
-                    <BookmarkSimple size={13} weight={item.isSaved ? 'fill' : 'regular'} aria-hidden="true" />
-                    {item.isSaved ? 'Gespeichert' : 'Merken'}
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await markItemRead(item.id)
-                      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: 'read' } : it))
-                    }}
-                    aria-label="Als gelesen markieren"
-                  >
-                    <CheckCircle size={13} weight="bold" aria-hidden="true" /> Abhaken
-                  </button>
-                  <button
-                    className="btn-icon"
-                    style={{ marginLeft: 'auto' }}
-                    onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === item.id ? null : item.id) }}
-                    aria-label="Weitere Aktionen"
-                    aria-haspopup="true"
-                    aria-expanded={menuOpen === item.id}
-                  >
-                    <DotsThree size={16} weight="bold" aria-hidden="true" />
-                  </button>
+                </button>
+              ))}
+              <button
+                className="chip"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' as const }}
+                onClick={openTopicModal}
+                aria-label="Neues Thema anlegen"
+              >
+                <Plus size={12} weight="bold" aria-hidden="true" /> Thema
+              </button>
+            </div>
+          )}
 
-                  {menuOpen === item.id && (
-                    <div
-                      className="dropdown"
-                      style={{ position: 'absolute' as const, right: 12, top: 44, zIndex: 10, minWidth: 180 }}
-                      role="menu"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        role="menuitem"
-                        className="dropdown-item"
-                        onClick={async () => { await markItemNotRelevant(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <ThumbsDown size={14} weight="bold" aria-hidden="true" /> Nicht passend
-                      </button>
-                      <button
-                        role="menuitem"
-                        className="dropdown-item"
-                        onClick={async () => { await archiveItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
-                      </button>
-                      <div className="dropdown-divider" />
-                      <button
-                        role="menuitem"
-                        className="dropdown-item dropdown-item--danger"
-                        onClick={async () => { await deleteItem(item.id); setItems((prev) => prev.filter((it) => it.id !== item.id)); setMenuOpen(null) }}
-                      >
-                        <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
-                      </button>
-                    </div>
-                  )}
+          {/* Item count */}
+          <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 12, textAlign: 'right' as const }}>
+            {total} {view === 'dismissed' ? 'ausgeblendete Artikel' : 'Artikel'}
+          </div>
+
+          {/* Stream */}
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+            {loading && items.length === 0 && (
+              <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }} role="status" aria-live="polite">
+                Wird geladen…
+              </div>
+            )}
+            {!loading && items.length === 0 && (
+              <div style={{ textAlign: 'center' as const, padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
+                {view === 'dismissed' ? 'Keine ausgeblendeten Artikel.' : 'Keine Artikel gefunden.'}
+              </div>
+            )}
+            {items.map((item) => renderItem(item))}
+            {items.length < total && (
+              <button className="btn btn-ghost" style={{ alignSelf: 'center', marginTop: 8 }} onClick={() => loadItems(items.length, false)}>
+                Mehr laden ({total - items.length} weitere)
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── DATA VIEW ────────────────────────────────────────────────────── */}
+      {view === 'data' && <DataView />}
+
+      {/* ── SOURCES VIEW ─────────────────────────────────────────────────── */}
+      {view === 'sources' && (
+        <SourcesView
+          topics={topics}
+          onTopicsChange={setTopics}
+        />
+      )}
+
+      {/* ── TOPIC MODAL ──────────────────────────────────────────────────── */}
+      {topicModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setTopicModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Neues Thema anlegen"
+        >
+          <div
+            className="card"
+            style={{ width: '100%', maxWidth: 480, padding: 24, maxHeight: '80vh', overflowY: 'auto' as const }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+                <Tag size={16} weight="fill" color="var(--accent)" aria-hidden="true" /> Neues Thema
+              </span>
+              <button className="btn-icon" aria-label="Schließen" onClick={() => setTopicModal(false)}>✕</button>
+            </div>
+
+            {topicError && (
+              <div style={{ padding: '10px 14px', background: 'var(--error-bg)', border: '1px solid var(--error)', borderRadius: 8, fontSize: 13, color: 'var(--error)', marginBottom: 16 }}>
+                {topicError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Name</label>
+              <input
+                autoFocus
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 14, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
+                value={newTopicName}
+                onChange={(e) => setNewTopicName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateTopic()}
+                placeholder='z.B. "KI", "Marketing", "Wettbewerb"'
+                maxLength={100}
+              />
+            </div>
+
+            {sources.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Quellen zuweisen</label>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
+                  {sources.map((src) => (
+                    <label key={src.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: topicSourceSel.includes(src.id) ? 'var(--accent-light)' : undefined }}>
+                      <input
+                        type="checkbox"
+                        checked={topicSourceSel.includes(src.id)}
+                        onChange={(e) => setTopicSourceSel((prev) =>
+                          e.target.checked ? [...prev, src.id] : prev.filter((id) => id !== src.id)
+                        )}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{src.name}</span>
+                      <span style={{ fontSize: 11, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)', padding: '1px 6px', borderRadius: 3, fontWeight: 600 }}>
+                        {src.type.toUpperCase()}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
-            )
-          })}
+            )}
 
-          {items.length < total && (
-            <button
-              className="btn btn-ghost"
-              style={{ alignSelf: 'center', marginTop: 8 }}
-              onClick={() => loadItems(items.length, false)}
-            >
-              Mehr laden ({total - items.length} weitere)
-            </button>
-          )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => setTopicModal(false)}>Abbrechen</button>
+              <button
+                className="btn btn-primary"
+                onClick={handleCreateTopic}
+                disabled={savingTopic || !newTopicName.trim()}
+                aria-busy={savingTopic}
+              >
+                {savingTopic ? 'Wird angelegt…' : 'Thema anlegen'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
-}
-
-// Client-side mappers (snake_case Supabase → camelCase interface)
-function mapSource(r: Record<string, unknown>): FeedSource {
-  return {
-    id: r.id as string, organizationId: r.organization_id as string,
-    userId: (r.user_id as string) ?? null, name: r.name as string,
-    type: r.type as FeedSource['type'], url: (r.url as string) ?? null,
-    config: (r.config as Record<string, unknown>) ?? {},
-    keywordsInclude: (r.keywords_include as string[]) ?? [],
-    keywordsExclude: (r.keywords_exclude as string[]) ?? [],
-    domainsAllow: (r.domains_allow as string[]) ?? [],
-    minScore: r.min_score as number, schemaId: (r.schema_id as string) ?? null,
-    isActive: r.is_active as boolean, lastFetchedAt: (r.last_fetched_at as string) ?? null,
-    errorCount: r.error_count as number, lastError: (r.last_error as string) ?? null,
-    createdAt: r.created_at as string, updatedAt: r.updated_at as string,
-  }
-}
-
-function mapItem(r: Record<string, unknown>): FeedItem {
-  return {
-    id: r.id as string, sourceId: r.source_id as string, organizationId: r.organization_id as string,
-    title: r.title as string, content: (r.content as string) ?? null,
-    summary: (r.summary as string) ?? null, keyFacts: (r.key_facts as string[]) ?? null,
-    url: (r.url as string) ?? null, author: (r.author as string) ?? null,
-    publishedAt: (r.published_at as string) ?? null, fetchedAt: r.fetched_at as string,
-    stage: r.stage as 1 | 2 | 3, score: (r.score as number) ?? null,
-    scoreReason: (r.score_reason as string) ?? null, status: r.status as FeedItem['status'],
-    isSaved: r.is_saved as boolean, contentHash: (r.content_hash as string) ?? null,
-    expiresAt: (r.expires_at as string) ?? null, archivedSummary: (r.archived_summary as string) ?? null,
-    metadata: (r.metadata as Record<string, unknown>) ?? {}, createdAt: r.created_at as string,
-  }
 }

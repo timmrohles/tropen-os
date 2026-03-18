@@ -5,31 +5,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// ── Dify Chat aufrufen (Haupt-App, blocking) ─────────────────────────────────
+// ── Anthropic API direkt aufrufen ────────────────────────────────────────────
 async function callLLM(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get('DIFY_API_KEY')
-  if (!apiKey) throw new Error('DIFY_API_KEY nicht konfiguriert')
-  const difyUrl = Deno.env.get('DIFY_API_URL') ?? 'https://api.dify.ai/v1'
-  const res = await fetch(`${difyUrl}/chat-messages`, {
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY nicht konfiguriert')
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: {},
-      query: prompt,
-      response_mode: 'blocking',
-      user: 'jungle-order',
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
     }),
   })
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Dify error ${res.status}: ${err}`)
+    throw new Error(`Anthropic error ${res.status}: ${err}`)
   }
   const data = await res.json()
-  const text = data?.answer
-  if (!text) throw new Error(`Dify: kein answer in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
+  const text = data?.content?.[0]?.text
+  if (!text) throw new Error(`Anthropic: kein text in response. Raw: ${JSON.stringify(data).slice(0, 500)}`)
   return text
 }
 
@@ -40,7 +39,7 @@ function extractJson(text: string): unknown {
   try {
     return JSON.parse(raw.trim())
   } catch {
-    throw new Error(`Dify-Antwort ist kein JSON. Antwort: "${text.slice(0, 300)}"`)
+    throw new Error(`LLM-Antwort ist kein JSON. Antwort: "${text.slice(0, 300)}"`)
   }
 }
 

@@ -56,7 +56,7 @@ export default function NewClientPage() {
 
   if (success) {
     return (
-      <div className="content-narrow">
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <div style={s.successBox}>
           <div style={s.successIcon}>🦜</div>
           <h2 style={s.successHeading}>Client angelegt!</h2>
@@ -69,7 +69,7 @@ export default function NewClientPage() {
   }
 
   return (
-    <div className="content-narrow">
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
           <h1 className="page-header-title">Neuer Client</h1>

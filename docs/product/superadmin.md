@@ -36,16 +36,26 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 
 ---
 
-## Superadmin To-Do (Stand 2026-03-14)
+## Superadmin To-Do (Stand 2026-03-17)
 
 | Priorität | Feature | Status |
 |-----------|---------|--------|
 | ✅ Fertig | Phase 2 Plan C — Workspaces + Card Engine (Backend) | ✅ 2026-03-14 |
 | ✅ Fertig | Phase 2 Plan G — Feeds | ✅ 2026-03-14 |
-| 🔴 Hoch | Phase 2 Plan D — Chat & Context Integration | ⬜ Offen |
-| 🟡 Mittel | Phase 2 Plan E — Transformations-Engine | ⬜ Offen |
-| 🟡 Mittel | Phase 2 Plan F — UI (Projekte + Workspaces + Feeds-Settings) | ⬜ Offen |
-| 🟢 Niedrig | Agenten-System Phase 2 | ⬜ Offen |
+| ✅ Fertig | Feeds Quellen-Verwaltung UI (edit, copy, delete, pause) | ✅ 2026-03-16 |
+| ✅ Fertig | Wissensbasis RAG-Fix (Knowledge-Search 401, direkte Einbettung in ai-chat) | ✅ 2026-03-16 |
+| ✅ Fertig | Multi-Provider LLM-Routing (Anthropic + OpenAI direkt, kein Dify-Relay) | ✅ 2026-03-16 |
+| ✅ Fertig | CodeQL Security-Fix + CI-Failures (file size, icon weight) | ✅ 2026-03-16 |
+| ✅ Fertig | Phase 2 Plan 1 — Capability + Outcome System + Guided Workflows | ✅ 2026-03-17 |
+| ✅ Fertig | Phase 2 Plan D — Chat & Context Integration | ✅ 2026-03-17 |
+| ✅ Fertig | Phase 2 Plan E — Transformations-Engine (analyze → preview → execute) | ✅ 2026-03-17 |
+| ✅ Fertig | Phase 2 Plan F — UI: Projekte Memory-Tab, Workspaces-Liste | ✅ 2026-03-17 |
+| ✅ Fertig | **Dify abgelöst** — jungle-order auf Anthropic direkt umgestellt | ✅ 2026-03-17 |
+| ✅ Fertig | **Plan J spezifiziert** — Produktion: Dashboards, autonome Feeds, Agents | ✅ 2026-03-17 |
+| ✅ Fertig | **Agenten-Spec** — docs/plans/agents-spec.md (Plan J2 Grundlage) | ✅ 2026-03-17 |
+| 🔴 Hoch | **Plan J1** — Feeds autonom: Run-History, konfigurierbare Outputs | ⬜ Nächster Schritt |
+| 🔴 Hoch | **Plan J2** — Agenten-System: DB, Engine, API, Scheduled Runs | ⬜ Nach J1 |
+| 🟡 Mittel | **Plan K** — Geteilte Chats + Team-Antwort | ⬜ Offen |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
 

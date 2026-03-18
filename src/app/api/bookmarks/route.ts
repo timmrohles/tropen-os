@@ -15,6 +15,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
 
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (conversationId && !uuidPattern.test(conversationId)) {
+    return NextResponse.json([])
+  }
+
   let query = supabaseAdmin
     .from('bookmarks')
     .select('*')

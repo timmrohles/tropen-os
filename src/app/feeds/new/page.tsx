@@ -3,14 +3,13 @@
 // Multi-step wizard for creating a new feed source.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createFeedSource } from '@/actions/feeds'
+import { createFeedSource, triggerFetch } from '@/actions/feeds'
 import type { FeedSourceType } from '@/types/feeds'
 import { Rss, Envelope, Plugs, Globe, Plus, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 
 type Step = 1 | 2 | 3 | 4
 
 const s: Record<string, React.CSSProperties> = {
-  page:    { maxWidth: 640, margin: '0 auto', padding: '40px 24px' },
   types:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 },
   typeCard:{ padding: '20px 16px', border: '2px solid var(--border)', borderRadius: 10, cursor: 'pointer', textAlign: 'center' as const, transition: 'border-color 150ms', background: 'var(--bg-surface)' },
   typeCardActive: { borderColor: 'var(--accent)', background: 'var(--accent-subtle)' },
@@ -29,10 +28,10 @@ const s: Record<string, React.CSSProperties> = {
 }
 
 const TYPES: Array<{ type: FeedSourceType; icon: React.ReactNode; name: string; desc: string }> = [
-  { type: 'rss',   icon: <Rss size={28} weight="fill" color="var(--accent)" />,     name: 'RSS-Feed',   desc: 'Einfachste Option' },
-  { type: 'email', icon: <Envelope size={28} weight="fill" color="#7C6FF7" />,       name: 'Newsletter', desc: 'Über Inbound-Adresse' },
-  { type: 'api',   icon: <Plugs size={28} weight="fill" color="#F7A44A" />,          name: 'API',        desc: 'Eigene Konfiguration' },
-  { type: 'url',   icon: <Globe size={28} weight="fill" color="var(--text-tertiary)" />, name: 'Website', desc: '⚠ Rechtl. beachten' },
+  { type: 'rss',   icon: <Rss size={28} weight="fill" color="var(--text-primary)" />,      name: 'RSS-Feed',   desc: 'Einfachste Option' },
+  { type: 'email', icon: <Envelope size={28} weight="fill" color="var(--text-primary)" />,  name: 'Newsletter', desc: 'Über Inbound-Adresse' },
+  { type: 'api',   icon: <Plugs size={28} weight="fill" color="var(--text-primary)" />,     name: 'API',        desc: 'Eigene Konfiguration' },
+  { type: 'url',   icon: <Globe size={28} weight="fill" color="var(--text-primary)" />,     name: 'Website',    desc: '⚠ Rechtl. beachten' },
 ]
 
 export default function NewFeedPage() {
@@ -49,6 +48,8 @@ export default function NewFeedPage() {
   const [kwInput, setKwInput] = useState('')
   const [kwExInput, setKwExInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [fetching, setFetching] = useState(false)
+  const [fetchResult, setFetchResult] = useState<{ itemsSaved: number } | null>(null)
   const [error, setError] = useState('')
 
   const addKw = (kw: string, list: string[], setList: (v: string[]) => void) => {
@@ -66,7 +67,18 @@ export default function NewFeedPage() {
     if (type === 'url') { config.css_selector = cssSelector; config.disclaimer_acknowledged = true }
     const result = await createFeedSource({ name, type, url: url || undefined, config, keywordsInclude, keywordsExclude, minScore })
     setSaving(false)
-    if ('error' in result) { setError(result.error); return }
+    if ('error' in result) { setError(result.error ?? ''); return }
+
+    // Trigger initial fetch for non-email sources (email comes via inbound webhook)
+    if (type !== 'email' && result.source?.id) {
+      setFetching(true)
+      const fetchRes = await triggerFetch(result.source.id)
+      setFetching(false)
+      setFetchResult({ itemsSaved: fetchRes.itemsSaved })
+      // Short delay so user sees the result, then navigate
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+
     router.push('/feeds')
   }
 
@@ -75,9 +87,9 @@ export default function NewFeedPage() {
     : true
 
   return (
-    <div style={s.page}>
+    <div className="content-narrow">
       {/* Page Header */}
-      <div className="page-header" style={{ padding: 0 }}>
+      <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">Neue Feed-Quelle</h1>
           <p className="page-header-sub">Schritt {step} von 4</p>
@@ -104,7 +116,7 @@ export default function NewFeedPage() {
                 onKeyDown={(e) => e.key === 'Enter' && setType(t)}
                 aria-pressed={type === t}
               >
-                <div aria-hidden="true">{icon}</div>
+                <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center' }}>{icon}</div>
                 <div style={s.typeName}>{n}</div>
                 <div style={s.typeDesc}>{desc}</div>
               </div>
@@ -186,7 +198,7 @@ export default function NewFeedPage() {
               {keywordsInclude.map((kw) => (
                 <span key={kw} className="chip chip--active" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   {kw}
-                  <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', lineHeight: 1 }} onClick={() => setKeywordsInclude(keywordsInclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
+                  <button type="button" className="btn-icon" onClick={() => setKeywordsInclude(keywordsInclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
                 </span>
               ))}
             </div>
@@ -217,7 +229,7 @@ export default function NewFeedPage() {
               {keywordsExclude.map((kw) => (
                 <span key={kw} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 20, background: 'var(--error-bg)', border: '1px solid var(--error)', fontSize: 12, color: 'var(--error)' }}>
                   {kw}
-                  <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', lineHeight: 1 }} onClick={() => setKeywordsExclude(keywordsExclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
+                  <button type="button" className="btn-icon" onClick={() => setKeywordsExclude(keywordsExclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
                 </span>
               ))}
             </div>
@@ -238,9 +250,13 @@ export default function NewFeedPage() {
               aria-valuenow={minScore}
               aria-label={`Relevanz-Schwelle: ${minScore} von 10`}
             />
-            <div style={{ ...s.hint, display: 'flex', justifyContent: 'space-between' }}>
-              <span>1 — Alles zeigen</span><span>10 — Nur Bestes</span>
-            </div>
+            <p className="form-hint">
+              Artikel werden von KI auf Relevanz bewertet (Score 1–10).{' '}
+              Nur Artikel <strong>ab diesem Score</strong> werden angezeigt.{' '}
+              <span className="form-hint-option">5 – großzügig</span>{' '}
+              <span className="form-hint-recommended">6 – empfohlen</span>{' '}
+              <span className="form-hint-option">8 – streng</span>
+            </p>
           </div>
         </>
       )}
@@ -286,11 +302,11 @@ export default function NewFeedPage() {
           <button
             className="btn btn-primary"
             type="button"
-            disabled={saving}
+            disabled={saving || fetching}
             onClick={handleSubmit}
-            aria-busy={saving}
+            aria-busy={saving || fetching}
           >
-            {saving ? 'Wird gespeichert…' : 'Quelle erstellen'}
+            {saving ? 'Wird gespeichert…' : fetching ? 'Erster Fetch läuft…' : fetchResult ? `${fetchResult.itemsSaved} Artikel gefunden — weiter…` : 'Quelle erstellen'}
           </button>
         )}
       </div>

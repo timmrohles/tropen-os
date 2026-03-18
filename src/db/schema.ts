@@ -299,9 +299,9 @@ export const operatorResults = pgTable('operator_results', {
 ])
 
 // ---------------------------------------------------------------------------
-// outcomes
+// workspace_outcomes (workspace-scoped — umbenannt von "outcomes" in Migration 039)
 // ---------------------------------------------------------------------------
-export const outcomes = pgTable('outcomes', {
+export const workspaceOutcomes = pgTable('workspace_outcomes', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   type: outcomeTypeEnum('type').notNull(),
@@ -317,10 +317,26 @@ export const outcomes = pgTable('outcomes', {
   generatedAt: timestamp('generated_at', { withTimezone: true }),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, (t) => [
-  index('outcomes_workspace_id_idx').on(t.workspaceId),
-  index('outcomes_type_idx').on(t.type),
-  index('outcomes_deleted_at_idx').on(t.deletedAt),
+  index('workspace_outcomes_workspace_id_idx').on(t.workspaceId),
+  index('workspace_outcomes_type_idx').on(t.type),
+  index('workspace_outcomes_deleted_at_idx').on(t.deletedAt),
 ])
+
+// ---------------------------------------------------------------------------
+// outcomes (system-level — Output-Typen: Text, Tabelle, Report, ...)
+// Hinweis: workspace-scoped Outcomes → workspaceOutcomes (oben)
+// ---------------------------------------------------------------------------
+export const outcomes = pgTable('outcomes', {
+  id:                    uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  label:                 varchar('label', { length: 100 }).notNull(),
+  icon:                  varchar('icon', { length: 10 }).notNull(),
+  description:           text('description'),
+  outputType:            varchar('output_type', { length: 50 }).notNull().unique(),
+  cardType:              varchar('card_type', { length: 50 }).notNull(),
+  systemPromptInjection: text('system_prompt_injection'),
+  isActive:              boolean('is_active').notNull().default(true),
+  sortOrder:             integer('sort_order').notNull().default(0),
+})
 
 // ---------------------------------------------------------------------------
 // Relations
@@ -334,7 +350,7 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
   knowledgeEntries: many(knowledgeEntries),
   messages: many(workspaceMessages),
   operators: many(operators),
-  outcomes: many(outcomes),
+  workspaceOutcomes: many(workspaceOutcomes),
 }))
 
 export const workspaceParticipantsRelations = relations(workspaceParticipants, ({ one }) => ({
@@ -389,8 +405,8 @@ export const operatorResultsRelations = relations(operatorResults, ({ one }) => 
   workspace: one(workspaces, { fields: [operatorResults.workspaceId], references: [workspaces.id] }),
 }))
 
-export const outcomesRelations = relations(outcomes, ({ one }) => ({
-  workspace: one(workspaces, { fields: [outcomes.workspaceId], references: [workspaces.id] }),
+export const workspaceOutcomesRelations = relations(workspaceOutcomes, ({ one }) => ({
+  workspace: one(workspaces, { fields: [workspaceOutcomes.workspaceId], references: [workspaces.id] }),
 }))
 
 export const workspaceTemplatesRelations = relations(workspaceTemplates, ({ many }) => ({
@@ -433,8 +449,11 @@ export type OperatorInsert = typeof operators.$inferInsert
 export type OperatorResult = typeof operatorResults.$inferSelect
 export type OperatorResultInsert = typeof operatorResults.$inferInsert
 
-export type Outcome = typeof outcomes.$inferSelect
-export type OutcomeInsert = typeof outcomes.$inferInsert
+export type WorkspaceOutcome = typeof workspaceOutcomes.$inferSelect
+export type WorkspaceOutcomeInsert = typeof workspaceOutcomes.$inferInsert
+
+export type SystemOutcome = typeof outcomes.$inferSelect
+export type SystemOutcomeInsert = typeof outcomes.$inferInsert
 
 // Enum-Typen
 export type WorkspaceDomain = typeof workspaceDomainEnum.enumValues[number]

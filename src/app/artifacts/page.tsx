@@ -187,15 +187,15 @@ function ArtifactsPageInner() {
             }
             style={s.backBtn}
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft size={14} weight="bold" />
             Zurück zum Chat
           </button>
         )}
 
-        <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header">
           <div className="page-header-text">
-            <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Archive size={24} color="var(--accent)" weight="fill" />
+            <h1 className="page-header-title">
+              <Archive size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
               Artefakte
             </h1>
             <p className="page-header-sub">Gespeicherte Code-Blöcke, Tabellen und Dokumente aus deinen Chats</p>
@@ -207,7 +207,7 @@ function ArtifactsPageInner() {
 
         <div style={s.filterBar}>
           <div style={s.searchWrap}>
-            <span style={s.searchIcon}><MagnifyingGlass size={14} /></span>
+            <span style={s.searchIcon}><MagnifyingGlass size={14} weight="bold" /></span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -265,7 +265,7 @@ function ArtifactsPageInner() {
                   <span style={s.cardDate}>{formatDate(art.created_at)}</span>
                   <div style={s.cardActions}>
                     <button onClick={() => downloadArtifact(art)} title="Herunterladen" className="btn-icon">
-                      <DownloadSimple size={15} />
+                      <DownloadSimple size={15} weight="bold" />
                     </button>
                     <button
                       onClick={() => handleDelete(art.id)}
@@ -274,7 +274,7 @@ function ArtifactsPageInner() {
                       className="btn-icon"
                       style={{ opacity: deletingId === art.id ? 0.4 : 1 }}
                     >
-                      <Trash size={15} />
+                      <Trash size={15} weight="bold" />
                     </button>
                   </div>
                 </div>

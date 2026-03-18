@@ -140,7 +140,7 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
               alignItems: 'center',
             }}
           >
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -203,7 +203,7 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
                       flexShrink: 0,
                     }}
                   >
-                    <DownloadSimple size={16} />
+                    <DownloadSimple size={16} weight="bold" />
                   </button>
                 </div>
               ))}

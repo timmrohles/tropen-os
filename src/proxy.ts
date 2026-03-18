@@ -13,6 +13,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Wird nur aktiv wenn UPSTASH_REDIS_REST_URL gesetzt ist (in dev ohne Upstash übersprungen).
 
 function buildLimiters() {
+  if (process.env.NODE_ENV === 'development') return null
   const url = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
   if (!url || !token) return null

@@ -68,7 +68,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
         }}
       >
         <span aria-hidden="true">{currentAccount.shortLabel}</span>
-        <CaretDown size={11} aria-hidden="true" />
+        <CaretDown size={11} weight="bold" aria-hidden="true" />
       </button>
 
       {open && (

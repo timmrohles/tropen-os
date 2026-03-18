@@ -3,6 +3,52 @@
 
 ---
 
+# ⚠️ System-Architekt
+
+**Lies vor jedem Build zuerst: `ARCHITECT.md`**
+
+Der System-Architekt ist der Bauleiter von Tropen OS.
+Kein Feature ohne Architektur-Review.
+Kein Build ohne abschließende CLAUDE.md-Aktualisierung.
+Kein Build ohne Eintrag in `docs/architect-log.md`.
+
+**Kurzregel:** Lesen → Review → Ampel → Bauen → Dokumentieren
+
+---
+
+# ⛔ STOP — Lies das als Erstes
+
+## Pflicht-Protokoll vor jedem Build
+
+**Keine Ausnahme. Kein optionaler Schritt.**
+
+```
+Schritt 1  cat docs/webapp-manifest/manifesto.md
+Schritt 2  cat docs/webapp-manifest/engineering-standard.md
+Schritt 3  cat docs/webapp-manifest/audit-system.md
+Schritt 4  cat docs/phase2-plans.md
+Schritt 5  cat ARCHITECT.md
+Schritt 6  ls supabase/migrations/ | tail -5 → letzte Migrations lesen
+Schritt 7  Architektur-Review durchführen (Template in ARCHITECT.md)
+Schritt 8  Ampel bestimmen → dann bauen oder fragen
+```
+
+Bei UI-Änderungen zusätzlich:
+```
+Schritt 9  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt 10 CLAUDE.md → Abschnitt "Code-Regeln" lesen
+```
+
+Bei AI-Features zusätzlich:
+```
+Schritt 11 cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
+Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
+```
+
+---
+
+---
+
 ## Wie dieses Dokument funktioniert
 
 CLAUDE.md ist ein lebendes Dokument. Claude Code darf und soll es aktuell halten —
@@ -87,10 +133,14 @@ Kein einziger Punkt ist optional.
 ```
 [ ] content-max / content-narrow / content-wide / content-full gesetzt?
 [ ] page-header mit page-header-title + page-header-actions vorhanden?
+[ ] H1-Icon: 22px, color="var(--text-primary)", weight="fill", aria-hidden="true"?
+[ ] Kein marginBottom/padding override auf page-header — CSS-Klasse regelt das?
+[ ] Chips: nur Text, KEINE Icons in Chips?
+[ ] Kein Sidebar-Layout — flaches Layout mit Card-Grid + Edit-Card darunter?
 [ ] Nur className="card" für Cards — nie eigene box-styles?
 [ ] Nur className="btn btn-*" für Buttons — nie eigene button-styles?
+[ ] "Neu erstellen"-Aktionen immer in page-header-actions — nie in Sidebar/Content?
 [ ] Nur Phosphor Icons (@phosphor-icons/react), weight="bold" oder weight="fill"?
-[ ] H1-Icons: color="var(--text-primary)" — KEIN var(--accent) in Überschriften?
 [ ] Ausschließlich CSS-Variablen für Farben — keine Hex-Werte im Code?
 [ ] Kein manuelles paddingTop/paddingBottom — content-Klassen enthalten das automatisch?
 [ ] Kein background auf Page-Wrapper — Body-Gradient muss durchscheinen?
@@ -98,6 +148,61 @@ Kein einziger Punkt ist optional.
 [ ] Alle interaktiven Elemente per Tastatur erreichbar, Fokus-Indikator sichtbar?
 [ ] Icons ohne sichtbaren Text haben aria-label oder aria-hidden="true"?
 ```
+
+### Verbindliches Seiten-Layout (Stand 2026-03-16)
+
+Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
+
+```tsx
+<div className="content-max">
+  {/* 1. Page Header — immer vorhanden */}
+  <div className="page-header">
+    <div className="page-header-text">
+      <h1 className="page-header-title">
+        <IconName size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+        Seitentitel
+      </h1>
+      <p className="page-header-sub">Kurzer Untertitel</p>
+    </div>
+    <div className="page-header-actions">
+      <button className="btn btn-primary">+ Neu</button>
+    </div>
+  </div>
+
+  {/* 2. Filter-Bar — optional, wenn Suche/Filter vorhanden */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+    <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+      {/* Suchfeld mit MagnifyingGlass-Icon */}
+    </div>
+    <div style={{ display: 'flex', gap: 6 }}>
+      <button className="chip chip--active">Alle</button>
+      <button className="chip">Filter</button>
+      {/* Chips: nur Text, KEINE Icons */}
+    </div>
+  </div>
+
+  {/* 3. Content — Cards in Grid oder Liste */}
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+    <button className="card" style={{ padding: '16px 18px', textAlign: 'left' }}>
+      Card-Inhalt
+    </button>
+  </div>
+
+  {/* 4. Edit-Card — bei Auswahl, UNTER dem Grid */}
+  {selected && (
+    <div className="card" style={{ padding: 24, marginTop: 16 }}>
+      Bearbeitungsformular
+    </div>
+  )}
+</div>
+```
+
+**Regeln:**
+- Kein Sidebar-Layout — immer flach (Header → Filter → Grid → Edit)
+- Chips enthalten nur Text — keine Icons
+- "Neu erstellen"-Button immer in `page-header-actions`
+- Kein `style`-Override auf `.page-header` (kein marginBottom, padding, background)
+- `.page-header-title` hat `display:flex; align-items:center; gap:10px` via CSS
 
 ---
 
@@ -134,6 +239,21 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 
 Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: Anthropic SDK direkt (`ANTHROPIC_API_KEY`) — kein Dify für neue Features.
+
+### Dify — abgelöst (✅ 2026-03-17)
+
+Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`claude-haiku-4-5-20251001`).
+`DIFY_API_KEY` und `DIFY_API_URL` können aus den Supabase Edge Function Secrets entfernt werden.
+
+<!-- TODO(timm): Dify komplett ablösen oder parallel weiterführen?
+  Stand 2026-03-16: ai-chat Edge Function wurde auf direktes Anthropic/OpenAI-Routing umgestellt.
+  Dify läuft noch, wird aber nicht mehr aktiv für Chat genutzt.
+  Optionen:
+  A) Dify vollständig abschalten (Instanz runterfahren, Env-Vars entfernen)
+  B) Dify als Fallback behalten für Jungle Order / komplexe Workflows
+  C) Dify komplett ersetzen (Workflows selbst bauen)
+  Entscheid ausstehend — bis dahin: Dify nicht aktiv einbinden, bestehende Instanz läuft weiter.
+-->
 
 ---
 
@@ -310,6 +430,21 @@ Nicht ohne explizite Anweisung:
 
 ---
 
+## Engineering Standards
+
+### Claude.ai Feature-Parität
+
+Neue Claude.ai-Features werden regelmäßig geprüft und eingeordnet.
+Vollständige Governance-Regel: `docs/phase2-plans.md` →
+Abschnitt "Governance-Regel: Feature-Parität mit Claude.ai"
+
+Kurzregel für Claude Code:
+- Modell-Features: kommen automatisch via API
+- UI-Features: wir bauen KMU-optimierte Äquivalente
+- Anthropic-interne Features: eigene Lösung bereits vorhanden
+
+---
+
 ## Autonomie-Level: Hoch
 
 Wir arbeiten lokal. Kein Produktionssystem gefährdet.
@@ -351,8 +486,92 @@ Letzte relevante Migrationen:
 | 032_support_tables.sql | dept_settings, transformations, templates |
 | 033_feed_tables.sql | feed_sources, feed_items, feed_processing_log (APPEND ONLY) |
 | 20260314000036_feeds_v2.sql | Feeds v2-Schema mit keywords, min_score, content_hash UNIQUE |
+| 20260317000039_capability_outcome_system.sql | capabilities, outcomes, capability_outcomes, org/user settings, guided_workflows Schema |
+| 20260317000040_cards_capability.sql | cards Extension: capability_id, outcome_id, sources, last_run_at, next_run_at |
+| 20260317000041_guided_workflows_seed.sql | Guided Workflows: 7 System-Workflows + Marketing-Paket geseedet; capability_org_settings um guided_workflows_enabled + allowed_workflow_ids erweitert |
+| 20260317000042_feed_dismissed.sql | feed_items: dismissed_at + dismissed_by Spalten für Soft-Hide |
+| 20260317000043_feed_topics.sql | feed_topics + feed_topic_sources Tabellen mit RLS |
+| 20260317000044_feed_data_sources.sql | feed_data_sources + feed_data_records Tabellen (Daten-Tab) mit RLS |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`
+
+### Guided Workflows (Stand 2026-03-17)
+
+Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen vor, User steuert. Maximal 3 Verschachtelungsebenen. Kein LLM-Call bei der Erkennung.
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/guided-workflow-engine.ts` | `detectWorkflow()`, `resolveOption()`, `buildWorkflowPrompt()` |
+| `src/lib/validators/guided.ts` | Zod-Schemas für alle Guided-API-Routes |
+| `src/app/api/guided/detect/route.ts` | POST — Workflow-Erkennung via Keywords + Context |
+| `src/app/api/guided/workflows/route.ts` | GET + POST — Workflows für User (system + org + user scope) |
+| `src/app/api/guided/workflows/[id]/route.ts` | PATCH — Workflow bearbeiten (ownership-guard) |
+| `src/app/api/guided/workflows/[id]/copy/route.ts` | POST — Workflow kopieren → user-scope |
+| `src/app/api/guided/settings/route.ts` | PATCH — User schaltet Guided Workflows ein/aus |
+| `src/app/api/guided/resolve/route.ts` | POST — Option auflösen → next_workflow / capability_plan / custom_input / save_artifact |
+
+**Regeln:**
+- `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
+- Maximal 3 Verschachtelungsebenen (next_workflow_id Chain)
+- Jeder Workflow hat immer eine `is_custom: true` Option als Escape
+- `guided_enabled = false` überschreibt alles — keine Ausnahmen
+
+### UI — Projekte + Workspaces (Plan F — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/app/projects/page.tsx` | Memory-Count-Badge auf Projektkarten + Gedächtnis-Tab (zeigt project_memory Einträge) |
+| `src/app/workspaces/page.tsx` | Server Component — lädt Workspaces via workspace_participants, rendert WorkspacesList |
+| `src/components/workspaces/WorkspacesList.tsx` | Client Component — Workspace-Grid mit Status, Karten-Zähler, Create-Dialog |
+
+**Regeln:**
+- Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
+- project_memory count kommt vom List-Endpoint (kein Extra-Request per Karte)
+- Memory-Tab lädt lazy beim ersten Klick, nicht beim Seitenaufruf
+
+### Transformations-Engine (Plan E — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/validators/transformations.ts` | Zod-Schemas: `analyzeSchema`, `createTransformationSchema`, `executeTransformationSchema` |
+| `src/app/api/transformations/analyze/route.ts` | POST — AI-Analyse (claude-haiku), kein DB-Write, gibt max. 2 Suggestions zurück |
+| `src/app/api/transformations/route.ts` | GET (list by source) + POST (create pending) |
+| `src/app/api/transformations/[id]/route.ts` | GET (detail) + PATCH `{ action: 'execute' }` → baut workspace oder feed + transformation_link |
+
+**Regeln:**
+- Immer drei Schritte: `analyze` (kein DB-Write) → `create` (pending) → `execute` (baut target)
+- `execute` ist **nicht destruktiv** — der Source bleibt erhalten
+- `target_type`: nur `'workspace'` und `'feed'` implementiert (kein `'agent'` vorerst)
+- DB-Tabellen: `transformations`, `transformation_links` — aus Migration 032
+
+### Chat & Context Integration (Plan D — Stand 2026-03-17)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/functions/ai-chat/index.ts` | `workflow_plan` param, project_memory injection, memory_warning event |
+| `src/lib/project-context.ts` | `loadProjectContext()` — parallele Queries: `projects.instructions` + `project_memory` |
+| `src/app/api/chat/stream/route.ts` | Auth via `getAuthUser()`, Capability-Routing via `resolveWorkflow()`, `capabilityId`/`outcomeId` params |
+
+**Regeln:**
+- `chat/stream` holt `userId` immer via `getAuthUser()` — nie aus dem Request-Body
+- `workflow_plan` wird client-seitig via `/api/guided/resolve` aufgelöst (Deno-Edge kennt keinen Node.js-Resolver)
+- Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
+- `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
+
+### Agenten-System (Plan J2 — Spec fertig, Build ausstehend)
+
+**Spec:** `docs/plans/agents-spec.md`
+
+| Datei | Status |
+|-------|--------|
+| `agents` Tabelle erweitern (neue Migration) | ⬜ Plan J2 |
+| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2 |
+| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2 |
+| `src/lib/agent-engine.ts` | ⬜ Plan J2 |
+| `/api/agents/**` Routes | ⬜ Plan J2 |
+| Vercel Cron `*/5 * * * *` → `/api/cron/agents/check` | ⬜ Plan J2 |
+
+**Nächster Build-Schritt: Plan J1 (Feeds autonom — Run-History, konfigurierbare Outputs)**
 
 ---
 
@@ -379,6 +598,7 @@ eslint src/           # keine Fehler
 | `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
+| `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
 
 ---
 

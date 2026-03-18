@@ -3,6 +3,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { unzipSync } from "https://esm.sh/fflate@0.8.2";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -11,6 +12,16 @@ const OPENAI_API_KEY       = Deno.env.get("OPENAI_API_KEY")!;
 const CHUNK_SIZE      = 800;
 const CHUNK_OVERLAP   = 100;
 const EMBEDDING_MODEL = "text-embedding-3-small";
+
+function stripXmlTagsStable(input: string): string {
+  let previous: string;
+  let current = input;
+  do {
+    previous = current;
+    current = current.replace(/<[^>]+>/g, "");
+  } while (current !== previous);
+  return current;
+}
 
 function corsHeaders() {
   return {
@@ -55,13 +66,21 @@ async function extractText(content: Uint8Array, fileType: string): Promise<strin
     }
 
     case "docx": {
-      const text = new TextDecoder("utf-8", { fatal: false }).decode(content);
-      const xmlMatches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) ?? [];
-      return xmlMatches
-        .map(m => m.replace(/<[^>]+>/g, ""))
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
+      // DOCX ist ein ZIP-Archiv — erst entpacken, dann word/document.xml parsen
+      try {
+        const unzipped = unzipSync(content);
+        const docXmlBytes = unzipped["word/document.xml"];
+        if (!docXmlBytes) return "";
+        const xmlText = new TextDecoder("utf-8").decode(docXmlBytes);
+        const xmlMatches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) ?? [];
+        return xmlMatches
+          .map(m => stripXmlTagsStable(m))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+      } catch {
+        return "";
+      }
     }
 
     default:

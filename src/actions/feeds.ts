@@ -65,6 +65,7 @@ function mapItem(r: Record<string, unknown>): FeedItem {
     contentHash: (r.content_hash as string) ?? null,
     expiresAt: (r.expires_at as string) ?? null,
     archivedSummary: (r.archived_summary as string) ?? null,
+    dismissedAt: (r.dismissed_at as string) ?? null,
     metadata: (r.metadata as Record<string, unknown>) ?? {},
     createdAt: r.created_at as string,
   }
@@ -171,14 +172,48 @@ export async function deleteFeedSource(id: string) {
   return { ok: true }
 }
 
+export async function copyFeedSource(id: string) {
+  const me = await getAuthUser()
+  if (!me) return { error: 'Nicht autorisiert' }
+  const { data: src, error: fetchErr } = await supabaseAdmin
+    .from('feed_sources')
+    .select('*')
+    .eq('id', id)
+    .eq('organization_id', me.organization_id)
+    .single()
+  if (fetchErr || !src) return { error: 'Quelle nicht gefunden' }
+  const { data, error } = await supabaseAdmin
+    .from('feed_sources')
+    .insert({
+      organization_id: me.organization_id,
+      user_id: me.id,
+      name: `${src.name} (Kopie)`,
+      type: src.type,
+      url: src.url,
+      config: src.config ?? {},
+      keywords_include: src.keywords_include ?? [],
+      keywords_exclude: src.keywords_exclude ?? [],
+      domains_allow: src.domains_allow ?? [],
+      min_score: src.min_score,
+      schema_id: src.schema_id ?? null,
+      is_active: false,
+    })
+    .select().single()
+  if (error) return { error: error.message }
+  return { source: mapSource(data as Record<string, unknown>) }
+}
+
 // ---------------------------------------------------------------------------
 // Feed Items
 // ---------------------------------------------------------------------------
 
 export async function listFeedItems(opts: {
   sourceId?: string
+  topicId?: string
   status?: string
   isSaved?: boolean
+  dismissed?: boolean
+  search?: string
   limit?: number
   offset?: number
 } = {}): Promise<{ items: FeedItem[]; total: number }> {
@@ -186,6 +221,17 @@ export async function listFeedItems(opts: {
   if (!me) return { items: [], total: 0 }
   const limit = Math.min(opts.limit ?? 30, 100)
   const offset = opts.offset ?? 0
+
+  // Topic filter: resolve source IDs from feed_topic_sources
+  let topicSourceIds: string[] | null = null
+  if (opts.topicId) {
+    const { data: ts } = await supabaseAdmin
+      .from('feed_topic_sources')
+      .select('source_id')
+      .eq('topic_id', opts.topicId)
+    topicSourceIds = (ts ?? []).map((r: Record<string, unknown>) => r.source_id as string)
+    if (topicSourceIds.length === 0) return { items: [], total: 0 }
+  }
 
   let q = supabaseAdmin
     .from('feed_items')
@@ -195,9 +241,21 @@ export async function listFeedItems(opts: {
     .order('fetched_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
+  if (opts.dismissed) {
+    // Dismissed tab: show items dismissed in last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString()
+    q = q.not('dismissed_at', 'is', null).gte('dismissed_at', thirtyDaysAgo)
+  } else {
+    // Normal views: hide dismissed items
+    q = q.is('dismissed_at', null)
+  }
+
   if (opts.sourceId) q = q.eq('source_id', opts.sourceId)
+  if (topicSourceIds) q = q.in('source_id', topicSourceIds)
   if (opts.status) q = q.eq('status', opts.status)
   if (opts.isSaved) q = q.eq('is_saved', true)
+  if (opts.search && opts.search.length > 2)
+    q = q.or(`title.ilike.%${opts.search}%,summary.ilike.%${opts.search}%`)
 
   const { data, count } = await q
   return { items: (data ?? []).map((r: Record<string, unknown>) => mapItem(r)), total: count ?? 0 }
@@ -270,6 +328,16 @@ export async function deleteDistribution(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Send digest (called by cron/feed-digest)
+// ---------------------------------------------------------------------------
+
+export async function sendDigestNow(distributionId: string): Promise<{ sent: number }> {
+  // TODO: implement digest email sending via Resend
+  log.info('[sendDigestNow] stub called', { distributionId })
+  return { sent: 0 }
+}
+
+// ---------------------------------------------------------------------------
 // Trigger fetch (called by cron + manual "sync now")
 // ---------------------------------------------------------------------------
 
@@ -304,6 +372,11 @@ export async function triggerFetch(sourceId: string): Promise<{
     errors.push(err instanceof Error ? err.message : String(err))
   }
 
+  // First fetch (last_fetched_at === null): relax age limit to 30 days so new sources
+  // immediately show recent content instead of filtering almost everything out.
+  const isFirstFetch = !source.lastFetchedAt
+  const processOptions = isFirstFetch ? { maxAgeDays: 30 } : undefined
+
   let saved = 0
   let stage3Count = 0
 
@@ -312,7 +385,7 @@ export async function triggerFetch(sourceId: string): Promise<{
       if (stage3Count >= 10) {
         item.metadata = { ...(item.metadata ?? {}), stage3_skipped: true }
       }
-      const id = await processItem(item, source)
+      const id = await processItem(item, source, processOptions)
       if (id) { saved++; stage3Count++ }
     } catch (err) {
       errors.push(`Item "${item.title}": ${err instanceof Error ? err.message : String(err)}`)
@@ -331,3 +404,25 @@ export async function triggerFetch(sourceId: string): Promise<{
 
   return { itemsFound: rawItems.length, itemsSaved: saved, errors }
 }
+
+// ---------------------------------------------------------------------------
+// Dismiss / Restore (Ausblenden — reversible, 30-day TTL)
+// ---------------------------------------------------------------------------
+
+export async function dismissItem(id: string) {
+  const me = await getAuthUser()
+  if (!me) return
+  await supabaseAdmin.from('feed_items')
+    .update({ dismissed_at: new Date().toISOString(), dismissed_by: me.id })
+    .eq('id', id).eq('organization_id', me.organization_id)
+}
+
+export async function restoreItem(id: string) {
+  const me = await getAuthUser()
+  if (!me) return
+  await supabaseAdmin.from('feed_items')
+    .update({ dismissed_at: null, dismissed_by: null })
+    .eq('id', id).eq('organization_id', me.organization_id)
+}
+
+// Topics ausgelagert nach: src/actions/feed-topics.ts

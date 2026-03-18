@@ -6,10 +6,10 @@ import { SquaresFour, Clock } from '@phosphor-icons/react'
 export default function WorkspacePage() {
   return (
     <div className="content-max">
-      <div className="page-header" style={{ marginBottom: 40 }}>
+      <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <SquaresFour size={24} color="var(--accent)" weight="fill" />
+          <h1 className="page-header-title">
+            <SquaresFour size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
             Workspace
           </h1>
           <p className="page-header-sub">Visuelles Karten-System für strukturiertes Arbeiten</p>

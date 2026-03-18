@@ -1,7 +1,9 @@
 // Tropen OS Service Worker
 // Strategie: Network-first für API/Auth, Cache-first für statische Assets
 
-const CACHE_NAME = 'tropen-os-v1'
+// Version aus Registrierungs-URL lesen (wird bei jedem Build/Dev-Start gewechselt)
+const _swVersion = new URL(location.href).searchParams.get('v') || 'v1'
+const CACHE_NAME = `tropen-os-${_swVersion}`
 const OFFLINE_URL = '/offline'
 
 // Assets die beim Install gecacht werden

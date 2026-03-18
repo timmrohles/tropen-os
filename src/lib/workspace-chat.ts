@@ -53,7 +53,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
     }
     ctx.setInput('')
     ctx.setSending(true)
-    ctx.setError('')
+    // Fehler erst nach erfolgreichem Start zurücksetzen (nicht schon beim Versuch)
     ctx.setRouting(null)
 
     try {
@@ -71,10 +71,11 @@ export function createChatActions(ctx: ChatActionsCtx) {
             message: currentInput,
             agent_id: ctx.activeAgentId ?? undefined,
           }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(60_000),
         }
       )
 
+      ctx.setError('')
       if (!response.ok) {
         const errText = await response.text().catch(() => response.statusText)
         let errMsg = `HTTP ${response.status}`
@@ -151,7 +152,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
     } catch (err) {
       ctx.setMessages((prev) => prev.filter((m) => !m.pending))
       const msg = err instanceof Error ? err.message : String(err)
-      ctx.setError(msg.includes('timed out') ? 'Zeitüberschreitung (30s). Bitte erneut versuchen.' : msg)
+      ctx.setError(msg.includes('timed out') ? 'Zeitüberschreitung (60s). Bitte erneut versuchen.' : msg)
     } finally {
       ctx.sendingRef.current = false
       ctx.setSending(false)

@@ -96,7 +96,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   errorMsg: {
     fontSize: 13,
-    color: '#f87171',
+    color: 'var(--error)',
     marginTop: 12,
   },
 }
