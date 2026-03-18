@@ -35,7 +35,7 @@ test.describe('Toro Chat Widget', () => {
 
     // Antwort muss erscheinen
     await expect(
-      page.getByText('Tropen OS ist ein verantwortungsvoller KI-Workspace')
+      page.getByText('Tropen OS ist ein verantwortungsvoller KI-Workspace', { exact: false })
     ).toBeVisible({ timeout: 8_000 })
   })
 
