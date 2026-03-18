@@ -22,6 +22,40 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+### 2026-03-17 — Architect Review D2 + J2 (noch kein Build)
+
+**Ampel:** 🟡 (D2) · 🔴 (J2)
+**Prompt:** Agenten-Spec + Plan D (neue Version) — kritisch prüfen, nicht bauen
+**Entscheidung:** Review durchgeführt, Build noch nicht gestartet. Wartet auf Timms Entscheidungen.
+
+**Befunde D2 (Workspace Chat Context):**
+- workspace_messages existiert bereits (Migration 035) — braucht ALTER nicht CREATE
+- loadProjectContext() existiert bereits in project-context.ts
+- Plan heißt ab jetzt "Plan D2" (Plan D ✅ bereits fertig)
+- 5 Anpassungen im Build-Prompt nötig vor dem Build
+
+**Befunde J2 (Agenten-System + Skills):**
+- agents-Tabelle existiert (Migration 025) — minimales Schema, braucht ALTER
+- skills-Tabelle existiert nicht
+- Überschneidung Skills vs. Capabilities noch ungeklärt
+- Plan-Nummern-Konflikt ARCHITECT.md vs. phase2-plans.md
+- Scope zu groß → Pflicht-Aufteilung in J2a / J2b / J2c
+
+**Offene Punkte:**
+- Vollständige Entscheidungs-Tabelle: docs/superpowers/plans/2026-03-17-architect-review-d2-j2.md
+- D1: Zeitdimension in D2 oder Plan K?
+- J1: Skills vs. Capabilities (Option A/B/C)
+- J2: Plan-Nummern synchronisieren
+- J3: Cron-Runner (Supabase pg_cron empfohlen)
+- J4: Marketing-Agents scope='package' nach ALTER
+- J5: Toro-Vorschlag opt-in DEFAULT false bestätigt?
+
+**Neue Lernmuster:**
+- "Prüfe ob workspace_messages existiert" — ja, seit Migration 035
+- Plan D hatte einen unfertigen Teil (Workspace-Context) — beim nächsten Spec-Review sofort checken
+
+---
+
 ### 2026-03-17 — Capability + Outcome System (Plan 1)
 
 **Ampel:** 🟢

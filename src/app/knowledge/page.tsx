@@ -170,7 +170,12 @@ export default function KnowledgePage() {
           .from('knowledge-files')
           .upload(`${orgId}/${source.id}/${safeName}`, file, { upsert: true })
 
-        if (storageErr) throw new Error(`storage: ${storageErr.message}`)
+        if (storageErr) {
+          // DB-Record bereinigen — sonst bleibt Dokument ewig in 'processing' hängen
+          await supabase.from('knowledge_documents').delete().eq('id', doc.id)
+          await supabase.from('knowledge_sources').delete().eq('id', source.id)
+          throw new Error(`Datei-Upload fehlgeschlagen: ${storageErr.message}`)
+        }
 
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, percent: 70 } : u))
 
@@ -212,12 +217,32 @@ export default function KnowledgePage() {
   }
 
   async function retryDoc(id: string) {
-    // Reset status to processing and re-trigger ingest
     await supabase
       .from('knowledge_documents')
       .update({ status: 'processing', error_message: null })
       .eq('id', id)
-    await supabase.functions.invoke('knowledge-ingest', { body: { document_id: id } })
+
+    const { data: result, error: fnErr } = await supabase.functions.invoke('knowledge-ingest', {
+      body: { document_id: id },
+    })
+
+    const errMsg = (result as { error?: string } | null)?.error ?? fnErr?.message ?? null
+
+    if (errMsg?.includes('Object not found')) {
+      // Datei nicht in Storage — Dokument löschen, User muss neu hochladen
+      await fetch('/api/knowledge', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: id }),
+      })
+      setUploadError('Datei nicht mehr vorhanden — bitte Dokument erneut hochladen.')
+    } else if (errMsg) {
+      await supabase
+        .from('knowledge_documents')
+        .update({ status: 'error', error_message: errMsg })
+        .eq('id', id)
+    }
+
     loadDocs()
   }
 

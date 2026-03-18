@@ -2,11 +2,15 @@
 // src/app/feeds/SourcesView.tsx — Quellen-Verwaltung Tab
 import { useState, useCallback, useEffect } from 'react'
 import {
-  listFeedSources, updateFeedSource, deleteFeedSource, copyFeedSource,
+  listFeedSources, updateFeedSource, deleteFeedSource, copyFeedSource, triggerFetch,
 } from '@/actions/feeds'
-import type { FeedSource } from '@/types/feeds'
+import { toggleTopicSource } from '@/actions/feed-topics'
+import type { FeedSource, FeedTopic } from '@/types/feeds'
 import {
-  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning,
+  estimateFeedCost, estimateArticlesPerWeek, formatCostPerWeek,
+} from '@/lib/feed-cost-estimator'
+import {
+  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise,
 } from '@phosphor-icons/react'
 
 const SOURCE_COLOR: Record<string, string> = {
@@ -16,7 +20,12 @@ const SOURCE_COLOR: Record<string, string> = {
   url:   'var(--text-tertiary)',
 }
 
-export default function SourcesView() {
+interface Props {
+  topics: FeedTopic[]
+  onTopicsChange: (topics: FeedTopic[]) => void
+}
+
+export default function SourcesView({ topics, onTopicsChange }: Props) {
   const [sources, setSources]           = useState<FeedSource[]>([])
   const [loading, setLoading]           = useState(true)
   const [menuOpen, setMenuOpen]         = useState<string | null>(null)
@@ -26,6 +35,8 @@ export default function SourcesView() {
   const [editMinScore, setEditMinScore] = useState(5)
   const [saving, setSaving]             = useState(false)
   const [editError, setEditError]       = useState('')
+  const [fetchingId, setFetchingId]     = useState<string | null>(null)
+  const [fetchMsg, setFetchMsg]         = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -57,6 +68,22 @@ export default function SourcesView() {
     }
   }
 
+  const handleFetchNow = async (src: FeedSource) => {
+    setMenuOpen(null)
+    setFetchingId(src.id)
+    setFetchMsg((prev) => ({ ...prev, [src.id]: '' }))
+    try {
+      const res = await triggerFetch(src.id)
+      const msg = res.itemsSaved > 0
+        ? `${res.itemsSaved} neue Artikel`
+        : res.errors.length > 0 ? `Fehler: ${res.errors[0]}` : 'Keine neuen Artikel'
+      setFetchMsg((prev) => ({ ...prev, [src.id]: msg }))
+      setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, lastFetchedAt: new Date().toISOString() } : s))
+    } finally {
+      setFetchingId(null)
+    }
+  }
+
   const openEdit = (src: FeedSource) => {
     setEditing(src)
     setEditName(src.name)
@@ -77,6 +104,21 @@ export default function SourcesView() {
     setEditing(null)
   }
 
+  const handleToggleTopic = async (topicId: string, sourceId: string, add: boolean) => {
+    const res = await toggleTopicSource(topicId, sourceId, add)
+    if (!res.error) {
+      onTopicsChange(topics.map((t) => {
+        if (t.id !== topicId) return t
+        return {
+          ...t,
+          sourceIds: add
+            ? [...t.sourceIds, sourceId]
+            : t.sourceIds.filter((id) => id !== sourceId),
+        }
+      }))
+    }
+  }
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>Wird geladen…</div>
   }
@@ -92,81 +134,125 @@ export default function SourcesView() {
   return (
     <div onClick={() => setMenuOpen(null)}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-        {sources.map((src) => (
-          <div
-            key={src.id}
-            className="card"
-            style={{
-              padding: '16px 18px', cursor: 'pointer',
-              borderLeft: src.isActive ? '3px solid var(--accent)' : '3px solid var(--border)',
-              opacity: src.isActive ? 1 : 0.65,
-              outline: editing?.id === src.id ? '2px solid var(--accent)' : undefined,
-              position: 'relative',
-            }}
-            onClick={() => openEdit(src)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)' }}>
-                {src.type.toUpperCase()}
-              </span>
-              <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                <button className="btn-icon" title={src.isActive ? 'Pausieren' : 'Aktivieren'}
-                  aria-label={src.isActive ? 'Quelle pausieren' : 'Quelle aktivieren'}
-                  onClick={() => handleToggleActive(src)}>
-                  {src.isActive
-                    ? <PauseCircle size={16} weight="fill" color="var(--accent)" aria-hidden="true" />
-                    : <PlayCircle  size={16} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />}
-                </button>
-                <button className="btn-icon" aria-label="Weitere Aktionen" aria-haspopup="true"
-                  aria-expanded={menuOpen === src.id}
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === src.id ? null : src.id) }}>
-                  <DotsThree size={16} weight="bold" aria-hidden="true" />
-                </button>
-                {menuOpen === src.id && (
-                  <div className="dropdown" style={{ position: 'absolute', right: 12, top: 44, zIndex: 20, minWidth: 180 }}
-                    role="menu" onClick={(e) => e.stopPropagation()}>
-                    <button role="menuitem" className="dropdown-item" onClick={() => openEdit(src)}>
-                      <PencilSimple size={14} weight="bold" aria-hidden="true" /> Bearbeiten
-                    </button>
-                    <button role="menuitem" className="dropdown-item" onClick={() => handleCopy(src)}>
-                      <Copy size={14} weight="bold" aria-hidden="true" /> Duplizieren
-                    </button>
-                    <div className="dropdown-divider" />
-                    <button role="menuitem" className="dropdown-item dropdown-item--danger" onClick={() => handleDelete(src)}>
-                      <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
-                    </button>
-                  </div>
+        {sources.map((src) => {
+          const est = estimateFeedCost(estimateArticlesPerWeek(src.type), src.minScore)
+          const srcTopics = topics.filter((t) => t.sourceIds.includes(src.id))
+          return (
+            <div
+              key={src.id}
+              className="card"
+              style={{
+                padding: '16px 18px', cursor: 'pointer',
+                borderLeft: src.isActive ? '3px solid var(--accent)' : '3px solid var(--border)',
+                opacity: src.isActive ? 1 : 0.65,
+                outline: editing?.id === src.id ? '2px solid var(--accent)' : undefined,
+                position: 'relative',
+              }}
+              onClick={() => openEdit(src)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)' }}>
+                  {src.type.toUpperCase()}
+                </span>
+                <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                  <button className="btn-icon" title={src.isActive ? 'Pausieren' : 'Aktivieren'}
+                    aria-label={src.isActive ? 'Quelle pausieren' : 'Quelle aktivieren'}
+                    onClick={() => handleToggleActive(src)}>
+                    {src.isActive
+                      ? <PauseCircle size={16} weight="fill" color="var(--accent)" aria-hidden="true" />
+                      : <PlayCircle  size={16} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />}
+                  </button>
+                  <button className="btn-icon" aria-label="Weitere Aktionen" aria-haspopup="true"
+                    aria-expanded={menuOpen === src.id}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === src.id ? null : src.id) }}>
+                    <DotsThree size={16} weight="bold" aria-hidden="true" />
+                  </button>
+                  {menuOpen === src.id && (
+                    <div className="dropdown" style={{ position: 'absolute', right: 12, top: 44, zIndex: 20, minWidth: 180 }}
+                      role="menu" onClick={(e) => e.stopPropagation()}>
+                      <button role="menuitem" className="dropdown-item" onClick={() => handleFetchNow(src)}
+                        disabled={fetchingId === src.id || src.type === 'email'}>
+                        <ArrowClockwise size={14} weight="bold" aria-hidden="true" />
+                        {fetchingId === src.id ? 'Wird gefetcht…' : 'Jetzt fetchen'}
+                      </button>
+                      <div className="dropdown-divider" />
+                      <button role="menuitem" className="dropdown-item" onClick={() => openEdit(src)}>
+                        <PencilSimple size={14} weight="bold" aria-hidden="true" /> Bearbeiten
+                      </button>
+                      <button role="menuitem" className="dropdown-item" onClick={() => handleCopy(src)}>
+                        <Copy size={14} weight="bold" aria-hidden="true" /> Duplizieren
+                      </button>
+                      <div className="dropdown-divider" />
+                      <button role="menuitem" className="dropdown-item dropdown-item--danger" onClick={() => handleDelete(src)}>
+                        <Trash size={14} weight="bold" aria-hidden="true" /> Löschen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{src.name}</div>
+              {src.url && (
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {src.url}
+                </div>
+              )}
+
+              {/* Cost estimate row */}
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                ~{est.articlesPerWeek} Artikel/Woche · {formatCostPerWeek(est.weeklyEur)}/Woche
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                <span>Min. Score: {src.minScore}</span>
+                {src.lastFetchedAt && <span>Zuletzt: {new Date(src.lastFetchedAt).toLocaleDateString('de-DE')}</span>}
+                {src.errorCount > 0 && (
+                  <span style={{ color: '#E53E3E', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <Warning size={12} weight="fill" aria-hidden="true" /> {src.errorCount} Fehler
+                  </span>
                 )}
               </div>
-            </div>
 
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{src.name}</div>
-            {src.url && (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {src.url}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
-              <span>Min. Score: {src.minScore}</span>
-              {src.lastFetchedAt && <span>Zuletzt: {new Date(src.lastFetchedAt).toLocaleDateString('de-DE')}</span>}
-              {src.errorCount > 0 && (
-                <span style={{ color: '#E53E3E', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                  <Warning size={12} weight="fill" aria-hidden="true" /> {src.errorCount} Fehler
-                </span>
+              {fetchingId === src.id && (
+                <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ArrowClockwise size={12} weight="bold" aria-hidden="true" /> Wird gefetcht…
+                </div>
+              )}
+              {fetchMsg[src.id] && fetchingId !== src.id && (
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
+                  {fetchMsg[src.id]}
+                </div>
+              )}
+
+              {/* Keyword chips */}
+              {src.keywordsInclude.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                  {src.keywordsInclude.slice(0, 3).map((k, i) => (
+                    <span key={i} className="chip" style={{ fontSize: 11 }}>{k}</span>
+                  ))}
+                  {src.keywordsInclude.length > 3 && (
+                    <span className="chip" style={{ fontSize: 11 }}>+{src.keywordsInclude.length - 3}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Topic badges */}
+              {srcTopics.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                  {srcTopics.map((t) => (
+                    <span key={t.id} style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500,
+                      background: t.color ?? 'var(--active-bg)', color: '#fff',
+                    }}>
+                      {t.name}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-            {src.keywordsInclude.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                {src.keywordsInclude.slice(0, 3).map((k, i) => (
-                  <span key={i} className="chip" style={{ fontSize: 11 }}>{k}</span>
-                ))}
-                {src.keywordsInclude.length > 3 && (
-                  <span className="chip" style={{ fontSize: 11 }}>+{src.keywordsInclude.length - 3}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {editing && (
@@ -197,15 +283,53 @@ export default function SourcesView() {
                 />
               </div>
             )}
-            <div>
+            <div style={{ gridColumn: editing.type === 'email' ? undefined : '1 / -1' }}>
               <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
                 Mindest-Score ({editMinScore})
               </label>
               <input type="range" min={1} max={10} value={editMinScore}
                 onChange={(e) => setEditMinScore(Number(e.target.value))}
                 style={{ width: '100%' }} aria-label="Mindest-Score" />
+              <p className="form-hint">
+                Artikel werden von KI auf Relevanz bewertet (Score 1–10).{' '}
+                Nur Artikel <strong>ab diesem Score</strong> werden angezeigt.{' '}
+                <span className="form-hint-option">5 – großzügig</span>{' '}
+                <span className="form-hint-recommended">6 – empfohlen</span>{' '}
+                <span className="form-hint-option">8 – streng</span>
+              </p>
             </div>
           </div>
+
+          {/* Topic assignment */}
+          {topics.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 10 }}>
+                Themen
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {topics.map((t) => {
+                  const assigned = t.sourceIds.includes(editing.id)
+                  return (
+                    <label key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={assigned}
+                        onChange={(e) => handleToggleTopic(t.id, editing.id, e.target.checked)}
+                      />
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 500,
+                        background: assigned ? (t.color ?? 'var(--active-bg)') : 'var(--border)',
+                        color: assigned ? '#fff' : 'var(--text-secondary)',
+                      }}>
+                        {t.name}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
             <button className="btn btn-ghost" onClick={() => setEditing(null)}>Abbrechen</button>
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>

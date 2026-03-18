@@ -1197,6 +1197,10 @@ body {
 .kb-btn-primary:hover { background: var(--accent-dark); }
 .kb-error-msg  { font-size: 13px; color: #ef4444; margin-top: 8px; }
 .kb-admin-hint { font-size: 13px; color: var(--text-tertiary); padding: 32px; text-align: center; }
+.form-hint { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px; }
+.form-hint strong { color: var(--text-primary); }
+.form-hint .form-hint-option { display: inline; font-size: 11px; font-weight: 600; color: var(--text-tertiary); background: rgba(26,23,20,0.06); border-radius: 4px; padding: 1px 5px; }
+.form-hint .form-hint-recommended { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-light); border-radius: 4px; padding: 1px 5px; }
 
 /* ─── Card-System ────────────────────────────────────── */
 .card {
@@ -1298,6 +1302,8 @@ body {
 }
 .animate-dropdown { animation: slideDown 150ms ease forwards; }
 
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }

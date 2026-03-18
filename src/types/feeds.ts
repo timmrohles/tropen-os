@@ -54,8 +54,21 @@ export interface FeedItem {
   contentHash: string | null
   expiresAt: string | null
   archivedSummary: string | null
+  dismissedAt: string | null
   metadata: Record<string, unknown>
   createdAt: string
+}
+
+export interface FeedTopic {
+  id: string
+  userId: string
+  organizationId: string
+  name: string
+  color: string | null
+  displayOrder: number
+  sourceIds: string[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface FeedDistribution {
@@ -77,6 +90,45 @@ export interface RawFeedItem {
   publishedAt?: Date
   author?: string
   metadata?: Record<string, unknown>
+}
+
+// API-Datenquellen
+export interface FeedDataSource {
+  id: string
+  userId: string
+  organizationId: string
+  name: string
+  description: string | null
+  url: string
+  method: 'GET' | 'POST'
+  authType: 'none' | 'bearer' | 'api_key' | 'basic' | null
+  authConfig: Record<string, string>
+  requestHeaders: Record<string, string>
+  requestBody: string | null
+  fetchInterval: number
+  schemaPath: string | null
+  schemaPreview: Record<string, unknown> | null
+  isActive: boolean
+  lastFetchedAt: string | null
+  lastError: string | null
+  recordCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FeedDataRecord {
+  id: string
+  sourceId: string
+  userId: string
+  organizationId: string
+  fetchedAt: string
+  data: unknown
+  recordCount: number | null
+  fetchDurationMs: number | null
+  httpStatus: number | null
+  error: string | null
+  linkedProjectId: string | null
+  linkedWorkspaceId: string | null
 }
 
 // Stage 2 result from Haiku

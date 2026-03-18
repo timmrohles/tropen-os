@@ -410,4 +410,6 @@ export const TODOS_OPS: Todo[] = [
     prioritaet: 'mittel',
     referenz: 'WCAG 1.4.3',
   },
+
 ]
+// Architektur-Entscheidungen ausgelagert nach: todoDataArch.ts

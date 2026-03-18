@@ -37,6 +37,10 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  env: {
+    // Ändert sich bei jedem Server-Start / Build → SW-Cache wird automatisch invalidiert
+    NEXT_PUBLIC_BUILD_TIME: String(Date.now()),
+  },
   async headers() {
     return [
       {

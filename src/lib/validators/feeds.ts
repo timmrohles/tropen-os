@@ -45,6 +45,32 @@ export const createDistributionSchema = z.object({
 })
 export type CreateDistributionInput = z.infer<typeof createDistributionSchema>
 
+// API-Datenquellen
+export const createDataSourceSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  url: z.string().url(),
+  method: z.enum(['GET', 'POST']).optional().default('GET'),
+  auth_type: z.enum(['none', 'bearer', 'api_key', 'basic']).optional(),
+  auth_config: z.record(z.string(), z.string()).optional().default({}),
+  request_headers: z.record(z.string(), z.string()).optional().default({}),
+  request_body: z.string().optional(),
+  fetch_interval: z
+    .number()
+    .int()
+    .refine((v) => v === 0 || v >= 300, { message: 'Mindestens 300 Sekunden (5 Minuten) oder 0 (manuell)' })
+    .refine((v) => v <= 86400, { message: 'Maximal 86400 Sekunden (1 Tag)' })
+    .optional()
+    .default(3600),
+  schema_path: z.string().optional(),
+})
+export type CreateDataSourceInput = z.infer<typeof createDataSourceSchema>
+
+export const updateDataSourceSchema = createDataSourceSchema.partial().extend({
+  is_active: z.boolean().optional(),
+})
+export type UpdateDataSourceInput = z.infer<typeof updateDataSourceSchema>
+
 // Email inbound webhook from Resend
 export const emailInboundSchema = z.object({
   to: z.array(z.object({ email: z.string() })),

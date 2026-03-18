@@ -37,7 +37,7 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'chat-04',
     titel: 'Jungle Order: Struktur-Vorschlag + Zusammenführen',
-    beschreibung: 'Edge Function jungle-order mit action:structure + action:merge. Separater Dify Workflow tropen-os-jungle-order.',
+    beschreibung: 'Edge Function jungle-order mit action:structure + action:merge. Läuft jetzt auf Anthropic direkt (claude-haiku-4-5-20251001), Dify vollständig abgelöst.',
     status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'mittel',
@@ -109,7 +109,7 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'chat-12',
     titel: 'Agenten-System Phase 2: Agent-Dropdown im Chat-Input',
-    beschreibung: 'Vollständig implementiert: Dropdown in ChatInput, agent_id wird in conversations gespeichert, beim Conversation-Wechsel wiederhergestellt. Edge Function lädt agent system_prompt und übergibt ihn an Dify.',
+    beschreibung: 'Vollständig implementiert: Dropdown in ChatInput, agent_id wird in conversations gespeichert, beim Conversation-Wechsel wiederhergestellt. Edge Function lädt agent system_prompt und übergibt ihn an Anthropic direkt.',
     status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'hoch',
@@ -127,7 +127,7 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'chat-14',
     titel: 'Projekt-Gedächtnis Phase 2: Manuelles Kontext-Textfeld',
-    beschreibung: 'UI-Textarea in projects/page.tsx (instructions-Feld) war vorhanden. Edge Function ergänzt: lädt project.instructions via project_id der Conversation und übergibt project_context an Dify.',
+    beschreibung: 'UI-Textarea in projects/page.tsx (instructions-Feld) war vorhanden. Edge Function ergänzt: lädt project.instructions via project_id der Conversation und übergibt project_context an Anthropic direkt.',
     status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'mittel',
@@ -135,8 +135,8 @@ export const TODOS_FEATURES: Todo[] = [
   },
   {
     id: 'chat-15',
-    titel: 'Projekt-Gedächtnis Phase 3: Automatische Extraktion via Dify',
-    beschreibung: 'Toro extrahiert Personen, Deadlines, Entscheidungen, offene Fragen aus Chat-Verlauf → projects.memory.',
+    titel: 'Projekt-Gedächtnis Phase 3: Automatische Extraktion via Anthropic',
+    beschreibung: 'Toro extrahiert Personen, Deadlines, Entscheidungen, offene Fragen aus Chat-Verlauf → projects.memory. Direkt via Anthropic SDK (kein Dify).',
     status: 'geplant',
     kategorie: 'Chat & Workspace',
     prioritaet: 'niedrig',
@@ -163,7 +163,7 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'chat-18',
     titel: 'Voice Output',
-    beschreibung: 'Text-to-Speech für Toro-Antworten. Dify-Integration vorhanden, UI fehlt.',
+    beschreibung: 'Text-to-Speech für Toro-Antworten. Noch nicht implementiert — eigene Lösung über Anthropic/OpenAI TTS.',
     status: 'geplant',
     kategorie: 'Chat & Workspace',
     prioritaet: 'niedrig',
@@ -221,7 +221,7 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'proj-05',
     titel: 'RAG Pipeline: knowledge-search + ai-chat Integration',
-    beschreibung: 'knowledge-search Edge Function deployed. ai-chat Step 9c: ruft knowledge-search auf, injiziert Top-5 Chunks als knowledge_context in Dify inputs.',
+    beschreibung: 'knowledge-search Edge Function deployed. ai-chat ruft knowledge-search auf, injiziert Top-5 Chunks als knowledge_context direkt in den Anthropic System-Prompt.',
     status: 'erledigt',
     kategorie: 'Projekte & Wissensbasis',
     prioritaet: 'hoch',
@@ -230,17 +230,17 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'proj-06',
     titel: 'knowledge-ingest: Edge Function Crash-Ursache finden',
-    beschreibung: 'Step-Debugging deployed. User muss fehlgeschlagenes Dokument löschen + neu hochladen. RLS-Policies (Mig. 036) + Bucket sind korrekt.',
-    status: 'offen',
+    beschreibung: 'Root Cause (2026-03-18): retryDoc() rief Ingest auf ohne Datei in Storage → "Object not found". Außerdem: bei Storage-Upload-Fehler blieb Dokument in "processing" hängen. Fix: (1) handleFiles bereinigt DB-Record bei Storage-Fehler. (2) retryDoc löscht Dokument automatisch wenn Datei fehlt.',
+    status: 'erledigt',
     kategorie: 'Projekte & Wissensbasis',
     prioritaet: 'hoch',
     referenz: '2026-03-13',
   },
   {
     id: 'proj-07',
-    titel: 'Dify: knowledge_context Variable in System-Prompt einbauen',
-    beschreibung: 'Manueller Schritt im Dify Dashboard — kein Code.',
-    status: 'offen',
+    titel: 'RAG: knowledge_context in Anthropic System-Prompt',
+    beschreibung: 'Erledigt mit Dify-Ablösung: knowledge_context wird direkt in den Anthropic System-Prompt injiziert (ai-chat Edge Function). Kein manueller Schritt mehr nötig.',
+    status: 'erledigt',
     kategorie: 'Projekte & Wissensbasis',
     prioritaet: 'hoch',
     referenz: '2026-03-13',

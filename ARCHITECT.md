@@ -576,43 +576,42 @@ Plan E:  Transformations-Engine (analyze → preview → execute)
 Plan F:  UI — Projekte Memory-Badge+Tab, Workspaces-Liste
 ```
 
-### 🔴 Offene Entscheidung
-
-```
-Dify-Entscheidung: Komplett ablösen oder parallel weiterführen?
-→ Jungle Order bleibt auf Dify bis Entscheidung
-→ Alle neuen Chat-Features: Anthropic direkt
-```
-
 ### ⬜ Nächste Pläne (in dieser Reihenfolge)
 
 ```
-Plan H:  Asset-Management
-Plan I:  Konsolidierung + Export
-Plan J:  Geteilte Chats + Team-Antwort
-Phase 3: Agenten-System
+Plan J1: Feeds autonom — Run-History, konfigurierbare Outputs   🔴 Nächster Schritt
+Plan J2a: skills-Tabelle + RLS + Seed, agent_skills, skill-resolver  (nach J1)
+Plan J2b: agents ALTER + agent_runs + agent-engine              (nach J2a)
+Plan J2c: Scheduled Trigger (Cron), Webhook, Paket-Seeds        (nach J2b)
+Plan K:  Geteilte Chats + Team-Antwort
 Phase 3: Prompt-Bibliothek
 Phase 3: Wissenschafts-Paket
 ```
+
+> **Plan J = "Produktion" (Feeds autonom + Agenten scheduled)**
+> Sub-Pläne: J1 (Feeds), J2a/J2b/J2c (Agenten-System)
+> **Plan K = Geteilte Chats + Team-Antwort** (früher fälschlich "Plan J" in ARCHITECT.md)
 
 ---
 
 ## Offene Architektur-Fragen (Stand 2026-03-17)
 
 ```
-❓ Dify vollständig ablösen?
-   Status: Entscheidung offen (Timm)
-   Jungle Order bleibt auf Dify bis Entscheidung
-   Neue Features: immer Anthropic direkt
+✅ Dify vollständig abgelöst (2026-03-17)
+   jungle-order läuft auf Anthropic direkt (claude-haiku-4-5-20251001).
+   DIFY_API_KEY und DIFY_API_URL können aus Supabase Edge Function Secrets entfernt werden.
 
-❓ Geteilte Chats (Plan J)
+❓ Geteilte Chats (Plan K)
    Status: geplant, noch nicht gestartet
    Frage: read-only public URL oder Team-Antwort-Modus?
 
-❓ Agenten-System Phase 2
-   Status: geplant, noch nicht spezifiziert
-   Frage: welche agent_assignments Tabelle nutzen?
-   Relation zu Capability + Outcome klären.
+❓ Agenten-System (Plan J2 — Spec fertig)
+   Status: Spec fertig in docs/plans/agents-spec.md
+   Offene Entscheidungen (aus Architect Review 2026-03-17):
+   J1: Skills vs. Capabilities → Empfehlung Option C (eigenständig, kein Risiko)
+   J3: Cron-Runner → Empfehlung Supabase pg_cron
+   J4: Marketing-Agents scope='package' → Empfehlung Ja
+   J5: Toro-Vorschlag opt-in DEFAULT false → Empfehlung Ja
 
 ❓ Architecture Decision Records (ADR)
    Status: docs/adr/ leer

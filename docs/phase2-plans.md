@@ -109,6 +109,10 @@ Bei jedem größeren Claude.ai-Release prüfen:
 | **Plan E** | Transformations-Engine | ✅ Fertig |
 | **Plan F** | UI (Projekte + Workspaces + Feeds-Settings) | ✅ Fertig |
 | **Plan J** | Produktion – Live Dashboards, autonome Feeds, scheduled Agents | ⬜ Offen |
+| **Plan J1** | Feeds autonom: Run-History, konfigurierbare Outputs | ⬜ Nächster Schritt |
+| **Plan J2a** | skills-Tabelle + RLS + Seed, agent_skills, skill-resolver | ⬜ Nach J1 |
+| **Plan J2b** | agents ALTER + agent_runs + agent-engine | ⬜ Nach J2a |
+| **Plan J2c** | Scheduled Trigger (Cron), Webhook, Paket-Seeds | ⬜ Nach J2b |
 | **Plan K** | Geteilte Chats + Team-Antwort | ⬜ Geplant |
 
 ---

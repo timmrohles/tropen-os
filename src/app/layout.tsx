@@ -33,7 +33,6 @@ export const metadata: Metadata = {
   title: 'Tropen OS',
   description: 'Responsible AI Department für den Mittelstand',
   manifest: '/manifest.json',
-  themeColor: 'var(--accent)',   // var(--accent) — war var(--accent) (altes Grün)
   appleWebApp: {
     capable: true,
     title: 'Tropen OS',
@@ -41,10 +40,11 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover',    // Pflicht für env(safe-area-inset-*) auf iOS
+  viewportFit: 'cover',
+  themeColor: 'var(--accent)',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

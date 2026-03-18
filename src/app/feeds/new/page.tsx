@@ -3,7 +3,7 @@
 // Multi-step wizard for creating a new feed source.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createFeedSource } from '@/actions/feeds'
+import { createFeedSource, triggerFetch } from '@/actions/feeds'
 import type { FeedSourceType } from '@/types/feeds'
 import { Rss, Envelope, Plugs, Globe, Plus, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 
@@ -48,6 +48,8 @@ export default function NewFeedPage() {
   const [kwInput, setKwInput] = useState('')
   const [kwExInput, setKwExInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [fetching, setFetching] = useState(false)
+  const [fetchResult, setFetchResult] = useState<{ itemsSaved: number } | null>(null)
   const [error, setError] = useState('')
 
   const addKw = (kw: string, list: string[], setList: (v: string[]) => void) => {
@@ -66,6 +68,17 @@ export default function NewFeedPage() {
     const result = await createFeedSource({ name, type, url: url || undefined, config, keywordsInclude, keywordsExclude, minScore })
     setSaving(false)
     if ('error' in result) { setError(result.error ?? ''); return }
+
+    // Trigger initial fetch for non-email sources (email comes via inbound webhook)
+    if (type !== 'email' && result.source?.id) {
+      setFetching(true)
+      const fetchRes = await triggerFetch(result.source.id)
+      setFetching(false)
+      setFetchResult({ itemsSaved: fetchRes.itemsSaved })
+      // Short delay so user sees the result, then navigate
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+
     router.push('/feeds')
   }
 
@@ -237,9 +250,13 @@ export default function NewFeedPage() {
               aria-valuenow={minScore}
               aria-label={`Relevanz-Schwelle: ${minScore} von 10`}
             />
-            <div style={{ ...s.hint, display: 'flex', justifyContent: 'space-between' }}>
-              <span>1 — Alles zeigen</span><span>10 — Nur Bestes</span>
-            </div>
+            <p className="form-hint">
+              Artikel werden von KI auf Relevanz bewertet (Score 1–10).{' '}
+              Nur Artikel <strong>ab diesem Score</strong> werden angezeigt.{' '}
+              <span className="form-hint-option">5 – großzügig</span>{' '}
+              <span className="form-hint-recommended">6 – empfohlen</span>{' '}
+              <span className="form-hint-option">8 – streng</span>
+            </p>
           </div>
         </>
       )}
@@ -285,11 +302,11 @@ export default function NewFeedPage() {
           <button
             className="btn btn-primary"
             type="button"
-            disabled={saving}
+            disabled={saving || fetching}
             onClick={handleSubmit}
-            aria-busy={saving}
+            aria-busy={saving || fetching}
           >
-            {saving ? 'Wird gespeichert…' : 'Quelle erstellen'}
+            {saving ? 'Wird gespeichert…' : fetching ? 'Erster Fetch läuft…' : fetchResult ? `${fetchResult.itemsSaved} Artikel gefunden — weiter…` : 'Quelle erstellen'}
           </button>
         )}
       </div>

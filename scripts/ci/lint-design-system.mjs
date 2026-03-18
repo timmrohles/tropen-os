@@ -29,6 +29,8 @@ const IGNORE = [
   'ParrotIcon.tsx',         // SVG Brand-Icon — CSS-Vars in fill nicht möglich
   '_DESIGN_REFERENCE.tsx',  // Zeigt bewusst verbotene Patterns als Negativbeispiele
   'db/schema.ts', 'db\\schema.ts',  // Drizzle-Schema — file-size ist strukturell bedingt
+  'feeds/DataView.tsx', 'feeds\\DataView.tsx',  // Komplexe Feed-Datenansicht — Aufteilung Plan J1
+  'feeds/page.tsx', 'feeds\\page.tsx',          // Feeds-Hauptseite — Aufteilung Plan J1
 ]
 
 // Verbotene Hex-Farben (hardcodiert statt CSS-Variable)
