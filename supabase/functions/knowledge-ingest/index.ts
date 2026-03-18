@@ -116,7 +116,8 @@ serve(async (req) => {
     document_id = body.document_id;
     if (!document_id) throw new Error("document_id fehlt");
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
+    console.error('[knowledge-ingest] parse error:', e)
+    return new Response(JSON.stringify({ error: "Ungültige Anfrage" }), {
       status: 400,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
@@ -203,7 +204,8 @@ serve(async (req) => {
       .update({ status: "error", error_message: String(err) })
       .eq("id", document_id);
 
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('[knowledge-ingest] processing error:', err)
+    return new Response(JSON.stringify({ error: "Verarbeitung fehlgeschlagen" }), {
       status: 500,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });

@@ -49,7 +49,8 @@ serve(async (req) => {
 
     if (!query || !org_id || !user_id) throw new Error("query, org_id und user_id sind Pflicht");
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
+    console.error('[knowledge-search] parse error:', e)
+    return new Response(JSON.stringify({ error: "Ungültige Anfrage" }), {
       status: 400,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
@@ -118,7 +119,8 @@ serve(async (req) => {
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('[knowledge-search] search error:', err)
+    return new Response(JSON.stringify({ error: "Suche fehlgeschlagen" }), {
       status: 500,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
