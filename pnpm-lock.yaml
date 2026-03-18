@@ -169,7 +169,7 @@ importers:
         specifier: ^20.8.4
         version: 20.8.4
       msw:
-        specifier: ^2.12.10
+        specifier: ^2.12.13
         version: 2.12.13(@types/node@20.19.37)(typescript@5.9.3)
       postcss:
         specifier: ^8.5.8
