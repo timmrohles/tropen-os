@@ -356,12 +356,12 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
                     {/* Delete */}
                     {isConfirmDelete ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--error, #c0392b)' }}>Löschen?</span>
+                        <span style={{ fontSize: 12, color: 'var(--error)' }}>Löschen?</span>
                         <button
                           onClick={() => handleDelete(conv.id)}
                           style={{
                             padding: '2px 8px', fontSize: 12, fontWeight: 600,
-                            background: 'var(--error, #c0392b)', color: '#fff',
+                            background: 'var(--error)', color: '#fff',
                             border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                           }}
                         >
@@ -390,7 +390,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
                           color: 'var(--text-tertiary)',
                           transition: 'all var(--t-fast)',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--error-bg, rgba(192,57,43,0.08))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--error, #c0392b)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--error-bg)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--error)' }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
                       >
                         <Trash size={15} weight="bold" />
