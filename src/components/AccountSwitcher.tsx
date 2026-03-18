@@ -76,7 +76,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
           <div
             role="presentation"
             aria-hidden="true"
-            style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 390 }}
             onClick={() => setOpen(false)}
           />
           <ul
@@ -84,7 +84,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
             aria-label="Konto wechseln"
             className="animate-dropdown"
             style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 20,
+              position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 400,
               background: 'var(--bg-surface-solid)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',

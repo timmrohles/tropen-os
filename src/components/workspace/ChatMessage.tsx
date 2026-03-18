@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -9,9 +10,11 @@ import {
   CheckCircle, Warning, Lightbulb, Leaf,
   ChartBar, Wrench, ArrowRight,
   BookmarkSimple, FloppyDisk, ThumbsDown,
+  SquaresFour,
 } from '@phosphor-icons/react'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
 import ParrotIcon from '@/components/ParrotIcon'
+import { SaveArtifactModal } from './SaveArtifactModal'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -22,6 +25,10 @@ interface ChatMessageProps {
   onBookmarkChange?: (messageId: string, bookmarked: boolean) => void
   onArtifactSaved?: () => void
 }
+
+// ─── Workspace action marker ──────────────────────────────────────────────
+
+const WORKSPACE_MARKER = /^\[TORO:WORKSPACE:(.+)\]$/
 
 // ─── Icon map: emoji marker → Phosphor icon ─────────────────────────────────
 
@@ -34,6 +41,74 @@ const ICON_MAP: Array<{ marker: string; icon: React.ReactNode }> = [
   { marker: '🔧', icon: <Wrench size={15} weight="fill" className="cmsg-icon cmsg-icon--tech" /> },
   { marker: '→',  icon: <ArrowRight size={15} weight="bold" className="cmsg-icon cmsg-icon--arrow" /> },
 ]
+
+// ─── Workspace action card ────────────────────────────────────────────────
+
+function WorkspaceActionCard({ title }: { title: string }) {
+  const router = useRouter()
+  const [creating, setCreating] = useState(false)
+  const [created, setCreated] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleCreate() {
+    setCreating(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/workspaces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Fehler')
+      const ws = await res.json()
+      setCreated(true)
+      router.push(`/ws/${ws.id}/canvas`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler')
+      setCreating(false)
+    }
+  }
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      background: 'var(--accent-light)',
+      border: '1px solid var(--accent)',
+      borderRadius: 8, padding: '10px 14px',
+      marginTop: 8,
+    }}>
+      <SquaresFour size={18} color="var(--accent)" weight="fill" aria-hidden="true" />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', margin: '0 0 1px' }}>
+          Neuer Workspace
+        </p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          {title}
+        </p>
+        {error && <p style={{ fontSize: 11, color: 'var(--error)', margin: '2px 0 0' }}>{error}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={() => void handleCreate()}
+        disabled={creating || created}
+        style={{
+          background: created ? 'transparent' : 'var(--accent)',
+          border: created ? '1px solid var(--accent)' : 'none',
+          borderRadius: 6,
+          padding: '6px 14px',
+          color: created ? 'var(--accent)' : '#fff',
+          fontSize: 12, fontWeight: 600,
+          cursor: creating || created ? 'default' : 'pointer',
+          opacity: creating ? 0.7 : 1,
+          flexShrink: 0,
+          transition: 'all 0.15s',
+        }}
+      >
+        {creating ? 'Erstelle…' : created ? '↗ Geöffnet' : 'Workspace erstellen →'}
+      </button>
+    </div>
+  )
+}
 
 // ─── Markdown component factory (accepts artifact save callback) ───────────
 
@@ -116,6 +191,14 @@ function renderAssistantContent(
     if (line.startsWith('```')) inCodeBlock = !inCodeBlock
 
     if (!inCodeBlock) {
+      // Workspace action marker
+      const wsMatch = WORKSPACE_MARKER.exec(line.trim())
+      if (wsMatch) {
+        flushMd()
+        result.push(<WorkspaceActionCard key={`ws-${i}`} title={wsMatch[1].trim()} />)
+        continue
+      }
+
       const entry = ICON_MAP.find(({ marker }) => line.startsWith(marker))
       if (entry) {
         flushMd()
@@ -135,131 +218,6 @@ function renderAssistantContent(
 
   flushMd()
   return result
-}
-
-// ─── Save artifact modal (simple prompt-style) ────────────────────────────
-
-interface SaveArtifactModalProps {
-  content: string
-  language: string | null
-  conversationId: string
-  organizationId: string
-  onDone: () => void
-  onCancel: () => void
-}
-
-function SaveArtifactModal({ content, language, conversationId, organizationId, onDone, onCancel }: SaveArtifactModalProps) {
-  const [name, setName] = useState(language ? `${language}-snippet` : 'code-snippet')
-  const [saving, setSaving] = useState(false)
-
-  async function handleSave() {
-    if (!name.trim()) return
-    setSaving(true)
-    try {
-      await fetch('/api/artifacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          organizationId,
-          name: name.trim(),
-          type: 'code',
-          language,
-          content,
-        }),
-      })
-      onDone()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        zIndex: 300,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onCancel}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: 24,
-          width: 340,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-        }}
-      >
-        <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 15 }}>
-          Artefakt speichern
-        </div>
-        <div>
-          <label style={{ color: 'var(--text-secondary)', fontSize: 12, display: 'block', marginBottom: 6 }}>
-            Name
-          </label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            style={{
-              width: '100%',
-              background: 'var(--bg-input)',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '8px 10px',
-              color: 'var(--text-primary)',
-              fontSize: 13,
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '7px 14px',
-              color: 'var(--text-secondary)',
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-            style={{
-              background: 'var(--accent)',
-              border: 'none',
-              borderRadius: 6,
-              padding: '7px 14px',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: saving ? 'default' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? 'Speichern…' : 'Speichern'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

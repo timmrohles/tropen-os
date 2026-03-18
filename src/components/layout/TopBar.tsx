@@ -141,8 +141,7 @@ export default function TopBar() {
     borderRadius: 'var(--radius-lg)',
     boxShadow: 'var(--shadow-lg)',
     zIndex: 300,
-    minWidth: 220,
-    overflow: 'hidden',
+    minWidth: 260,
   }
 
   const menuItemStyle: React.CSSProperties = {
