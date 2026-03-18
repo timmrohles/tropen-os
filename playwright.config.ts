@@ -21,14 +21,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // In CI: kein Dev-Server starten, gegen laufende Instanz testen
-  // Lokal: Dev-Server automatisch starten
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: true,
-        timeout: 60_000,
-      },
+  webServer: {
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
 })
