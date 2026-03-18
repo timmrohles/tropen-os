@@ -531,6 +531,7 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 | `src/app/workspaces/[id]/layout.tsx` | Full-screen fixed container (position:fixed, inset:0) für Canvas-Ansicht |
 | `src/app/workspaces/[id]/CanvasClient.tsx` | Client: Header, Tabs (Canvas/Silo-Chat/Einstellungen), Karten-Grid, CreateCardModal |
 | `src/components/workspaces/CardTile.tsx` | Karten-Kachel: Role-Badge, Status, Stale-Warning, Sources-Zähler |
+| `src/app/api/workspaces/[id]/copy/route.ts` | POST — Workspace kopieren (inkl. Cards) |
 
 **Canvas-Regeln:**
 - Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
@@ -540,6 +541,28 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Karten-API: `POST /api/workspaces/[id]/cards` (createCardSchema: title + role required)
 - Workspace-API: `PATCH /api/workspaces/[id]` (updateWorkspacePlanCSchema)
 - Migration `20260318000049_conversations_workspace.sql`: conversations um workspace_id, card_id, conversation_type erweitert
+
+### CI-Pipeline (Stand 2026-03-18)
+
+Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step und blockiert bei Errors.
+
+**Häufige Fehlerquellen (alle behoben):**
+- Hex-Farben im Code → nur `var(--)` erlaubt; `var(--error, #hex)` als Fallback ebenfalls verboten
+- `console.log/warn/error` in Produktion → `createLogger('scope')` aus `src/lib/logger.ts`
+- Icon `weight="thin"` oder `weight="regular"` → nur `weight="bold"` oder `weight="fill"`
+- Dateien > 500 Zeilen → CI-Error; > 300 Zeilen → Warning; große Dateien aufteilen
+
+**write-test-results.mjs** läuft mit `|| true` — fehlende Secrets blockieren CI nicht.
+
+**OpenAI-Client:** Lazy-Init via `getOpenAI()` + Proxy in `src/lib/llm/openai.ts` — kein `new OpenAI()` auf Modul-Ebene (wirft bei fehlendem `OPENAI_API_KEY` zur Build-Zeit).
+
+### AccountSwitcher (Stand 2026-03-18)
+
+**Kein Dropdown-im-Dropdown.** Die 4 Rollen werden direkt inline als Button-Liste gerendert.
+
+- `src/components/NavBar.tsx` — inline Rollenauswahl im NavBar-Dropdown (eigener `viewAsOpen` State)
+- `src/components/layout/TopBar.tsx` — inline Rollenauswahl im Account-Panel
+- `src/components/AccountSwitcher.tsx` — wird nur noch als Typ-Import verwendet (`type AccountRole`)
 
 ### Transformations-Engine (Plan E — Stand 2026-03-17)
 
