@@ -1,31 +1,72 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import CanvasClient from './CanvasClient'
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
-import useWorkspaceState from '@/hooks/useWorkspaceState'
-import WorkspaceLayout from '@/components/workspace/WorkspaceLayout'
+export default async function WorkspaceCanvasPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id: workspaceId } = await params
 
-function ChatPageInner({ params }: { params: Promise<{ id: string }> }) {
-  const [workspaceId, setWorkspaceId] = useState('')
-  const searchParams = useSearchParams()
-  const initialConvId = searchParams.get('conv')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  useEffect(() => {
-    params.then((p) => setWorkspaceId(p.id))
-  }, [params])
+  const { data: ws } = await supabaseAdmin
+    .from('workspaces')
+    .select('id, title, goal, status, meta, department_id, created_by, created_at, updated_at')
+    .eq('id', workspaceId)
+    .is('deleted_at', null)
+    .maybeSingle()
 
-  const state = useWorkspaceState(workspaceId, initialConvId)
+  if (!ws) redirect('/workspaces')
 
-  if (!workspaceId) return null
+  const { data: cards } = await supabaseAdmin
+    .from('cards')
+    .select('id, title, description, role, type, status, stale_reason, sources, sort_order, content, capability_id, outcome_id, created_at, updated_at')
+    .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
 
-  return <WorkspaceLayout {...state} />
+  return (
+    <CanvasClient
+      workspaceId={workspaceId}
+      initialWorkspace={{
+        id: ws.id,
+        title: ws.title,
+        goal: ws.goal ?? null,
+        status: (ws.status ?? 'draft') as string,
+        meta: (ws.meta ?? {}) as Record<string, unknown>,
+      }}
+      initialCards={(cards ?? []) as CanvasCard[]}
+    />
+  )
 }
 
-export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
-  return (
-    <Suspense>
-      <ChatPageInner params={params} />
-    </Suspense>
-  )
+export type CanvasCard = {
+  id: string
+  title: string
+  description: string | null
+  role: string | null
+  type: string | null
+  status: string
+  stale_reason: string | null
+  sources: unknown[] | null
+  sort_order: number
+  content: unknown | null
+  capability_id: string | null
+  outcome_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CanvasWorkspace = {
+  id: string
+  title: string
+  goal: string | null
+  status: string
+  meta: Record<string, unknown>
 }

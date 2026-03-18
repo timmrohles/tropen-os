@@ -93,6 +93,26 @@
   --bg-inset:      rgba(26, 23, 20, 0.04);
   --border-muted:  rgba(26,23,20,0.08);
   --accent-muted:  rgba(45,122,80,0.5);
+
+  /* ─── Sidebar Layout ────────────────────────────────── */
+  --sidebar-width:           240px;
+  --sidebar-collapsed-width: 56px;
+  --header-height:           56px;
+  --bottom-nav-height:       56px;
+  --nav-item-height:         40px;
+  --topbar-height:           44px;
+  --content-top:             44px; /* desktop: TopBar height */
+
+  /* ─── Sidebar Dark Theme ─────────────────────────────── */
+  --sidebar-bg:          #1A2E23;
+  --sidebar-text:        rgba(255, 255, 255, 0.85);
+  --sidebar-text-muted:  rgba(255, 255, 255, 0.45);
+  --sidebar-border:      rgba(255, 255, 255, 0.08);
+  --sidebar-hover:       rgba(255, 255, 255, 0.07);
+  --sidebar-active-bg:   rgba(255, 255, 255, 0.12);
+  --sidebar-active-text: #ffffff;
+  --sidebar-icon:        rgba(255, 255, 255, 0.65);
+  --sidebar-icon-active: #ffffff;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -871,6 +891,10 @@ body {
 /* Toast */
 .wl-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--active-bg); border: 1px solid var(--accent); color: var(--active-text); padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 500; box-shadow: var(--shadow-lg); white-space: nowrap; }
 
+/* Chat list page */
+.chat-list-row .chat-list-actions { opacity: 0; transition: opacity var(--t-fast); }
+.chat-list-row:hover .chat-list-actions { opacity: 1; }
+
 /* Multi-Select Action Bar */
 .wl-action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-surface-solid); border: 1px solid var(--border-medium); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-lg); z-index: 300; backdrop-filter: blur(8px); }
 .wl-action-count { font-size: 12px; color: var(--text-tertiary); margin-right: 4px; white-space: nowrap; }
@@ -1382,6 +1406,72 @@ body {
 
 .legal-page a {
   color: var(--accent);
+}
+
+/* ─── App Shell ──────────────────────────────────────── */
+
+/* Default sidebar offset (desktop: full width) */
+:root {
+  --current-sidebar-offset: var(--sidebar-width);
+}
+
+/* Collapsed sidebar state — set via JS on :root dataset */
+:root[data-sidebar-collapsed="true"] {
+  --current-sidebar-offset: var(--sidebar-collapsed-width);
+}
+
+/* Mobile: no sidebar, full-height header */
+@media (max-width: 767px) {
+  :root {
+    --current-sidebar-offset: 0px;
+    --content-top: var(--header-height);
+  }
+}
+
+/* Top bar — fixed header right of sidebar */
+.top-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: var(--current-sidebar-offset);
+  height: var(--topbar-height);
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--sidebar-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 16px;
+  gap: 8px;
+  z-index: 100;
+  transition: left 200ms ease-out;
+}
+
+@media (max-width: 767px) {
+  .top-bar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-bar { transition: none; }
+}
+
+/* Main content area — shifts right of sidebar on desktop */
+.app-main {
+  position: fixed;
+  top: var(--topbar-height);
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: left 200ms ease-out;
+}
+
+/* Mobile overrides */
+@media (max-width: 767px) {
+  .app-main {
+    top: var(--header-height) !important;
+    left: 0 !important;
+    bottom: var(--bottom-nav-height);
+  }
 }
 
 /* ─── Reduced Motion ─────────────────────────────────── */

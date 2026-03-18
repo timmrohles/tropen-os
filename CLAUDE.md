@@ -495,6 +495,7 @@ Letzte relevante Migrationen:
 | 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
 | 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
 | 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
+| 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
@@ -519,18 +520,26 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - Jeder Workflow hat immer eine `is_custom: true` Option als Escape
 - `guided_enabled = false` überschreibt alles — keine Ausnahmen
 
-### UI — Projekte + Workspaces (Plan F — Stand 2026-03-17)
+### UI — Projekte + Workspaces (Plan F — Stand 2026-03-18)
 
 | Datei | Inhalt |
 |-------|--------|
 | `src/app/projects/page.tsx` | Memory-Count-Badge auf Projektkarten + Gedächtnis-Tab (zeigt project_memory Einträge) |
 | `src/app/workspaces/page.tsx` | Server Component — lädt Workspaces via workspace_participants, rendert WorkspacesList |
 | `src/components/workspaces/WorkspacesList.tsx` | Client Component — Workspace-Grid mit Status, Karten-Zähler, Create-Dialog |
+| `src/app/workspaces/[id]/page.tsx` | Server Component — Auth + Workspace/Cards laden, rendert CanvasClient |
+| `src/app/workspaces/[id]/layout.tsx` | Full-screen fixed container (position:fixed, inset:0) für Canvas-Ansicht |
+| `src/app/workspaces/[id]/CanvasClient.tsx` | Client: Header, Tabs (Canvas/Silo-Chat/Einstellungen), Karten-Grid, CreateCardModal |
+| `src/components/workspaces/CardTile.tsx` | Karten-Kachel: Role-Badge, Status, Stale-Warning, Sources-Zähler |
 
-**Regeln:**
+**Canvas-Regeln:**
 - Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
 - project_memory count kommt vom List-Endpoint (kein Extra-Request per Karte)
 - Memory-Tab lädt lazy beim ersten Klick, nicht beim Seitenaufruf
+- Canvas `/workspaces/[id]` = Grid-Canvas (sort_order); Freeform-Canvas bei `/ws/[id]/canvas` bleibt unberührt
+- Karten-API: `POST /api/workspaces/[id]/cards` (createCardSchema: title + role required)
+- Workspace-API: `PATCH /api/workspaces/[id]` (updateWorkspacePlanCSchema)
+- Migration `20260318000049_conversations_workspace.sql`: conversations um workspace_id, card_id, conversation_type erweitert
 
 ### Transformations-Engine (Plan E — Stand 2026-03-17)
 
