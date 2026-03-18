@@ -1312,6 +1312,50 @@ body {
   .show-in-pwa { display: flex; }
 }
 
+/* ─── Legal Pages (Impressum, Datenschutz, Barrierefreiheit) ── */
+.legal-page h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.legal-page h1 + p {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  margin-bottom: 40px;
+}
+
+.legal-page section {
+  margin-bottom: 32px;
+}
+
+.legal-page section:last-child {
+  margin-bottom: 0;
+}
+
+.legal-page h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.legal-page p,
+.legal-page li {
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.legal-page ul {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.legal-page a {
+  color: var(--accent);
+}
+
 /* ─── Reduced Motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
