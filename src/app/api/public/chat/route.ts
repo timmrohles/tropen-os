@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest } from 'next/server'
 import { openai, DEFAULT_MODEL } from '@/lib/llm/openai'
 import { routeRequest } from '@/lib/llm/router'
