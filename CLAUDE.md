@@ -494,8 +494,9 @@ Letzte relevante Migrationen:
 | 20260317000044_feed_data_sources.sql | feed_data_sources + feed_data_records Tabellen (Daten-Tab) mit RLS |
 | 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
 | 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
+| 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
 ### Guided Workflows (Stand 2026-03-17)
 
@@ -578,18 +579,36 @@ Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen 
 - `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
 - `scope='user'` → nur eigener User
 
-### Agenten-System (Plan J2b/J2c — ausstehend)
+### Agenten-System (Plan J2b+J2c — Stand 2026-03-18)
 
 **Spec:** `docs/plans/agents-spec.md`
 
-| Datei | Status |
+| Datei | Inhalt |
 |-------|--------|
-| `agents` Tabelle erweitern (scope, trigger_type, etc.) | ⬜ Plan J2b |
-| Marketing-Paket-Agenten als agents-Rows migrieren | ⬜ Plan J2b |
-| `agent_runs` Tabelle (APPEND ONLY) | ⬜ Plan J2b |
-| `src/lib/agent-engine.ts` | ⬜ Plan J2b |
-| `/api/agents/**` Routes | ⬜ Plan J2b |
-| Scheduled Trigger (Cron), Webhook, Paket-Seeds | ⬜ Plan J2c |
+| `supabase/migrations/20260318000048_agents_v2.sql` | agents ALTER: scope, trigger_type, trigger_config, capability_steps, input_sources, output_targets, requires_approval, max_cost_eur, emoji, is_active, deleted_at + agent_runs (APPEND ONLY) + 5 Marketing-Paket-Agenten |
+| `src/types/agents.ts` | Agent, AgentRun, AgentStep, AgentTriggerConfig, AgentInput, AgentOutput Interfaces + mapAgent(), mapAgentRun() |
+| `src/lib/agent-engine.ts` | runAgent(), executeStep(), checkBudget(), calculateNextRun(), checkScheduledTriggers() |
+| `src/app/api/agents/route.ts` | GET (list, scope-filter) + POST (create) |
+| `src/app/api/agents/[id]/route.ts` | GET (detail + letzten 5 Runs) + PATCH + DELETE (soft) |
+| `src/app/api/agents/[id]/copy/route.ts` | POST — als user-scope kopieren |
+| `src/app/api/agents/[id]/run/route.ts` | POST — manueller Run (gibt run_id zurück) |
+| `src/app/api/agents/[id]/runs/route.ts` | GET — Run-History mit Pagination |
+| `src/app/api/agents/runs/[run_id]/route.ts` | GET — einzelner Run |
+| `src/app/api/agents/webhook/[agent_id]/route.ts` | POST — eingehender Webhook (HMAC-SHA256) |
+| `src/app/api/cron/agents/route.ts` | GET — Vercel Cron (täglich 7 Uhr) → checkScheduledTriggers |
+| `vercel.json` | Cron: `/api/cron/agents` `"0 7 * * *"` |
+
+**Scope-Sichtbarkeit:**
+- `scope='system'` → alle Users
+- `scope='package'` → alle Users (API-Layer prüft requires_package)
+- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
+- `scope='user'` → nur eigener User
+
+**Agenten-Engine Regeln:**
+- Max 1 gleichzeitiger Run pro Agent (rate-limit via agent_runs.status='running')
+- Budget-Check vor jedem Run (30-Tage-Fenster)
+- Webhook-Runs erfordern webhook_secret (HMAC-SHA256)
+- agent_runs ist APPEND ONLY — kein UPDATE/DELETE
 
 ---
 
