@@ -18,12 +18,17 @@ test.describe('Toro Chat Widget', () => {
   })
 
   test('Antwort erscheint nach Nachricht senden', async ({ page }) => {
-    // API-Route mocken – kein OpenAI-Call in Tests
+    // API-Route mocken – SSE-Format wie die echte Route
     await page.route('**/api/public/chat**', (route) =>
       route.fulfill({
         status: 200,
-        contentType: 'text/plain',
-        body: 'Tropen OS ist ein verantwortungsvoller KI-Workspace für den Mittelstand.',
+        contentType: 'text/event-stream',
+        body: [
+          'data: {"content":"Tropen OS ist ein verantwortungsvoller KI-Workspace für den Mittelstand."}',
+          '',
+          'data: [DONE]',
+          '',
+        ].join('\n'),
       })
     )
 
