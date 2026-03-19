@@ -645,6 +645,54 @@ Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step
 
 ---
 
+## Systemische Lektionen aus dem Markt
+
+> Abgeleitet aus Langdock-Analyse + Marktbeobachtung, März 2026.
+> Diese Prinzipien gelten für jedes neue Feature und jede Architektur-Entscheidung.
+
+**1. Model-Agnostik ist kein Feature — es ist das Fundament**
+Kein Lock-in auf ein Modell. Jeder externe Modellanbieter sitzt hinter einer Abstraktionsschicht. Der Smart Router entscheidet — nicht der Code.
+Konsequenz: Jeder neue API-Call zu einem Modell geht durch `src/lib/router/` — niemals direkt in einer Route oder Komponente.
+
+**2. Org-Governance ist das eigentliche Produkt für KMU**
+User kaufen nicht weil die KI gut ist — Org-Admins kaufen weil sie Kontrolle haben. Welche Modelle sind erlaubt? Welche Capabilities? Welches Budget?
+Konsequenz: Jedes neue Feature braucht eine Admin-Konfigurationsebene. Nicht als Nachgedanke — als erster Schritt beim Design.
+
+**3. Keine eigene Infrastruktur — saubere Integrationsschicht**
+Tropen OS trainiert kein eigenes Modell. Betreibt keine GPU-Cluster. Ist eine Abstraktionsschicht über bestehenden Diensten. Das hält das Team klein und die Marge hoch.
+Konsequenz: Wenn ein Feature eigene Infrastruktur braucht, ist das ein Signal für einen externen Dienst (n8n, Supabase, Vercel) — nicht für Eigenbau.
+
+**4. Community-Effekt ist der Wachstumsmotor**
+Langdock wächst ohne Sales über Weiterempfehlungen. Tropen OS baut denselben Effekt über Community ein: geteilte Agenten, Templates, Workflows.
+Konsequenz: Community ist kein "Nice to have" in Phase 3 — es ist die Wachstumsstrategie. Jedes Feature das Teilen ermöglicht, hat strategische Priorität.
+
+**5. Tenant-Isolation ist nicht verhandelbar — bei jedem neuen Feature**
+Die kritischste systemische Lektion: Org-Isolation muss von Tag 1 stimmen. Nachrüsten ist ein Albtraum.
+
+Checkliste für jedes neue Feature:
+```
+□ Haben alle DB-Queries ein organization_id WHERE-Filter?
+□ Haben alle neuen Tabellen RLS-Policies?
+□ Können Daten einer Org jemals zu einer anderen Org gelangen?
+□ Sind externe Dienste (n8n, Feeds) per Org getrennt?
+□ Sind Community-Inhalte explizit als "public" markiert — alles andere ist privat?
+```
+
+Konkrete Risikostellen:
+
+| Feature | Risiko | Maßnahme |
+|---------|--------|----------|
+| n8n Workflows | Shared Instanz — Workspace-Scope muss stimmen | `n8n_workspace_id` per Org, nie teilen |
+| Community-Templates | Öffentliche Inhalte müssen explizit opt-in sein | scope-Feld: user/org/public — Default: user |
+| Live-Systeme | Öffentliche URLs dürfen keine Org-Daten leaken | Auth-Check auf jedem Live-Endpoint |
+| Feed-Distributions | Feed-Items dürfen nicht Org-übergreifend fließen | `organization_id` auf feed_items Pflichtfeld |
+
+**6. Basis perfektionieren vor Ausführung**
+Langdock hat zwei Jahre Chat und Wissen gebaut — dann erst Workflows. Tropen OS baut beides parallel. Das ist riskanter aber möglich — wenn die Basis (Chat, Projekte, Wissensbasis) stabil ist.
+Konsequenz: Plan F (Workspaces) und Plan J (Feeds/Agenten) erst deployen wenn die bestehenden Features stabil und bug-frei sind. Kein Feature-Race auf wackeliger Basis.
+
+---
+
 ## Vor jedem Commit
 
 ```bash
@@ -670,6 +718,7 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
+| `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
 
 ---
 

@@ -10,9 +10,11 @@ import {
   ShieldCheck, ClipboardText, ListChecks,
   ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush,
   ChatCircle, FolderOpen, Books, Compass, Buildings, SquaresFour, RssSimple, Archive,
-  Sparkle, Bell,
+  Sparkle,
 } from '@phosphor-icons/react'
 import ParrotIcon from './ParrotIcon'
+import NavBarViewAsSwitcher from './NavBarViewAsSwitcher'
+import NavBarNotifications from './NavBarNotifications'
 
 const VIEW_AS_KEY = 'tropen_view_as'
 
@@ -84,7 +86,6 @@ export default function NavBar() {
   const handleBellClick = () => {
     setNotifOpen((o) => !o)
     if (!notifOpen && unreadCount > 0) {
-      // Mark all as read
       fetch('/api/feeds/notifications', { method: 'PATCH' })
         .then(() => setUnreadCount(0))
         .catch(() => null)
@@ -316,10 +317,10 @@ export default function NavBar() {
                 </Link>
               </li>
               <li>
-                <Link href="/hub" style={navLinkStyle(isActive('/hub'))}
-                  aria-current={isActive('/hub') ? 'page' : undefined}>
+                <Link href="/agenten" style={navLinkStyle(isActive('/agenten'))}
+                  aria-current={isActive('/agenten') ? 'page' : undefined}>
                   <Compass size={16} weight="fill" aria-hidden="true" />
-                  Hub
+                  Agenten
                 </Link>
               </li>
               <li>
@@ -353,140 +354,20 @@ export default function NavBar() {
         {/* Right side */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           {isSuperadmin && (
-            <div style={{ position: 'relative' }}>
-              {viewAsOpen && (
-                <div
-                  role="presentation"
-                  aria-hidden="true"
-                  style={{ position: 'fixed', inset: 0, zIndex: 90 }}
-                  onClick={() => setViewAsOpen(false)}
-                />
-              )}
-              <button
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded={viewAsOpen}
-                aria-label={`Ansicht als: ${viewAs}`}
-                onClick={() => setViewAsOpen(v => !v)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '4px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                  background: 'rgba(26,23,20,0.06)',
-                  color: 'var(--text-primary)', fontSize: 12, fontWeight: 500,
-                  fontFamily: 'var(--font-sans, system-ui)',
-                }}
-              >
-                {({ superadmin: 'Super', org_admin: 'Admin', member: 'Member', viewer: 'Viewer' })[viewAs]}
-                <span aria-hidden="true" style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
-              </button>
-              {viewAsOpen && (
-                <ul
-                  role="listbox"
-                  aria-label="Ansicht wechseln"
-                  style={{
-                    position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 100,
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 10,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    minWidth: 220, padding: 4,
-                    listStyle: 'none', margin: 0,
-                  }}
-                >
-                  {([
-                    { role: 'superadmin' as const, label: 'Superadmin', desc: 'Vollzugriff auf alle Organisationen' },
-                    { role: 'org_admin'  as const, label: 'Admin',      desc: 'Organisations-Administrator' },
-                    { role: 'member'     as const, label: 'Member',     desc: 'Normales Mitglied — Chat, Projekte' },
-                    { role: 'viewer'     as const, label: 'Viewer',     desc: 'Lese-Zugriff, keine Erstellung' },
-                  ]).map(({ role, label, desc }) => {
-                    const active = viewAs === role
-                    return (
-                      <li key={role} role="option" aria-selected={active}>
-                        <button
-                          type="button"
-                          onClick={() => { handleViewAsChange(role); setViewAsOpen(false) }}
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            width: '100%', padding: '8px 12px', border: 'none', cursor: 'pointer',
-                            borderRadius: 8, textAlign: 'left',
-                            fontFamily: 'var(--font-sans, system-ui)',
-                            background: active ? 'var(--active-bg)' : 'transparent',
-                            color: active ? '#fff' : 'var(--text-primary)',
-                          }}
-                          onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.04))' }}
-                          onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                        >
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 500 }}>{label}</div>
-                            <div style={{ fontSize: 11, opacity: 0.6, marginTop: 1 }}>{desc}</div>
-                          </div>
-                          {active && <span aria-hidden="true" style={{ fontSize: 12 }}>✓</span>}
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
+            <NavBarViewAsSwitcher
+              viewAs={viewAs}
+              viewAsOpen={viewAsOpen}
+              setViewAsOpen={setViewAsOpen}
+              onViewAsChange={handleViewAsChange}
+            />
           )}
-          {loggedIn && (
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                aria-label={unreadCount > 0 ? `${unreadCount} ungelesene Benachrichtigungen` : 'Benachrichtigungen'}
-                aria-haspopup="true"
-                aria-expanded={notifOpen}
-                className="btn-icon"
-                onClick={handleBellClick}
-                style={{ position: 'relative' }}
-              >
-                <Bell size={18} weight={unreadCount > 0 ? 'fill' : 'bold'} color={unreadCount > 0 ? 'var(--accent)' : 'var(--text-secondary)'} aria-hidden="true" />
-                {unreadCount > 0 && (
-                  <span style={{
-                    position: 'absolute', top: 0, right: 0,
-                    background: 'var(--accent)', color: '#fff',
-                    borderRadius: '50%', fontSize: 9, fontWeight: 700,
-                    width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }} aria-hidden="true">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              {notifOpen && (
-                <div
-                  role="dialog"
-                  aria-label="Benachrichtigungen"
-                  style={{
-                    position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                    width: 320, background: 'var(--bg-surface)',
-                    border: '1px solid var(--border)', borderRadius: 12,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 100,
-                    overflow: 'hidden',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Benachrichtigungen
-                  </div>
-                  {notifs.length === 0 ? (
-                    <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                      Keine neuen Benachrichtigungen
-                    </div>
-                  ) : (
-                    <ul role="list" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                      {notifs.map((n) => (
-                        <li key={n.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                          <div style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: 2 }}>{n.title}</div>
-                          {n.body && <div style={{ color: 'var(--text-tertiary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.body}</div>}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <NavBarNotifications
+            loggedIn={loggedIn}
+            unreadCount={unreadCount}
+            notifOpen={notifOpen}
+            notifs={notifs}
+            onBellClick={handleBellClick}
+          />
           {loggedIn && (
             <button
               type="button"
