@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import type { ChatMessageType, Project } from '@/hooks/useWorkspaceState'
+import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
 import EmptyState from './EmptyState'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
@@ -10,6 +10,7 @@ import ContextBar from './ContextBar'
 import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 import MemorySaveModal from './MemorySaveModal'
+import ShareModal from './ShareModal'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -37,6 +38,9 @@ interface ChatAreaProps {
   activeConvProjectId: string | null
   showMemoryModal: boolean
   onSetShowMemoryModal: (v: boolean) => void
+  conversations: Conversation[]
+  shareModalConvId: string | null
+  onSetShareModalConvId: (id: string | null) => void
 }
 
 export default function ChatArea({
@@ -65,6 +69,9 @@ export default function ChatArea({
   activeConvProjectId,
   showMemoryModal,
   onSetShowMemoryModal,
+  conversations,
+  shareModalConvId,
+  onSetShareModalConvId,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -200,6 +207,13 @@ export default function ChatArea({
               onClose={() => onSetShowMemoryModal(false)}
               projectId={activeConvProjectId}
               conversationId={activeConvId}
+            />
+          )}
+          {shareModalConvId && (
+            <ShareModal
+              convId={shareModalConvId}
+              convTitle={conversations.find(c => c.id === shareModalConvId)?.title ?? null}
+              onClose={() => onSetShareModalConvId(null)}
             />
           )}
         </>

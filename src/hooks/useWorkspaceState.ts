@@ -98,6 +98,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   // Memory modal
   const [showMemoryModal, setShowMemoryModal] = useState(false)
+  const [shareModalConvId, setShareModalConvId] = useState<string | null>(null)
   const warnedConvRef = useRef<Set<string>>(new Set())
 
   // Mobile
@@ -366,6 +367,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     mergeProjectDropOpen, setMergeProjectDropOpen,
     toastMsg,
     showMemoryModal, setShowMemoryModal,
+    shareModalConvId, setShareModalConvId,
     isMobile, navOpen, setNavOpen,
     jungleSummary,
     jungleProjects, setJungleProjects,

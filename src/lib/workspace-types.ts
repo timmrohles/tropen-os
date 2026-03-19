@@ -190,6 +190,8 @@ export interface WorkspaceState {
   toastMsg: string
   showMemoryModal: boolean
   setShowMemoryModal: React.Dispatch<React.SetStateAction<boolean>>
+  shareModalConvId: string | null
+  setShareModalConvId: React.Dispatch<React.SetStateAction<string | null>>
   jungleSummary: string
   jungleProjects: JungleProject[]
   setJungleProjects: React.Dispatch<React.SetStateAction<JungleProject[]>>

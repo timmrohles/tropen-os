@@ -1,5 +1,5 @@
 import React from 'react'
-import { PencilSimple, FolderSimple, CaretRight, Trash } from '@phosphor-icons/react'
+import { PencilSimple, FolderSimple, CaretRight, Trash, LinkSimple } from '@phosphor-icons/react'
 
 interface Project {
   id: string
@@ -26,6 +26,7 @@ interface ContextMenuProps {
   onSetEditingTitle: (title: string) => void
   onSetConfirmDeleteId: (id: string | null) => void
   onAssignToProject: (convId: string, projectId: string | null) => void
+  onShare: (convId: string) => void
 }
 
 export default function ContextMenu({
@@ -42,6 +43,7 @@ export default function ContextMenu({
   onSetEditingTitle,
   onSetConfirmDeleteId,
   onAssignToProject,
+  onShare,
 }: ContextMenuProps) {
   const menuConv = conversations.find((c) => c.id === contextMenuId)
   if (!menuConv) return null
@@ -94,6 +96,15 @@ export default function ContextMenu({
           Aus Projekt entfernen
         </button>
       )}
+      <button className="wl-ctx-item" onMouseDown={(e) => {
+        e.stopPropagation()
+        onSetContextMenuId(null)
+        onSetMenuAnchor(null)
+        onShare(menuConv.id)
+      }}>
+        <LinkSimple size={15} weight="bold" className="wl-ctx-icon" />
+        Teilen
+      </button>
       <div className="wl-ctx-divider" />
       <button className="wl-ctx-item wl-ctx-item--danger" onMouseDown={(e) => {
         e.stopPropagation()
