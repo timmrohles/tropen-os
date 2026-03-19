@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { SquaresFour, RssSimple, Robot, Books } from '@phosphor-icons/react'
 
