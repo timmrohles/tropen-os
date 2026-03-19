@@ -22,6 +22,31 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-19 — Library-System Fundament (Prompt 01)
+
+**Was gebaut wurde:**
+- 4 Migrations (052–056): extend capabilities/outcomes/skills, new roles/library_versions tables, cards extension, seed data
+- 7 Rollen geseedet: 5 system (Generalist default, Stratege, Analyst, Kommunikator, Projektmanager) + 2 package marketing
+- 5 package_agents → roles migriert (Campaign Planner, Brand Voice Writer, Social Adapter, Newsletter Spezialist, Copy Texter)
+- 3 neue system-Skills + 3 package-Skills Marketing
+- library-resolver.ts: resolveWorkflow(), detectRole(), detectSkill(), buildSystemPrompt()
+- 20+ API routes unter /api/library/*
+- Chat Input: "Agent" → "Rolle", lädt aus /api/library/roles
+
+**Warum:**
+Library-System ist das Fundament für Chat, Workspace, Agenten und Feeds.
+Rollen geben Toro Fachexpertise. Skills geben Toro Schritt-für-Schritt-Anweisungen.
+Capabilities + Outcomes regeln Modell-Routing und Output-Format.
+
+**Architektur-Entscheide:**
+- library-resolver.ts ist SEPARATE von capability-resolver.ts (backward compat)
+- model_catalog hat UUID PK (nicht TEXT wie in Spec — bestehende FK beibehalten)
+- capabilities.requires_package: neues TEXT-Feld package_slug (UUID FK bleibt erhalten)
+- package_agents Tabelle bleibt erhalten (nur Kopie als roles, keine Löschung)
+- Fix-Migration 054 nötig: roles_insert RLS policy verhinderte scope='public' für Org-Admins
+
+---
+
 ### 2026-03-17 — Architect Review D2 + J2 (noch kein Build)
 
 **Ampel:** 🟡 (D2) · 🔴 (J2)

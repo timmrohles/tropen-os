@@ -497,6 +497,11 @@ Letzte relevante Migrationen:
 | 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
 | 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
 | 20260319000050_shared_chats.sql | conversations: share_token, shared_at, share_scope, shared_from_id + Indexes |
+| 20260319000052_library_extend_existing.sql | ALTER capabilities/outcomes/skills: name, scope, icon, source_id etc. |
+| 20260319000053_library_new_tables.sql | CREATE roles/library_versions/org_library_settings/user_library_settings |
+| 20260319000054_library_new_tables_fix.sql | Fix: roles_insert policy, idx_roles_name_active, idx_lib_versions_org |
+| 20260319000055_library_cards.sql | cards: role_id UUID + skill_id UUID |
+| 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
@@ -642,6 +647,53 @@ Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step
 - Budget-Check vor jedem Run (30-Tage-Fenster)
 - Webhook-Runs erfordern webhook_secret (HMAC-SHA256)
 - agent_runs ist APPEND ONLY — kein UPDATE/DELETE
+
+### Library-System (Capability + Outcome + Role + Skill)
+
+Vier eigenständige Entitäten — alle resolviert in `src/lib/library-resolver.ts`:
+
+| Entität | Frage | Verwaltet von |
+|---------|-------|--------------|
+| capabilities | WAS kann Toro? (Modell, Tools) | Superadmin only |
+| outcomes | WAS kommt raus? (Format, Karten-Typ) | Superadmin only |
+| roles | WER ist Toro? (Fachexpertise, System-Prompt) | Org-Admin + Member |
+| skills | WIE arbeitet Toro? (Schritt-für-Schritt) | Org-Admin + Member |
+
+**Resolver:** `src/lib/library-resolver.ts`
+**Vor jedem LLM-Call:** `POST /api/library/resolve { capabilityId, outcomeId, roleId?, skillId? }`
+
+**Scope-Hierarchie:** system → package → org → user → public
+**Community (scope='public'):** explizites opt-in, nie automatisch
+
+**Abgrenzung Rollen vs. Agenten:**
+- Rolle = Toros Fachexpertise im Chat (interaktiv)
+- Agent = autonome Ausführung ohne User-Interaktion (Scheduled/Reactive)
+
+**Keine FK-Verbindung** zwischen skills und capabilities.
+Skills empfehlen `recommended_capability_type` als String — nie als FK.
+
+**System-Prompt-Baulogik:**
+1. Rolle.system_prompt
+2. Skill.instructions + Skill-Kontext
+3. Capability.system_prompt_injection
+4. Outcome.system_prompt_injection
+
+**API routes:**
+- `GET /api/library/capabilities` — alle sichtbaren Capabilities
+- `GET /api/library/roles` — alle sichtbaren Rollen (ersetzt package_agents)
+- `GET /api/library/skills` — alle sichtbaren Skills
+- `POST /api/library/resolve` — WorkflowPlan auflösen
+- `POST /api/library/roles/[id]/adopt` — kopieren als eigene Basis
+- `POST /api/library/roles/[id]/import` — public/system als user-Kopie importieren
+
+**Migrationen:**
+| Datei | Inhalt |
+|-------|--------|
+| 20260319000052_library_extend_existing.sql | ALTER capabilities/outcomes/skills |
+| 20260319000053_library_new_tables.sql | CREATE roles/library_versions/settings |
+| 20260319000054_library_new_tables_fix.sql | Fix: idx_roles_name_active, insert policy fix |
+| 20260319000055_library_cards.sql | cards: role_id + skill_id |
+| 20260319000056_library_seed.sql | Seed roles (7 system+package), package_agents → roles |
 
 ---
 
