@@ -22,21 +22,8 @@ ALTER TABLE public.capabilities
   ADD COLUMN IF NOT EXISTS is_eu_only          BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Extend scope to include 'package' and 'public'
--- Drop and recreate the scope check constraint
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.table_constraints tc
-    JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-    WHERE tc.table_name = 'capabilities'
-      AND tc.constraint_type = 'CHECK'
-      AND tc.constraint_name LIKE '%scope%'
-  ) THEN
-    ALTER TABLE public.capabilities DROP CONSTRAINT IF EXISTS capabilities_scope_check;
-  END IF;
-END;
-$$;
-
+-- Drop and recreate the scope check constraint (idempotent)
+ALTER TABLE public.capabilities DROP CONSTRAINT IF EXISTS capabilities_scope_check;
 ALTER TABLE public.capabilities
   ADD CONSTRAINT capabilities_scope_check
   CHECK (scope IN ('system','package','org','user','public'));
