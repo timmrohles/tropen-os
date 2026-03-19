@@ -496,6 +496,7 @@ Letzte relevante Migrationen:
 | 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
 | 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
 | 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
+| 20260319000050_shared_chats.sql | conversations: share_token, shared_at, share_scope, shared_from_id + Indexes |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
@@ -661,6 +662,7 @@ eslint src/           # keine Fehler
 | `docs/webapp-manifest/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
 | `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/product/architecture.md` | Phase-2-Architektur, DB-Hierarchie, Kontroll-Spektrum |
+| `docs/product/architecture-navigation.md` | Produkt-Nordstern: Navigation, Workspace-Konzept, Live/Agenten/Community |
 | `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne |
 | `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
 | `docs/product/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |

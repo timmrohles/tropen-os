@@ -55,7 +55,7 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | **Agenten-Spec** — docs/plans/agents-spec.md (Plan J2 Grundlage) | ✅ 2026-03-17 |
 | ✅ Fertig | Design-System Consistency — alle Seiten auf Design-System migriert | ✅ 2026-03-17 |
 | ✅ Fertig | Feed-Infrastruktur Round 2 — distributor, ttl-cleanup, digest, fetch-cron | ✅ 2026-03-17 |
-| ✅ Fertig | Hub-Seite `/hub` — Agenten + Templates UI (Grundgerüst) | ✅ 2026-03-17 |
+| ✅ Fertig | Agenten-Seite `/agenten` (ex `/hub`) — Agenten + Templates UI (Grundgerüst) | ✅ 2026-03-17 |
 | ✅ Fertig | Artifacts API — `/api/artifacts` CRUD + conversationId-Filterung | ✅ 2026-03-17 |
 | ✅ Fertig | Workspace Canvas `/ws/[id]/canvas` — Canvas-Route + Settings | ✅ 2026-03-17 |
 | ✅ Fertig | CodeQL Security-Fix Round 2 — Edge-Function-Fehler sanitized, RLS für operators/workspace_templates (Migration 045) | ✅ 2026-03-18 |
@@ -67,7 +67,7 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | **Plan J2a** — skills-Tabelle + RLS + Seed, agent_skills, skill-resolver, /api/skills/* | ✅ 2026-03-18 |
 | ✅ Fertig | **Plan J2b** — agents ALTER + agent_runs + agent-engine + /api/agents/** | ✅ 2026-03-18 |
 | ✅ Fertig | **Plan J2c** — Scheduled Trigger (Cron daily 7h), Webhook HMAC, vercel.json | ✅ 2026-03-18 |
-| 🟡 Mittel | **Plan K** — Geteilte Chats + Team-Antwort | ⬜ Offen |
+| ✅ Fertig | **Plan K** — Geteilte Chats (Share-Link, /s/[token], Team-Antwort) | ✅ 2026-03-19 |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
 
