@@ -4,8 +4,8 @@ interface Announcement {
   body: string | null
   url: string | null
   url_label: string | null
-  type: string
-  source: string
+  type: 'info' | 'update' | 'warning'
+  source: 'tropen' | 'org'
   published_at: string
 }
 

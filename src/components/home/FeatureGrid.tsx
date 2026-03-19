@@ -1,5 +1,4 @@
-'use client'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { SquaresFour, RssSimple, Robot, Books } from '@phosphor-icons/react'
 
 const FEATURES = [
@@ -34,7 +33,6 @@ const FEATURES = [
 ] as const
 
 export default function FeatureGrid() {
-  const router = useRouter()
   return (
     <div style={{
       display: 'grid',
@@ -42,32 +40,30 @@ export default function FeatureGrid() {
       gap: 16, marginBottom: 32,
     }}>
       {FEATURES.map(({ href, Icon, title, description, example }) => (
-        <div
+        <Link
           key={href}
-          className="card"
-          style={{ cursor: 'pointer' }}
-          onClick={() => router.push(href)}
-          onKeyDown={e => e.key === 'Enter' && router.push(href)}
-          role="button"
-          tabIndex={0}
+          href={href}
+          style={{ display: 'block', textDecoration: 'none' }}
           aria-label={`Zu ${title} navigieren`}
         >
-          <div style={{ padding: '16px 18px' }}>
-            <Icon size={24} weight="fill" color="var(--accent)" aria-hidden="true" />
-            <h3 style={{
-              fontSize: 15, fontWeight: 700, color: 'var(--text-primary)',
-              margin: '8px 0 4px',
-            }}>
-              {title}
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 8px' }}>
-              {description}
-            </p>
-            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
-              {example}
-            </p>
+          <div className="card">
+            <div style={{ padding: '16px 18px' }}>
+              <Icon size={24} weight="fill" color="var(--accent)" aria-hidden="true" />
+              <h3 style={{
+                fontSize: 15, fontWeight: 700, color: 'var(--text-primary)',
+                margin: '8px 0 4px',
+              }}>
+                {title}
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 8px' }}>
+                {description}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                {example}
+              </p>
+            </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   )

@@ -18,6 +18,7 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Profile must be fetched first to get orgId
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select('full_name, organization_id')
@@ -28,63 +29,72 @@ export default async function HomePage() {
   const orgId = profile?.organization_id ?? null
   const now = new Date().toISOString()
 
-  const { data: tropenAnn } = await supabaseAdmin
-    .from('announcements')
-    .select('id, title, body, url, url_label, type, source, published_at')
-    .is('organization_id', null)
-    .eq('source', 'tropen')
-    .eq('is_active', true)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order('published_at', { ascending: false })
-    .limit(3)
-
-  let orgAnn: typeof tropenAnn = []
-  if (orgId) {
-    const { data } = await supabaseAdmin
+  // Parallelize all remaining queries; org-scoped ones are bundled conditionally
+  const [tropenAnnResult, chatsResult, orgResult] = await Promise.all([
+    supabaseAdmin
       .from('announcements')
       .select('id, title, body, url, url_label, type, source, published_at')
-      .eq('organization_id', orgId)
-      .eq('source', 'org')
+      .is('organization_id', null)
+      .eq('source', 'tropen')
       .eq('is_active', true)
       .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order('published_at', { ascending: false })
-      .limit(3)
-    orgAnn = data ?? []
-  }
-  const announcements = [...(tropenAnn ?? []), ...(orgAnn)].slice(0, 5)
+      .limit(3),
 
-  const { data: recentChats } = await supabaseAdmin
-    .from('conversations')
-    .select('id, title, updated_at')
-    .eq('user_id', user.id)
-    .order('updated_at', { ascending: false })
-    .limit(3)
-
-  let recentWorkspaces: { id: string; title: string; updated_at: string }[] = []
-  if (orgId) {
-    const { data } = await supabaseAdmin
-      .from('workspaces')
+    supabaseAdmin
+      .from('conversations')
       .select('id, title, updated_at')
-      .eq('organization_id', orgId)
-      .is('deleted_at', null)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
-      .limit(2)
-    recentWorkspaces = (data ?? []) as { id: string; title: string; updated_at: string }[]
+      .limit(3),
+
+    orgId ? Promise.all([
+      supabaseAdmin
+        .from('announcements')
+        .select('id, title, body, url, url_label, type, source, published_at')
+        .eq('organization_id', orgId)
+        .eq('source', 'org')
+        .eq('is_active', true)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('published_at', { ascending: false })
+        .limit(3),
+
+      supabaseAdmin
+        .from('workspaces')
+        .select('id, title, updated_at')
+        .eq('organization_id', orgId)
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
+        .limit(2),
+
+      supabaseAdmin
+        .from('organizations')
+        .select('name')
+        .eq('id', orgId)
+        .maybeSingle(),
+    ]) : Promise.resolve(null),
+  ])
+
+  const tropenAnn = tropenAnnResult.data ?? []
+  const recentChats = chatsResult.data ?? []
+
+  let orgAnn: typeof tropenAnn = []
+  let recentWorkspaces: { id: string; title: string; updated_at: string }[] = []
+  let orgName = 'Org'
+
+  if (orgResult) {
+    const [orgAnnResult, workspacesResult, orgNameResult] = orgResult
+    orgAnn = orgAnnResult.data ?? []
+    recentWorkspaces = (workspacesResult.data ?? []) as { id: string; title: string; updated_at: string }[]
+    orgName = orgNameResult.data?.name ?? 'Org'
   }
 
-  let orgName = 'Org'
-  if (orgId) {
-    const { data: org } = await supabaseAdmin
-      .from('organizations')
-      .select('name')
-      .eq('id', orgId)
-      .maybeSingle()
-    orgName = org?.name ?? 'Org'
-  }
+  const announcements = [...tropenAnn, ...orgAnn].slice(0, 5)
 
   return (
     <div className="content-max">
 
+      {/* Home greeting — intentionally uses custom layout, not the standard page-header pattern */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{
           fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
@@ -104,9 +114,9 @@ export default async function HomePage() {
       <ChatCTA />
       <FeatureGrid />
 
-      {((recentChats && recentChats.length > 0) || recentWorkspaces.length > 0) && (
+      {((recentChats.length > 0) || recentWorkspaces.length > 0) && (
         <RecentlyUsed
-          chats={recentChats ?? []}
+          chats={recentChats}
           workspaces={recentWorkspaces}
         />
       )}

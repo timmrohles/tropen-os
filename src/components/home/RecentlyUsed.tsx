@@ -6,6 +6,7 @@ interface Workspace { id: string; title: string; updated_at: string }
 
 function formatRelativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
+  if (isNaN(diff) || diff < 0) return 'gerade eben'
   const minutes = Math.floor(diff / 60000)
   if (minutes < 60) return `vor ${minutes}m`
   const hours = Math.floor(minutes / 60)
