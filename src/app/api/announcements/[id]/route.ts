@@ -3,33 +3,59 @@ import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-// PATCH — toggle is_active or update fields
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+type AccessResult =
+  | { ann: { created_by: string; organization_id: string }; allowed: true }
+  | { ann: null; allowed: false; status: 401 | 403 | 404 | 500; message: string }
+
+async function checkAccess(id: string): Promise<AccessResult> {
   const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    return { ann: null, allowed: false, status: 401, message: 'Unauthorized' }
+  }
 
-  const role = user.role ?? null
-
-  // Check ownership
-  const { data: ann } = await supabaseAdmin
+  const { data: ann, error: annError } = await supabaseAdmin
     .from('announcements')
     .select('created_by, organization_id')
     .eq('id', id)
     .maybeSingle()
 
-  if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (annError) {
+    return { ann: null, allowed: false, status: 500, message: annError.message }
+  }
 
+  if (!ann) {
+    return { ann: null, allowed: false, status: 404, message: 'Not found' }
+  }
+
+  const role = user.role ?? null
   const isOwner = ann.created_by === user.id
   const isSuperadmin = role === 'superadmin'
-  const isOrgAdmin = ['org_admin', 'owner'].includes(role ?? '')
+  const isOrgAdmin =
+    ['org_admin', 'owner'].includes(role ?? '') &&
+    ann.organization_id === user.organization_id
 
   if (!isOwner && !isSuperadmin && !isOrgAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return { ann: null, allowed: false, status: 403, message: 'Forbidden' }
+  }
+
+  return { ann, allowed: true }
+}
+
+// PATCH — toggle is_active or update fields
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  const access = await checkAccess(id)
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.message }, { status: access.status })
   }
 
   const body = await request.json()
   const { is_active } = body
+
+  if (typeof is_active !== 'boolean') {
+    return NextResponse.json({ error: 'is_active must be a boolean' }, { status: 400 })
+  }
 
   const { data: updated, error: updateError } = await supabaseAdmin
     .from('announcements')
@@ -45,25 +71,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 // DELETE — remove announcement
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const role = user.role ?? null
-
-  const { data: ann } = await supabaseAdmin
-    .from('announcements')
-    .select('created_by')
-    .eq('id', id)
-    .maybeSingle()
-
-  if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  const isOwner = ann.created_by === user.id
-  const isSuperadmin = role === 'superadmin'
-  const isOrgAdmin = ['org_admin', 'owner'].includes(role ?? '')
-
-  if (!isOwner && !isSuperadmin && !isOrgAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const access = await checkAccess(id)
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.message }, { status: access.status })
   }
 
   const { error: deleteError } = await supabaseAdmin
