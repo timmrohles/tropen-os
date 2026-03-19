@@ -34,6 +34,11 @@ export const adoptSchema = z.object({
   label: z.string().min(1).max(120).optional(),
 })
 
+export const adoptSkillSchema = z.object({
+  scope: z.enum(['org','user']),
+  title: z.string().min(1).max(120).optional(),
+})
+
 export const createSkillSchema = z.object({
   name:                       z.string().min(1).max(80),
   title:                      z.string().min(1).max(120),
