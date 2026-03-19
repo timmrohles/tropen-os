@@ -83,14 +83,14 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="content-max" style={{ paddingTop: 32, paddingBottom: 48 }}>
+    <div className="content-max">
 
       <div style={{ marginBottom: 32 }}>
         <h1 style={{
           fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
           letterSpacing: '-0.03em', margin: 0,
         }}>
-          {getGreeting()}, {firstName}
+          {getGreeting()}, {firstName} 👋
         </h1>
         <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
           Was möchtest du heute angehen?

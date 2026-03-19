@@ -21,7 +21,7 @@ export default function ChatCTA() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ fontSize: 28 }} aria-hidden="true">🦜</span>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>Chat starten</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-inverse)' }}>Chat starten</div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
               Frag Toro — er hilft dir sofort weiter
             </div>
