@@ -16,7 +16,7 @@ interface AnnouncementRow {
   url: string | null
   url_label: string | null
   type: string
-  source: string
+  source: 'tropen' | 'org'
   expires_at: string | null
   published_at: string
 }
@@ -51,6 +51,7 @@ export default function SuperadminAnnouncementsPage() {
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [actioningId, setActioningId] = useState<string | null>(null)
 
   function loadAnnouncements() {
@@ -120,20 +121,32 @@ export default function SuperadminAnnouncementsPage() {
 
   async function handleDeactivate(id: string) {
     setActioningId(id)
-    await fetch(`/api/announcements/${id}`, {
+    setActionError(null)
+    const res = await fetch(`/api/announcements/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_active: false }),
     })
     setActioningId(null)
-    loadAnnouncements()
+    if (res.ok) {
+      loadAnnouncements()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setActionError(data.error ?? 'Deaktivieren fehlgeschlagen.')
+    }
   }
 
   async function handleDelete(id: string) {
     setActioningId(id)
-    await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
+    setActionError(null)
+    const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
     setActioningId(null)
-    loadAnnouncements()
+    if (res.ok) {
+      loadAnnouncements()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setActionError(data.error ?? 'Löschen fehlgeschlagen.')
+    }
   }
 
   return (
@@ -156,7 +169,7 @@ export default function SuperadminAnnouncementsPage() {
       </div>
 
       {showForm && (
-        <div style={s.formCard}>
+        <div className="card" style={{ padding: '24px 28px', marginBottom: 24 }}>
           <div style={s.formTitle}>Neue Announcement erstellen</div>
 
           {formError && <div style={s.errorBanner}>{formError}</div>}
@@ -228,7 +241,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div style={s.fullWidth}>
-              <label style={s.label}>Zielgruppe</label>
+              <span style={s.label}>Zielgruppe</span>
               <div style={s.radioGroup}>
                 <label style={s.radioLabel}>
                   <input
@@ -282,6 +295,8 @@ export default function SuperadminAnnouncementsPage() {
           </div>
         </div>
       )}
+
+      {actionError && <div style={s.errorBanner}>{actionError}</div>}
 
       <div className="card">
         <div className="card-header">

@@ -1,13 +1,6 @@
 import type React from 'react'
 
 export const s: Record<string, React.CSSProperties> = {
-  formCard: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
-    padding: '24px 28px',
-    marginBottom: 24,
-  },
   formTitle: {
     fontSize: 14,
     fontWeight: 600,
@@ -31,7 +24,7 @@ export const s: Record<string, React.CSSProperties> = {
   input: {
     width: '100%',
     background: 'var(--bg-input)',
-    border: '1px solid rgba(26,23,20,0.14)',
+    border: '1px solid var(--border-medium)',
     color: 'var(--text-primary)',
     padding: '9px 12px',
     borderRadius: 6,
@@ -42,7 +35,7 @@ export const s: Record<string, React.CSSProperties> = {
   textarea: {
     width: '100%',
     background: 'var(--bg-input)',
-    border: '1px solid rgba(26,23,20,0.14)',
+    border: '1px solid var(--border-medium)',
     color: 'var(--text-primary)',
     padding: '9px 12px',
     borderRadius: 6,
@@ -89,8 +82,8 @@ export const s: Record<string, React.CSSProperties> = {
     letterSpacing: '0.04em',
   },
   errorBanner: {
-    background: 'rgba(239,68,68,0.08)',
-    border: '1px solid rgba(239,68,68,0.2)',
+    background: 'var(--error-bg)',
+    border: '1px solid var(--error-border)',
     borderRadius: 6,
     padding: '10px 14px',
     fontSize: 13,
@@ -101,10 +94,10 @@ export const s: Record<string, React.CSSProperties> = {
 
 export function typeBadgeStyle(type: string): React.CSSProperties {
   if (type === 'warning') {
-    return { ...s.typeBadge, background: 'rgba(234,179,8,0.12)', color: 'var(--text-secondary)' }
+    return { ...s.typeBadge, background: 'var(--warning-bg)', color: 'var(--text-secondary)' }
   }
   if (type === 'update') {
     return { ...s.typeBadge, background: 'var(--accent-light)', color: 'var(--accent)' }
   }
-  return { ...s.typeBadge, background: 'rgba(26,23,20,0.07)', color: 'var(--text-tertiary)' }
+  return { ...s.typeBadge, background: 'var(--bg-inset)', color: 'var(--text-tertiary)' }
 }

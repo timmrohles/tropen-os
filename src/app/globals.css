@@ -35,6 +35,7 @@
   --warning-bg:     #FEF4E7;
   --error:          #C0392B;
   --error-bg:       #FDECEA;
+  --error-border:   color-mix(in srgb, #C0392B 20%, transparent);
   --info:           #2D7A50;
   --info-bg:        #D4EDDE;
 
