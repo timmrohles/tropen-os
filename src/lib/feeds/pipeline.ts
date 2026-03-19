@@ -5,20 +5,13 @@
 // Stage 3: Sonnet deep processing (max 10 items/batch)
 
 import { createHash } from 'crypto'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import type { RawFeedItem, FeedSource, Stage2Result } from '@/types/feeds'
 
 const log = createLogger('feeds:pipeline')
-
-let _anthropic: Anthropic | null = null
-function getAnthropic(): Anthropic {
-  if (!_anthropic) {
-    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  }
-  return _anthropic
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -127,16 +120,14 @@ export async function runStage2(
   let errorMsg: string | null = null
 
   try {
-    const response = await getAnthropic().messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+    const { text: raw, usage } = await generateText({
+      model: anthropic('claude-haiku-4-5-20251001'),
+      maxOutputTokens: 300,
       system: systemPrompt,
       messages: [{ role: 'user', content: `Titel: ${item.title}\n\nAuszug: ${excerpt}` }],
     })
-    tokensIn = response.usage.input_tokens
-    tokensOut = response.usage.output_tokens
-
-    const raw = response.content.filter((b) => b.type === 'text').map((b) => (b as { type: 'text'; text: string }).text).join('')
+    tokensIn = usage.inputTokens ?? 0
+    tokensOut = usage.outputTokens ?? 0
     const match = raw.match(/\{[\s\S]*\}/)
     if (match) {
       const parsed = JSON.parse(match[0])
@@ -178,9 +169,9 @@ export async function runStage3(
   let errorMsg: string | null = null
 
   try {
-    const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 600,
+    const { text: raw, usage } = await generateText({
+      model: anthropic('claude-sonnet-4-6'),
+      maxOutputTokens: 600,
       system: `Du fasst Nachrichtenartikel für "${source.name}" zusammen.
 Antworte NUR mit JSON:
 {
@@ -189,10 +180,8 @@ Antworte NUR mit JSON:
 }`,
       messages: [{ role: 'user', content: `Titel: ${item.title}\n\nInhalt: ${item.content ?? '(kein Inhalt)'}` }],
     })
-    tokensIn = response.usage.input_tokens
-    tokensOut = response.usage.output_tokens
-
-    const raw = response.content.filter((b) => b.type === 'text').map((b) => (b as { type: 'text'; text: string }).text).join('')
+    tokensIn = usage.inputTokens ?? 0
+    tokensOut = usage.outputTokens ?? 0
     const match = raw.match(/\{[\s\S]*\}/)
     if (match) {
       const parsed = JSON.parse(match[0])
