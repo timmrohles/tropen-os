@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/client'
 import type { AccountRole } from './AccountSwitcher'
 import {
   ShieldCheck, ClipboardText, ListChecks,
-  ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush,
+  ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush, Megaphone,
   ChatCircle, FolderOpen, Books, Compass, Buildings, SquaresFour, RssSimple, Archive,
   Sparkle,
 } from '@phosphor-icons/react'
@@ -267,6 +267,13 @@ export default function NavBar() {
                   aria-current={isActive('/admin/branding') ? 'page' : undefined}>
                   <PaintBrush size={16} weight="fill" aria-hidden="true" />
                   Branding
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin/announcements" style={navLinkStyle(isActive('/admin/announcements'))}
+                  aria-current={isActive('/admin/announcements') ? 'page' : undefined}>
+                  <Megaphone size={16} weight="fill" aria-hidden="true" />
+                  Neuigkeiten
                 </Link>
               </li>
               <li>
