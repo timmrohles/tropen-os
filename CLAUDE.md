@@ -35,8 +35,9 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 
 Bei UI-Änderungen zusätzlich:
 ```
-Schritt 9  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
-Schritt 10 CLAUDE.md → Abschnitt "Code-Regeln" lesen
+Schritt 9  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
+Schritt 10 CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt 11 CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
 
 Bei AI-Features zusätzlich:
@@ -238,7 +239,9 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 | Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-20250514` |
 
 Feed Stage 1: kein API-Aufruf — regelbasiert.
-SDK: Anthropic SDK direkt (`ANTHROPIC_API_KEY`) — kein Dify für neue Features.
+SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
+Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
+AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
 
 ### Dify — abgelöst (✅ 2026-03-17)
 
