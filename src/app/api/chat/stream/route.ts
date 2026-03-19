@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { streamText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
 import { resolveWorkflow } from '@/lib/capability-resolver'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+import { logRoutingDecision } from '@/lib/qa/routing-logger'
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
 
@@ -108,32 +108,30 @@ export async function POST(req: NextRequest) {
     let tokensInput: number | null = null
     let tokensOutput: number | null = null
 
+    const routingReason = capabilityId ? `capability:${capabilityId}` : 'direct'
+    const taskType = cardId ? 'card-chat' : 'workspace-chat'
+    const streamStart = Date.now()
+
     const encoder = new TextEncoder()
 
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          const stream = anthropic.messages.stream({
-            model: modelId,
+          const result = streamText({
+            model: anthropic(modelId),
             system: systemPrompt,
             messages: apiMessages,
-            max_tokens: 2048,
+            maxOutputTokens: 2048,
           })
 
-          for await (const event of stream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
-              const chunk = event.delta.text
-              accumulatedText += chunk
-              controller.enqueue(encoder.encode(chunk))
-            }
+          for await (const chunk of result.textStream) {
+            accumulatedText += chunk
+            controller.enqueue(encoder.encode(chunk))
           }
 
-          const finalMessage = await stream.finalMessage()
-          tokensInput = finalMessage.usage?.input_tokens ?? null
-          tokensOutput = finalMessage.usage?.output_tokens ?? null
+          const usage = await result.usage
+          tokensInput = usage.inputTokens ?? null
+          tokensOutput = usage.outputTokens ?? null
 
           // Save complete response to DB
           await supabaseAdmin.from('workspace_messages').insert({
@@ -149,9 +147,28 @@ export async function POST(req: NextRequest) {
             user_id: userId,
           })
 
+          logRoutingDecision({
+            taskType,
+            modelSelected: modelId,
+            routingReason,
+            latencyMs: Date.now() - streamStart,
+            status: 'success',
+            userId,
+          })
+
           controller.close()
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler'
+
+          logRoutingDecision({
+            taskType,
+            modelSelected: modelId,
+            routingReason,
+            latencyMs: Date.now() - streamStart,
+            status: 'error',
+            errorMessage,
+            userId,
+          })
 
           try {
             await supabaseAdmin.from('workspace_messages').insert({

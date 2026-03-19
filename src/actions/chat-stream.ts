@@ -1,20 +1,10 @@
 'use server'
 
-/**
- * NOTE: This file requires @anthropic-ai/sdk.
- * Install with: pnpm add @anthropic-ai/sdk
- * The package is not yet in package.json — add it before using this module.
- */
-
-import Anthropic from '@anthropic-ai/sdk'
+import { streamText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
 import type { SendMessageInput } from '@/types/chat'
-
-// ---------------------------------------------------------------------------
-// Anthropic client
-// ---------------------------------------------------------------------------
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // ---------------------------------------------------------------------------
 // streamMessage
@@ -74,28 +64,21 @@ export async function streamMessage(input: SendMessageInput): Promise<ReadableSt
       let tokensOutput: number | null = null
 
       try {
-        const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-6',
+        const result = streamText({
+          model: anthropic('claude-sonnet-4-6'),
           system: systemPrompt,
           messages: apiMessages,
-          max_tokens: 2048,
+          maxOutputTokens: 2048,
         })
 
-        for await (const event of stream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            const chunk = event.delta.text
-            accumulatedText += chunk
-            controller.enqueue(new TextEncoder().encode(chunk))
-          }
+        for await (const chunk of result.textStream) {
+          accumulatedText += chunk
+          controller.enqueue(new TextEncoder().encode(chunk))
         }
 
-        // Get final message for usage stats
-        const finalMessage = await stream.finalMessage()
-        tokensInput = finalMessage.usage?.input_tokens ?? null
-        tokensOutput = finalMessage.usage?.output_tokens ?? null
+        const usage = await result.usage
+        tokensInput = usage.inputTokens ?? null
+        tokensOutput = usage.outputTokens ?? null
 
         // Save complete response to DB
         await supabaseAdmin.from('workspace_messages').insert({
