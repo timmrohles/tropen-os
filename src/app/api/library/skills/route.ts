@@ -13,14 +13,20 @@ export async function GET() {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data } = await supabaseAdmin.from('skills')
-    .select('id, name, title, icon, description, scope, requires_package, instructions, trigger_keywords, recommended_role_name, recommended_capability_type, output_type, is_active, is_public, is_template, sort_order')
-    .is('deleted_at', null)
-    .eq('is_active', true)
-    .or(`scope.in.(system,public),scope.eq.package,and(scope.eq.org,organization_id.eq.${me.organization_id}),and(scope.eq.user,user_id.eq.${me.id})`)
-    .order('sort_order')
+  try {
+    const { data, error } = await supabaseAdmin.from('skills')
+      .select('id, name, title, icon, description, scope, requires_package, instructions, trigger_keywords, recommended_role_name, recommended_capability_type, output_type, is_active, is_public, is_template, sort_order')
+      .is('deleted_at', null)
+      .eq('is_active', true)
+      .or(`scope.in.(system,public),scope.eq.package,and(scope.eq.org,organization_id.eq.${me.organization_id}),and(scope.eq.user,user_id.eq.${me.id})`)
+      .order('sort_order')
 
-  return NextResponse.json({ skills: data ?? [] })
+    if (error) { log.error('fetch skills', { error }); throw error }
+    return NextResponse.json({ skills: data ?? [] })
+  } catch (err) {
+    log.error('GET /api/library/skills', { err })
+    return NextResponse.json({ error: 'Failed to load skills' }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {
