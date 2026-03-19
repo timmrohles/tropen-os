@@ -30,7 +30,7 @@ export default async function HomePage() {
   const now = new Date().toISOString()
 
   // Parallelize all remaining queries; org-scoped ones are bundled conditionally
-  const [tropenAnnResult, chatsResult, orgResult] = await Promise.all([
+  const [tropenAnnResult, chatsResult, membershipResult, orgResult] = await Promise.all([
     supabaseAdmin
       .from('announcements')
       .select('id, title, body, url, url_label, type, source, published_at')
@@ -47,6 +47,13 @@ export default async function HomePage() {
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(3),
+
+    supabaseAdmin
+      .from('department_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle(),
 
     orgId ? Promise.all([
       supabaseAdmin
@@ -77,6 +84,7 @@ export default async function HomePage() {
 
   const tropenAnn = tropenAnnResult.data ?? []
   const recentChats = chatsResult.data ?? []
+  const workspaceId = membershipResult.data?.workspace_id ?? null
 
   let orgAnn: typeof tropenAnn = []
   let recentWorkspaces: { id: string; title: string; updated_at: string }[] = []
@@ -111,7 +119,7 @@ export default async function HomePage() {
         <AnnouncementsFeed announcements={announcements} orgName={orgName} />
       )}
 
-      <ChatCTA />
+      <ChatCTA workspaceId={workspaceId} />
       <FeatureGrid />
 
       {((recentChats.length > 0) || recentWorkspaces.length > 0) && (
