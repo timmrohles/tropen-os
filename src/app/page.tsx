@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import Parrot from '@/components/Parrot'
@@ -27,6 +28,8 @@ export default async function HomePage() {
   const {
     data: { user }
   } = await supabase.auth.getUser()
+
+  if (user) redirect('/home')
 
   return (
     <div className="content-max">
