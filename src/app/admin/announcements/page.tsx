@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
 import { Megaphone } from '@phosphor-icons/react'
 import { s, typeBadgeStyle } from './announcements.styles'
 
@@ -30,10 +29,9 @@ const EMPTY_FORM: CreateForm = {
 }
 
 export default function OrgAnnouncementsPage() {
-  const supabase = createClient()
-  const [orgId, setOrgId] = useState<string | null>(null)
   const [announcements, setAnnouncements] = useState<AnnouncementRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -44,29 +42,22 @@ export default function OrgAnnouncementsPage() {
   function loadAnnouncements() {
     setLoading(true)
     fetch('/api/announcements')
-      .then((r) => r.json())
-      .then((data: unknown) =>
+      .then((r) => {
+        if (!r.ok) throw new Error(`Fehler beim Laden (${r.status})`)
+        return r.json()
+      })
+      .then((data: unknown) => {
         setAnnouncements(Array.isArray(data) ? (data as AnnouncementRow[]) : [])
-      )
-      .catch(() => setAnnouncements([]))
+        setLoadError(null)
+      })
+      .catch(() => {
+        setAnnouncements([])
+        setLoadError('Neuigkeiten konnten nicht geladen werden. Bitte Seite neu laden.')
+      })
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const meta = user.user_metadata as { organization_id?: string }
-      if (meta.organization_id) {
-        setOrgId(meta.organization_id)
-      } else {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('organization_id')
-          .eq('id', user.id)
-          .single()
-        if (profile?.organization_id) setOrgId(profile.organization_id)
-      }
-    })
     loadAnnouncements()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -87,10 +78,6 @@ export default function OrgAnnouncementsPage() {
       setFormError('Titel ist erforderlich.')
       return
     }
-    if (!orgId) {
-      setFormError('Organisation konnte nicht geladen werden. Bitte Seite neu laden.')
-      return
-    }
     setSaving(true)
     setFormError(null)
 
@@ -100,7 +87,6 @@ export default function OrgAnnouncementsPage() {
       url: form.url.trim() || null,
       type: 'info',
       expires_at: form.expires_at || null,
-      organization_id: orgId,
     }
 
     const res = await fetch('/api/announcements', {
@@ -224,6 +210,12 @@ export default function OrgAnnouncementsPage() {
               {saving ? 'Speichern…' : 'Neuigkeit erstellen'}
             </button>
           </div>
+        </div>
+      )}
+
+      {loadError && (
+        <div style={{ padding: '10px 14px', marginBottom: 16, borderRadius: 6, fontSize: 13, background: 'var(--error-bg)', border: '1px solid var(--error-border)', color: 'var(--text-primary)' }}>
+          {loadError}
         </div>
       )}
 
