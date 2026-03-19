@@ -39,6 +39,7 @@ export async function POST(
       share_scope: 'org',
     })
     .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -64,10 +65,13 @@ export async function DELETE(
 
   if (!conv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  await supabaseAdmin
+  const { error: revokeError } = await supabaseAdmin
     .from('conversations')
     .update({ share_token: null, shared_at: null, share_scope: null })
     .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (revokeError) return NextResponse.json({ error: revokeError.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }
