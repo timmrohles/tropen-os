@@ -345,7 +345,7 @@ export default function ChatInput({
             disabled={wsCreating || !wsTitle.trim()}
             style={{
               background: 'var(--accent)',
-              color: '#fff',
+              color: 'var(--text-inverse)',
               border: 'none',
               opacity: wsCreating || !wsTitle.trim() ? 0.6 : 1,
               cursor: wsCreating || !wsTitle.trim() ? 'default' : 'pointer',
