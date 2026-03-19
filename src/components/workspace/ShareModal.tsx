@@ -23,7 +23,7 @@ export default function ShareModal({ convId, convTitle, onClose }: ShareModalPro
       .finally(() => setLoading(false))
   }, [convId])
 
-  const shareUrl = token ? `${window.location.origin}/s/${token}` : ''
+  const shareUrl = token && typeof window !== 'undefined' ? `${window.location.origin}/s/${token}` : ''
 
   function handleCopy() {
     if (!shareUrl) return
@@ -42,8 +42,7 @@ export default function ShareModal({ convId, convTitle, onClose }: ShareModalPro
   }
 
   const s: Record<string, React.CSSProperties> = {
-    backdrop: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    modal: { background: 'var(--bg-surface)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.16)' },
+    modal: { background: 'var(--bg-surface)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' },
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     title: { fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
     sub: { fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16 },
@@ -54,7 +53,7 @@ export default function ShareModal({ convId, convTitle, onClose }: ShareModalPro
   }
 
   return (
-    <div style={s.backdrop} onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div style={s.modal} onClick={e => e.stopPropagation()}>
         <div style={s.header}>
           <p style={s.title}>
