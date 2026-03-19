@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const LINKS = [
   { href: '/superadmin/clients', label: 'Clients' },
+  { href: '/superadmin/announcements', label: 'Announcements' },
   { href: '/admin/todos', label: 'To-Dos & Compliance' },
 ]
 
