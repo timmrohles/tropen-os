@@ -3,6 +3,9 @@
 // NOTE: does NOT replace capability-resolver.ts (keep that for backward compat)
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('library-resolver')
 
 export interface WorkflowPlan {
   model_id:           string     // api_model_id — what you pass to the model SDK
@@ -48,6 +51,7 @@ interface OutcomeRow {
 }
 interface RoleRow {
   id: string
+  name: string
   system_prompt: string
   domain_keywords: string[]
 }
@@ -83,7 +87,7 @@ export async function resolveWorkflow(input: {
       .eq('id', input.outcomeId).single(),
     input.roleId
       ? supabaseAdmin.from('roles')
-          .select('id, system_prompt, domain_keywords')
+          .select('id, name, system_prompt, domain_keywords')
           .eq('id', input.roleId).is('deleted_at', null).single()
       : Promise.resolve({ data: null, error: null }),
     input.skillId
@@ -93,30 +97,45 @@ export async function resolveWorkflow(input: {
       : Promise.resolve({ data: null, error: null }),
   ])
 
-  if (capResult.error || !capResult.data) throw new Error(`Capability not found: ${input.capabilityId}`)
-  if (outcomeResult.error || !outcomeResult.data) throw new Error(`Outcome not found: ${input.outcomeId}`)
+  if (capResult.error || !capResult.data) {
+    log.error('Capability not found', { capabilityId: input.capabilityId, error: capResult.error })
+    throw new Error(`Capability not found: ${input.capabilityId}`)
+  }
+  if (outcomeResult.error || !outcomeResult.data) {
+    log.error('Outcome not found', { outcomeId: input.outcomeId, error: outcomeResult.error })
+    throw new Error(`Outcome not found: ${input.outcomeId}`)
+  }
 
   const cap     = capResult.data    as CapabilityRow
   const outcome = outcomeResult.data as OutcomeRow
   const role    = roleResult.data    as RoleRow | null
   const skill   = skillResult.data   as SkillRow | null
 
-  // Resolve model: capability default → haiku fallback
+  // Resolve model: capability default → haiku fallback (parallel if we have a modelId)
   const modelId = cap.default_model_id
   let model: ModelRow | null = null
+
   if (modelId) {
-    const { data } = await supabaseAdmin.from('model_catalog')
-      .select('id, api_model_id, provider, cost_per_1k_output, is_active, is_eu_hosted')
-      .eq('id', modelId).single()
-    model = data as ModelRow | null
-  }
-  if (!model) {
+    // Fetch both the specific model and the haiku fallback in parallel
+    const [specificResult, haikusResult] = await Promise.all([
+      supabaseAdmin.from('model_catalog')
+        .select('id, api_model_id, provider, cost_per_1k_output, is_active, is_eu_hosted')
+        .eq('id', modelId).single(),
+      supabaseAdmin.from('model_catalog')
+        .select('id, api_model_id, provider, cost_per_1k_output, is_active, is_eu_hosted')
+        .eq('api_model_id', 'claude-haiku-4-5-20251001').single(),
+    ])
+    model = (specificResult.data ?? haikusResult.data) as ModelRow | null
+  } else {
     const { data } = await supabaseAdmin.from('model_catalog')
       .select('id, api_model_id, provider, cost_per_1k_output, is_active, is_eu_hosted')
       .eq('api_model_id', 'claude-haiku-4-5-20251001').single()
     model = data as ModelRow | null
   }
-  if (!model) throw new Error('No model available')
+  if (!model) {
+    log.error('No model available', { capabilityId: input.capabilityId })
+    throw new Error('No model available')
+  }
 
   const systemPrompt = buildSystemPrompt(
     { role, skill, cap, outcome },
@@ -145,10 +164,10 @@ export async function detectRole(
   _userId: string,
 ): Promise<RoleRow | null> {
   const { data: roles } = await supabaseAdmin.from('roles')
-    .select('id, system_prompt, domain_keywords')
+    .select('id, name, system_prompt, domain_keywords')
     .is('deleted_at', null)
     .eq('is_active', true)
-    .in('scope', ['system','package','org','user'])
+    .or(`scope.in.(system,package,public),and(scope.eq.org,organization_id.eq.${_orgId}),and(scope.eq.user,user_id.eq.${_userId})`)
     .limit(50)
 
   if (!roles?.length) return null
@@ -183,8 +202,8 @@ export async function detectSkill(
 
   for (const skill of skills as SkillRow[]) {
     let score = skill.trigger_keywords.filter(kw => lower.includes(kw.toLowerCase())).length
-    // Boost if skill matches role recommendation
-    if (role && skill.recommended_role_name === role.id) score += 1
+    // Boost if skill matches role recommendation (name comparison, not id)
+    if (role && skill.recommended_role_name === role.name) score += 1
     if (score > bestScore) { bestScore = score; bestSkill = skill }
   }
   return bestScore > 0 ? bestSkill : null
