@@ -2,22 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PaperPlaneRight, Robot, X, CaretDown, SquaresFour } from '@phosphor-icons/react'
+import { PaperPlaneRight, UserCircle, X, CaretDown, SquaresFour } from '@phosphor-icons/react'
 
-interface Agent {
+interface Role {
   id: string
-  name: string
+  label: string
+  icon: string | null
   description: string | null
-}
-
-interface PackageAgent {
-  id: string
-  name: string
-  description: string | null
-  system_prompt: string | null
-  quick_chips: string[]
-  package_id: string
-  packages: { slug: string; name: string; icon: string | null } | null
+  scope: string
+  requires_package: string | null
 }
 
 interface CapabilityOutcome {
@@ -38,8 +31,8 @@ interface ChatInputProps {
   setInput: (v: string) => void
   sending: boolean
   onSubmit: (e: React.FormEvent) => void
-  activeAgentId: string | null
-  onSetActiveAgentId: ((id: string | null) => void) | null
+  activeRoleId: string | null
+  onSetActiveRoleId: ((id: string | null) => void) | null
   activeCapabilityId: string | null
   onSetActiveCapabilityId: ((id: string | null) => void) | null
   activeOutcomeId: string | null
@@ -48,13 +41,12 @@ interface ChatInputProps {
 
 export default function ChatInput({
   input, setInput, sending, onSubmit,
-  activeAgentId, onSetActiveAgentId,
+  activeRoleId, onSetActiveRoleId,
   activeCapabilityId, onSetActiveCapabilityId,
   activeOutcomeId, onSetActiveOutcomeId,
 }: ChatInputProps) {
   const router = useRouter()
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [packageAgents, setPackageAgents] = useState<PackageAgent[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [capabilities, setCapabilities] = useState<Capability[]>([])
   const [dropOpen, setDropOpen] = useState(false)
   const [capDropOpen, setCapDropOpen] = useState(false)
@@ -67,14 +59,12 @@ export default function ChatInput({
   const [wsCreating, setWsCreating] = useState(false)
 
   useEffect(() => {
-    fetch('/api/agents')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setAgents(Array.isArray(data) ? data : []))
-      .catch(() => {})
-    fetch('/api/packages/agents')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setPackageAgents(Array.isArray(data) ? data : []))
-      .catch(() => {})
+    fetch('/api/library/roles')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { roles: Role[] } | null) => {
+        if (d) setRoles(d.roles)
+      })
+      .catch(() => null)
     fetch('/api/capabilities')
       .then(r => r.ok ? r.json() : [])
       .then(data => setCapabilities(Array.isArray(data) ? data : []))
@@ -108,14 +98,12 @@ export default function ChatInput({
     return () => document.removeEventListener('mousedown', onDown)
   }, [outcomeDropOpen])
 
-  const activeAgent = agents.find(a => a.id === activeAgentId) ?? null
-  const activePackageAgent = packageAgents.find(a => a.id === activeAgentId) ?? null
-  const activeAnyAgent = activeAgent ?? activePackageAgent
+  const activeRole = roles.find(r => r.id === activeRoleId) ?? null
 
-  // Group package agents by package
-  const packageGroups = packageAgents.reduce<Record<string, { meta: PackageAgent['packages']; agents: PackageAgent[] }>>((acc, a) => {
-    if (!acc[a.package_id]) acc[a.package_id] = { meta: a.packages, agents: [] }
-    acc[a.package_id].agents.push(a)
+  // Group roles by scope
+  const scopeGroups = roles.reduce<Record<string, Role[]>>((acc, r) => {
+    if (!acc[r.scope]) acc[r.scope] = []
+    acc[r.scope].push(r)
     return acc
   }, {})
 
@@ -155,28 +143,35 @@ export default function ChatInput({
     }
   }
 
+  const scopeLabels: Record<string, string> = {
+    system: 'System',
+    package: 'Paket',
+    org: 'Organisation',
+    user: 'Eigene',
+  }
+
   return (
     <div className="cinput-wrap-outer">
-      {/* Agent Bar */}
-      {onSetActiveAgentId && (
+      {/* Rolle Bar */}
+      {onSetActiveRoleId && (
         <div className="cinput-agent-bar" ref={dropRef} style={{ position: 'relative' }}>
           <button
             type="button"
-            className={`cinput-agent-btn${activeAnyAgent ? ' cinput-agent-btn--active' : ''}`}
+            className={`cinput-agent-btn${activeRole ? ' cinput-agent-btn--active' : ''}`}
             onClick={() => setDropOpen(v => !v)}
-            title="Agent wählen"
+            title="Rolle wählen"
           >
-            <Robot size={13} weight={activeAnyAgent ? 'fill' : 'bold'} />
-            <span>{activeAnyAgent ? activeAnyAgent.name : 'Kein Agent'}</span>
+            <UserCircle size={13} weight={activeRole ? 'fill' : 'bold'} />
+            <span>{activeRole ? activeRole.label : 'Keine Rolle'}</span>
             <CaretDown size={11} weight="bold" style={{ opacity: 0.5 }} />
           </button>
 
-          {activeAnyAgent && (
+          {activeRole && (
             <button
               type="button"
               className="cinput-agent-clear"
-              onClick={() => onSetActiveAgentId(null)}
-              title="Agent entfernen"
+              onClick={() => onSetActiveRoleId(null)}
+              title="Rolle entfernen"
             >
               <X size={11} weight="bold" />
             </button>
@@ -282,46 +277,37 @@ export default function ChatInput({
             <div className="cinput-agent-drop">
               <div className="cinput-agent-drop-none">
                 <button
-                  className={`cinput-agent-option${activeAnyAgent ? '' : ' cinput-agent-option--active'}`}
-                  onClick={() => { onSetActiveAgentId(null); setDropOpen(false) }}
+                  className={`cinput-agent-option${activeRole ? '' : ' cinput-agent-option--active'}`}
+                  onClick={() => { onSetActiveRoleId(null); setDropOpen(false) }}
                 >
-                  Kein Agent
+                  Keine Rolle
                 </button>
               </div>
 
-              {/* Eigene Agenten */}
-              {agents.length > 0 && agents.map(a => (
-                <button
-                  key={a.id}
-                  className={`cinput-agent-option${activeAgentId === a.id ? ' cinput-agent-option--active' : ''}`}
-                  onClick={() => { onSetActiveAgentId(a.id); setDropOpen(false) }}
-                >
-                  <span className="cinput-agent-option-name">{a.name}</span>
-                  {a.description && <span className="cinput-agent-option-desc">{a.description}</span>}
-                </button>
-              ))}
-
-              {/* Package-Agenten */}
-              {Object.entries(packageGroups).map(([pkgId, group]) => (
-                <div key={pkgId} className="cinput-agent-pkg-section">
+              {/* Rollen gruppiert nach Scope */}
+              {Object.entries(scopeGroups).map(([scope, scopeRoles]) => (
+                <div key={scope} className="cinput-agent-pkg-section">
                   <span className="cinput-agent-pkg-label">
-                    {group.meta?.icon} {group.meta?.name}
+                    {scopeLabels[scope] ?? scope}
                   </span>
-                  {group.agents.map(a => (
+                  {scopeRoles.map(r => (
                     <button
-                      key={a.id}
-                      className={`cinput-agent-option${activeAgentId === a.id ? ' cinput-agent-option--active' : ''}`}
-                      onClick={() => { onSetActiveAgentId(a.id); setDropOpen(false) }}
+                      key={r.id}
+                      className={`cinput-agent-option${activeRoleId === r.id ? ' cinput-agent-option--active' : ''}`}
+                      onClick={() => { onSetActiveRoleId(r.id); setDropOpen(false) }}
                     >
-                      <span className="cinput-agent-option-name">{a.name}</span>
-                      {a.description && <span className="cinput-agent-option-desc">{a.description}</span>}
+                      <span className="cinput-agent-option-name">
+                        {r.icon && <span style={{ marginRight: 4 }}>{r.icon}</span>}
+                        {r.label}
+                      </span>
+                      {r.description && <span className="cinput-agent-option-desc">{r.description}</span>}
                     </button>
                   ))}
                 </div>
               ))}
 
-              {agents.length === 0 && packageAgents.length === 0 && (
-                <div className="cinput-agent-empty">Noch keine Agenten — unter Projekte anlegen</div>
+              {roles.length === 0 && (
+                <div className="cinput-agent-empty">Noch keine Rollen verfügbar</div>
               )}
             </div>
           )}
@@ -378,26 +364,10 @@ export default function ChatInput({
         </div>
       )}
 
-      {/* Schnellstart-Chips */}
-      {activePackageAgent && activePackageAgent.quick_chips.length > 0 && (
-        <div className="cinput-chips">
-          {activePackageAgent.quick_chips.map((chip, i) => (
-            <button
-              key={i}
-              className="cinput-chip"
-              type="button"
-              onClick={() => setInput(chip)}
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-      )}
-
       <form onSubmit={onSubmit} className="cinput-row">
         <input
           className="cinput-field"
-          placeholder={activeAnyAgent ? `Nachricht an ${activeAnyAgent.name}…` : 'Nachricht eingeben…'}
+          placeholder={activeRole ? `Nachricht an ${activeRole.label}…` : 'Nachricht eingeben…'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={sending}

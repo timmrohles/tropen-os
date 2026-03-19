@@ -39,7 +39,7 @@ export default function EmptyState({ input, setInput, sending, onSubmit }: Empty
       <p className="es-sub">Was möchtest du heute erkunden?</p>
 
       <div className="es-input-wrap">
-        <ChatInput input={input} setInput={setInput} sending={sending} onSubmit={onSubmit} activeAgentId={null} onSetActiveAgentId={null} activeCapabilityId={null} onSetActiveCapabilityId={null} activeOutcomeId={null} onSetActiveOutcomeId={null} />
+        <ChatInput input={input} setInput={setInput} sending={sending} onSubmit={onSubmit} activeRoleId={null} onSetActiveRoleId={null} activeCapabilityId={null} onSetActiveCapabilityId={null} activeOutcomeId={null} onSetActiveOutcomeId={null} />
       </div>
 
       {activeTemplate && (

@@ -28,8 +28,8 @@ interface ChatAreaProps {
   onSetInput: (v: string) => void
   onSendMessage: (e: React.FormEvent) => void
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
-  activeAgentId?: string | null
-  onSetActiveAgentId?: (id: string | null) => void
+  activeRoleId?: string | null
+  onSetActiveRoleId?: (id: string | null) => void
   activeCapabilityId?: string | null
   onSetActiveCapabilityId?: (id: string | null) => void
   activeOutcomeId?: string | null
@@ -59,8 +59,8 @@ export default function ChatArea({
   onSetInput,
   onSendMessage,
   onAssignToProject: _onAssignToProject,
-  activeAgentId,
-  onSetActiveAgentId,
+  activeRoleId,
+  onSetActiveRoleId,
   activeCapabilityId,
   onSetActiveCapabilityId,
   activeOutcomeId,
@@ -180,8 +180,8 @@ export default function ChatArea({
               setInput={onSetInput}
               sending={sending}
               onSubmit={onSendMessage}
-              activeAgentId={activeAgentId ?? null}
-              onSetActiveAgentId={onSetActiveAgentId ?? null}
+              activeRoleId={activeRoleId ?? null}
+              onSetActiveRoleId={onSetActiveRoleId ?? null}
               activeCapabilityId={activeCapabilityId ?? null}
               onSetActiveCapabilityId={onSetActiveCapabilityId ?? null}
               activeOutcomeId={activeOutcomeId ?? null}

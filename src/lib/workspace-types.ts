@@ -125,8 +125,8 @@ export interface WorkspaceState {
   sending: boolean
   error: string
   setError: React.Dispatch<React.SetStateAction<string>>
-  activeAgentId: string | null
-  setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>
+  activeRoleId: string | null
+  setActiveRoleId: React.Dispatch<React.SetStateAction<string | null>>
   activeCapabilityId: string | null
   setActiveCapabilityId: React.Dispatch<React.SetStateAction<string | null>>
   activeOutcomeId: string | null

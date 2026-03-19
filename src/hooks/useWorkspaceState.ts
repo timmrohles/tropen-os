@@ -34,7 +34,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const sendingRef = useRef(false)
   const [input, setInput] = useState('')
-  const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
+  const [activeRoleId, setActiveRoleId] = useState<string | null>(null)
   const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null)
   const [activeOutcomeId, setActiveOutcomeId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -252,7 +252,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     if (sendingRef.current) return
     // Restore agent from conversation
     const conv = conversations.find(c => c.id === activeConvId)
-    if (conv) setActiveAgentId(conv.agent_id ?? null)
+    if (conv) setActiveRoleId(conv.agent_id ?? null)
     supabase
       .from('messages')
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
@@ -270,7 +270,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const convActions = createConversationActions({
     supabase, workspaceId,
-    activeConvId, activeAgentId, conversations, trashConvs, selectedIds, newProjectName,
+    activeConvId, activeRoleId, conversations, trashConvs, selectedIds, newProjectName,
     setConversations, setActiveConvId, setMessages, setDeleting, setConfirmDeleteId,
     setTrashConvs, setTrashCount, setTrashLoading, setProjects,
     setCreatingProject, setNewProjectName, setEditingConvId, setEditingProjectId,
@@ -292,7 +292,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const chatActions = createChatActions({
     supabase, workspaceId,
-    activeConvId, activeAgentId, activeCapabilityId, activeOutcomeId,
+    activeConvId, activeRoleId, activeCapabilityId, activeOutcomeId,
     input, sending, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
     newConversation: convActions.newConversation,
@@ -334,7 +334,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     confirmDeleteId, setConfirmDeleteId,
     deleting, routing, sending,
     error, setError,
-    activeAgentId, setActiveAgentId,
+    activeRoleId, setActiveRoleId,
     activeCapabilityId, setActiveCapabilityId,
     activeOutcomeId, setActiveOutcomeId,
     projects, setProjects,

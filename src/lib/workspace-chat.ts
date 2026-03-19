@@ -12,7 +12,7 @@ export interface ChatActionsCtx {
   supabase: SupabaseClient
   workspaceId: string
   activeConvId: string | null
-  activeAgentId: string | null
+  activeRoleId: string | null
   activeCapabilityId: string | null
   activeOutcomeId: string | null
   input: string
@@ -94,7 +94,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
             workspace_id: workspaceId,
             conversation_id: convId,
             message: currentInput,
-            agent_id: ctx.activeAgentId ?? undefined,
+            role_id: ctx.activeRoleId ?? undefined,
             workflow_plan: workflowPlan,
           }),
           signal: AbortSignal.timeout(60_000),

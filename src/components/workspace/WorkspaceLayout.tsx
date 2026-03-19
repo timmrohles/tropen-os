@@ -32,8 +32,8 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     projects,
     organizationId,
     assignToProject,
-    activeAgentId,
-    setActiveAgentId,
+    activeRoleId,
+    setActiveRoleId,
     activeCapabilityId,
     setActiveCapabilityId,
     activeOutcomeId,
@@ -102,8 +102,8 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
         onAssignToProject={assignToProject}
-        activeAgentId={activeAgentId}
-        onSetActiveAgentId={setActiveAgentId}
+        activeRoleId={activeRoleId}
+        onSetActiveRoleId={setActiveRoleId}
         activeCapabilityId={activeCapabilityId}
         onSetActiveCapabilityId={setActiveCapabilityId}
         activeOutcomeId={activeOutcomeId}

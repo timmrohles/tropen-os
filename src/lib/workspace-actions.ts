@@ -7,7 +7,7 @@ export interface ConversationActionsCtx {
   supabase: SupabaseClient
   workspaceId: string
   activeConvId: string | null
-  activeAgentId: string | null
+  activeRoleId: string | null
   conversations: Conversation[]
   trashConvs: Conversation[]
   selectedIds: Set<string>
@@ -47,7 +47,7 @@ export function createConversationActions(ctx: ConversationActionsCtx) {
     const now = new Date().toISOString()
     const tempId = `temp-${now}`
     const optimistic: Conversation = {
-      id: tempId, title: defaultConvTitle(), created_at: now, task_type: null, project_id: null, agent_id: ctx.activeAgentId, deleted_at: null
+      id: tempId, title: defaultConvTitle(), created_at: now, task_type: null, project_id: null, agent_id: ctx.activeRoleId, deleted_at: null
     }
     ctx.setConversations((prev) => [optimistic, ...prev])
     ctx.setActiveConvId(tempId)
@@ -62,7 +62,8 @@ export function createConversationActions(ctx: ConversationActionsCtx) {
         workspace_id: workspaceId,
         user_id: user.id,
         title: defaultConvTitle(),
-        agent_id: ctx.activeAgentId ?? null,
+        agent_id: ctx.activeRoleId ?? null,
+        conversation_type: 'chat',
       })
       .select('id, title, created_at, project_id, task_type, agent_id, deleted_at')
       .single()
