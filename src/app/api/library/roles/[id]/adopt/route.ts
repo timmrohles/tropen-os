@@ -5,6 +5,9 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { adoptSchema } from '@/lib/validators/library'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('api/library/roles/[id]/adopt')
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const me = await getAuthUser()
@@ -41,8 +44,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     recommended_model_class:   s.recommended_model_class ?? 'deep',
     source_id:                 id,
     created_by_role:           ['superadmin','owner','admin'].includes(me.role) ? 'org_admin' : 'member',
+    is_active:                 true,
   }).select('id').single()
 
-  if (error) return NextResponse.json({ error: 'Adopt failed' }, { status: 500 })
+  if (error) { log.error('adopt role', { error }); return NextResponse.json({ error: 'Adopt failed' }, { status: 500 }) }
   return NextResponse.json({ id: copy.id }, { status: 201 })
 }

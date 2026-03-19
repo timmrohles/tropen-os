@@ -2,6 +2,9 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('api/library/roles/[id]/publish')
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const me = await getAuthUser()
@@ -18,10 +21,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     || (['owner','admin'].includes(me.role) && r.organization_id === me.organization_id)
   if (!canPublish) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  await supabaseAdmin.from('roles').update({ scope: 'public', is_public: true, updated_at: new Date().toISOString() }).eq('id', id)
-  await supabaseAdmin.from('library_versions').insert({
+  const { error } = await supabaseAdmin.from('roles')
+    .update({ scope: 'public', is_public: true, updated_at: new Date().toISOString() }).eq('id', id)
+  if (error) { log.error('publish role', { error }); return NextResponse.json({ error: 'Publish failed' }, { status: 500 }) }
+
+  const { error: vErr } = await supabaseAdmin.from('library_versions').insert({
     entity_type: 'role', entity_id: id, organization_id: me.organization_id,
     changed_by: me.id, change_type: 'publish', snapshot: { id },
   })
+  if (vErr) log.warn('library_versions insert failed on publish', { vErr })
+
   return NextResponse.json({ ok: true })
 }

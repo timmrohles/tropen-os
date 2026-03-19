@@ -46,11 +46,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .update({ ...validated.data, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) { log.error('update role', { error }); return NextResponse.json({ error: 'Update failed' }, { status: 500 }) }
 
-  await supabaseAdmin.from('library_versions').insert({
+  const { error: vErr } = await supabaseAdmin.from('library_versions').insert({
     entity_type: 'role', entity_id: id,
     organization_id: me.organization_id, changed_by: me.id,
     change_type: 'update', snapshot,
   })
+  if (vErr) log.warn('library_versions insert failed on update', { vErr })
 
   return NextResponse.json({ ok: true })
 }
@@ -67,11 +68,12 @@ export async function DELETE(_req: Request, { params }: Params) {
     .update({ deleted_at: new Date().toISOString(), is_active: false }).eq('id', id)
   if (error) { log.error('delete role', { error }); return NextResponse.json({ error: 'Delete failed' }, { status: 500 }) }
 
-  await supabaseAdmin.from('library_versions').insert({
+  const { error: vErr } = await supabaseAdmin.from('library_versions').insert({
     entity_type: 'role', entity_id: id,
     organization_id: me.organization_id, changed_by: me.id,
     change_type: 'deactivate', snapshot: { id, scope: role.scope },
   })
+  if (vErr) log.warn('library_versions insert failed on delete', { vErr })
 
   return NextResponse.json({ ok: true })
 }

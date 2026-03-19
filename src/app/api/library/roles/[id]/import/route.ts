@@ -3,6 +3,9 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('api/library/roles/[id]/import')
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const me = await getAuthUser()
@@ -26,9 +29,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     preferred_skill_names: s.preferred_skill_names ?? [],
     preferred_outcome_types: s.preferred_outcome_types ?? [],
     recommended_model_class: s.recommended_model_class ?? 'deep',
-    source_id: id, created_by_role: 'member',
+    source_id: id, created_by_role: 'member', is_active: true,
   }).select('id').single()
 
-  if (error) return NextResponse.json({ error: 'Import failed' }, { status: 500 })
+  if (error) { log.error('import role', { error }); return NextResponse.json({ error: 'Import failed' }, { status: 500 }) }
   return NextResponse.json({ id: copy.id }, { status: 201 })
 }
