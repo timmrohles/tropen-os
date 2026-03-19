@@ -2,7 +2,8 @@
 // Plan J2b — Agent-Engine: runAgent, executeStep, checkBudget, calculateNextRun
 // checkScheduledTriggers is called via GET /api/cron/agents/check (Plan J2c)
 
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import type {
@@ -17,10 +18,6 @@ export const runtime = 'nodejs'
 const log = createLogger('agent-engine')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getAnthropicClient() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-}
 
 async function fetchAgent(agentId: string): Promise<Agent | null> {
   const { data } = await supabaseAdmin
@@ -155,8 +152,6 @@ export async function executeStep(
   agent: Agent,
   previousOutput?: string
 ): Promise<StepResult> {
-  const client = getAnthropicClient()
-
   const systemPrompt =
     step.system_prompt_override ??
     agent.systemPrompt ??
@@ -171,24 +166,19 @@ export async function executeStep(
       : `Führe deine Aufgabe (Schritt ${step.order + 1}) aus.`
 
   try {
-    const response = await client.messages.create({
-      model,
-      max_tokens: 2048,
+    const { text, usage } = await generateText({
+      model: anthropic(model),
+      maxOutputTokens: 2048,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     })
-
-    const text = response.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as { type: 'text'; text: string }).text)
-      .join('\n')
 
     return {
       success: true,
       output: text,
       tokenUsage: {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
+        input_tokens: usage.inputTokens ?? 0,
+        output_tokens: usage.outputTokens ?? 0,
       },
     }
   } catch (err) {
