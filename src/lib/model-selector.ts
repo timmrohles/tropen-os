@@ -15,6 +15,9 @@ export type TaskType =
   | 'feed_stage2'       // feed scoring + enrichment (fast pass)
   | 'feed_stage3'       // feed deep analysis
   | 'transformation'    // workspace/feed transformation
+  | 'project_intro'    // context-aware opening message for project chats
+  | 'chips'            // quick-action chip generation after responses
+  | 'prompt_builder'   // guided prompt refinement dialog
 
 export interface ModelSelection {
   modelId:   string    // what to pass to anthropic()
@@ -40,6 +43,9 @@ const MODEL_ROUTING: Record<TaskType, Omit<ModelSelection, 'taskType'>> = {
   extract:           { modelId: HAIKU,  tier: 'fast',  maxTokens: 1024  },
   memory_extraction: { modelId: HAIKU,  tier: 'fast',  maxTokens: 1024  },
   feed_stage2:       { modelId: HAIKU,  tier: 'fast',  maxTokens: 512   },
+  project_intro:     { modelId: HAIKU,  tier: 'fast',  maxTokens: 512   },
+  chips:             { modelId: HAIKU,  tier: 'fast',  maxTokens: 256   },
+  prompt_builder:    { modelId: HAIKU,  tier: 'fast',  maxTokens: 512   },
 }
 
 // ─── Selector ───────────────────────────────────────────────────────────────
