@@ -311,15 +311,18 @@ export async function listDistributions(sourceId: string): Promise<FeedDistribut
   return (data ?? []).map((r: Record<string, unknown>) => mapDistribution(r))
 }
 
-export async function createDistribution(input: Record<string, unknown>) {
+export async function createDistribution(sourceId: string, input: Record<string, unknown>) {
   const parsed = createDistributionSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.message }
+  const targetId = parsed.data.target_type === 'notification'
+    ? '00000000-0000-0000-0000-000000000000'
+    : parsed.data.target_id
   const { data, error } = await supabaseAdmin.from('feed_distributions').insert({
-    source_id: parsed.data.sourceId,
-    target_type: parsed.data.targetType,
-    target_id: parsed.data.targetId,
-    auto_inject: parsed.data.autoInject,
-    min_score: parsed.data.minScore,
+    source_id:   sourceId,
+    target_type: parsed.data.target_type,
+    target_id:   targetId,
+    auto_inject: parsed.data.auto_inject,
+    min_score:   parsed.data.min_score,
   }).select().single()
   if (error) return { error: error.message }
   return { distribution: mapDistribution(data as Record<string, unknown>) }
