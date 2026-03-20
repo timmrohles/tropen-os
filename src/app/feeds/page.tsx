@@ -15,6 +15,7 @@ import {
 } from '@phosphor-icons/react'
 import SourcesView from './SourcesView'
 import DataView from './DataView'
+import NotificationBadge from './_components/NotificationBadge'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
@@ -304,6 +305,7 @@ export default function FeedsPage() {
           <p className="page-header-sub">Deine kuratierten Feed-Quellen</p>
         </div>
         <div className="page-header-actions">
+          <NotificationBadge />
           <a href="/feeds/new" className="btn btn-primary">+ Quelle</a>
         </div>
       </div>
