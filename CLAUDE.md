@@ -35,15 +35,15 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 
 Bei UI-Änderungen zusätzlich:
 ```
-Schritt 9  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
-Schritt 10 CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
-Schritt 11 CLAUDE.md → Abschnitt "Code-Regeln" lesen
+Schritt UI-1  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
+Schritt UI-2  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt UI-3  CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
 
 Bei AI-Features zusätzlich:
 ```
-Schritt 11 cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
-Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
+Schritt AI-1  cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
+Schritt AI-2  cat docs/tuev-ai-matrix-mapping-tropen.docx
 ```
 
 ---
@@ -248,15 +248,6 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`claude-haiku-4-5-20251001`).
 `DIFY_API_KEY` und `DIFY_API_URL` können aus den Supabase Edge Function Secrets entfernt werden.
 
-<!-- TODO(timm): Dify komplett ablösen oder parallel weiterführen?
-  Stand 2026-03-16: ai-chat Edge Function wurde auf direktes Anthropic/OpenAI-Routing umgestellt.
-  Dify läuft noch, wird aber nicht mehr aktiv für Chat genutzt.
-  Optionen:
-  A) Dify vollständig abschalten (Instanz runterfahren, Env-Vars entfernen)
-  B) Dify als Fallback behalten für Jungle Order / komplexe Workflows
-  C) Dify komplett ersetzen (Workflows selbst bauen)
-  Entscheid ausstehend — bis dahin: Dify nicht aktiv einbinden, bestehende Instanz läuft weiter.
--->
 
 ---
 
@@ -380,6 +371,15 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 - Kein PII in Logs
 - Dateien > 300 Zeilen sind eine Warnung, > 500 Zeilen eine Verletzung
 - Jedes neue Feature braucht Tests
+- Neue Env-Variablen immer in `.env.example` dokumentieren — Secrets nie in `.env.local` committen
+
+### Error-Handling
+
+- Standardisierte Error-Typen aus `src/lib/errors.ts`
+- API-Routes: try/catch + strukturierte JSON-Response `{ error: string, code?: string }`
+- Nie generische Error-Messages an den Client — immer spezifische, hilfreiche Meldungen
+- Zod-Validation via `validateBody()` in jeder API-Route — vor jeder Business-Logik
+- Auth-Check via `getAuthUser()` als erste Zeile in jeder API-Route
 
 ### Namenskonventionen (Next.js Standard)
 
@@ -400,20 +400,26 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 
 ```
 /src
+  /actions              # Server Actions (cards, workspaces, feeds, chat, connections)
   /app                  # Nur Routing — kein Business-Code
   /components
     /ui                 # Primitive Komponenten
-    /layout             # Strukturelle Komponenten
-    /[feature]          # Feature-spezifische Komponenten
-  /features             # Self-contained Feature-Module
-  /hooks                # Shared Custom Hooks
-  /lib                  # Utilities, Helpers
-  /services             # Business-Logik, externe Abstraktionen
+    /layout             # Strukturelle Komponenten (AppShell, Sidebar, TopBar, BottomNav)
+    /workspace          # Workspace-Feature-Komponenten (Canvas, ChatPanel, DetailPanel)
+    /workspaces         # Workspace-Liste-Komponenten (CardTile, WorkspacesList)
+    /ws                 # Canvas-Ansicht-Komponenten
+  /db                   # Drizzle Schema (nur Typen + Migrations-Referenz, keine Queries)
+  /hooks                # Shared Custom Hooks (useWorkspaceState, useRightSidebar, useFocusTrap)
+  /lib                  # Business-Logik, LLM-Layer, Resolver, Validators
+    /llm                # Anthropic, OpenAI, Router, Model-Selector
+    /feeds              # Feed-Ingestion, Distribution, Cost-Estimation
+    /validators         # Zod-Schemas für API-Routes
   /types                # Globale TypeScript-Typen
-  /config               # Konfiguration, Konstanten
+  /utils                # Supabase Client-Utilities
 /docs
   /product              # Produktdokumentation (RAG, Onboarding, etc.)
   /adr                  # Architecture Decision Records
+  /plans                # Feature-Specs (agents-spec.md, etc.)
   /webapp-manifest      # Engineering Standards & Audit System
 ```
 
@@ -476,7 +482,7 @@ supabase migration repair --status applied <nummer> → dann db push
 
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
-- Migration-Nummern: einfache Zahlen (001, 002...), kein Timestamp-Format
+- Migration-Nummern: Legacy-Migrationen 001–033 nutzen einfache Nummern (`030_name.sql`). Ab Migration 034+ gilt Timestamp-Format (`YYYYMMDDHHMMSS_name.sql`) — Supabase CLI Standard.
 
 ### Migrations-Übersicht (001–033+)
 → Vollständige Liste: `docs/product/migrations.md`
@@ -708,7 +714,7 @@ Skills empfehlen `recommended_capability_type` als String — nie als FK.
 
 **1. Model-Agnostik ist kein Feature — es ist das Fundament**
 Kein Lock-in auf ein Modell. Jeder externe Modellanbieter sitzt hinter einer Abstraktionsschicht. Der Smart Router entscheidet — nicht der Code.
-Konsequenz: Jeder neue API-Call zu einem Modell geht durch `src/lib/router/` — niemals direkt in einer Route oder Komponente.
+Konsequenz: Jeder neue API-Call zu einem Modell geht durch `src/lib/llm/router.ts` — niemals direkt in einer Route oder Komponente.
 
 **2. Org-Governance ist das eigentliche Produkt für KMU**
 User kaufen nicht weil die KI gut ist — Org-Admins kaufen weil sie Kontrolle haben. Welche Modelle sind erlaubt? Welche Capabilities? Welches Budget?
@@ -774,6 +780,8 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
+| `docs/adr/*.md` | Architecture Decision Records (aktuell ADR-001 bis ADR-004) |
+| `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
 
 ---
