@@ -13,6 +13,7 @@ import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 import MemorySaveModal from './MemorySaveModal'
 import ShareModal from './ShareModal'
+import PromptBuilderModal from './PromptBuilderModal'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -82,7 +83,7 @@ export default function ChatArea({
   memoryExtracting = false,
   chips,
   setChips: _setChips,
-  promptBuilderOpen: _promptBuilderOpen,
+  promptBuilderOpen,
   setPromptBuilderOpen,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
@@ -249,6 +250,15 @@ export default function ChatArea({
               onClose={() => onSetShareModalConvId(null)}
             />
           )}
+          <PromptBuilderModal
+            open={promptBuilderOpen}
+            originalPrompt={input}
+            onClose={() => setPromptBuilderOpen(false)}
+            onAccept={(refined) => {
+              onSetInput(refined)
+              setPromptBuilderOpen(false)
+            }}
+          />
         </>
       ) : (
         <EmptyState

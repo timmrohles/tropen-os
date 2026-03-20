@@ -234,6 +234,7 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 |------------|--------|
 | Projekt-Chat, Workspace-Chat, Transformations-Engine | `claude-sonnet-4-20250514` |
 | Context-Zusammenfassung, Feed Stage 2 | `claude-haiku-4-5-20251001` |
+| Projekt-Einstieg, Chips, Prompt-Builder (Plan L) | `claude-haiku-4-5-20251001` |
 | Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-20250514` |
 
 Feed Stage 1: kein API-Aufruf — regelbasiert.
@@ -510,6 +511,7 @@ Letzte relevante Migrationen:
 | 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
 | 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
 | 20260320000060_project_memory_feeds.sql | project_memory: organization_id, memory_type, source_url, metadata; DROP NOT NULL on type |
+| 20260320000061_chat_prompt_builder.sql | conversations: 'prompt_builder' added to conversation_type CHECK |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
 
