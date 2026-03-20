@@ -54,6 +54,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
           .from('conversations')
           .select('id, title, created_at, project_id')
           .eq('workspace_id', workspaceId)
+          .eq('conversation_type', 'chat')
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .limit(200),
@@ -95,7 +96,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
     if (!user) { setCreating(false); return }
     const { data } = await supabase
       .from('conversations')
-      .insert({ workspace_id: workspaceId, user_id: user.id, title: 'Neuer Chat' })
+      .insert({ workspace_id: workspaceId, user_id: user.id, title: 'Neuer Chat', conversation_type: 'chat' })
       .select('id')
       .single()
     setCreating(false)

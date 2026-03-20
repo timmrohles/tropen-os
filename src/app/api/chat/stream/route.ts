@@ -6,8 +6,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
 import { resolveWorkflow } from '@/lib/capability-resolver'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
+import { selectModel } from '@/lib/model-selector'
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const { modelId: DEFAULT_MODEL } = selectModel('chat')
 
 export async function POST(req: NextRequest) {
   const me = await getAuthUser()
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
             role: 'assistant',
             content: accumulatedText,
             context_snapshot: contextSnapshot,
-            model: 'claude-sonnet-4-6',
+            model: 'claude-sonnet-4.6',
             tokens_input: tokensInput,
             tokens_output: tokensOutput,
             user_id: userId,
