@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type React from 'react'
-import type { Conversation, ChatMessage } from './workspace-types'
+import type { Conversation, ChatMessage, ChipItem } from './workspace-types'
 
 interface WorkflowPlanParam {
   api_model_id: string
@@ -26,6 +26,7 @@ export interface ChatActionsCtx {
   setRouting: React.Dispatch<React.SetStateAction<{ task_type: string; agent: string; model_class: string; model: string } | null>>
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>
   setMemoryExtracting: React.Dispatch<React.SetStateAction<boolean>>
+  setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
   newConversation: (initialMessages?: ChatMessage[]) => Promise<string | null>
 }
 
@@ -45,6 +46,9 @@ export function createChatActions(ctx: ChatActionsCtx) {
       id: `pending-${crypto.randomUUID()}`, role: 'assistant', content: '',
       model_used: null, cost_eur: null, tokens_input: null, tokens_output: null, pending: true,
     }
+
+    let accumulatedContent = ''
+    ctx.setChips([])
 
     ctx.sendingRef.current = true
     let convId = ctx.activeConvId
@@ -139,6 +143,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
           try { parsed = JSON.parse(raw) as typeof parsed } catch { continue }
 
           if (parsed.type === 'chunk' && parsed.content) {
+            accumulatedContent += parsed.content
             ctx.setMessages((prev) =>
               prev.map((m) => (m.pending ? { ...m, content: m.content + parsed.content! } : m))
             )
@@ -179,6 +184,18 @@ export function createChatActions(ctx: ChatActionsCtx) {
               ctx.setConversations((prev) =>
                 prev.map((c) => c.id === convId && !c.task_type ? { ...c, task_type: detectedType } : c)
               )
+            }
+
+            // Fire-and-forget chips generation
+            if (accumulatedContent.trim().length > 20) {
+              fetch('/api/chat/generate-chips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lastMessage: accumulatedContent }),
+              })
+                .then(r => r.ok ? r.json() as Promise<{ chips: ChipItem[] }> : null)
+                .then(res => { if (res?.chips?.length) ctx.setChips(res.chips) })
+                .catch(() => {/* non-blocking */})
             }
           } else if (parsed.type === 'error') {
             throw new Error(parsed.message ?? 'Stream-Fehler')

@@ -55,6 +55,11 @@ export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_u
   pending?: boolean
 }
 
+export interface ChipItem {
+  label: string
+  prompt: string
+}
+
 export interface JungleProject {
   name: string
   emoji: string
@@ -216,6 +221,10 @@ export interface WorkspaceState {
   activePeriodLabel: string | undefined
   hasActiveFilters: boolean
   contextPercent: number
+  chips: ChipItem[]
+  setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
+  promptBuilderOpen: boolean
+  setPromptBuilderOpen: React.Dispatch<React.SetStateAction<boolean>>
   memoryExtracting: boolean
   isMobile: boolean
   navOpen: boolean

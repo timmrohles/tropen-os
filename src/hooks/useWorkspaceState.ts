@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 import {
   PERIODS, TASK_TYPES, matchesPeriod,
   type Conversation, type Project, type ChatMessage, type JungleProject,
-  type PeriodValue, type TaskValue, type WorkspaceState,
+  type PeriodValue, type TaskValue, type WorkspaceState, type ChipItem,
 } from '@/lib/workspace-types'
 import { createConversationActions } from '@/lib/workspace-actions'
 import { createJungleActions } from '@/lib/workspace-jungle'
@@ -95,6 +95,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [mergeReady, setMergeReady] = useState(false)
   const [mergeProjectDropOpen, setMergeProjectDropOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+
+  // Chips + prompt builder
+  const [chips, setChips] = useState<ChipItem[]>([])
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
 
   // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
@@ -330,7 +334,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     activeConvId, activeRoleId, activeCapabilityId, activeOutcomeId,
     input, sending, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
-    setMemoryExtracting,
+    setMemoryExtracting, setChips,
     newConversation: convActions.newConversation,
   })
 
@@ -404,6 +408,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     toastMsg,
     showMemoryModal, setShowMemoryModal,
     shareModalConvId, setShareModalConvId,
+    chips, setChips,
+    promptBuilderOpen, setPromptBuilderOpen,
     memoryExtracting,
     isMobile, navOpen, setNavOpen,
     jungleSummary,

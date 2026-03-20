@@ -1,8 +1,4 @@
-// Local type — will be replaced by workspace-types import after Task 4 adds ChipItem there
-interface ChipItem {
-  label: string
-  prompt: string
-}
+import type { ChipItem } from '@/lib/workspace-types'
 
 export function buildChipsPrompt(lastResponse: string): string {
   const truncated = lastResponse.slice(0, 500)
