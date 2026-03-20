@@ -35,8 +35,12 @@ export async function GET(
     .eq('source_id', id)
     .order('created_at', { ascending: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    log.error('list distributions failed', { error: error.message })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
+  // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side
   return NextResponse.json({ distributions: data ?? [] })
 }
 
@@ -53,6 +57,7 @@ export async function POST(
   const { id } = await params
 
   // Parse + validate body
+  // Uses inline safeParse (not validateBody helper) because safeParse returns typed data directly
   let rawBody: unknown
   try { rawBody = await req.json() } catch { rawBody = {} }
   const parsed = createDistributionSchema.safeParse(rawBody)
@@ -106,5 +111,6 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side
   return NextResponse.json({ distribution: data }, { status: 201 })
 }

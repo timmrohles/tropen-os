@@ -18,20 +18,16 @@ export async function DELETE(
   const { id, distId } = await params
 
   // Fetch distribution and verify it belongs to a source in user's org
+  // Org filter pushed into query — 404 on wrong org (no unsafe cast needed)
   const { data: dist } = await supabaseAdmin
     .from('feed_distributions')
-    .select('id, source_id, feed_sources!inner(organization_id)')
+    .select('id, feed_sources!inner(organization_id)')
     .eq('id', distId)
     .eq('source_id', id)
+    .eq('feed_sources.organization_id', user.organization_id)
     .maybeSingle()
 
   if (!dist) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  const distRow = dist as Record<string, unknown>
-  const feedSrc = distRow.feed_sources as Record<string, unknown>
-  if (feedSrc.organization_id !== user.organization_id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { error } = await supabaseAdmin
     .from('feed_distributions')
