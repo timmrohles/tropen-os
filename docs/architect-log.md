@@ -22,6 +22,26 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-20 — Plan J1: Feeds autonom (Distributions + Run-History)
+
+**Was gebaut wurde:**
+- Distributions CRUD API (`/api/feeds/[id]/distributions`)
+- Project-Distribution in `distributor.ts` (Items → project_memory)
+- RunHistoryPanel: Kosten, Fehler-Details, Items-Breakdown
+- DistributionsPanel: Outputs konfigurieren direkt in SourcesView
+- NotificationBadge: unread count + Mini-Dropdown im Feeds-Header
+- Migration 20260320000060: project_memory um organization_id, memory_type, source_url, metadata erweitert
+
+**Was es bedeutet:**
+Feeds sind jetzt echte Produktions-Tools. Items können automatisch in Projekte,
+Workspaces und als Notifications weitergeleitet werden. Die Run-History zeigt
+ob Feeds korrekt laufen und was sie kosten.
+
+**Nächste Schritte:**
+Plan D: Chat & Context Integration vollständig abschließen.
+
+---
+
 ## 2026-03-19 — Code & Architektur Review (Audit v2.1)
 
 **Score:** 53.6% — 🟠 Risky (vorher 45.5% Prototype, +8.1 Punkte)

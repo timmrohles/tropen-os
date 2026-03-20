@@ -509,15 +509,34 @@ Letzte relevante Migrationen:
 | 20260319000055_library_cards.sql | cards: role_id UUID + skill_id UUID |
 | 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
 | 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
+| 20260320000060_project_memory_feeds.sql | project_memory: organization_id, memory_type, source_url, metadata; DROP NOT NULL on type |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
+
+### Feeds — Distributions + Run-History (Plan J1 — Stand 2026-03-20)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/app/api/feeds/[id]/distributions/route.ts` | GET list + POST create |
+| `src/app/api/feeds/[id]/distributions/[distId]/route.ts` | DELETE |
+| `src/lib/feeds/distributor.ts` | project target_type implementiert → project_memory |
+| `src/app/feeds/_components/RunHistoryPanel.tsx` | Run-Details mit Kosten + Fehler |
+| `src/app/feeds/_components/DistributionsPanel.tsx` | Outputs konfigurieren (project/workspace/notification) |
+| `src/app/feeds/_components/NotificationBadge.tsx` | Ungelesene Notifications mit Badge + Dropdown |
+
+**Distributions-Regeln:**
+- Nur owner/admin darf Distributions anlegen/löschen
+- target_type 'notification': target_id ist Dummy-UUID (alle Org-Member werden notifiziert)
+- target_type 'project': Items landen in project_memory (memory_type='feed_item')
+- target_type 'workspace': Items landen in knowledge_entries (entry_type='feed')
+- min_score (1–10) filtert: Items unter dem Score werden nicht weitergeleitet
 
 ### Feature-Dokumentation
 
 Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
 → **`docs/product/feature-registry.md`**
 
-Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill).
+Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1).
 
 **Kurzreferenz für häufig benötigte Regeln:**
 - Guided Workflows: `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
