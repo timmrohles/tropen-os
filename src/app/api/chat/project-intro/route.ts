@@ -24,34 +24,52 @@ export async function POST(req: NextRequest) {
   }
 
   // Load conversation + project
-  const { data: conv } = await supabaseAdmin
-    .from('conversations')
-    .select('id, project_id, workspace_id')
-    .eq('id', conversationId)
-    .single()
+  let conv: { id: string; project_id: string | null; workspace_id: string | null } | null
+  let project: { title: string } | null
+  let projectCtx: Awaited<ReturnType<typeof loadProjectContext>>
+  let lastConvMessages: Array<{ role: string; content: string }> | null
 
-  if (!conv?.project_id) {
-    return NextResponse.json({ error: 'Not a project conversation' }, { status: 400 })
+  try {
+    const { data: convData } = await supabaseAdmin
+      .from('conversations')
+      .select('id, project_id, workspace_id')
+      .eq('id', conversationId)
+      .eq('organization_id', me.organization_id)
+      .single()
+
+    conv = convData
+
+    if (!conv?.project_id) {
+      return NextResponse.json({ error: 'Not a project conversation' }, { status: 400 })
+    }
+
+    // Load project title
+    const { data: projectData } = await supabaseAdmin
+      .from('projects')
+      .select('title')
+      .eq('id', conv.project_id)
+      .is('deleted_at', null)
+      .single()
+
+    project = projectData
+
+    // Load project context + last conversation messages in parallel
+    const [ctx, { data: msgs }] = await Promise.all([
+      loadProjectContext(conv.project_id),
+      supabaseAdmin
+        .from('messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(6),
+    ])
+
+    projectCtx = ctx
+    lastConvMessages = msgs
+  } catch (err) {
+    log.error('Failed to load project context', { error: String(err) })
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
-
-  // Load project title
-  const { data: project } = await supabaseAdmin
-    .from('projects')
-    .select('title')
-    .eq('id', conv.project_id)
-    .is('deleted_at', null)
-    .single()
-
-  // Load project context + last conversation messages in parallel
-  const [projectCtx, { data: lastConvMessages }] = await Promise.all([
-    loadProjectContext(conv.project_id),
-    supabaseAdmin
-      .from('messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(6),
-  ])
 
   const prompt = buildProjectIntroPrompt({
     projectTitle: project?.title ?? 'Projekt',
