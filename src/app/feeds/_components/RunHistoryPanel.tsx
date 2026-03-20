@@ -14,8 +14,8 @@ interface Props {
 
 function statusIcon(status: FeedRun['status']) {
   if (status === 'success') return <CheckCircle size={14} color="var(--accent)" weight="fill" />
-  if (status === 'error')   return <XCircle size={14} color="var(--error, #e53e3e)" weight="fill" />
-  if (status === 'partial') return <Warning size={14} color="var(--warning, #d97706)" weight="fill" />
+  if (status === 'error')   return <XCircle size={14} color="var(--error)" weight="fill" />
+  if (status === 'partial') return <Warning size={14} color="var(--warning)" weight="fill" />
   return <Clock size={14} color="var(--text-tertiary)" weight="fill" />
 }
 
@@ -86,9 +86,9 @@ export default function RunHistoryPanel({ runs, loading, onRefresh }: Props) {
               </div>
 
               {run.errors && run.errors.length > 0 && (
-                <div style={{ marginTop: 6, padding: '6px 8px', background: 'rgba(229,62,62,0.06)', borderRadius: 4 }}>
+                <div style={{ marginTop: 6, padding: '6px 8px', background: 'var(--error-bg)', borderRadius: 4 }}>
                   {run.errors.slice(0, 2).map((e, i) => (
-                    <p key={i} style={{ fontSize: 12, color: 'var(--error, #e53e3e)', margin: 0 }}>
+                    <p key={i} style={{ fontSize: 12, color: 'var(--error)', margin: 0 }}>
                       {e.step}: {e.message}
                     </p>
                   ))}
