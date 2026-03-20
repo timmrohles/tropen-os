@@ -12,6 +12,8 @@ import {
 import {
   PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise,
 } from '@phosphor-icons/react'
+import RunHistoryPanel from './_components/RunHistoryPanel'
+import DistributionsPanel from './_components/DistributionsPanel'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
@@ -39,6 +41,9 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   const [fetchMsg, setFetchMsg]         = useState<Record<string, string>>({})
   const [runHistory, setRunHistory]     = useState<FeedRun[]>([])
   const [loadingRuns, setLoadingRuns]   = useState(false)
+  const [expandedPanel, setExpandedPanel] = useState<Record<string, 'runs' | 'outputs' | null>>({})
+  const [projects, setProjects]           = useState<{ id: string; name: string }[]>([])
+  const [workspaces, setWorkspaces]       = useState<{ id: string; name: string }[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -48,6 +53,30 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/projects').then(r => r.json()),
+      fetch('/api/workspaces').then(r => r.json()),
+    ]).then(([pJson, wJson]: [Record<string, unknown>, Record<string, unknown>]) => {
+      setProjects(((pJson.projects ?? []) as Record<string, unknown>[]).map((p) => ({ id: p.id as string, name: p.name as string })))
+      setWorkspaces(((wJson.workspaces ?? []) as Record<string, unknown>[]).map((w) => ({ id: w.id as string, name: w.name as string })))
+    }).catch(() => { /* silently ignore fetch errors */ })
+  }, [])
+
+  const fetchRuns = useCallback(async (sourceId: string) => {
+    setLoadingRuns(true)
+    setRunHistory([])
+    try {
+      const res = await fetch(`/api/feeds/${sourceId}/runs?limit=5`)
+      if (res.ok) {
+        const data = await res.json() as { runs: FeedRun[] }
+        setRunHistory(data.runs)
+      }
+    } finally {
+      setLoadingRuns(false)
+    }
+  }, [])
 
   const handlePause = async (src: FeedSource) => {
     const res = await fetch(`/api/feeds/${src.id}/pause`, { method: 'POST' })
@@ -99,17 +128,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     setEditMinScore(src.minScore)
     setEditError('')
     setMenuOpen(null)
-    setRunHistory([])
-    setLoadingRuns(true)
-    try {
-      const res = await fetch(`/api/feeds/${src.id}/runs?limit=5`)
-      if (res.ok) {
-        const data = await res.json() as { runs: FeedRun[] }
-        setRunHistory(data.runs)
-      }
-    } finally {
-      setLoadingRuns(false)
-    }
+    await fetchRuns(src.id)
   }
 
   const handleSave = async () => {
@@ -270,6 +289,41 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                   ))}
                 </div>
               )}
+
+              {/* Panel-Toggles */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  className={`chip${expandedPanel[src.id] === 'runs' ? ' chip--active' : ''}`}
+                  onClick={() => setExpandedPanel(p => ({ ...p, [src.id]: p[src.id] === 'runs' ? null : 'runs' }))}
+                >
+                  Run-Historie
+                </button>
+                <button
+                  className={`chip${expandedPanel[src.id] === 'outputs' ? ' chip--active' : ''}`}
+                  onClick={() => setExpandedPanel(p => ({ ...p, [src.id]: p[src.id] === 'outputs' ? null : 'outputs' }))}
+                >
+                  Outputs
+                </button>
+              </div>
+
+              {expandedPanel[src.id] === 'runs' && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <RunHistoryPanel
+                    runs={runHistory}
+                    loading={loadingRuns}
+                    onRefresh={() => fetchRuns(src.id)}
+                  />
+                </div>
+              )}
+              {expandedPanel[src.id] === 'outputs' && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DistributionsPanel
+                    sourceId={src.id}
+                    projects={projects}
+                    workspaces={workspaces}
+                  />
+                </div>
+              )}
             </div>
           )
         })}
@@ -353,28 +407,11 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
           {/* Run-History */}
           <div style={{ marginTop: 24 }}>
             <div className="card-divider" style={{ marginBottom: 16 }} />
-            <span className="card-section-label">Letzte Runs</span>
-            {loadingRuns ? (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Wird geladen…</div>
-            ) : runHistory.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Noch keine Runs.</div>
-            ) : (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {runHistory.map((run) => {
-                  const statusColor = run.status === 'success' ? 'var(--accent)' : run.status === 'partial' ? '#F7A44A' : '#E53E3E'
-                  return (
-                    <div key={run.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--text-secondary)' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, flexShrink: 0 }} aria-hidden="true" />
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
-                        {new Date(run.startedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span>{run.itemsFound} gefunden · {run.itemsDistributed} verteilt</span>
-                      {run.durationMs && <span style={{ color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{(run.durationMs / 1000).toFixed(1)}s</span>}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            <RunHistoryPanel
+              runs={runHistory}
+              loading={loadingRuns}
+              onRefresh={() => editing && fetchRuns(editing.id)}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
