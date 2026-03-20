@@ -35,6 +35,8 @@ export interface Conversation {
   project_id: string | null
   agent_id: string | null
   deleted_at: string | null
+  intention: 'focused' | 'open' | null
+  current_project_id: string | null
 }
 
 export interface Project {
@@ -218,6 +220,10 @@ export interface WorkspaceState {
   chips: ChipItem[]
   setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
   memoryExtracting: boolean
+  pendingIntention: 'focused' | 'open' | null
+  setPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'open' | null>>
+  pendingCurrentProjectId: string | null
+  setPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
   isMobile: boolean
   navOpen: boolean
   setNavOpen: React.Dispatch<React.SetStateAction<boolean>>

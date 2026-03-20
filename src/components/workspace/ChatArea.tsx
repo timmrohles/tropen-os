@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
 import type { ChipItem } from '@/lib/workspace-types'
 import EmptyState from './EmptyState'
+import IntentionGate from './IntentionGate'
+import FocusedFlow from './FocusedFlow'
 import QuickChips from './QuickChips'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
@@ -40,6 +42,10 @@ interface ChatAreaProps {
   memoryExtracting?: boolean
   chips: ChipItem[]
   setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
+  pendingIntention: 'focused' | 'open' | null
+  onSetPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'open' | null>>
+  pendingCurrentProjectId: string | null
+  onSetPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
 }
 
 export default function ChatArea({
@@ -51,7 +57,7 @@ export default function ChatArea({
   routing,
   messagesEndRef,
   userInitial,
-  projects: _projects,
+  projects,
   workspaceId,
   organizationId,
   onNewConversation,
@@ -68,11 +74,21 @@ export default function ChatArea({
   memoryExtracting = false,
   chips,
   setChips: _setChips,
+  pendingIntention,
+  onSetPendingIntention,
+  pendingCurrentProjectId,
+  onSetPendingCurrentProjectId,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false)
   const headerRef = useRef<ChatHeaderStripHandle>(null)
+
+  // IntentionGate: lokale Auswahl — wird bei jedem Wechsel zu activeConvId=null zurückgesetzt
+  const [intentionChoice, setIntentionChoice] = useState<'focused' | 'open' | null>(null)
+  useEffect(() => {
+    if (!activeConvId) setIntentionChoice(null)
+  }, [activeConvId])
 
   const fetchBookmarks = useCallback(async (convId: string) => {
     try {
@@ -224,7 +240,7 @@ export default function ChatArea({
             />
           )}
         </>
-      ) : (
+      ) : intentionChoice === 'open' ? (
         <EmptyState
           onNewConversation={onNewConversation}
           input={input}
@@ -232,6 +248,19 @@ export default function ChatArea({
           sending={sending}
           onSubmit={onSendMessage}
         />
+      ) : intentionChoice === 'focused' ? (
+        <FocusedFlow
+          projects={projects}
+          workspaceId={workspaceId ?? ''}
+          input={input}
+          setInput={onSetInput}
+          sending={sending}
+          onSubmit={onSendMessage}
+          onSetPendingIntention={onSetPendingIntention}
+          onSetPendingCurrentProjectId={onSetPendingCurrentProjectId}
+        />
+      ) : (
+        <IntentionGate onSelect={setIntentionChoice} />
       )}
     </div>
   )

@@ -43,6 +43,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     setChips,
     isMobile,
     toastMsg,
+    pendingIntention,
+    setPendingIntention,
+    pendingCurrentProjectId,
+    setPendingCurrentProjectId,
   } = props
 
   const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
@@ -109,6 +113,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         memoryExtracting={memoryExtracting}
         chips={chips}
         setChips={setChips}
+        pendingIntention={pendingIntention}
+        onSetPendingIntention={setPendingIntention}
+        pendingCurrentProjectId={pendingCurrentProjectId}
+        onSetPendingCurrentProjectId={setPendingCurrentProjectId}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

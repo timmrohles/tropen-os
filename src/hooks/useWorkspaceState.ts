@@ -96,6 +96,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   // Chips
   const [chips, setChips] = useState<ChipItem[]>([])
 
+  // Intention system — pending state bis newConversation() aufgerufen wird
+  const [pendingIntention, setPendingIntention] = useState<'focused' | 'open' | null>(null)
+  const [pendingCurrentProjectId, setPendingCurrentProjectId] = useState<string | null>(null)
+
   // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
   const [shareModalConvId, setShareModalConvId] = useState<string | null>(null)
@@ -221,7 +225,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         supabase.from('departments').select('name').eq('id', workspaceId).single(),
         supabase
           .from('conversations')
-          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at')
+          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at, intention, current_project_id')
           .eq('workspace_id', workspaceId)
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
@@ -309,6 +313,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     setContextMenuId, setContextMenuSubmenu, setDragConvId, setDragOverId,
     setRouting, setSelectMode, setSelectedIds, setError, setSearch,
     setPeriodFilter, setTaskFilter,
+    pendingIntention, setPendingIntention,
+    pendingCurrentProjectId, setPendingCurrentProjectId,
   })
 
   const jungleActions = createJungleActions({
@@ -400,6 +406,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     shareModalConvId, setShareModalConvId,
     chips, setChips,
     memoryExtracting,
+    pendingIntention, setPendingIntention,
+    pendingCurrentProjectId, setPendingCurrentProjectId,
     isMobile, navOpen, setNavOpen,
     jungleSummary,
     jungleProjects, setJungleProjects,

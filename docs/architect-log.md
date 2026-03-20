@@ -22,6 +22,28 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-20 — Intentions-System Chat-Start (Weichenstellung)
+
+**Was gebaut wurde:**
+- Migration `20260320000062`: `conversations` um `intention`, `current_project_id`, `drift_detected`, `focus_since_message` erweitert; `focus_log` Tabelle (APPEND ONLY) mit RLS angelegt
+- `IntentionGate.tsx`: Zwei klickbare Karten ("Gezielt" / "Offen") — ersetzt EmptyState wenn `activeConvId === null`
+- `FocusedFlow.tsx`: 3-Phasen UI — Projekt-Picker → Start-Modus-Wahl → ChatInput bereit; "Kurz strukturieren" befüllt Input mit Struktur-Prompt
+- `workspace-types.ts`: `Conversation` um `intention` + `current_project_id` erweitert; `WorkspaceState` um `pendingIntention` + `pendingCurrentProjectId`
+- `workspace-actions.ts`: `newConversation()` liest `pendingIntention` / `pendingCurrentProjectId` aus Context und schreibt sie in den DB-Insert; reset nach Erfolg
+- `useWorkspaceState.ts`: Pending-State + `convActions`-Übergabe + Select-Felder erweitert
+- `ChatArea.tsx`: IntentionGate/FocusedFlow/EmptyState basierend auf `intentionChoice` (lokaler State, reset bei `activeConvId → null`)
+
+**Architektur-Entscheidungen:**
+- `IntentionGate` ersetzt `EmptyState` als erste Ansicht; `EmptyState` bleibt als "Offen"-Pfad erhalten
+- `pendingIntention` + `pendingCurrentProjectId` in State (kein API-Call) — werden erst bei `newConversation()` in DB geschrieben
+- "Kurz strukturieren" = pre-filled Prompt statt eigener API-Route (einfacher, nutzt denselben LLM-Flow)
+- `focus_log` ist APPEND ONLY — Intention-Wechsel werden protokolliert aber nie überschrieben
+- System-Prompt-Injection in `ai-chat` Edge Function: Edge Function liest `intention` + `current_project_id` aus DB via `conversation_id` — keine Client-seitigen Änderungen nötig (TODO: Edge Function updaten)
+
+**TypeScript:** 0 Errors. Design-Lint: 0 Errors, 38 Warnings.
+
+---
+
 ## 2026-03-20 — Chat-Input Cleanup (nach Plan L)
 
 **Was entfernt wurde:**
