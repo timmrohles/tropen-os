@@ -32,12 +32,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     projects,
     organizationId,
     assignToProject,
-    activeRoleId,
-    setActiveRoleId,
-    activeCapabilityId,
-    setActiveCapabilityId,
-    activeOutcomeId,
-    setActiveOutcomeId,
     messagesEndRef,
     contextPercent,
     showMemoryModal,
@@ -47,8 +41,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     memoryExtracting,
     chips,
     setChips,
-    promptBuilderOpen,
-    setPromptBuilderOpen,
     isMobile,
     toastMsg,
   } = props
@@ -107,12 +99,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
         onAssignToProject={assignToProject}
-        activeRoleId={activeRoleId}
-        onSetActiveRoleId={setActiveRoleId}
-        activeCapabilityId={activeCapabilityId}
-        onSetActiveCapabilityId={setActiveCapabilityId}
-        activeOutcomeId={activeOutcomeId}
-        onSetActiveOutcomeId={setActiveOutcomeId}
         contextPercent={contextPercent}
         activeConvProjectId={activeConvProjectId}
         showMemoryModal={showMemoryModal}
@@ -123,8 +109,6 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         memoryExtracting={memoryExtracting}
         chips={chips}
         setChips={setChips}
-        promptBuilderOpen={promptBuilderOpen}
-        setPromptBuilderOpen={setPromptBuilderOpen}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

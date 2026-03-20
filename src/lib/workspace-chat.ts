@@ -2,19 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type React from 'react'
 import type { Conversation, ChatMessage, ChipItem } from './workspace-types'
 
-interface WorkflowPlanParam {
-  api_model_id: string
-  provider: string
-  system_prompt: string
-}
-
 export interface ChatActionsCtx {
   supabase: SupabaseClient
   workspaceId: string
   activeConvId: string | null
-  activeRoleId: string | null
-  activeCapabilityId: string | null
-  activeOutcomeId: string | null
   input: string
   sending: boolean
   conversations: Conversation[]
@@ -73,23 +64,6 @@ export function createChatActions(ctx: ChatActionsCtx) {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Nicht eingeloggt')
 
-      // Resolve workflow plan if capability is selected
-      let workflowPlan: WorkflowPlanParam | undefined
-      if (ctx.activeCapabilityId && ctx.activeOutcomeId) {
-        const resolveRes = await fetch('/api/capabilities/resolve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            capability_id: ctx.activeCapabilityId,
-            outcome_id: ctx.activeOutcomeId,
-          }),
-        })
-        if (resolveRes.ok) {
-          const plan = await resolveRes.json() as { model_id: string; provider: string; system_prompt: string }
-          workflowPlan = { api_model_id: plan.model_id, provider: plan.provider, system_prompt: plan.system_prompt }
-        }
-      }
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-chat`,
         {
@@ -99,8 +73,6 @@ export function createChatActions(ctx: ChatActionsCtx) {
             workspace_id: workspaceId,
             conversation_id: convId,
             message: currentInput,
-            role_id: ctx.activeRoleId ?? undefined,
-            workflow_plan: workflowPlan,
           }),
           signal: AbortSignal.timeout(60_000),
         }

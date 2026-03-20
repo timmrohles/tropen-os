@@ -130,12 +130,6 @@ export interface WorkspaceState {
   sending: boolean
   error: string
   setError: React.Dispatch<React.SetStateAction<string>>
-  activeRoleId: string | null
-  setActiveRoleId: React.Dispatch<React.SetStateAction<string | null>>
-  activeCapabilityId: string | null
-  setActiveCapabilityId: React.Dispatch<React.SetStateAction<string | null>>
-  activeOutcomeId: string | null
-  setActiveOutcomeId: React.Dispatch<React.SetStateAction<string | null>>
   projects: Project[]
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   collapsedProjects: Set<string>
@@ -223,8 +217,6 @@ export interface WorkspaceState {
   contextPercent: number
   chips: ChipItem[]
   setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
-  promptBuilderOpen: boolean
-  setPromptBuilderOpen: React.Dispatch<React.SetStateAction<boolean>>
   memoryExtracting: boolean
   isMobile: boolean
   navOpen: boolean

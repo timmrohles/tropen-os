@@ -22,6 +22,24 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-20 — Chat-Input Cleanup (nach Plan L)
+
+**Was entfernt wurde:**
+- `ChatInput.tsx`: Rollen-Dropdown, Capability/Modus-Dropdown, Outcome-Dropdown, Workspace-Button + Workspace-Erstellen-Formular — reduziert auf Input + Send-Button
+- `useWorkspaceState.ts` / `workspace-types.ts` / `workspace-actions.ts` / `workspace-chat.ts`: `activeRoleId`, `activeCapabilityId`, `activeOutcomeId` vollständig entfernt
+- `PromptBuilderModal.tsx` + `/api/chat/prompt-builder/` — entfernt
+- `promptBuilderOpen`/`setPromptBuilderOpen` State — entfernt
+
+**Architektur-Entscheidungen:**
+- `role_id` und `workflow_plan` werden nicht mehr an die Edge Function `ai-chat` übergeben — Roles/Capabilities sind implizit via `detectRole()` / `detectCapability()` (noch nicht implementiert, aber das ist die Richtung)
+- `agent_id` wird bei neuen Conversations immer `null` — kein manuelles Setzen mehr möglich
+- Der `'Prompt verfeinern'` Chip sendet jetzt `'Hilf mir, meinen nächsten Prompt zu formulieren.'` als normalen User-Prompt — Inline-Gespräch statt Modal
+- Sentinel `__PROMPT_BUILDER__` vollständig entfernt
+
+**TypeScript:** 0 Errors. Design-Lint: 0 Errors, 38 Warnings.
+
+---
+
 ## 2026-03-20 — Plan L: Chat-Interaktions-System
 
 **Was gebaut wurde:**

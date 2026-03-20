@@ -13,7 +13,6 @@ import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 import MemorySaveModal from './MemorySaveModal'
 import ShareModal from './ShareModal'
-import PromptBuilderModal from './PromptBuilderModal'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -31,12 +30,6 @@ interface ChatAreaProps {
   onSetInput: (v: string) => void
   onSendMessage: (e: React.FormEvent) => void
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
-  activeRoleId?: string | null
-  onSetActiveRoleId?: (id: string | null) => void
-  activeCapabilityId?: string | null
-  onSetActiveCapabilityId?: (id: string | null) => void
-  activeOutcomeId?: string | null
-  onSetActiveOutcomeId?: (id: string | null) => void
   contextPercent: number
   activeConvProjectId: string | null
   showMemoryModal: boolean
@@ -47,8 +40,6 @@ interface ChatAreaProps {
   memoryExtracting?: boolean
   chips: ChipItem[]
   setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
-  promptBuilderOpen: boolean
-  setPromptBuilderOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export default function ChatArea({
@@ -67,12 +58,6 @@ export default function ChatArea({
   onSetInput,
   onSendMessage,
   onAssignToProject: _onAssignToProject,
-  activeRoleId,
-  onSetActiveRoleId,
-  activeCapabilityId,
-  onSetActiveCapabilityId,
-  activeOutcomeId,
-  onSetActiveOutcomeId,
   contextPercent,
   activeConvProjectId,
   showMemoryModal,
@@ -83,8 +68,6 @@ export default function ChatArea({
   memoryExtracting = false,
   chips,
   setChips: _setChips,
-  promptBuilderOpen,
-  setPromptBuilderOpen,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -177,12 +160,8 @@ export default function ChatArea({
           </div>
 
           <QuickChips
-            chips={[...chips, { label: 'Prompt verfeinern', prompt: '__prompt_builder__' }]}
+            chips={[...chips, { label: 'Prompt verfeinern', prompt: 'Hilf mir, meinen nächsten Prompt zu formulieren.' }]}
             onSelect={(prompt) => {
-              if (prompt === '__prompt_builder__') {
-                setPromptBuilderOpen(true)
-                return
-              }
               onSetInput(prompt)
               onSendMessage({ preventDefault: () => {} } as React.FormEvent)
             }}
@@ -214,12 +193,6 @@ export default function ChatArea({
               setInput={onSetInput}
               sending={sending}
               onSubmit={onSendMessage}
-              activeRoleId={activeRoleId ?? null}
-              onSetActiveRoleId={onSetActiveRoleId ?? null}
-              activeCapabilityId={activeCapabilityId ?? null}
-              onSetActiveCapabilityId={onSetActiveCapabilityId ?? null}
-              activeOutcomeId={activeOutcomeId ?? null}
-              onSetActiveOutcomeId={onSetActiveOutcomeId ?? null}
             />
           </div>
 
@@ -250,15 +223,6 @@ export default function ChatArea({
               onClose={() => onSetShareModalConvId(null)}
             />
           )}
-          <PromptBuilderModal
-            open={promptBuilderOpen}
-            originalPrompt={input}
-            onClose={() => setPromptBuilderOpen(false)}
-            onAccept={(refined) => {
-              onSetInput(refined)
-              setPromptBuilderOpen(false)
-            }}
-          />
         </>
       ) : (
         <EmptyState

@@ -34,9 +34,6 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const sendingRef = useRef(false)
   const [input, setInput] = useState('')
-  const [activeRoleId, setActiveRoleId] = useState<string | null>(null)
-  const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null)
-  const [activeOutcomeId, setActiveOutcomeId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<PeriodValue>('all')
   const [taskFilter, setTaskFilter] = useState<TaskValue>('all')
@@ -96,9 +93,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [mergeProjectDropOpen, setMergeProjectDropOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
-  // Chips + prompt builder
+  // Chips
   const [chips, setChips] = useState<ChipItem[]>([])
-  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
 
   // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
@@ -256,9 +252,6 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   useEffect(() => {
     if (!activeConvId) return
     if (sendingRef.current) return
-    // Restore agent from conversation
-    const conv = conversations.find(c => c.id === activeConvId)
-    if (conv) setActiveRoleId(conv.agent_id ?? null)
     supabase
       .from('messages')
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
@@ -309,7 +302,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const convActions = createConversationActions({
     supabase, workspaceId,
-    activeConvId, activeRoleId, conversations, trashConvs, selectedIds, newProjectName,
+    activeConvId, conversations, trashConvs, selectedIds, newProjectName,
     setConversations, setActiveConvId, setMessages, setDeleting, setConfirmDeleteId,
     setTrashConvs, setTrashCount, setTrashLoading, setProjects,
     setCreatingProject, setNewProjectName, setEditingConvId, setEditingProjectId,
@@ -331,7 +324,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const chatActions = createChatActions({
     supabase, workspaceId,
-    activeConvId, activeRoleId, activeCapabilityId, activeOutcomeId,
+    activeConvId,
     input, sending, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
     setMemoryExtracting, setChips,
@@ -374,9 +367,6 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     confirmDeleteId, setConfirmDeleteId,
     deleting, routing, sending,
     error, setError,
-    activeRoleId, setActiveRoleId,
-    activeCapabilityId, setActiveCapabilityId,
-    activeOutcomeId, setActiveOutcomeId,
     projects, setProjects,
     collapsedProjects, setCollapsedProjects,
     editingConvId, setEditingConvId,
@@ -409,7 +399,6 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     showMemoryModal, setShowMemoryModal,
     shareModalConvId, setShareModalConvId,
     chips, setChips,
-    promptBuilderOpen, setPromptBuilderOpen,
     memoryExtracting,
     isMobile, navOpen, setNavOpen,
     jungleSummary,
