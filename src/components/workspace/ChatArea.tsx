@@ -2,7 +2,9 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
+import type { ChipItem } from '@/lib/workspace-types'
 import EmptyState from './EmptyState'
+import QuickChips from './QuickChips'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
@@ -42,6 +44,10 @@ interface ChatAreaProps {
   shareModalConvId: string | null
   onSetShareModalConvId: (id: string | null) => void
   memoryExtracting?: boolean
+  chips: ChipItem[]
+  setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
+  promptBuilderOpen: boolean
+  setPromptBuilderOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export default function ChatArea({
@@ -74,6 +80,10 @@ export default function ChatArea({
   shareModalConvId,
   onSetShareModalConvId,
   memoryExtracting = false,
+  chips,
+  setChips: _setChips,
+  promptBuilderOpen: _promptBuilderOpen,
+  setPromptBuilderOpen,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -164,6 +174,19 @@ export default function ChatArea({
             {error && <div className="carea-error">{error}</div>}
             <div ref={messagesEndRef} />
           </div>
+
+          <QuickChips
+            chips={[...chips, { label: 'Prompt verfeinern', prompt: '__prompt_builder__' }]}
+            onSelect={(prompt) => {
+              if (prompt === '__prompt_builder__') {
+                setPromptBuilderOpen(true)
+                return
+              }
+              onSetInput(prompt)
+              onSendMessage({ preventDefault: () => {} } as React.FormEvent)
+            }}
+            disabled={sending}
+          />
 
           {routing && (
             <div className="carea-routing-meta">

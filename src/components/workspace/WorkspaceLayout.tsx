@@ -45,6 +45,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     shareModalConvId,
     setShareModalConvId,
     memoryExtracting,
+    chips,
+    setChips,
+    promptBuilderOpen,
+    setPromptBuilderOpen,
     isMobile,
     toastMsg,
   } = props
@@ -117,6 +121,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         shareModalConvId={shareModalConvId}
         onSetShareModalConvId={setShareModalConvId}
         memoryExtracting={memoryExtracting}
+        chips={chips}
+        setChips={setChips}
+        promptBuilderOpen={promptBuilderOpen}
+        setPromptBuilderOpen={setPromptBuilderOpen}
       />
 
       {/* ── Session Panel (Desktop only) ── */}
