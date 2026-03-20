@@ -23,7 +23,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   // ── State ──────────────────────────────────────────────
   const [workspaceName, setWorkspaceName] = useState('')
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeConvId, setActiveConvId] = useState<string | null>(null)
+  const [activeConvId, setActiveConvId] = useState<string | null>(initialConvId ?? null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
 
   const contextTokens = useMemo(() => estimateConversationTokens(messages), [messages])
@@ -101,6 +101,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [shareModalConvId, setShareModalConvId] = useState<string | null>(null)
   const [memoryExtracting, setMemoryExtracting] = useState(false)
   const warnedConvRef = useRef<Set<string>>(new Set())
+  const introCheckedRef = useRef<Set<string>>(new Set())
 
   // Mobile
   const [isMobile, setIsMobile] = useState(false)
@@ -259,7 +260,40 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
       .eq('conversation_id', activeConvId)
       .order('created_at')
-      .then(({ data }) => setMessages((data ?? []) as ChatMessage[]))
+      .then(({ data }) => {
+        const loaded = (data ?? []) as ChatMessage[]
+        setMessages(loaded)
+        // Projekt-Einstieg: fire once per new conversation with no messages
+        const conv = conversations.find(c => c.id === activeConvId)
+        if (
+          loaded.length === 0 &&
+          conv?.project_id &&
+          activeConvId &&
+          !introCheckedRef.current.has(activeConvId)
+        ) {
+          introCheckedRef.current.add(activeConvId)
+          fetch('/api/chat/project-intro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversationId: activeConvId }),
+          })
+            .then(r => r.ok ? r.json() as Promise<{ message: string }> : null)
+            .then(res => {
+              if (res?.message) {
+                setMessages([{
+                  id: `intro-${activeConvId}`,
+                  role: 'assistant',
+                  content: res.message,
+                  model_used: 'claude-haiku-4-5-20251001',
+                  cost_eur: null,
+                  tokens_input: null,
+                  tokens_output: null,
+                }])
+              }
+            })
+            .catch(() => {/* non-blocking */})
+        }
+      })
   }, [activeConvId])
 
   const messageCount = messages.length
