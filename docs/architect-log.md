@@ -22,6 +22,38 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-19 — Code & Architektur Review (Audit v2.1)
+
+**Score:** 53.6% — 🟠 Risky (vorher 45.5% Prototype, +8.1 Punkte)
+
+**Wichtigste Verbesserungen seit 2026-03-15:**
+- Sicherheit +1: Security-Headers (HSTS, CSP, X-Frame-Options) + globales Rate Limiting (4 Stufen) + Webhook-HMAC + Sentry verifiziert aktiv
+- CI/CD +1: Design-Lint, Dependency-Check, E2E-Tests, Security Audit in Pipeline
+- Testing +1: 22 Testdateien (vorher 10), 3 E2E-Tests, CI-integriert
+- PWA +3: manifest.json + Service Worker + Offline-Fallback
+- /health Endpoint: vollständig (DB-Ping, Latenz, Version, HTTP 200/503)
+- Library-System: Roles/Skills/Capabilities/Outcomes strukturiert implementiert
+
+**Kritische Findings (sofort beheben):**
+- SSRF: Feed-Fetcher (`url.ts`, `rss.ts`, `api.ts`) ohne Private-IP-Blockierung
+- PII in Log: `onboarding/complete/route.ts` Zeile 140 loggt E-Mail-Adresse
+- Email-Webhook ohne Signaturvalidierung: `/api/feeds/inbound/email/route.ts`
+- Debug-Route in Produktion ohne Auth-Guard: `/api/debug/feeds/route.ts`
+- CSP veraltet: `api.dify.ai` noch drin (Dify abgelöst)
+
+**Strukturelle Defizite (unverändert seit letztem Audit):**
+- Backup & DR: Score 1 — kein DR-Runbook, kein Restore-Test, PITR unverifiziert
+- Supply Chain: Score 1 — kein SBOM
+
+**Neue Dokumente angelegt:**
+- `docs/audit-report-2026-03-19.md` — vollständiger Audit-Report
+- `docs/tech-debt.md` — priorisierte Tech-Debt-Liste
+- `docs/adr/001-supabase-als-auth-und-db.md`
+- `docs/adr/002-conversations-fuer-workspace-chats.md`
+- `docs/adr/003-library-system-rolle-capability-skill.md`
+
+---
+
 ## 2026-03-19 — Library-System Fundament (Prompt 01)
 
 **Was gebaut wurde:**

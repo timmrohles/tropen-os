@@ -221,7 +221,7 @@ VALUES
    'Betreffzeile max. 50 Zeichen. Klarer CTA. Lesernutzen im Intro. Max. 400 Wörter.',
    'text',
    ARRAY['newsletter','mailing','email','kampagne','betreff'],
-   'content_strategist', 'writing', TRUE, 3, 'superadmin')
+   'marketing_expert', 'writing', TRUE, 3, 'superadmin')
 ON CONFLICT DO NOTHING;
 
 COMMIT;

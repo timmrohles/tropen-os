@@ -216,6 +216,7 @@ export interface WorkspaceState {
   activePeriodLabel: string | undefined
   hasActiveFilters: boolean
   contextPercent: number
+  memoryExtracting: boolean
   isMobile: boolean
   navOpen: boolean
   setNavOpen: React.Dispatch<React.SetStateAction<boolean>>

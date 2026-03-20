@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { SquaresFour, Plus, SquaresFour as WsIcon, DotsThree, CopySimple, Trash } from '@phosphor-icons/react'
 
 type Workspace = {
@@ -257,46 +258,46 @@ export default function WorkspacesList({ workspaces: initial }: { workspaces: Wo
             const cardCount = ws.cards?.[0]?.count ?? 0
             const statusLabel = STATUS_LABEL[ws.status] ?? ws.status
             return (
-              <div
-                key={ws.id}
-                className="card"
-                style={{ padding: '16px 18px', cursor: 'pointer', position: 'relative' }}
-                onClick={() => router.push(`/workspaces/${ws.id}`)}
-                role="button"
-                tabIndex={0}
-                aria-label={`Workspace öffnen: ${ws.title}`}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') router.push(`/workspaces/${ws.id}`) }}
-              >
-                {/* Title row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8 }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                    {ws.title}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <div key={ws.id} className="card" style={{ padding: '16px 18px', position: 'relative' }}>
+                {/* Clickable area — Link for proper navigation semantics */}
+                <Link
+                  href={`/workspaces/${ws.id}`}
+                  aria-label={`Workspace öffnen: ${ws.title}`}
+                  style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+                >
+                  {/* Title row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8, paddingRight: 28 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
+                      {ws.title}
+                    </p>
                     <span style={{
-                      fontSize: 10, padding: '2px 8px', borderRadius: 999,
+                      fontSize: 10, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
                       background: ws.status === 'active' ? 'var(--accent)' : 'var(--bg-surface-2)',
-                      color: ws.status === 'active' ? '#fff' : 'var(--text-tertiary)',
+                      color: ws.status === 'active' ? 'white' : 'var(--text-tertiary)',
                       border: `1px solid ${ws.status === 'active' ? 'var(--accent)' : 'var(--border)'}`,
                       fontWeight: 500,
                     }}>
                       {statusLabel}
                     </span>
-                    <CardMenu wsId={ws.id} onDelete={handleDelete} onCopy={handleCopy} />
                   </div>
-                </div>
 
-                {ws.goal && (
-                  <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    {ws.goal}
-                  </p>
-                )}
+                  {ws.goal && (
+                    <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {ws.goal}
+                    </p>
+                  )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
-                  <SquaresFour size={12} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                    {cardCount} {cardCount === 1 ? 'Karte' : 'Karten'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                    <SquaresFour size={12} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      {cardCount} {cardCount === 1 ? 'Karte' : 'Karten'}
+                    </span>
+                  </div>
+                </Link>
+
+                {/* Menu — absolute positioned to avoid nesting inside <a> */}
+                <div style={{ position: 'absolute', top: 12, right: 12 }}>
+                  <CardMenu wsId={ws.id} onDelete={handleDelete} onCopy={handleCopy} />
                 </div>
               </div>
             )

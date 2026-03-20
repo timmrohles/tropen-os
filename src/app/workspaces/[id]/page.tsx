@@ -21,7 +21,15 @@ export default async function WorkspaceCanvasPage({
     .is('deleted_at', null)
     .maybeSingle()
 
-  if (!ws) redirect('/workspaces')
+  // Participant-Check: nur Mitglieder dürfen den Canvas sehen
+  const { data: participant } = await supabaseAdmin
+    .from('workspace_participants')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!ws || !participant) redirect('/workspaces')
 
   const { data: cards } = await supabaseAdmin
     .from('cards')

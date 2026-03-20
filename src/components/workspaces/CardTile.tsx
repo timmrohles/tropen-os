@@ -4,17 +4,17 @@ import { Warning, Tray, ArrowsClockwise, Export as ExportIcon } from '@phosphor-
 import type { CanvasCard } from '@/app/workspaces/[id]/page'
 
 const ROLE_CONFIG = {
-  input:   { label: 'Eingabe',   color: 'var(--accent)',  bg: 'var(--accent-light)', Icon: Tray },
-  process: { label: 'Analyse',   color: '#8B5CF6',        bg: '#EDE9FE',             Icon: ArrowsClockwise },
-  output:  { label: 'Ergebnis',  color: '#F59E0B',        bg: '#FEF3C7',             Icon: ExportIcon },
+  input:   { label: 'Eingabe',   color: 'var(--accent)',          bg: 'var(--accent-light)',    Icon: Tray },
+  process: { label: 'Analyse',   color: 'var(--tropen-process)',  bg: 'var(--tropen-process-bg)', Icon: ArrowsClockwise },
+  output:  { label: 'Ergebnis',  color: 'var(--tropen-output)',   bg: 'var(--tropen-output-bg)',  Icon: ExportIcon },
 } as const
 
 const STATUS_CONFIG = {
   draft:      { label: 'Entwurf',       color: 'var(--text-tertiary)' },
   ready:      { label: 'Bereit',        color: 'var(--accent)'        },
-  stale:      { label: 'Veraltet',      color: '#F59E0B'              },
+  stale:      { label: 'Veraltet',      color: 'var(--warning)'       },
   processing: { label: 'Verarbeitung',  color: 'var(--accent)'        },
-  error:      { label: 'Fehler',        color: '#EF4444'              },
+  error:      { label: 'Fehler',        color: 'var(--error)'         },
 } as const
 
 interface Props {
@@ -87,7 +87,7 @@ export default function CardTile({ card, onClick }: Props) {
 
       {/* Stale warning */}
       {card.status === 'stale' && card.stale_reason && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, fontSize: 11, color: '#F59E0B', marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, fontSize: 11, color: 'var(--warning)', marginTop: 2 }}>
           <Warning size={13} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
           <span style={{ lineHeight: 1.4 }}>{card.stale_reason}</span>
         </div>

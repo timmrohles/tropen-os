@@ -44,6 +44,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     setShowMemoryModal,
     shareModalConvId,
     setShareModalConvId,
+    memoryExtracting,
     isMobile,
     toastMsg,
   } = props
@@ -115,6 +116,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         conversations={conversations}
         shareModalConvId={shareModalConvId}
         onSetShareModalConvId={setShareModalConvId}
+        memoryExtracting={memoryExtracting}
       />
 
       {/* ── Session Panel (Desktop only) ── */}

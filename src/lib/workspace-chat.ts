@@ -25,6 +25,7 @@ export interface ChatActionsCtx {
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   setRouting: React.Dispatch<React.SetStateAction<{ task_type: string; agent: string; model_class: string; model: string } | null>>
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>
+  setMemoryExtracting: React.Dispatch<React.SetStateAction<boolean>>
   newConversation: (initialMessages?: ChatMessage[]) => Promise<string | null>
 }
 
@@ -155,7 +156,16 @@ export function createChatActions(ctx: ChatActionsCtx) {
                   }
                 : m)
             )
+
+            // Fire-and-forget memory extraction (only for project conversations)
             const conv = ctx.conversations.find((c) => c.id === convId)
+            if (convId && conv?.project_id) {
+              ctx.setMemoryExtracting(true)
+              fetch(`/api/conversations/${convId}/extract-memory`, { method: 'POST' })
+                .catch(() => {/* non-blocking */})
+              setTimeout(() => ctx.setMemoryExtracting(false), 3000)
+            }
+
             const isDefaultTitle = conv?.title?.startsWith('Chat · ')
             if (isDefaultTitle) {
               const wordArr = currentInput.trim().split(/\s+/)

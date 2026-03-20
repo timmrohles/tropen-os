@@ -41,6 +41,7 @@ interface ChatAreaProps {
   conversations: Conversation[]
   shareModalConvId: string | null
   onSetShareModalConvId: (id: string | null) => void
+  memoryExtracting?: boolean
 }
 
 export default function ChatArea({
@@ -72,6 +73,7 @@ export default function ChatArea({
   conversations,
   shareModalConvId,
   onSetShareModalConvId,
+  memoryExtracting = false,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
@@ -172,6 +174,14 @@ export default function ChatArea({
               <span>{routing.task_type}</span>
               <span className="carea-routing-dot">·</span>
               <span>🌱</span>
+              {memoryExtracting && (
+                <>
+                  <span className="carea-routing-dot">·</span>
+                  <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>
+                    Gedächtnis wird gespeichert…
+                  </span>
+                </>
+              )}
             </div>
           )}
           <div className="carea-input-wrap">

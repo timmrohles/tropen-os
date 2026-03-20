@@ -96,9 +96,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [mergeProjectDropOpen, setMergeProjectDropOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
-  // Memory modal
+  // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
   const [shareModalConvId, setShareModalConvId] = useState<string | null>(null)
+  const [memoryExtracting, setMemoryExtracting] = useState(false)
   const warnedConvRef = useRef<Set<string>>(new Set())
 
   // Mobile
@@ -295,6 +296,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     activeConvId, activeRoleId, activeCapabilityId, activeOutcomeId,
     input, sending, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
+    setMemoryExtracting,
     newConversation: convActions.newConversation,
   })
 
@@ -368,6 +370,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     toastMsg,
     showMemoryModal, setShowMemoryModal,
     shareModalConvId, setShareModalConvId,
+    memoryExtracting,
     isMobile, navOpen, setNavOpen,
     jungleSummary,
     jungleProjects, setJungleProjects,

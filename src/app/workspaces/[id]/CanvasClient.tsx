@@ -97,7 +97,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
             {cards.length} {cards.length === 1 ? 'Karte' : 'Karten'}
           </span>
           {staleCount > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#F59E0B' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--warning)' }}>
               <Warning size={14} weight="fill" aria-hidden="true" />
               {staleCount} veraltet
             </span>
@@ -187,7 +187,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
                     {saveState === 'saving' ? 'Wird gespeichert…' : 'Speichern'}
                   </button>
                   {saveState === 'saved' && <span style={{ fontSize: 13, color: 'var(--accent)' }}>Gespeichert ✓</span>}
-                  {saveState === 'error' && <span style={{ fontSize: 13, color: '#EF4444' }}>Fehler beim Speichern</span>}
+                  {saveState === 'error' && <span style={{ fontSize: 13, color: 'var(--error)' }}>Fehler beim Speichern</span>}
                 </div>
               </div>
             </div>
@@ -213,8 +213,8 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
 
 const ROLE_OPTIONS = [
   { value: 'input',   label: 'Eingabe',  icon: <Tray size={15} weight="fill" aria-hidden="true" />,            description: 'Rohdaten, Briefings, Dokumente',        color: 'var(--accent)',  bg: 'var(--accent-light)' },
-  { value: 'process', label: 'Analyse',  icon: <ArrowsClockwise size={15} weight="fill" aria-hidden="true" />, description: 'KI verarbeitet, vergleicht, bewertet',   color: '#8B5CF6',        bg: '#EDE9FE'             },
-  { value: 'output',  label: 'Ergebnis', icon: <ExportIcon size={15} weight="fill" aria-hidden="true" />,      description: 'Fertige Outputs und Deliverables',       color: '#F59E0B',        bg: '#FEF3C7'             },
+  { value: 'process', label: 'Analyse',  icon: <ArrowsClockwise size={15} weight="fill" aria-hidden="true" />, description: 'KI verarbeitet, vergleicht, bewertet',   color: 'var(--tropen-process)',  bg: 'var(--tropen-process-bg)' },
+  { value: 'output',  label: 'Ergebnis', icon: <ExportIcon size={15} weight="fill" aria-hidden="true" />,      description: 'Fertige Outputs und Deliverables',       color: 'var(--tropen-output)',   bg: 'var(--tropen-output-bg)'  },
 ] as const
 
 interface ModalProps {
@@ -302,7 +302,7 @@ function CreateCardModal({ workspaceId, onCreated, onClose }: ModalProps) {
             <textarea id="ccm-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Kurze Erklärung…" style={{ ...inp, resize: 'vertical', minHeight: 68 }} />
           </div>
 
-          {error && <p role="alert" style={{ fontSize: 13, color: '#EF4444', marginBottom: 12 }}>{error}</p>}
+          {error && <p role="alert" style={{ fontSize: 13, color: 'var(--error)', marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button type="submit" disabled={isPending} className="btn btn-primary" aria-busy={isPending}>

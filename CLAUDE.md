@@ -505,8 +505,9 @@ Letzte relevante Migrationen:
 | 20260319000054_library_new_tables_fix.sql | Fix: roles_insert policy, idx_roles_name_active, idx_lib_versions_org |
 | 20260319000055_library_cards.sql | cards: role_id UUID + skill_id UUID |
 | 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
+| 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
 
 ### Guided Workflows (Stand 2026-03-17)
 
