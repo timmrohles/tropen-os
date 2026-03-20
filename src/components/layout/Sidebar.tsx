@@ -122,7 +122,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/workspaces', icon: <SquaresFour size={18} aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
     { href: '/feeds', icon: <RssSimple size={18} aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
     { href: '/artifacts', icon: <Archive size={18} aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
-    { href: '/hub', icon: <Compass size={18} aria-hidden="true" />, label: 'Hub', matchPrefix: '/hub' },
+    { href: '/agenten', icon: <Compass size={18} aria-hidden="true" />, label: 'Agenten', matchPrefix: '/agenten' },
     { href: '/knowledge', icon: <Books size={18} aria-hidden="true" />, label: 'Wissen', matchPrefix: '/knowledge' },
   ]
   const memberBottomItems: NavItem[] = [

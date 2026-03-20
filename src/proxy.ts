@@ -139,9 +139,9 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  // /login + /forgot-password: eingeloggte User → /chat
+  // /login + /forgot-password: eingeloggte User → /home
   if (pathname.startsWith('/login') || pathname.startsWith('/forgot-password')) {
-    if (user) return NextResponse.redirect(new URL('/chat', request.url))
+    if (user) return NextResponse.redirect(new URL('/home', request.url))
     return response
   }
 
@@ -184,7 +184,7 @@ export async function proxy(request: NextRequest) {
 
   if (onboardingCookie === '1') {
     if (isOnboarding) {
-      return NextResponse.redirect(new URL('/chat', request.url))
+      return NextResponse.redirect(new URL('/home', request.url))
     }
     return response
   }

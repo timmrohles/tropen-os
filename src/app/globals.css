@@ -40,8 +40,10 @@
   --info-bg:        #D4EDDE;
 
   /* ─── Tropen Theme (dunkle Features) ──────────────── */
-  --tropen-process: #7C6FF7;
-  --tropen-output:  #F7A44A;
+  --tropen-process:     #7C6FF7;
+  --tropen-process-bg:  #EEECFE;
+  --tropen-output:      #F7A44A;
+  --tropen-output-bg:   #FEF3C7;
 
   /* ─── Toggle / UI ─────────────────────────────────── */
   --toggle-off:     #C5C2BC;

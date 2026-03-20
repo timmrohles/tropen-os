@@ -38,18 +38,19 @@ export default function FeatureGrid() {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridAutoRows: '1fr',
       gap: 16, marginBottom: 32,
     }}>
       {FEATURES.map(({ href, Icon, title, description, example }) => (
         <Link
           key={href}
           href={href}
-          style={{ display: 'block', textDecoration: 'none' }}
+          style={{ display: 'flex', textDecoration: 'none' }}
           aria-label={`Zu ${title} navigieren`}
         >
-          <div className="card">
-            <div style={{ padding: '16px 18px' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
               <Icon size={24} weight="fill" color="var(--accent)" aria-hidden="true" />
               <h3 style={{
                 fontSize: 15, fontWeight: 700, color: 'var(--text-primary)',
@@ -60,9 +61,14 @@ export default function FeatureGrid() {
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 8px' }}>
                 {description}
               </p>
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 16px' }}>
                 {example}
               </p>
+              <div style={{ marginTop: 'auto' }}>
+                <span className="btn btn-sm btn-primary" style={{ pointerEvents: 'none' }}>
+                  Öffnen →
+                </span>
+              </div>
             </div>
           </div>
         </Link>

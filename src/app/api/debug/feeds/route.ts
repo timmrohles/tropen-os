@@ -3,8 +3,15 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Debug route must not be loaded in production')
+}
+
 // POST /api/debug/feeds — hard-delete all deleted feed_items so feed-fetch can re-insert them
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   const { error, count } = await supabaseAdmin
     .from('feed_items')
     .delete({ count: 'exact' })
@@ -14,6 +21,9 @@ export async function POST() {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

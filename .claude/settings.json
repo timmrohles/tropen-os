@@ -1,22 +1,12 @@
 {
   "hooks": {
-    "UserPromptSubmit": [
+    "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "echo '⛔ PFLICHT: Hast du das Protokoll in CLAUDE.md gelesen? Schritt 1-8 ausführen bevor du baust.'"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"/c/Users/timmr/tropen OS\" && pnpm typecheck 2>&1 | grep -E 'error TS|Found [0-9]+ error' | head -20 || true"
+            "command": "node -e \"const fs=require('fs'),p='src/components/_DESIGN_REFERENCE.tsx';try{const c=fs.readFileSync(p,'utf8');console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'=== DESIGN REFERENCE (Pflichtlektuere vor jedem UI-Build) ===\\n'+c+'\\n=== ENDE DESIGN REFERENCE ==='}}));}catch(e){console.log('{}');}\"",
+            "statusMessage": "Design Reference laden..."
           }
         ]
       }

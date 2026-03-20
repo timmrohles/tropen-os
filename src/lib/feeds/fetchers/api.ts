@@ -1,6 +1,7 @@
 // src/lib/feeds/fetchers/api.ts
 import type { RawFeedItem, FeedSource } from '@/types/feeds'
 import { createLogger } from '@/lib/logger'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 
 const log = createLogger('feeds:fetchers:api')
 
@@ -32,6 +33,12 @@ export function applyMapping(item: Record<string, unknown>, mapping: Record<stri
 export async function fetchApi(source: FeedSource, mapping?: Record<string, string>): Promise<RawFeedItem[]> {
   const config = source.config as Record<string, unknown>
   if (!source.url) return []
+
+  const { safe, reason } = await isSafeUrl(source.url)
+  if (!safe) {
+    log.warn('[api fetcher] SSRF-Check fehlgeschlagen', { sourceId: source.id, reason })
+    return []
+  }
 
   const headers: Record<string, string> = {
     'Accept': 'application/json',
