@@ -62,6 +62,7 @@ export async function POST(
     .from('project_memory')
     .insert({
       project_id: id,
+      organization_id: me.organization_id,
       type,
       content: (content as string).trim(),
       importance: importance ?? 'medium',

@@ -40,6 +40,18 @@ export async function POST(
       return NextResponse.json({ skipped: true, reason: 'no_project' })
     }
 
+    // Fetch organization_id from the project (required for project_memory INSERT)
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('organization_id')
+      .eq('id', conv.project_id)
+      .maybeSingle()
+
+    if (!project?.organization_id) {
+      log.warn('project has no organization_id, skipping extraction', { projectId: conv.project_id })
+      return NextResponse.json({ skipped: true, reason: 'no_organization' })
+    }
+
     // Load messages (last 30 — enough for meaningful extraction without blowing tokens)
     const { data: msgRows } = await supabaseAdmin
       .from('messages')
@@ -89,6 +101,7 @@ export async function POST(
       await supabaseAdmin.from('project_memory').insert(
         result.memories.map((m) => ({
           project_id: conv.project_id,
+          organization_id: project.organization_id,
           type: m.type,
           content: m.content,
           importance: m.importance,

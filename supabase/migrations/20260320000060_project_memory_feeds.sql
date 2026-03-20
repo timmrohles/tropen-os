@@ -23,3 +23,8 @@ WHERE pm.project_id = p.id AND pm.organization_id IS NULL;
 -- Make organization_id NOT NULL after backfill
 ALTER TABLE public.project_memory
   ALTER COLUMN organization_id SET NOT NULL;
+
+-- Deprecate old 'type' column: remove NOT NULL constraint and set default
+-- memory_type is the canonical field going forward; type kept for backwards compat
+ALTER TABLE public.project_memory ALTER COLUMN type DROP NOT NULL;
+ALTER TABLE public.project_memory ALTER COLUMN type SET DEFAULT 'fact';
