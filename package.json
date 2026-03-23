@@ -24,7 +24,7 @@
     "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
+    "@anthropic-ai/sdk": "^0.80.0",
     "@neondatabase/serverless": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",
     "@sentry/nextjs": "^10.43.0",
