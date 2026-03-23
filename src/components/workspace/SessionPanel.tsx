@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react'
 import ParrotIcon from '@/components/ParrotIcon'
 import type { ChatMessage } from '@/hooks/useWorkspaceState'
+import { AreaChart } from '@tremor/react'
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -49,13 +50,11 @@ const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
   clear: 'Klar', structured: 'Strukturiert', detailed: 'Ausführlich',
 }
 
-/* Graduated severity colors for budget warnings — intentional inline values
-   because these need distinct bg/border/text per level. Uses semantic CSS vars
-   for the text color and derives muted tints for bg/border. */
+// Dot color per warning level — used for the small inline badge indicator
 const WARN_COLORS = {
-  amber:  { bg: 'var(--warning-bg)', border: 'var(--warning)',  color: 'var(--warning)' },
-  orange: { bg: 'var(--warning-bg)', border: 'var(--warning)',  color: 'var(--warning)' },
-  red:    { bg: 'var(--error-bg)',   border: 'var(--error)',    color: 'var(--error)' },
+  amber:  { color: 'var(--warning)' },
+  orange: { color: 'var(--warning)' },
+  red:    { color: 'var(--error)' },
 }
 
 // ─────────────────────────────────────────────────────────
@@ -194,6 +193,11 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     0
   )
 
+  // ── Kosten-Chart ────────────────────────────────────────
+  const costChartData = nonPending
+    .filter(m => m.role === 'assistant' && (m.cost_eur ?? 0) > 0)
+    .map((m, i) => ({ 'Msg': i + 1, '€': m.cost_eur ?? 0 }))
+
   // ── Kosten-Forecast ────────────────────────────────────
 
   const now = new Date()
@@ -278,6 +282,20 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
         <Row label="Kosten Monat" value={monthlyCost !== null && monthlyCost > 0 ? `€${monthlyCost.toFixed(4)}` : '—'} />
         <Row label="Hochrechnung" value={forecastCost !== null && forecastCost > 0 ? `~€${forecastCost.toFixed(2)}` : '—'} />
         <Row label="CO₂ est." value={calcCO2(sessionTokens)} />
+        {costChartData.length >= 2 && (
+          <AreaChart
+            data={costChartData}
+            index="Msg"
+            categories={['€']}
+            colors={['green']}
+            valueFormatter={(v) => `€${v.toFixed(5)}`}
+            showLegend={false}
+            showGridLines={false}
+            showXAxis={false}
+            showYAxis={false}
+            className="h-16 mt-2 -mx-1"
+          />
+        )}
       </div>
 
       {/* ── Sektion: Warnungen ── */}
@@ -286,13 +304,12 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
           <Divider />
           <div className="sp-warnings">
             {warnings.map((w, i) => (
-              <div
-                key={i}
-                className="sp-warning"
-                /* Dynamic colors from warning level – inline required */
-                style={{ background: WARN_COLORS[w.level].bg, border: `1px solid ${WARN_COLORS[w.level].border}`, color: WARN_COLORS[w.level].color }}
-              >
-                {w.level === 'red' ? '🔴' : w.level === 'orange' ? '🟠' : '⚠️'} {w.text}
+              <div key={i} className="sp-warning-badge">
+                <span
+                  className="sp-warning-dot"
+                  style={{ background: WARN_COLORS[w.level].color }}
+                />
+                <span className="sp-warning-text t-dezent">{w.text}</span>
               </div>
             ))}
           </div>

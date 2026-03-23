@@ -3,7 +3,7 @@ import { streamText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
+import { buildWorkspaceContext, buildCardContext, buildContextSnapshot, buildPresentationContext } from '@/lib/context-builder'
 import { resolveWorkflow } from '@/lib/capability-resolver'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
 import { selectModel } from '@/lib/model-selector'
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     content:       string
     capabilityId?: string
     outcomeId?:    string
+    mode?:         'presentation'
   }
 
   try {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { workspaceId, cardId, content, capabilityId, outcomeId } = body
+  const { workspaceId, cardId, content, capabilityId, outcomeId, mode } = body
   const userId = me.id
 
   if (!workspaceId || !content) {
@@ -73,7 +74,9 @@ export async function POST(req: NextRequest) {
     // Build system prompt
     const baseSystemPrompt = cardId
       ? await buildCardContext(cardId)
-      : await buildWorkspaceContext(workspaceId)
+      : mode === 'presentation'
+        ? await buildPresentationContext(workspaceId)
+        : await buildWorkspaceContext(workspaceId)
 
     const systemPrompt = capabilitySystemPrompt
       ? `${capabilitySystemPrompt}\n\n${baseSystemPrompt}`

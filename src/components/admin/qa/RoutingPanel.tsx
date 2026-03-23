@@ -126,7 +126,7 @@ export function RoutingPanel({
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} height={32} />)}
           </div>
         ) : (
-          <BarList data={data?.stats.modelDistribution ?? []} className="mt-2" color="emerald" />
+          <BarList data={data?.stats.modelDistribution ?? []} className="mt-2" color="green" />
         )}
       </SectionCard>
     </div>

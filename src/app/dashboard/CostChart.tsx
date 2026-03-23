@@ -10,7 +10,7 @@ export default function CostChart({ data }: { data: Point[] }) {
       data={data}
       index="Datum"
       categories={['Kosten €']}
-      colors={['emerald']}
+      colors={['green']}
       valueFormatter={(v) => `€${v.toFixed(4)}`}
       showAnimation
       showLegend={false}

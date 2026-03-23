@@ -171,12 +171,30 @@ export const TODOS_FEATURES: Todo[] = [
   },
   {
     id: 'chat-19',
-    titel: 'Multimodalität & Datei-Upload im Chat',
-    beschreibung: 'Bild- und Dokument-Upload direkt im Chat-Eingabefeld.',
-    status: 'geplant',
+    titel: 'Inline PDF/Bild-Upload im Chat (Einmalige Analyse)',
+    beschreibung: 'Gebaut 2026-03-22: Paperclip-Button im ChatInput (📎), hidden file input für JPEG/PNG/GIF/WebP/PDF (max 4 MB). Base64 → attachmentRef → fetch body → Anthropic content block (image oder document). Attachment-Preview mit Name + KB + X-Button. Edge function: callAnthropic baut multi-part content array. Weg 2 (RAG) bereits gebaut, Weg 3 (Files API) für später.',
+    status: 'erledigt',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'mittel',
+    referenz: 'CLAUDE.md Pending Tasks',
+  },
+  {
+    id: 'chat-22',
+    titel: 'Artifact iframe: Auto-Height via ResizeObserver + postMessage',
+    beschreibung: 'Artifact-iFrame zeigt Scrollbar weil Höhe statisch ist. Fix: iFrame postet eigene Höhe via postMessage, Parent-Komponente setzt height dynamisch per ResizeObserver. Kein Scrollbalken mehr sichtbar.',
+    status: 'erledigt',
     kategorie: 'Chat & Workspace',
     prioritaet: 'niedrig',
-    referenz: 'Roadmap V2',
+    referenz: 'CLAUDE.md Pending Tasks',
+  },
+  {
+    id: 'chat-23',
+    titel: 'Session-Panel Warnungen: subtiler als Warn-Boxen',
+    beschreibung: 'Kosten-/Token-Warnungen im SessionPanel sind zu dominant. Umbauen auf kleine inline Badges statt Warn-Boxen. Warnung erst sichtbar wenn Threshold überschritten, dann als dezentes Badge am jeweiligen Wert.',
+    status: 'erledigt',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'niedrig',
+    referenz: 'CLAUDE.md Pending Tasks',
   },
   {
     id: 'chat-20',
@@ -373,10 +391,41 @@ export const TODOS_FEATURES: Todo[] = [
   {
     id: 'ds-05',
     titel: 'Proaktive Hilfe: UI für proactive_hints',
-    beschreibung: 'proactive_hints Boolean in user_preferences (Mig. 023). Settings-UI fehlt noch.',
-    status: 'offen',
+    beschreibung: 'proactive_hints Boolean in user_preferences (Mig. 023). Toggle-UI im SessionPanel vorhanden (💡 Proaktive Hinweise, mit Beschreibung und Persistenz in user_preferences).',
+    status: 'erledigt',
     kategorie: 'Design-System & UX',
     prioritaet: 'niedrig',
     referenz: 'Migration 023',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Präsentations-System — Folge-Tasks (Kern gebaut 2026-03-22)
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'pres-01',
+    titel: 'Präsentation Library-Skills: Pitch, Status-Update, Workshop',
+    beschreibung: '3 Skills ausgearbeitet und in DB geseedet (2026-03-22): pitch-deck (Investoren-Pitch, 9 Slides), status-update (Projekt-Status, 5-6 Slides), workshop-moderation (Workshop/Retro/Brainstorming). output_type=artifact, scope=system, trigger_keywords je ~15 Keywords.',
+    status: 'erledigt',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'mittel',
+    referenz: 'docs/plans/presentation-artifacts.md',
+  },
+  {
+    id: 'pres-02',
+    titel: 'Präsentation Workspace-Integration (buildPresentationContext)',
+    beschreibung: 'buildPresentationContext(workspaceId) in workspace-context.ts: lädt Workspace + Karten + Projekt-Gedächtnis (via department_id → projects → project_memory). Stream-Route: optionaler mode="presentation" aktiviert den Context. Exportiert aus context-builder.ts.',
+    status: 'erledigt',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'mittel',
+    referenz: 'docs/plans/presentation-artifacts.md',
+  },
+  {
+    id: 'pres-03',
+    titel: 'PowerPoint-Export via pptxgenjs',
+    beschreibung: 'Gebaut 2026-03-22: POST /api/artifacts/export-pptx — parst Reveal.js-HTML (h1, h2, ul/li), erstellt .pptx via pptxgenjs. Tropen-OS-Design (dunkelgrüne Titelfolie, grüne Header-Bar). PPTX-Button im ArtifactRenderer für Präsentations-Artifacts. pptxgenjs installiert.',
+    status: 'erledigt',
+    kategorie: 'Chat & Workspace',
+    prioritaet: 'niedrig',
+    referenz: 'docs/plans/presentation-artifacts.md',
   },
 ]
