@@ -72,7 +72,7 @@
     "dependency-cruiser": "^16.10.4",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.1.6",
+    "eslint-config-next": "^16.2.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-boundaries": "^5.4.0",
     "eslint-plugin-prettier": "^5.5.5",
