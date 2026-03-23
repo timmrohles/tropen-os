@@ -40,7 +40,7 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
     "franc-min": "^6.2.0",
-    "langsmith": "^0.5.10",
+    "langsmith": "^0.5.12",
     "next": "^16.1.6",
     "openai": "^6.29.0",
     "pg": "^8.20.0",
