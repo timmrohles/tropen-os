@@ -993,6 +993,198 @@ body {
   color: rgba(255, 255, 255, 0.45);
 }
 
+/* ── Settings Page ──────────────────────────────────────────────────────── */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 24px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: background 120ms, color 120ms;
+  width: 100%;
+}
+
+.settings-nav-item:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.settings-nav-item--active {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.settings-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.settings-input,
+.settings-select,
+.settings-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 120ms;
+}
+
+.settings-input:focus,
+.settings-select:focus,
+.settings-textarea:focus {
+  border-color: var(--accent);
+}
+
+.settings-input--readonly {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.settings-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* Connections */
+.connections-group {
+  margin-bottom: 20px;
+}
+
+.connections-group:last-child {
+  margin-bottom: 0;
+}
+
+.connections-group-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.connection-item:last-child {
+  border-bottom: none;
+}
+
+.connection-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.connection-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.connection-status-text {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Doc mini-list in settings */
+.settings-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-doc-row:last-child {
+  border-bottom: none;
+}
+
+.settings-doc-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-doc-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+    gap: 4px;
+  }
+  .settings-nav-item {
+    width: auto;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    WorkspaceLayout
    ───────────────────────────────────────────────────────────────────────── */
