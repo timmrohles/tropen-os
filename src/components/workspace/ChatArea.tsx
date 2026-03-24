@@ -2,19 +2,20 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
-import type { ChipItem } from '@/lib/workspace-types'
+import type { ChipItem, AttachmentData, GuidedAction } from '@/lib/workspace-types'
 import EmptyState from './EmptyState'
 import IntentionGate from './IntentionGate'
 import FocusedFlow from './FocusedFlow'
-import QuickChips from './QuickChips'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
 import ContextBar from './ContextBar'
+import ChatContextStrip from './ChatContextStrip'
 import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 import MemorySaveModal from './MemorySaveModal'
 import ShareModal from './ShareModal'
+import PerspectivesBar from './PerspectivesBar'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -31,9 +32,12 @@ interface ChatAreaProps {
   onNewConversation: () => void
   onSetInput: (v: string) => void
   onSendMessage: (e: React.FormEvent) => void
+  onSendDirect: (text: string) => void
+  onRegenerate: () => void
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
   contextPercent: number
   activeConvProjectId: string | null
+  onRefreshMessages: () => void
   showMemoryModal: boolean
   onSetShowMemoryModal: (v: boolean) => void
   conversations: Conversation[]
@@ -42,10 +46,14 @@ interface ChatAreaProps {
   memoryExtracting?: boolean
   chips: ChipItem[]
   setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
+  attachmentRef: React.MutableRefObject<AttachmentData | null>
   pendingIntention: 'focused' | 'open' | null
   onSetPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'open' | null>>
   pendingCurrentProjectId: string | null
   onSetPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
+  onGuidedAction: (action: GuidedAction) => void
+  isInSplitView?: boolean
+  isSearching?: boolean
 }
 
 export default function ChatArea({
@@ -63,9 +71,12 @@ export default function ChatArea({
   onNewConversation,
   onSetInput,
   onSendMessage,
+  onSendDirect,
+  onRegenerate,
   onAssignToProject: _onAssignToProject,
   contextPercent,
   activeConvProjectId,
+  onRefreshMessages,
   showMemoryModal,
   onSetShowMemoryModal,
   conversations,
@@ -74,21 +85,38 @@ export default function ChatArea({
   memoryExtracting = false,
   chips,
   setChips: _setChips,
+  attachmentRef,
   pendingIntention,
   onSetPendingIntention,
   pendingCurrentProjectId,
   onSetPendingCurrentProjectId,
+  onGuidedAction,
+  isInSplitView = false,
+  isSearching = false,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false)
+  const [perspectivesMessageId, setPerspectivesMessageId] = useState<string | null>(null)
   const headerRef = useRef<ChatHeaderStripHandle>(null)
+
+  // Derive focused-mode context from the active conversation
+  const activeConv = conversations.find(c => c.id === activeConvId) ?? null
+  const isFocused = activeConv?.intention === 'focused' && !!activeConv.current_project_id
+  const focusedProject = isFocused
+    ? projects.find(p => p.id === activeConv!.current_project_id) ?? null
+    : null
 
   // IntentionGate: lokale Auswahl — wird bei jedem Wechsel zu activeConvId=null zurückgesetzt
   const [intentionChoice, setIntentionChoice] = useState<'focused' | 'open' | null>(null)
   useEffect(() => {
     if (!activeConvId) setIntentionChoice(null)
   }, [activeConvId])
+
+  // Perspectives-Strip schließen wenn gesendet wird
+  useEffect(() => {
+    if (sending) setPerspectivesMessageId(null)
+  }, [sending])
 
   const fetchBookmarks = useCallback(async (convId: string) => {
     try {
@@ -132,6 +160,14 @@ export default function ChatArea({
             onOpenBookmarks={() => setBookmarksDrawerOpen(true)}
             onOpenSearch={() => setSearchDrawerOpen(true)}
           />
+          {isFocused && focusedProject && (
+            <ChatContextStrip
+              projectName={focusedProject.title}
+              workspaceId={workspaceId}
+              driftDetected={activeConv?.drift_detected}
+            />
+          )}
+
           {activeConvId && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <ContextBar percent={contextPercent} />
@@ -159,31 +195,41 @@ export default function ChatArea({
           )}
 
           <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log">
-            {messages.map((msg, i) => (
-              <ChatMessage
-                key={msg.id ?? i}
-                msg={msg}
-                userInitial={userInitial}
-                conversationId={activeConvId}
-                organizationId={organizationId}
-                bookmarkedIds={bookmarkedIds}
-                onBookmarkChange={handleBookmarkChange}
-                onArtifactSaved={handleArtifactSaved}
-              />
-            ))}
+            {messages.map((msg, i) => {
+              const isLast = i === messages.length - 1
+              const isLastAssistant = isLast && msg.role === 'assistant'
+              return (
+                <ChatMessage
+                  key={msg.id ?? i}
+                  msg={msg}
+                  userInitial={userInitial}
+                  conversationId={activeConvId}
+                  organizationId={organizationId}
+                  bookmarkedIds={bookmarkedIds}
+                  onBookmarkChange={handleBookmarkChange}
+                  onArtifactSaved={handleArtifactSaved}
+                  onSendDirect={onSendDirect}
+                  isLastMessage={isLast}
+                  isLastAssistantMessage={isLastAssistant}
+                  isStreaming={sending}
+                  chips={isLast ? chips : []}
+                  onRegenerate={onRegenerate}
+                  onPerspectives={(id) => setPerspectivesMessageId(id)}
+                  onGuidedAction={onGuidedAction}
+                  isInSplitView={isInSplitView}
+                />
+              )
+            })}
             {error && <div className="carea-error">{error}</div>}
             <div ref={messagesEndRef} />
           </div>
 
-          <QuickChips
-            chips={[...chips, { label: 'Prompt verfeinern', prompt: 'Hilf mir, meinen nächsten Prompt zu formulieren.' }]}
-            onSelect={(prompt) => {
-              onSetInput(prompt)
-              onSendMessage({ preventDefault: () => {} } as React.FormEvent)
-            }}
-            disabled={sending}
-          />
-
+          {isSearching && !routing && (
+            <div className="carea-routing-meta carea-routing-meta--searching">
+              <span className="carea-searching-dot" aria-hidden="true" />
+              <span style={{ fontStyle: 'italic' }}>Suche im Web…</span>
+            </div>
+          )}
           {routing && (
             <div className="carea-routing-meta">
               <span>{routing.model}</span>
@@ -203,13 +249,26 @@ export default function ChatArea({
               )}
             </div>
           )}
+          {perspectivesMessageId && activeConvId && (
+            <PerspectivesBar
+              conversationId={activeConvId}
+              onRefreshMessages={onRefreshMessages}
+              onClose={() => setPerspectivesMessageId(null)}
+            />
+          )}
+
           <div className="carea-input-wrap">
             <ChatInput
               input={input}
               setInput={onSetInput}
               sending={sending}
               onSubmit={onSendMessage}
+              attachmentRef={attachmentRef}
             />
+            <p className="chat-ai-disclaimer">
+              Toros Antworten sind KI-generiert und können Fehler enthalten.
+              Prüfe wichtige Informationen immer selbst.
+            </p>
           </div>
 
           <BookmarksDrawer
@@ -260,7 +319,28 @@ export default function ChatArea({
           onSetPendingCurrentProjectId={onSetPendingCurrentProjectId}
         />
       ) : (
-        <IntentionGate onSelect={setIntentionChoice} />
+        <>
+          <IntentionGate
+            onSelect={setIntentionChoice}
+            onSkip={() => setIntentionChoice('open')}
+          />
+          <div className="carea-input-wrap">
+            <ChatInput
+              input={input}
+              setInput={(v) => {
+                onSetInput(v)
+                if (v) setIntentionChoice('open')
+              }}
+              sending={sending}
+              onSubmit={onSendMessage}
+              attachmentRef={attachmentRef}
+            />
+            <p className="chat-ai-disclaimer">
+              Toros Antworten sind KI-generiert und können Fehler enthalten.
+              Prüfe wichtige Informationen immer selbst.
+            </p>
+          </div>
+        </>
       )}
     </div>
   )

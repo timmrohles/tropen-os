@@ -16,19 +16,20 @@ export default async function WorkspacesPage() {
   const ids = (participantRows ?? []).map((r: { workspace_id: string }) => r.workspace_id)
 
   type WsRow = {
-    id:         string
-    title:      string
-    goal:       string | null
-    status:     string
-    created_at: string
-    cards:      { count: number }[]
+    id:          string
+    title:       string
+    goal:        string | null
+    status:      string
+    created_at:  string
+    project_id:  string | null
+    cards:       { count: number }[]
   }
 
   let workspaces: WsRow[] = []
   if (ids.length > 0) {
     const { data } = await supabaseAdmin
       .from('workspaces')
-      .select('id, title, goal, status, created_at, cards(count)')
+      .select('id, title, goal, status, created_at, project_id, cards(count)')
       .in('id', ids)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -36,5 +37,22 @@ export default async function WorkspacesPage() {
     workspaces = (data ?? []) as WsRow[]
   }
 
-  return <WorkspacesList workspaces={workspaces} />
+  // For workspaces linked to a project, fetch how many cards are 'ready' (=done)
+  const projectLinkedIds = workspaces.filter(w => w.project_id).map(w => w.id)
+  const doneCounts: Record<string, number> = {}
+
+  if (projectLinkedIds.length > 0) {
+    const { data: readyCards } = await supabaseAdmin
+      .from('cards')
+      .select('workspace_id')
+      .in('workspace_id', projectLinkedIds)
+      .eq('status', 'ready')
+      .is('deleted_at', null)
+
+    for (const row of readyCards ?? []) {
+      doneCounts[row.workspace_id] = (doneCounts[row.workspace_id] ?? 0) + 1
+    }
+  }
+
+  return <WorkspacesList workspaces={workspaces} doneCounts={doneCounts} />
 }

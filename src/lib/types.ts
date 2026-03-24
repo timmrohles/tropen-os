@@ -5,7 +5,7 @@ export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'
 export type DepartmentRole = 'admin' | 'member' | 'viewer'
 /** @deprecated use DepartmentRole */
 export type WorkspaceRole = DepartmentRole
-export type MessageRole = 'user' | 'assistant'
+export type MessageRole = 'user' | 'assistant' | 'guided_picker' | 'guided_step' | 'guided_summary'
 export type Provider = 'openai' | 'anthropic' | 'mistral' | 'google'
 export type ModelClass = 'fast' | 'deep' | 'safe'
 export type TaskType = 'chat' | 'summarize' | 'extract' | 'research' | 'create'

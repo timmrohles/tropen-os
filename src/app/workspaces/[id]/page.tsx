@@ -33,7 +33,7 @@ export default async function WorkspaceCanvasPage({
 
   const { data: cards } = await supabaseAdmin
     .from('cards')
-    .select('id, title, description, role, type, status, stale_reason, sources, sort_order, content, capability_id, outcome_id, created_at, updated_at')
+    .select('id, title, description, role, type, status, stale_reason, sources, sort_order, content, capability_id, outcome_id, source, source_conversation_id, created_at, updated_at')
     .eq('workspace_id', workspaceId)
     .is('deleted_at', null)
     .order('sort_order', { ascending: true })
@@ -67,6 +67,8 @@ export type CanvasCard = {
   content: unknown | null
   capability_id: string | null
   outcome_id: string | null
+  source: 'manual' | 'chat_artifact' | null
+  source_conversation_id: string | null
   created_at: string
   updated_at: string
 }

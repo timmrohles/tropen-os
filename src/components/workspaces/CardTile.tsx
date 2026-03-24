@@ -1,6 +1,6 @@
 'use client'
 
-import { Warning, Tray, ArrowsClockwise, Export as ExportIcon } from '@phosphor-icons/react'
+import { Warning, Tray, ArrowsClockwise, Export as ExportIcon, ChatCircle } from '@phosphor-icons/react'
 import type { CanvasCard } from '@/app/workspaces/[id]/page'
 
 const ROLE_CONFIG = {
@@ -97,6 +97,14 @@ export default function CardTile({ card, onClick }: Props) {
       {Array.isArray(card.sources) && card.sources.length > 0 && (
         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
           {card.sources.length} {card.sources.length === 1 ? 'Quelle' : 'Quellen'}
+        </div>
+      )}
+
+      {/* Chat artifact badge */}
+      {card.source === 'chat_artifact' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+          <ChatCircle size={11} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Aus Chat</span>
         </div>
       )}
     </button>

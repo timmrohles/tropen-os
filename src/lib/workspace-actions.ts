@@ -51,7 +51,7 @@ export function createConversationActions(ctx: ConversationActionsCtx) {
     const tempId = `temp-${now}`
     const optimistic: Conversation = {
       id: tempId, title: defaultConvTitle(), created_at: now, task_type: null, project_id: null, agent_id: null, deleted_at: null,
-      intention: ctx.pendingIntention ?? 'open', current_project_id: ctx.pendingCurrentProjectId ?? null,
+      intention: ctx.pendingIntention ?? 'open', current_project_id: ctx.pendingCurrentProjectId ?? null, drift_detected: null,
     }
     ctx.setConversations((prev) => [optimistic, ...prev])
     ctx.setActiveConvId(tempId)

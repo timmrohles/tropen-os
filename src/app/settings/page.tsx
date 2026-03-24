@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import {
-  User, Brain, Sparkle, Plugs, Buildings,
-  Sliders, ShieldCheck, GearSix,
-} from '@phosphor-icons/react'
+import { GearSix } from '@phosphor-icons/react'
 import { ProfileSection } from './_components/ProfileSection'
 import { KIContextSection } from './_components/KIContextSection'
 import { SkillsSection } from './_components/SkillsSection'
@@ -26,13 +23,13 @@ type SettingsTab =
   | 'organization'
 
 const TABS = [
-  { id: 'profile' as const,      label: 'Profil',          Icon: User },
-  { id: 'ki-context' as const,   label: 'Mein KI-Kontext', Icon: Brain },
-  { id: 'skills' as const,       label: 'Meine Skills',    Icon: Sparkle },
-  { id: 'connections' as const,  label: 'Verbindungen',    Icon: Plugs },
-  { id: 'from-org' as const,     label: 'Von meiner Org',  Icon: Buildings },
-  { id: 'preferences' as const,  label: 'Präferenzen',     Icon: Sliders },
-  { id: 'security' as const,     label: 'Sicherheit',      Icon: ShieldCheck },
+  { id: 'profile' as const,      label: 'Profil' },
+  { id: 'ki-context' as const,   label: 'Mein KI-Kontext' },
+  { id: 'skills' as const,       label: 'Meine Skills' },
+  { id: 'connections' as const,  label: 'Verbindungen' },
+  { id: 'from-org' as const,     label: 'Von meiner Org' },
+  { id: 'preferences' as const,  label: 'Präferenzen' },
+  { id: 'security' as const,     label: 'Sicherheit' },
 ]
 
 export default function SettingsPage() {
@@ -59,7 +56,7 @@ export default function SettingsPage() {
 
   const visibleTabs = [
     ...TABS,
-    ...(isAdmin ? [{ id: 'organization' as const, label: 'Organisation', Icon: GearSix }] : []),
+    ...(isAdmin ? [{ id: 'organization' as const, label: 'Organisation' }] : []),
   ]
 
   return (
@@ -75,7 +72,7 @@ export default function SettingsPage() {
 
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Einstellungs-Bereiche">
-          {visibleTabs.map(({ id, label, Icon }) => (
+          {visibleTabs.map(({ id, label }) => (
             <button
               key={id}
               className={`settings-nav-item${activeTab === id ? ' settings-nav-item--active' : ''}`}
@@ -85,7 +82,6 @@ export default function SettingsPage() {
               }}
               aria-current={activeTab === id ? 'page' : undefined}
             >
-              <Icon size={16} weight="bold" aria-hidden="true" />
               {label}
             </button>
           ))}

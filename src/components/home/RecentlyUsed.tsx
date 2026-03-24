@@ -36,7 +36,7 @@ export default function RecentlyUsed({ chats, workspaces }: Props) {
             className="btn btn-ghost"
             onClick={() => router.push(`/chat/${c.id}`)}
             style={{ fontSize: 13 }}
-            aria-label={`Chat: ${c.title || 'Unbenannt'}, ${formatRelativeTime(c.updated_at)}`}
+            suppressHydrationWarning
           >
             {c.title || 'Chat'} · {formatRelativeTime(c.updated_at)}
           </button>
@@ -47,7 +47,7 @@ export default function RecentlyUsed({ chats, workspaces }: Props) {
             className="btn btn-ghost"
             onClick={() => router.push(`/workspaces/${w.id}`)}
             style={{ fontSize: 13 }}
-            aria-label={`Workspace: ${w.title}, ${formatRelativeTime(w.updated_at)}`}
+            suppressHydrationWarning
           >
             {w.title} · {formatRelativeTime(w.updated_at)}
           </button>

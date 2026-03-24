@@ -95,6 +95,12 @@ Wenn du Daten visualisieren möchtest (Zeitreihen, Vergleiche, Verteilungen, Tre
 </artifact>
 Typen: bar, line, pie (data: [{name,value}]), scatter (data: [[x,y]]). Keine Farben setzen — werden automatisch auf Tropen-Grün gesetzt. Nur bei >= 3 Datenpunkten.
 
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Erstellungs-Anfragen ohne ausreichend Details ("erstelle", "mach", "generier", "schreib") — EINE kurze Klärungsfrage stellen, dann warten. Erst wenn klar ist was gewünscht wird, bauen. Niemals raten und sofort bauen.
+- DIREKT STARTEN wenn Thema, Inhalt und Zweck bereits klar sind — auch aus dem Gesprächskontext heraus.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten. Gespräch, nicht Intake-Formular.
+
 Antworte präzise und auf Deutsch. Beziehe dich auf konkrete Karten wenn du Empfehlungen gibst.`
 }
 
@@ -164,6 +170,12 @@ ${upstreamSummary}
 
 Letzte 5 Änderungen:
 ${historySummary}
+
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Erstellungs-Anfragen ohne ausreichend Details — EINE kurze Klärungsfrage stellen, dann warten. Erst wenn klar ist was gewünscht wird, bauen.
+- DIREKT STARTEN wenn Typ, Inhalt und Zweck bereits klar sind.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten. Gespräch, nicht Intake-Formular.
 
 Hilf dem User dabei, den Inhalt dieser Karte zu verbessern oder zu generieren. Antworte auf Deutsch.`
 }
@@ -280,7 +292,13 @@ Regeln:
 - Letzte Slide: CTA oder Zusammenfassung
 - Nur Tropen-OS-Farben verwenden (#1A1714, #2D7A50, #EAE9E5)
 - Beziehe dich konkret auf die Karten und Projekt-Erkenntnisse oben
-- Antworte auf Deutsch`
+- Antworte auf Deutsch
+
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Präsentations-Anfragen ohne ausreichend Details — EINE kurze Klärungsfrage stellen (z.B. "Für welche Zielgruppe?" oder "Wie viele Slides?"), dann warten.
+- DIREKT STARTEN wenn Thema, Zielgruppe und Zweck bereits klar sind.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten.`
 }
 
 // ---------------------------------------------------------------------------

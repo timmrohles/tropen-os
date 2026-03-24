@@ -268,7 +268,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Bottom: collapse toggle + account link */}
+      {/* Bottom: new chat + account + collapse */}
       <div style={{
         flexShrink: 0,
         borderTop: '1px solid var(--sidebar-border)',
@@ -277,6 +277,36 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         flexDirection: 'column',
         gap: 2,
       }}>
+        {/* Neuer Chat */}
+        {showMemberNav && (
+          <Link
+            href="/chat"
+            aria-label={collapsed ? 'Neuer Chat' : undefined}
+            title={collapsed ? 'Neuer Chat' : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'center',
+              gap: 8,
+              height: 36,
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--accent)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: 'none',
+              marginBottom: 4,
+              flexShrink: 0,
+              transition: 'background var(--t-fast)',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--accent-dark, #225f3e)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--accent)' }}
+          >
+            {!collapsed && <span>+ Neuer Chat</span>}
+            {collapsed && <span style={{ fontSize: 16 }}>+</span>}
+          </Link>
+        )}
+
         {/* Account link */}
         <Link
           href="/settings"

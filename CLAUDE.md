@@ -217,6 +217,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | Sentry | @sentry/nextjs ^10 | Server + Client + Edge |
 | Upstash Redis | @upstash/ratelimit | Rate Limiting in `src/proxy.ts` |
 | pnpm | — | Package Manager |
+| pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
 
 ### DB-Zugriff — kritische Constraint
 
@@ -241,6 +242,17 @@ Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
 Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
+
+### Chart-Bibliotheken (ADR-005)
+
+| Kontext | Bibliothek | Warum |
+|---------|-----------|-------|
+| App-UI Charts (Dashboard, KPIs, Analytics) | `@tremor/react` v4 | React 19 nativ, Tailwind, kein Design-Aufwand |
+| Artifact-Charts (Toro generiert on-demand) | `echarts` via CDN im iFrame | JSON-Konfiguration für Toro, 50+ Chart-Typen, kein pnpm-Package in App |
+| Präsentations-Artifacts | Reveal.js via CDN im iFrame | Toro generiert HTML/Slides, kein pnpm-Package in App |
+
+**Regel:** Chart fester UI-Bestandteil → Tremor. Chart von Toro generiert → ECharts (CDN). Präsentation von Toro → Reveal.js (CDN). Recharts direkt → nicht mehr neu verwenden.
+Installiert: `@tremor/react@4.0.0-beta-tremor-v4.4` (React 19 nativ), `echarts@^6` (für mögliche direkte Nutzung).
 
 ### Dify — abgelöst (✅ 2026-03-17)
 
@@ -476,7 +488,13 @@ cd "/c/Users/timmr/tropen OS" && supabase db push
 
 # Migration bereits manuell angewendet?
 supabase migration repair --status applied <nummer> → dann db push
+
+# Edge Function deployen (nach Änderungen an supabase/functions/ai-chat/index.ts)
+supabase functions deploy ai-chat
 ```
+
+**WICHTIG: Edge Function muss nach jeder Änderung an `supabase/functions/ai-chat/index.ts` manuell deployed werden!**
+Letzter Deploy: 2026-03-24 (Web Search + SPARK-Regeln: web_search_enabled, callAnthropic +tools/beta, streamAnthropic emittiert searching-Event + sources; buildSystemPrompt Regel 2+3 mit konkreten Beispielen + Direkt-Start-Triggern erweitert)
 
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
@@ -512,6 +530,12 @@ Letzte relevante Migrationen:
 | 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
 | 20260320000060_project_memory_feeds.sql | project_memory: organization_id, memory_type, source_url, metadata; DROP NOT NULL on type |
 | 20260320000061_chat_prompt_builder.sql | conversations: 'prompt_builder' added to conversation_type CHECK |
+| 20260320000062_intention_system.sql | conversations: intention, current_project_id, drift_detected, focus_since_message; focus_log (APPEND ONLY) |
+| 20260320000063_artifacts_react_type.sql | artifacts: type CHECK erweitert um 'react', 'data', 'image', 'other' |
+| 20260320000064_workspace_cards_extend.sql | workspaces: project_id UUID FK; cards: source ('manual'/'chat_artifact'), source_conversation_id UUID FK |
+| 20260322000065_perspectives.sql | perspective_avatars (scope/org/user/system, is_tabula_rasa, RLS), perspective_user_settings (pin/sort), 5 System-Avatare geseedet |
+| 20260324000066_user_prefs_link_previews.sql | user_preferences: link_previews BOOLEAN DEFAULT true |
+| 20260324000067_user_prefs_web_search.sql | user_preferences: web_search_enabled BOOLEAN DEFAULT false |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
 
@@ -538,7 +562,29 @@ Letzte relevante Migrationen:
 Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
 → **`docs/product/feature-registry.md`**
 
-Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1).
+Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
+
+### Perspectives — Parallele KI-Perspektiven (Stand 2026-03-23)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/migrations/20260322000065_perspectives.sql` | perspective_avatars + perspective_user_settings, RLS, 5 System-Seeds |
+| `src/app/api/perspectives/avatars/route.ts` | GET (mit pin-settings) + POST (user/org-scope) |
+| `src/app/api/perspectives/avatars/[id]/route.ts` | PATCH + DELETE (soft) — nur eigene user-scoped Avatare |
+| `src/app/api/perspectives/avatars/[id]/copy/route.ts` | POST — kopiert als scope='user' |
+| `src/app/api/perspectives/settings/route.ts` | GET + PATCH — pin/sort pro User |
+| `src/app/api/perspectives/query/route.ts` | POST — paralleles SSE-Streaming (Promise.all), Tabula-Rasa-Guard |
+| `src/app/api/perspectives/post-to-chat/route.ts` | POST — Perspectives-Antwort als assistant-Nachricht einfügen |
+| `src/components/workspace/PerspectivesStrip.tsx` | Strip über ChatInput: Avatar-Pills, Info-Popover, Befragen-Button |
+| `src/components/workspace/PerspectivesBottomSheet.tsx` | Bottom-Sheet: SSE-Stream, Kopieren, In-Chat-Posten, 60vh/92vh |
+| `src/app/perspectives/page.tsx` | Verwaltungsseite: Tabs System/Org/Meine, Avatar-Grid, CRUD |
+| `src/app/perspectives/_components/AvatarFormDrawer.tsx` | Drawer für eigene Avatare erstellen/bearbeiten |
+
+**Perspectives-Regeln:**
+- `is_tabula_rasa=true` → Avatar bekommt **nur den letzten User-Turn** (kein Projektkontext) — server-seitig erzwungen
+- SSE-Events: `{ avatarId, delta }` pro Chunk · `{ avatarId, done, tokensUsed }` pro Avatar · `{ done: true }` am Ende
+- Budget-Check via `check_and_reserve_budget` RPC vor jedem Query
+- Scope-Hierarchie: system → org → user; system-Avatare sind read-only + nicht löschbar
 
 **Kurzreferenz für häufig benötigte Regeln:**
 - Guided Workflows: `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
@@ -610,6 +656,24 @@ Konsequenz: Plan F (Workspaces) und Plan J (Feeds/Agenten) erst deployen wenn di
 
 ---
 
+## Pending UI/Chat Tasks (nicht in phase2-plans.md)
+
+Kleine Verbesserungen, die beim Testen aufgefallen sind — noch kein eigener Plan.
+Details: `memory/project_pending_ui_tasks.md`
+
+| Task | Status | Notiz |
+|------|--------|-------|
+| Markdown-Rendering im Chat | ✅ bereits vorhanden | `react-markdown` + `remarkGfm` in `ChatMessage.tsx` — war fälschlich als offen notiert |
+| Artifact iframe-Höhe | ✅ gebaut | ResizeObserver + postMessage `iframe-resize` in `ArtifactRenderer.tsx`, max 800px (2026-03-23) |
+| Session-Panel Warnungen | ✅ gebaut | 5px-Dot + 11px-Text statt Warn-Boxen — `.sp-warning-badge` in `globals.css` (2026-03-23) |
+| Voice-to-Text | ✅ gebaut | Web Speech API, Mic-Button im ChatInput (2026-03-20) — Hydration-Fix: `hasSpeech` via `useEffect` (2026-03-23) |
+| Dokument-Upload im Chat | ✅ gebaut | PDF/Bild Base64 via `attachmentRef` → Anthropic `document`/`image` content block (2026-03-23) |
+| PowerPoint-Export | ✅ gebaut | `pptxgenjs`, `/api/artifacts/export-pptx`, Button in `ArtifactRenderer.tsx` für Präsentations-Artifacts (2026-03-23) |
+| Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
+| React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
+
+---
+
 ## Vor jedem Commit
 
 ```bash
@@ -635,7 +699,7 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/adr/*.md` | Architecture Decision Records (aktuell ADR-001 bis ADR-004) |
+| `docs/adr/*.md` | Architecture Decision Records (aktuell ADR-001 bis ADR-005) |
 | `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |

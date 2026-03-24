@@ -1,9 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import ChatArea from './ChatArea'
 import SessionPanel from './SessionPanel'
-import type { WorkspaceState } from '@/hooks/useWorkspaceState'
+import SplitArtifactPanel from './SplitArtifactPanel'
+import { createClient } from '@/utils/supabase/client'
+import type { WorkspaceState, ChatMessage } from '@/hooks/useWorkspaceState'
+import { parseArtifacts } from '@/lib/chat/parse-artifacts'
+import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
 
 // ─────────────────────────────────────────────────────────
 // Props
@@ -28,6 +32,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     routing,
     newConversation,
     sendMessage,
+    sendDirect,
     userInitial,
     projects,
     organizationId,
@@ -41,15 +46,75 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     memoryExtracting,
     chips,
     setChips,
+    attachmentRef,
     isMobile,
     toastMsg,
     pendingIntention,
     setPendingIntention,
     pendingCurrentProjectId,
     setPendingCurrentProjectId,
+    setMessages,
+    regenerate,
+    handleGuidedAction,
+    isSearching,
   } = props
 
   const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
+
+  const onRefreshMessages = useCallback(async () => {
+    if (!activeConvId) return
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('messages')
+      .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
+      .eq('conversation_id', activeConvId)
+      .order('created_at')
+    if (data) setMessages(data as ChatMessage[])
+  }, [activeConvId, setMessages])
+
+  // ── Split-screen artifact panel ────────────────────────
+  const [splitDismissedKey, setSplitDismissedKey] = React.useState<string | null>(null)
+  const [splitWidth, setSplitWidth] = React.useState(480)
+  const splitWidthRef = React.useRef(splitWidth)
+  React.useEffect(() => { splitWidthRef.current = splitWidth }, [splitWidth])
+  React.useEffect(() => { setSplitDismissedKey(null) }, [activeConvId])
+  React.useEffect(() => {
+    const stored = localStorage.getItem('split-width')
+    if (stored) setSplitWidth(parseInt(stored))
+  }, [])
+
+  const splitArtifact = React.useMemo((): ArtifactSegment | null => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant')
+    if (!lastAssistant) return null
+    const segments = parseArtifacts(lastAssistant.content)
+    const artifacts = segments.filter(s => s.segType === 'artifact') as ArtifactSegment[]
+    return artifacts.length > 0 ? artifacts[artifacts.length - 1] : null
+  }, [messages])
+
+  const splitArtifactKey = splitArtifact
+    ? `${splitArtifact.name}::${splitArtifact.content.slice(0, 80)}`
+    : null
+  const splitActive = !!splitArtifact && splitArtifactKey !== splitDismissedKey
+
+  function startSplitResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = splitWidthRef.current
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const onMove = (ev: MouseEvent) => {
+      setSplitWidth(Math.max(300, Math.min(900, startW - (ev.clientX - startX))))
+    }
+    const onUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      localStorage.setItem('split-width', String(splitWidthRef.current))
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
 
   // ── Right panel resize ─────────────────────────────────
   const [rightWidth, setRightWidth] = React.useState(340)
@@ -102,9 +167,14 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onNewConversation={newConversation}
         onSetInput={(v) => setInput(v)}
         onSendMessage={sendMessage}
+        onSendDirect={sendDirect}
+        onRegenerate={regenerate}
+        onGuidedAction={handleGuidedAction}
+        isInSplitView={splitActive}
         onAssignToProject={assignToProject}
         contextPercent={contextPercent}
         activeConvProjectId={activeConvProjectId}
+        onRefreshMessages={onRefreshMessages}
         showMemoryModal={showMemoryModal}
         onSetShowMemoryModal={setShowMemoryModal}
         conversations={conversations}
@@ -113,11 +183,29 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         memoryExtracting={memoryExtracting}
         chips={chips}
         setChips={setChips}
+        attachmentRef={attachmentRef}
         pendingIntention={pendingIntention}
         onSetPendingIntention={setPendingIntention}
         pendingCurrentProjectId={pendingCurrentProjectId}
         onSetPendingCurrentProjectId={setPendingCurrentProjectId}
+        isSearching={isSearching}
       />
+
+      {/* ── Split Artifact Panel (Desktop only) ── */}
+      {!isMobile && splitActive && splitArtifact && (
+        <>
+          <div className="wl-resize-handle" onMouseDown={startSplitResize} aria-hidden="true" />
+          <div className="wl-split-panel" style={{ width: splitWidth, flexShrink: 0 }}>
+            <SplitArtifactPanel
+              artifact={splitArtifact}
+              conversationId={activeConvId ?? undefined}
+              organizationId={organizationId ?? undefined}
+              onClose={() => setSplitDismissedKey(splitArtifactKey)}
+              onSendDirect={sendDirect}
+            />
+          </div>
+        </>
+      )}
 
       {/* ── Session Panel (Desktop only) ── */}
       {!isMobile && (
@@ -126,9 +214,8 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
           <div className="wl-panel-right" style={{ width: spCollapsed ? 24 : rightWidth, flexShrink: 0 }}>
             <SessionPanel
               conversationId={activeConvId}
-              messages={messages}
-              routing={routing}
-              onNewConversation={newConversation}
+              activeConvProjectId={activeConvProjectId}
+              projects={projects}
               collapsed={spCollapsed}
               onToggleCollapse={() => setSpCollapsed(v => !v)}
             />

@@ -7,23 +7,11 @@
 
 ## Kritisch (vor nächstem Feature-Release beheben)
 
-- [ ] **SSRF-Schutz fehlt in Feed-Fetchern** — `src/lib/feeds/fetchers/url.ts`, `rss.ts`, `api.ts` — Aufwand: S
-  - Private-IP-Ranges blockieren: `127.x`, `192.168.x`, `10.x`, `::1`
-  - URL-Schema-Allowlist: nur `http://` und `https://`
-  - Betrifft: alle User-konfigurierten Feed-URLs werden ungefiltert gefetcht
-
-- [ ] **PII in Logs: E-Mail-Adresse** — `src/app/api/onboarding/complete/route.ts` Zeile 140 — Aufwand: S
-  - `log.error('Invite error for', email, e)` → User-ID statt E-Mail-Adresse loggen
-
-- [ ] **Email-Inbound-Webhook ohne Signaturvalidierung** — `src/app/api/feeds/inbound/email/route.ts` — Aufwand: S
-  - Resend-Webhook-Signatur (HMAC-SHA256) validieren, analog zu Agenten-Webhook in `src/app/api/agents/webhook/[agent_id]/route.ts`
-
-- [ ] **Debug-Route in Produktion** — `src/app/api/debug/feeds/route.ts` — Aufwand: S
-  - Superadmin-Guard hinzufügen oder Route aus Produktion entfernen
-  - GET-Endpoint leaked Org-interne Feed-Metriken + E-Mail-Adresse des eingeloggten Users
-
-- [ ] **CSP enthält abgelöste Domain** — `next.config.ts` — Aufwand: S
-  - `api.dify.ai` aus `connect-src` entfernen (Dify seit 2026-03-17 vollständig abgelöst)
+- [x] **SSRF-Schutz fehlt in Feed-Fetchern** — `rss.ts` fehlte, 2026-03-21 behoben
+- [x] **PII in Logs: E-Mail-Adresse** — bereits gefixt (log zeigt keine E-Mail mehr)
+- [x] **Email-Inbound-Webhook ohne Signaturvalidierung** — 2026-03-21: `validateWebhookSecret()` via `Authorization: Bearer` + `timingSafeEqual`. `RESEND_INBOUND_SECRET` in `.env.example` dokumentiert.
+- [x] **Debug-Route in Produktion** — 2026-03-21: `assertSuperadmin()` Guard in GET + POST, `loggedInAs: user.email` entfernt
+- [x] **CSP enthält abgelöste Dify-Domain** — bereits entfernt (war nicht mehr vorhanden)
 
 ---
 

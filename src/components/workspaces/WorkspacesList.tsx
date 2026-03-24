@@ -6,12 +6,13 @@ import Link from 'next/link'
 import { SquaresFour, Plus, SquaresFour as WsIcon, DotsThree, CopySimple, Trash } from '@phosphor-icons/react'
 
 type Workspace = {
-  id:         string
-  title:      string
-  goal:       string | null
-  status:     string
-  created_at: string
-  cards:      { count: number }[]
+  id:          string
+  title:       string
+  goal:        string | null
+  status:      string
+  created_at:  string
+  project_id:  string | null
+  cards:       { count: number }[]
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -144,7 +145,10 @@ function CardMenu({ wsId, onDelete, onCopy }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function WorkspacesList({ workspaces: initial }: { workspaces: Workspace[] }) {
+export default function WorkspacesList({ workspaces: initial, doneCounts = {} }: {
+  workspaces: Workspace[]
+  doneCounts?: Record<string, number>
+}) {
   const router = useRouter()
   const [workspaces, setWorkspaces] = useState(initial)
   const [creating, setCreating] = useState(false)
@@ -257,6 +261,9 @@ export default function WorkspacesList({ workspaces: initial }: { workspaces: Wo
           {workspaces.map(ws => {
             const cardCount = ws.cards?.[0]?.count ?? 0
             const statusLabel = STATUS_LABEL[ws.status] ?? ws.status
+            const doneCount = doneCounts[ws.id] ?? 0
+            const showProgress = !!ws.project_id && cardCount > 0
+            const progressPct = showProgress ? Math.round((doneCount / cardCount) * 100) : 0
             return (
               <div key={ws.id} className="card" style={{ padding: '16px 18px', position: 'relative' }}>
                 {/* Clickable area — Link for proper navigation semantics */}
@@ -293,6 +300,27 @@ export default function WorkspacesList({ workspaces: initial }: { workspaces: Wo
                       {cardCount} {cardCount === 1 ? 'Karte' : 'Karten'}
                     </span>
                   </div>
+
+                  {/* Progress bar — only when workspace is linked to a project */}
+                  {showProgress && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{
+                        height: 4, borderRadius: 99, background: 'var(--border)',
+                        overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${progressPct}%`,
+                          background: progressPct === 100 ? 'var(--accent)' : 'var(--accent)',
+                          borderRadius: 99,
+                          transition: 'width 0.3s ease',
+                        }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                        {doneCount} / {cardCount} bereit
+                      </div>
+                    </div>
+                  )}
                 </Link>
 
                 {/* Menu — absolute positioned to avoid nesting inside <a> */}

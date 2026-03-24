@@ -10,7 +10,7 @@ import {
   ShieldCheck, ClipboardText, ListChecks,
   ChartBar, Cpu, CurrencyEur, FileText, Users, PaintBrush, Megaphone,
   ChatCircle, FolderOpen, Books, Compass, Buildings, SquaresFour, RssSimple, Archive,
-  Sparkle,
+  Sparkle, Eye,
 } from '@phosphor-icons/react'
 import ParrotIcon from './ParrotIcon'
 import NavBarViewAsSwitcher from './NavBarViewAsSwitcher'
@@ -283,6 +283,13 @@ export default function NavBar() {
                   Department
                 </Link>
               </li>
+              <li>
+                <Link href="/perspectives" style={navLinkStyle(isActive('/perspectives'))}
+                  aria-current={isActive('/perspectives') ? 'page' : undefined}>
+                  <Eye size={16} weight="fill" aria-hidden="true" />
+                  Perspectives
+                </Link>
+              </li>
             </>
           )}
 
@@ -328,6 +335,13 @@ export default function NavBar() {
                   aria-current={isActive('/agenten') ? 'page' : undefined}>
                   <Compass size={16} weight="fill" aria-hidden="true" />
                   Agenten
+                </Link>
+              </li>
+              <li>
+                <Link href="/perspectives" style={navLinkStyle(isActive('/perspectives'))}
+                  aria-current={isActive('/perspectives') ? 'page' : undefined}>
+                  <Eye size={16} weight="fill" aria-hidden="true" />
+                  Perspectives
                 </Link>
               </li>
               <li>

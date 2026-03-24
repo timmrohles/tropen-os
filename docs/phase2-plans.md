@@ -109,11 +109,12 @@ Bei jedem größeren Claude.ai-Release prüfen:
 | **Plan E** | Transformations-Engine | ✅ Fertig |
 | **Plan F** | UI (Projekte + Workspaces + Feeds-Settings) | ✅ Fertig |
 | **Plan J** | Produktion – Live Dashboards, autonome Feeds, scheduled Agents | ⬜ Offen |
-| **Plan J1** | Feeds autonom: Run-History, konfigurierbare Outputs | ⬜ Nächster Schritt |
-| **Plan J2a** | skills-Tabelle + RLS + Seed, agent_skills, skill-resolver | ⬜ Nach J1 |
-| **Plan J2b** | agents ALTER + agent_runs + agent-engine | ⬜ Nach J2a |
-| **Plan J2c** | Scheduled Trigger (Cron), Webhook, Paket-Seeds | ⬜ Nach J2b |
-| **Plan K** | Geteilte Chats + Team-Antwort | ⬜ Geplant |
+| **Plan J1** | Feeds autonom: Run-History, konfigurierbare Outputs | ✅ Fertig |
+| **Plan J2a** | skills-Tabelle + RLS + Seed, agent_skills, skill-resolver | ✅ Fertig |
+| **Plan J2b** | agents ALTER + agent_runs + agent-engine | ✅ Fertig |
+| **Plan J2c** | Scheduled Trigger (Cron), Webhook, Paket-Seeds | ✅ Fertig |
+| **Plan K** | Geteilte Chats + Team-Antwort | ✅ Fertig |
+| **Plan L** | MCP-Integrationen (Google Drive, Slack, Notion, HubSpot…) | ⬜ Konzept |
 
 ---
 
@@ -464,3 +465,28 @@ GET  /api/agents/[id]/runs
 - **Kosten-Transparenz:**
   Jeder autonome Run zeigt Token-Verbrauch + Kosten
   User sieht im Hub: "Heute: 0.34€ durch 3 Agent-Runs"
+
+---
+
+## Plan L — MCP-Integrationen
+
+**Ziel:** Toro verbindet sich direkt mit der Arbeitswelt der KMU —
+Google Drive, Slack, Notion, HubSpot und mehr ohne Copy-Paste.
+
+**Status:** ⬜ Konzept (2026-03-20)
+
+**Vollständiges Konzept:** `docs/plans/mcp-integrations-konzept.md`
+
+**Kern-Idee:**
+Variante A (sofort): Fremde MCP-Server via OAuth — keine eigene Infrastruktur.
+Variante B (später): Eigene MCP-Server für Tools ohne MCP-Support.
+
+**Build-Reihenfolge:**
+- Phase 1: DB-Schema `org_integrations` + OAuth-Flow + Google Drive + Slack
+- Phase 2: Notion, GitHub, HubSpot, Jira + Workspace-Karten mit Live-Daten
+- Phase 3: Branchenspezifische Integrationen (Datev, Lexoffice, Shopify)
+
+**Offene Fragen (blockierend):**
+- Token-Verschlüsselung: Supabase Vault oder eigener KMS?
+- DSGVO: AVV mit jedem Drittanbieter nötig?
+- Rate-Limiting pro Integration (Kosten-Kontrolle)

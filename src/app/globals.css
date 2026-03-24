@@ -654,6 +654,44 @@ body {
 /* ─── Quick-Chips (under last assistant message) ─────────────────────────── */
 .message-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 0; }
 
+/* ─── Suggestion Pills ───────────────────────────────────────────────────── */
+.suggestion-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0 4px;
+}
+.suggestion-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.80);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.suggestion-pill:hover {
+  background: rgba(255,255,255,0.20);
+  border-color: rgba(255,255,255,0.38);
+  color: #fff;
+}
+.suggestion-pill:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.suggestion-pill:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* ─── KI-Disclaimer ──────────────────────────────────────────────────────── */
 .chat-ai-disclaimer { text-align: center; font-size: 11px; color: var(--text-tertiary); padding-top: 6px; margin: 0; }
 

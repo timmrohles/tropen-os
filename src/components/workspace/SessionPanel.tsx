@@ -3,12 +3,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
-  Brain, ChartBar, Cpu, Sliders,
-  CaretLeft, CaretRight, CaretDown,
+  CaretLeft, CaretRight, CaretDown, X,
+  FolderOpen, Sliders, Plugs, Eye,
+  ChartBar, PencilSimple, MagnifyingGlass, Compass, ClipboardText, Sparkle,
 } from '@phosphor-icons/react'
 import ParrotIcon from '@/components/ParrotIcon'
-import type { ChatMessage } from '@/hooks/useWorkspaceState'
-import { AreaChart } from '@tremor/react'
+import type { Project } from '@/hooks/useWorkspaceState'
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -17,22 +17,16 @@ import { AreaChart } from '@tremor/react'
 interface Prefs {
   chat_style: 'clear' | 'structured' | 'detailed'
   memory_window: number
-  thinking_mode: boolean
   proactive_hints: boolean
-}
-
-interface Routing {
-  task_type: string
-  agent: string
-  model_class: string
-  model: string
+  thinking_mode: boolean
+  link_previews: boolean
+  web_search_enabled: boolean
 }
 
 export interface SessionPanelProps {
   conversationId: string | null
-  messages: ChatMessage[]
-  routing: Routing | null
-  onNewConversation: () => void
+  activeConvProjectId: string | null
+  projects: Project[]
   collapsed?: boolean
   onToggleCollapse?: () => void
 }
@@ -42,55 +36,48 @@ export interface SessionPanelProps {
 // ─────────────────────────────────────────────────────────
 
 const STYLE_OPTIONS: Array<{ value: Prefs['chat_style']; label: string; desc: string }> = [
-  { value: 'clear', label: 'Klar', desc: 'Kurz und direkt' },
+  { value: 'clear',      label: 'Klar',        desc: 'Kurz und direkt' },
   { value: 'structured', label: 'Strukturiert', desc: 'Mit Überschriften und Listen' },
-  { value: 'detailed', label: 'Ausführlich', desc: 'Detailliert mit Beispielen' },
+  { value: 'detailed',   label: 'Ausführlich',  desc: 'Detailliert mit Beispielen' },
 ]
 const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
   clear: 'Klar', structured: 'Strukturiert', detailed: 'Ausführlich',
 }
 
-// Dot color per warning level — used for the small inline badge indicator
-const WARN_COLORS = {
-  amber:  { color: 'var(--warning)' },
-  orange: { color: 'var(--warning)' },
-  red:    { color: 'var(--error)' },
+interface LibrarySkill {
+  id: string
+  name: string
+  title: string
+  icon: string | null
+  description: string | null
 }
 
-// ─────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────
-
-function calcCO2(tokens: number): string {
-  if (tokens === 0) return '—'
-  const mid = (tokens / 1_000_000) * 0.8 * 0.33 * 1000
-  const min = Math.max(0, mid * 0.6)
-  const max = Math.max(0, mid * 1.4)
-  if (max < 0.0001) return '<0.0001g'
-  return `~${min.toFixed(4)}g – ${max.toFixed(4)}g`
+const SKILL_ICONS: Record<string, React.ElementType> = {
+  analyst:         ChartBar,
+  writer:          PencilSimple,
+  researcher:      MagnifyingGlass,
+  strategist:      Compass,
+  project_manager: ClipboardText,
 }
 
-function fmtTokens(n: number): string {
-  if (n === 0) return '—'
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+function SkillIcon({ name, size = 12 }: { name: string; size?: number }) {
+  const Icon = SKILL_ICONS[name.toLowerCase()] ?? Sparkle
+  return <Icon size={size} weight="bold" />
 }
+
+const MCP_ITEMS = [
+  { id: 'gdrive',   label: 'Google Drive', connected: false },
+  { id: 'hubspot',  label: 'HubSpot',      connected: false },
+  { id: 'slack',    label: 'Slack',        connected: false },
+]
 
 // ─────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="sp-row">
-      <span className="sp-row-label t-dezent">{label}</span>
-      <span className="sp-row-value t-primary">{value}</span>
-    </div>
-  )
-}
-
 function SectionLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="sp-section-label t-dezent">
+    <div className="sp-section-label">
       {icon}
       <span>{children}</span>
     </div>
@@ -105,7 +92,13 @@ function Divider() {
 // Main Component
 // ─────────────────────────────────────────────────────────
 
-export default function SessionPanel({ conversationId: _convId, messages, routing, onNewConversation: _onNewConversation, collapsed: collapsedProp, onToggleCollapse }: SessionPanelProps) {
+export default function SessionPanel({
+  conversationId: _convId,
+  activeConvProjectId,
+  projects,
+  collapsed: collapsedProp,
+  onToggleCollapse,
+}: SessionPanelProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
 
@@ -114,46 +107,50 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
   function setCollapsed(v: boolean) {
     if (onToggleCollapse) { onToggleCollapse() } else { setCollapsedInternal(v) }
   }
-  const [prefs, setPrefs] = useState<Prefs>({ chat_style: 'structured', memory_window: 20, thinking_mode: false, proactive_hints: true })
+
+  const [prefs, setPrefs] = useState<Prefs>({
+    chat_style: 'structured',
+    memory_window: 20,
+    proactive_hints: true,
+    thinking_mode: false,
+    link_previews: true,
+    web_search_enabled: false,
+  })
   const [userId, setUserId] = useState<string | null>(null)
-  const [monthlyCost, setMonthlyCost] = useState<number | null>(null)
   const [styleDropOpen, setStyleDropOpen] = useState(false)
   const styleDropRef = useRef<HTMLDivElement>(null)
+  const [skillDrawerOpen, setSkillDrawerOpen] = useState(false)
+  const [librarySkills, setLibrarySkills] = useState<LibrarySkill[]>([])
+  const [activeSkillIds, setActiveSkillIds] = useState<Set<string>>(new Set())
+  const [skillsLoading, setSkillsLoading] = useState(false)
+  const [comingSoonMsg, setComingSoonMsg] = useState<string | null>(null)
+  const comingSoonTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function showComingSoon(label: string) {
+    if (comingSoonTimer.current) clearTimeout(comingSoonTimer.current)
+    setComingSoonMsg(`${label} — Integration kommt bald`)
+    comingSoonTimer.current = setTimeout(() => setComingSoonMsg(null), 4000)
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-      const [{ data: prefsData }, { data: costData }] = await Promise.all([
-        supabase
-          .from('user_preferences')
-          .select('chat_style, memory_window, thinking_mode, proactive_hints')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('messages')
-          .select('cost_eur')
-          .eq('role', 'assistant')
-          .gte('created_at', startOfMonth),
-      ])
-
-      if (prefsData) {
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('chat_style, memory_window, proactive_hints, thinking_mode, link_previews, web_search_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data) {
         setPrefs({
-          chat_style: (prefsData.chat_style as Prefs['chat_style']) ?? 'structured',
-          memory_window: (prefsData as { memory_window?: number }).memory_window ?? 20,
-          thinking_mode: (prefsData as { thinking_mode?: boolean }).thinking_mode ?? false,
-          proactive_hints: (prefsData as { proactive_hints?: boolean }).proactive_hints ?? true,
+          chat_style: (data.chat_style as Prefs['chat_style']) ?? 'structured',
+          memory_window: (data as { memory_window?: number }).memory_window ?? 20,
+          proactive_hints: (data as { proactive_hints?: boolean }).proactive_hints ?? true,
+          thinking_mode: (data as { thinking_mode?: boolean }).thinking_mode ?? false,
+          link_previews: (data as { link_previews?: boolean }).link_previews ?? true,
+          web_search_enabled: (data as { web_search_enabled?: boolean }).web_search_enabled ?? false,
         })
-      }
-
-      if (costData) {
-        const total = costData.reduce((s, m) => s + ((m as { cost_eur?: number | null }).cost_eur ?? 0), 0)
-        setMonthlyCost(total)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,45 +180,33 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
     savePrefs({ [key]: value })
   }
 
-  // ── Session Stats ───────────────────────────────────────
+  async function openSkillDrawer() {
+    setSkillDrawerOpen(true)
+    if (librarySkills.length > 0) return
+    setSkillsLoading(true)
+    try {
+      const res = await fetch('/api/library/skills')
+      if (res.ok) {
+        const data = await res.json() as { skills: LibrarySkill[] }
+        setLibrarySkills(data.skills ?? [])
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setSkillsLoading(false)
+    }
+  }
 
-  const nonPending = messages.filter(m => !m.pending)
-  const msgCount = nonPending.length
-  const sessionCost = nonPending.reduce((s, m) => s + (m.cost_eur ?? 0), 0)
-  const sessionTokens = nonPending.reduce(
-    (s, m) => s + ((m as { tokens_input?: number | null }).tokens_input ?? 0) + ((m as { tokens_output?: number | null }).tokens_output ?? 0),
-    0
-  )
+  function toggleSkill(id: string) {
+    setActiveSkillIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
-  // ── Kosten-Chart ────────────────────────────────────────
-  const costChartData = nonPending
-    .filter(m => m.role === 'assistant' && (m.cost_eur ?? 0) > 0)
-    .map((m, i) => ({ 'Msg': i + 1, '€': m.cost_eur ?? 0 }))
-
-  // ── Kosten-Forecast ────────────────────────────────────
-
-  const now = new Date()
-  const dayOfMonth = now.getDate()
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const forecastCost = monthlyCost !== null && dayOfMonth > 0
-    ? (monthlyCost / dayOfMonth) * daysInMonth
-    : null
-
-  // ── Warnings ────────────────────────────────────────────
-
-  const warnings: { level: 'amber' | 'orange' | 'red'; text: string }[] = []
-  if (prefs.memory_window > 30)
-    warnings.push({ level: 'amber', text: 'Größeres Gedächtnis = mehr Tokens pro Anfrage' })
-  if (routing?.model_class === 'deep')
-    warnings.push({ level: 'amber', text: 'Deep-Modell aktiv – höhere Kosten' })
-  if (sessionCost > 0.50)
-    warnings.push({ level: 'red', text: `Achtung: hohe Kosten dieser Session (€${sessionCost.toFixed(4)})` })
-  else if (sessionCost > 0.10)
-    warnings.push({ level: 'orange', text: `Session kostet bereits €${sessionCost.toFixed(4)}` })
-  if (forecastCost !== null && forecastCost > 10)
-    warnings.push({ level: 'red', text: `Hochrechnung: ca. €${forecastCost.toFixed(2)} diesen Monat` })
-  else if (forecastCost !== null && forecastCost > 5)
-    warnings.push({ level: 'orange', text: `Hochrechnung: ca. €${forecastCost.toFixed(2)} diesen Monat` })
+  const activeProject = projects.find(p => p.id === activeConvProjectId) ?? null
 
   // ── Collapsed State ─────────────────────────────────────
 
@@ -245,88 +230,105 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
 
       {/* Header */}
       <div className="sp-header">
-        <span className="sp-header-label t-dezent">SESSION</span>
+        <span className="sp-header-label">Chat</span>
         <button className="sp-header-btn" onClick={() => setCollapsed(true)} title="Panel einklappen">
           <CaretLeft size={14} weight="bold" />
         </button>
       </div>
 
-      {/* ── Sektion: Aktuelle Session ── */}
+      {/* ── KONTEXT ── */}
       <div className="sp-section">
-        <SectionLabel icon={<Cpu size={10} weight="bold" />}>Aktuelle Session</SectionLabel>
-
-        {routing ? (
-          <>
-            <Row label="Modell" value={routing.model} />
-            <div className="sp-row">
-              <span className="sp-row-label t-dezent">Klasse</span>
-              <span className={`sp-class-badge sp-class-badge--${routing.model_class ?? 'fast'}`}>{routing.model_class}</span>
-            </div>
-          </>
-        ) : (
-          <p className="sp-no-request">Noch keine Anfrage</p>
-        )}
-
-        <Row label="Gedächtnis" value={`${prefs.memory_window} Nachr.`} />
-        <Row label="Stil" value={STYLE_LABELS[prefs.chat_style]} />
+        <SectionLabel icon={<FolderOpen size={10} weight="bold" />}>Kontext</SectionLabel>
+        <div className="sp-context-row">
+          <span className={`sp-context-dot${activeProject ? ' sp-context-dot--active' : ''}`} />
+          {activeProject ? (
+            <span className="sp-context-name">{activeProject.title}</span>
+          ) : (
+            <span className="sp-context-name" style={{ color: 'var(--text-tertiary)' }}>Freier Chat</span>
+          )}
+        </div>
       </div>
 
       <Divider />
 
-      {/* ── Sektion: Diese Session ── */}
+      {/* ── TORO KONFIGURIEREN ── */}
       <div className="sp-section">
-        <SectionLabel icon={<ChartBar size={10} weight="bold" />}>Diese Session</SectionLabel>
-        <Row label="Nachrichten" value={msgCount > 0 ? String(msgCount) : '—'} />
-        <Row label="Tokens" value={fmtTokens(sessionTokens)} />
-        <Row label="Kosten Session" value={sessionCost > 0 ? `€${sessionCost.toFixed(4)}` : '—'} />
-        <Row label="Kosten Monat" value={monthlyCost !== null && monthlyCost > 0 ? `€${monthlyCost.toFixed(4)}` : '—'} />
-        <Row label="Hochrechnung" value={forecastCost !== null && forecastCost > 0 ? `~€${forecastCost.toFixed(2)}` : '—'} />
-        <Row label="CO₂ est." value={calcCO2(sessionTokens)} />
-        {costChartData.length >= 2 && (
-          <AreaChart
-            data={costChartData}
-            index="Msg"
-            categories={['€']}
-            colors={['green']}
-            valueFormatter={(v) => `€${v.toFixed(5)}`}
-            showLegend={false}
-            showGridLines={false}
-            showXAxis={false}
-            showYAxis={false}
-            className="h-16 mt-2 -mx-1"
-          />
-        )}
-      </div>
+        <SectionLabel icon={<Sliders size={10} weight="bold" />}>Toro konfigurieren</SectionLabel>
 
-      {/* ── Sektion: Warnungen ── */}
-      {warnings.length > 0 && (
-        <>
-          <Divider />
-          <div className="sp-warnings">
-            {warnings.map((w, i) => (
-              <div key={i} className="sp-warning-badge">
-                <span
-                  className="sp-warning-dot"
-                  style={{ background: WARN_COLORS[w.level].color }}
-                />
-                <span className="sp-warning-text t-dezent">{w.text}</span>
-              </div>
+        {/* Skills */}
+        <div className="sp-field">
+          <div className="sp-field-header">
+            <label className="sp-select-label" style={{ margin: 0 }}>Skills</label>
+            <button className="sp-skill-add" onClick={openSkillDrawer} title="Skills verwalten">
+              + Hinzufügen
+            </button>
+          </div>
+          <div className="sp-skill-chips">
+            {activeSkillIds.size === 0 && (
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Keine Skills aktiv</span>
+            )}
+            {librarySkills.filter(s => activeSkillIds.has(s.id)).map(skill => (
+              <span key={skill.id} className="skill-chip-active">
+                <SkillIcon name={skill.name} size={11} />
+                {skill.title}
+                <button
+                  className="skill-chip-remove"
+                  onClick={() => toggleSkill(skill.id)}
+                  aria-label={`${skill.title} entfernen`}
+                >
+                  <X size={10} weight="bold" />
+                </button>
+              </span>
             ))}
           </div>
-        </>
-      )}
+        </div>
 
-      <Divider />
-
-      {/* ── Sektion: Anpassen ── */}
-      <div className="sp-section">
-        <SectionLabel icon={<Sliders size={10} weight="bold" />}>Anpassen</SectionLabel>
+        {/* Skill Drawer */}
+        {skillDrawerOpen && (
+          <>
+            <div
+              className="sp-drawer-backdrop"
+              onClick={() => setSkillDrawerOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="sp-drawer">
+              <div className="sp-drawer-header">
+                <span className="sp-drawer-title">Skills</span>
+                <button className="sp-drawer-close" onClick={() => setSkillDrawerOpen(false)} aria-label="Schließen">
+                  <X size={14} weight="bold" />
+                </button>
+              </div>
+              <div className="sp-drawer-body">
+                {skillsLoading && <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Lädt…</span>}
+                {!skillsLoading && librarySkills.map(skill => (
+                  <div key={skill.id} className="sp-drawer-row">
+                    <span className="sp-drawer-row-icon">
+                      <SkillIcon name={skill.name} size={13} />
+                    </span>
+                    <div className="sp-drawer-row-info">
+                      <span className="sp-drawer-row-title">{skill.title}</span>
+                      {skill.description && (
+                        <span className="sp-drawer-row-desc">{skill.description}</span>
+                      )}
+                    </div>
+                    <button
+                      className={`sp-drawer-row-btn${activeSkillIds.has(skill.id) ? ' sp-drawer-row-btn--active' : ''}`}
+                      onClick={() => toggleSkill(skill.id)}
+                    >
+                      {activeSkillIds.has(skill.id) ? 'Entfernen' : 'Hinzufügen'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Gedächtnis-Slider */}
         <div className="sp-field">
           <div className="sp-slider-row">
-            <label className="sp-slider-label t-dezent">Gesprächsgedächtnis</label>
-            <span className="sp-slider-value t-primary">{prefs.memory_window}</span>
+            <label className="sp-slider-label">Gedächtnis</label>
+            <span className="sp-slider-value">{prefs.memory_window} Nachr.</span>
           </div>
           <input
             type="range"
@@ -335,32 +337,37 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
             onChange={e => updatePref('memory_window', Number(e.target.value))}
             className="sp-slider"
           />
-          {prefs.memory_window > 30 && (
-            <p className="sp-slider-warn">⚠️ Erhöht Tokenverbrauch pro Anfrage</p>
-          )}
         </div>
 
         {/* Antwort-Stil */}
         <div className="sp-field">
-          <label className="sp-select-label t-dezent">Antwort-Stil</label>
+          <label className="sp-select-label">Antwort-Stil</label>
           <div className="sp-select-wrap" ref={styleDropRef}>
             <button
               className="sp-select-trigger"
-              onClick={() => setStyleDropOpen((v) => !v)}
+              onClick={() => setStyleDropOpen(v => !v)}
             >
               {STYLE_LABELS[prefs.chat_style]}
-              <CaretDown size={14} weight="bold" style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: styleDropOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+              <CaretDown
+                size={14} weight="bold"
+                style={{
+                  color: 'var(--text-tertiary)',
+                  flexShrink: 0,
+                  transform: styleDropOpen ? 'rotate(180deg)' : undefined,
+                  transition: 'transform 0.15s',
+                }}
+              />
             </button>
             {styleDropOpen && (
               <div className="sp-select-menu">
-                {STYLE_OPTIONS.map((opt) => (
+                {STYLE_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
                     className={`sp-select-option${prefs.chat_style === opt.value ? ' sp-select-option--active' : ''}`}
                     onClick={() => { updatePref('chat_style', opt.value); setStyleDropOpen(false) }}
                   >
-                    <span className="sp-select-opt-label t-primary">{opt.label}</span>
-                    <span className="sp-select-opt-desc t-secondary">{opt.desc}</span>
+                    <span className="sp-select-opt-label">{opt.label}</span>
+                    <span className="sp-select-opt-desc">{opt.desc}</span>
                   </button>
                 ))}
               </div>
@@ -368,12 +375,10 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
           </div>
         </div>
 
-        {/* Proaktive Hinweise Toggle */}
+        {/* Proaktive Hinweise */}
         <div className="sp-field">
           <div className="sp-toggle-row">
-            <span className="sp-toggle-label">
-              💡 Proaktive Hinweise
-            </span>
+            <span className="sp-toggle-label">💡 Proaktive Hinweise</span>
             <button
               className={`sp-toggle-btn${prefs.proactive_hints ? ' sp-toggle-btn--on' : ''}`}
               onClick={() => updatePref('proactive_hints', !prefs.proactive_hints)}
@@ -382,17 +387,13 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
               <span className={`sp-toggle-thumb${prefs.proactive_hints ? ' sp-toggle-thumb--on' : ''}`} />
             </button>
           </div>
-          <p className="sp-toggle-note">
-            Toro schlägt nach Antworten nächste Schritte vor.
-          </p>
+          <p className="sp-toggle-note">Toro schlägt nächste Schritte vor.</p>
         </div>
 
-        {/* Thinking Mode Toggle */}
+        {/* Thinking Mode */}
         <div className="sp-field">
           <div className="sp-toggle-row">
-            <span className="sp-toggle-label">
-              <Brain size={15} weight="bold" /> Toro denkt laut nach
-            </span>
+            <span className="sp-toggle-label">Toro denkt laut nach</span>
             <button
               className={`sp-toggle-btn${prefs.thinking_mode ? ' sp-toggle-btn--on' : ''}`}
               onClick={() => updatePref('thinking_mode', !prefs.thinking_mode)}
@@ -401,12 +402,80 @@ export default function SessionPanel({ conversationId: _convId, messages, routin
               <span className={`sp-toggle-thumb${prefs.thinking_mode ? ' sp-toggle-thumb--on' : ''}`} />
             </button>
           </div>
-          <p className="sp-toggle-note">
-            Experimentell – wird in einer der nächsten Versionen aktiviert.
-          </p>
+          <p className="sp-toggle-note">Experimentell — zeigt Toros Denkprozess</p>
         </div>
       </div>
 
+      <Divider />
+
+      {/* ── VERBINDUNGEN (MCP) ── */}
+      <div className="sp-section">
+        <SectionLabel icon={<Plugs size={10} weight="bold" />}>Verbindungen</SectionLabel>
+        {MCP_ITEMS.map(item => (
+          <button
+            key={item.id}
+            className="sp-mcp-row sp-mcp-row--btn"
+            onClick={() => !item.connected && showComingSoon(item.label)}
+            title={item.connected ? undefined : `${item.label} verbinden`}
+          >
+            <span className={`sp-mcp-dot${item.connected ? ' sp-mcp-dot--on' : ''}`} />
+            <span className="sp-mcp-label">{item.label}</span>
+            <span className="sp-mcp-status">{item.connected ? 'verbunden' : 'nicht verbunden'}</span>
+          </button>
+        ))}
+        {comingSoonMsg && (
+          <div className="sp-coming-soon-toast">{comingSoonMsg}</div>
+        )}
+        <button className="sp-mcp-add" disabled title="Bald verfügbar">
+          + Weitere verbinden →
+        </button>
+      </div>
+
+      <Divider />
+
+      {/* ── ANSICHT ── */}
+      <div className="sp-section">
+        <SectionLabel icon={<Eye size={10} weight="bold" />}>Ansicht</SectionLabel>
+
+        {/* Split-View — Placeholder */}
+        <div className="sp-field">
+          <div className="sp-toggle-row">
+            <span className="sp-toggle-label">Geteilter Bildschirm</span>
+            <button className="btn btn-ghost btn-sm" disabled>Aktivieren</button>
+          </div>
+          <p className="sp-toggle-note">Chat links · Artefakt rechts</p>
+        </div>
+
+        {/* Live-Suche */}
+        <div className="sp-field">
+          <div className="sp-toggle-row">
+            <span className="sp-toggle-label">Live-Suche</span>
+            <button
+              className={`sp-toggle-btn${prefs.web_search_enabled ? ' sp-toggle-btn--on' : ''}`}
+              onClick={() => updatePref('web_search_enabled', !prefs.web_search_enabled)}
+              title={prefs.web_search_enabled ? 'Deaktivieren' : 'Aktivieren'}
+            >
+              <span className={`sp-toggle-thumb${prefs.web_search_enabled ? ' sp-toggle-thumb--on' : ''}`} />
+            </button>
+          </div>
+          <p className="sp-toggle-note">Toro sucht im Web nach aktuellen Infos</p>
+        </div>
+
+        {/* Link-Vorschauen */}
+        <div className="sp-field">
+          <div className="sp-toggle-row">
+            <span className="sp-toggle-label">Links anzeigen</span>
+            <button
+              className={`sp-toggle-btn${prefs.link_previews ? ' sp-toggle-btn--on' : ''}`}
+              onClick={() => updatePref('link_previews', !prefs.link_previews)}
+              title={prefs.link_previews ? 'Deaktivieren' : 'Aktivieren'}
+            >
+              <span className={`sp-toggle-thumb${prefs.link_previews ? ' sp-toggle-thumb--on' : ''}`} />
+            </button>
+          </div>
+          <p className="sp-toggle-note">URL-Vorschauen im Chat</p>
+        </div>
+      </div>
 
     </div>
   )

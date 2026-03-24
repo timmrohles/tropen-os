@@ -7,6 +7,7 @@ import {
   PERIODS, TASK_TYPES, matchesPeriod,
   type Conversation, type Project, type ChatMessage, type JungleProject,
   type PeriodValue, type TaskValue, type WorkspaceState, type ChipItem,
+  type AttachmentData,
 } from '@/lib/workspace-types'
 import { createConversationActions } from '@/lib/workspace-actions'
 import { createJungleActions } from '@/lib/workspace-jungle'
@@ -33,6 +34,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   )
 
   const sendingRef = useRef(false)
+  const attachmentRef = useRef<AttachmentData | null>(null)
   const [input, setInput] = useState('')
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<PeriodValue>('all')
@@ -99,6 +101,9 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   // Intention system — pending state bis newConversation() aufgerufen wird
   const [pendingIntention, setPendingIntention] = useState<'focused' | 'open' | null>(null)
   const [pendingCurrentProjectId, setPendingCurrentProjectId] = useState<string | null>(null)
+
+  // Web search
+  const [isSearching, setIsSearching] = useState(false)
 
   // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
@@ -225,7 +230,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         supabase.from('departments').select('name').eq('id', workspaceId).single(),
         supabase
           .from('conversations')
-          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at, intention, current_project_id')
+          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at, intention, current_project_id, drift_detected')
           .eq('workspace_id', workspaceId)
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
@@ -331,10 +336,11 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const chatActions = createChatActions({
     supabase, workspaceId,
     activeConvId,
-    input, sending, conversations, sendingRef,
+    input, sending, messages, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
-    setMemoryExtracting, setChips,
+    setMemoryExtracting, setChips, setIsSearching,
     newConversation: convActions.newConversation,
+    attachmentRef,
   })
 
   // ── Computed ───────────────────────────────────────────
@@ -405,7 +411,9 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     showMemoryModal, setShowMemoryModal,
     shareModalConvId, setShareModalConvId,
     chips, setChips,
+    attachmentRef,
     memoryExtracting,
+    isSearching, setIsSearching,
     pendingIntention, setPendingIntention,
     pendingCurrentProjectId, setPendingCurrentProjectId,
     isMobile, navOpen, setNavOpen,

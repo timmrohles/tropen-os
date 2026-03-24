@@ -12,22 +12,16 @@ export default function QuickChips({ chips, onSelect, disabled }: QuickChipsProp
   if (chips.length === 0) return null
 
   return (
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 6,
-      padding: '8px 16px 4px',
-    }}>
+    <div className="suggestion-pills">
       {chips.map((chip, i) => (
         <button
           key={i}
-          className="chip"
+          className="suggestion-pill"
           onClick={() => onSelect(chip.prompt)}
           disabled={disabled}
-          style={{ cursor: disabled ? 'default' : 'pointer' }}
           title={chip.prompt}
         >
-          {chip.label}
+          {chip.label} →
         </button>
       ))}
     </div>

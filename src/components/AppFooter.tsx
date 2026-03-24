@@ -25,7 +25,7 @@ export default function AppFooter() {
         color: 'var(--text-tertiary)',
       }}
     >
-      <span>© {new Date().getFullYear()} Tropen OS</span>
+      <span suppressHydrationWarning>© {new Date().getFullYear()} Tropen OS</span>
 
       <nav aria-label="Rechtliches" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 20px' }}>
         <Link href="/impressum" style={{ color: 'inherit', textDecoration: 'none' }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -9,12 +9,20 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
   CheckCircle, Warning, Lightbulb, Leaf,
   ChartBar, Wrench, ArrowRight,
-  BookmarkSimple, FloppyDisk, ThumbsDown,
+  FloppyDisk,
   SquaresFour,
 } from '@phosphor-icons/react'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
+import type { ChipItem, GuidedAction } from '@/lib/workspace-types'
 import ParrotIcon from '@/components/ParrotIcon'
 import { SaveArtifactModal } from './SaveArtifactModal'
+import ArtifactRenderer from './ArtifactRenderer'
+import MessageActions from './MessageActions'
+import GuidedModePicker from './GuidedModePicker'
+import GuidedStepCard from './GuidedStepCard'
+import GuidedSummary from './GuidedSummary'
+import { parseArtifacts } from '@/lib/chat/parse-artifacts'
+import SourcesBar from './SourcesBar'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -24,6 +32,15 @@ interface ChatMessageProps {
   bookmarkedIds?: Set<string>
   onBookmarkChange?: (messageId: string, bookmarked: boolean) => void
   onArtifactSaved?: () => void
+  onSendDirect?: (text: string) => void
+  isLastMessage?: boolean
+  isLastAssistantMessage?: boolean
+  isStreaming?: boolean
+  chips?: ChipItem[]
+  onPerspectives?: (messageId: string) => void
+  onRegenerate?: () => void
+  onGuidedAction?: (action: GuidedAction) => void
+  isInSplitView?: boolean
 }
 
 // ─── Workspace action marker ──────────────────────────────────────────────
@@ -166,9 +183,19 @@ function makeMdComponents(
 
 // ─── Content renderer (accepts components factory result) ─────────────────
 
-function renderAssistantContent(
+interface ArtifactRenderProps {
+  conversationId: string
+  organizationId: string
+  isInSplitView?: boolean
+  messageId?: string
+  onSaved?: () => void
+  onSendDirect?: (text: string) => void
+}
+
+function renderLines(
   content: string,
-  mdComponents: ReturnType<typeof makeMdComponents>
+  mdComponents: ReturnType<typeof makeMdComponents>,
+  keyPrefix = ''
 ): React.ReactNode[] {
   const lines = content.split('\n')
   const result: React.ReactNode[] = []
@@ -180,7 +207,7 @@ function renderAssistantContent(
     if (mdBuffer.length === 0) return
     const text = mdBuffer.join('\n')
     result.push(
-      <ReactMarkdown key={`md-${bufferKey++}`} remarkPlugins={[remarkGfm]} components={mdComponents as never}>
+      <ReactMarkdown key={`${keyPrefix}md-${bufferKey++}`} remarkPlugins={[remarkGfm]} components={mdComponents as never}>
         {text}
       </ReactMarkdown>
     )
@@ -191,11 +218,10 @@ function renderAssistantContent(
     if (line.startsWith('```')) inCodeBlock = !inCodeBlock
 
     if (!inCodeBlock) {
-      // Workspace action marker
       const wsMatch = WORKSPACE_MARKER.exec(line.trim())
       if (wsMatch) {
         flushMd()
-        result.push(<WorkspaceActionCard key={`ws-${i}`} title={wsMatch[1].trim()} />)
+        result.push(<WorkspaceActionCard key={`${keyPrefix}ws-${i}`} title={wsMatch[1].trim()} />)
         continue
       }
 
@@ -204,7 +230,7 @@ function renderAssistantContent(
         flushMd()
         const text = line.slice(entry.marker.length).trim()
         result.push(
-          <div key={`icon-${i}`} className="cmsg-icon-line">
+          <div key={`${keyPrefix}icon-${i}`} className="cmsg-icon-line">
             {entry.icon}
             <span>{text}</span>
           </div>
@@ -220,6 +246,40 @@ function renderAssistantContent(
   return result
 }
 
+function renderAssistantContent(
+  content: string,
+  mdComponents: ReturnType<typeof makeMdComponents>,
+  artifactProps?: ArtifactRenderProps
+): React.ReactNode[] {
+  if (!content.includes('<artifact')) {
+    return renderLines(content, mdComponents)
+  }
+
+  const segments = parseArtifacts(content)
+  const result: React.ReactNode[] = []
+
+  segments.forEach((seg, i) => {
+    if (seg.segType === 'text') {
+      result.push(...renderLines(seg.content, mdComponents, `seg${i}-`))
+    } else {
+      result.push(
+        <ArtifactRenderer
+          key={`artifact-${i}`}
+          artifact={seg}
+          conversationId={artifactProps?.conversationId}
+          organizationId={artifactProps?.organizationId}
+          messageId={artifactProps?.messageId}
+          onSaved={artifactProps?.onSaved}
+          onSendDirect={artifactProps?.onSendDirect}
+          isInSplitView={artifactProps?.isInSplitView}
+        />
+      )
+    }
+  })
+
+  return result
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChatMessage({
@@ -230,15 +290,62 @@ export default function ChatMessage({
   bookmarkedIds,
   onBookmarkChange,
   onArtifactSaved,
+  onSendDirect,
+  isLastMessage = false,
+  isLastAssistantMessage = false,
+  isStreaming = false,
+  chips = [],
+  onPerspectives,
+  onRegenerate,
+  onGuidedAction,
+  isInSplitView = false,
 }: ChatMessageProps) {
-  const isUser = msg.role === 'user'
-  const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
+  // Hooks müssen vor jedem early return stehen (Rules of Hooks)
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [saveModal, setSaveModal] = useState<{ content: string; language: string | null } | null>(null)
   const [flagState, setFlagState] = useState<'idle' | 'confirm' | 'done'>('idle')
   const [flagReason, setFlagReason] = useState('')
+  const router = useRouter()
 
+  // ── Guided Chat Mode rendering ───────────────────────────
+  if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
+    const gd = msg.guidedData
+    const msgId = msg.id
+    return (
+      <div className="cmsg cmsg--assistant">
+        <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
+        <div className="cmsg-bubble cmsg-bubble--assistant">
+          <div className="cmsg-content">
+            {msg.role === 'guided_picker' && (
+              <GuidedModePicker
+                onSelect={mode => onGuidedAction({ type: 'select_mode', messageId: msgId, mode })}
+              />
+            )}
+            {msg.role === 'guided_step' && (
+              <GuidedStepCard
+                step={gd.steps[gd.currentStepIndex]}
+                stepNumber={gd.currentStepIndex + 1}
+                totalSteps={gd.steps.length}
+                onAnswer={(value, label) => onGuidedAction({ type: 'answer_step', messageId: msgId, value, label })}
+              />
+            )}
+            {msg.role === 'guided_summary' && (
+              <GuidedSummary
+                answers={gd.answers}
+                onConfirm={() => onGuidedAction({ type: 'confirm_summary', messageId: msgId })}
+                onEdit={stepIndex => onGuidedAction({ type: 'edit_step', messageId: msgId, stepIndex })}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const isUser = msg.role === 'user'
+  const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
   const showActions = !isUser && !msg.pending && !!conversationId && !!msg.id
+  const hasArtifact = msg.content.includes('<artifact')
 
   async function handleBookmark() {
     if (!msg.id || !conversationId || bookmarkLoading) return
@@ -284,6 +391,21 @@ export default function ChatMessage({
     setSaveModal({ content, language })
   }
 
+  const handleShareToChat = useCallback(async () => {
+    try {
+      const res = await fetch('/api/conversations/new-from-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: msg.content, source_message_id: msg.id }),
+      })
+      if (!res.ok) return
+      const { conversation_id } = await res.json() as { conversation_id: string }
+      router.push(`?conv=${conversation_id}`)
+    } catch {
+      // silently ignore
+    }
+  }, [msg.content, msg.id, router])
+
   const mdComponents = makeMdComponents(
     showActions && organizationId ? handleSaveArtifact : undefined
   )
@@ -299,65 +421,34 @@ export default function ChatMessage({
           <div className="cmsg-content">
             {isUser
               ? msg.content
-              : renderAssistantContent(msg.content, mdComponents)
+              : renderAssistantContent(
+                  msg.content,
+                  mdComponents,
+                  showActions && organizationId && conversationId
+                    ? { conversationId, organizationId, messageId: msg.id ?? undefined, onSaved: onArtifactSaved, onSendDirect, isInSplitView }
+                    : undefined
+                )
             }
           </div>
           {!isUser && msg.pending && (
             <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
           )}
-          {!isUser && !msg.pending && msg.cost_eur != null && (
-            <div className="cmsg-meta">€{msg.cost_eur.toFixed(4)} · {msg.model_used}</div>
-          )}
-          {!isUser && !msg.pending && (
-            <div className="cmsg-ki-label" aria-label="KI-generierter Inhalt gemäß Art. 50 KI-VO">
-              KI-generiert · Toro
-            </div>
-          )}
-
           {showActions && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <button
-                onClick={handleBookmark}
-                disabled={bookmarkLoading}
-                title={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
-                aria-label={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: bookmarkLoading ? 'default' : 'pointer',
-                  color: isBookmarked ? 'var(--accent)' : 'var(--text-muted)',
-                  padding: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  opacity: bookmarkLoading ? 0.5 : 1,
-                  transition: 'color 150ms',
-                }}
-              >
-                <BookmarkSimple size={14} weight={isBookmarked ? 'fill' : 'regular'} />
-              </button>
-
-              {flagState === 'done' ? (
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 2 }}>Gemeldet</span>
-              ) : (
-                <button
-                  onClick={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
-                  title="Antwort als fehlerhaft melden (Art. 14 KI-VO)"
-                  aria-label="Antwort als fehlerhaft melden"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: flagState === 'confirm' ? '#f87171' : 'var(--text-muted)',
-                    padding: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    transition: 'color 150ms',
-                  }}
-                >
-                  <ThumbsDown size={14} weight={flagState === 'confirm' ? 'fill' : 'regular'} />
-                </button>
-              )}
-            </div>
+            <MessageActions
+              messageId={msg.id ?? ''}
+              content={msg.content}
+              isBookmarked={isBookmarked}
+              bookmarkLoading={bookmarkLoading}
+              flagState={flagState}
+              isLastMessage={isLastAssistantMessage}
+              hasArtifact={hasArtifact}
+              isRegenerating={isStreaming && isLastAssistantMessage}
+              onBookmark={handleBookmark}
+              onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
+              onPerspectives={msg.id && onPerspectives ? () => onPerspectives(msg.id!) : undefined}
+              onRegenerate={onRegenerate}
+              onShareToChat={handleShareToChat}
+            />
           )}
 
           {flagState === 'confirm' && showActions && (
@@ -429,6 +520,25 @@ export default function ChatMessage({
           <div className="cmsg-avatar-user">{userInitial}</div>
         )}
       </div>
+
+      {!isUser && !msg.pending && msg.sources && msg.sources.length > 0 && (msg.link_previews ?? true) && (
+        <SourcesBar sources={msg.sources} />
+      )}
+
+      {!isUser && isLastMessage && chips.length > 0 && (
+        <div className="suggestion-pills" role="list" aria-label="Vorschläge">
+          {chips.map(chip => (
+            <button
+              key={chip.label}
+              className="suggestion-pill"
+              role="listitem"
+              onClick={() => onSendDirect?.(chip.prompt)}
+            >
+              {chip.label} →
+            </button>
+          ))}
+        </div>
+      )}
 
       {saveModal && conversationId && organizationId && (
         <SaveArtifactModal

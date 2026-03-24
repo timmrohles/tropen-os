@@ -4,15 +4,30 @@ import React, { useState } from 'react'
 
 interface IntentionGateProps {
   onSelect: (intention: 'focused' | 'open') => void
+  onSkip: () => void
 }
 
-export default function IntentionGate({ onSelect }: IntentionGateProps) {
+function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 11) return 'Guten Morgen.'
+  if (h >= 11 && h < 18) return 'Hallo.'
+  return 'Guten Abend.'
+}
+
+export default function IntentionGate({ onSelect, onSkip }: IntentionGateProps) {
   const [hovered, setHovered] = useState<'focused' | 'open' | null>(null)
 
   function handleKey(e: React.KeyboardEvent, intention: 'focused' | 'open') {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       onSelect(intention)
+    }
+  }
+
+  function handleSkipKey(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSkip()
     }
   }
 
@@ -24,7 +39,7 @@ export default function IntentionGate({ onSelect }: IntentionGateProps) {
         style={{ width: 56, height: 56, objectFit: 'contain' }}
         onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none' }}
       />
-      <p className="igate-question">Was möchtest du heute angehen?</p>
+      <p className="igate-question">{getGreeting()} Was steht heute an?</p>
 
       <div className="igate-options">
         <div
@@ -69,6 +84,16 @@ export default function IntentionGate({ onSelect }: IntentionGateProps) {
           </div>
         </div>
       </div>
+
+      <button
+        className="igate-skip"
+        onClick={onSkip}
+        onKeyDown={handleSkipKey}
+        tabIndex={0}
+        aria-label="Einfach loslegen — kein Ziel wählen"
+      >
+        oder einfach loslegen ↓
+      </button>
     </div>
   )
 }
