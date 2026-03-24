@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import ChatArea from './ChatArea'
-import SessionPanel from './SessionPanel'
+import SessionPanel, { type SessionPrefs } from './SessionPanel'
 import SplitArtifactPanel from './SplitArtifactPanel'
 import { createClient } from '@/utils/supabase/client'
 import type { WorkspaceState, ChatMessage } from '@/hooks/useWorkspaceState'
@@ -57,6 +57,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     regenerate,
     handleGuidedAction,
     isSearching,
+    chatPrefsRef,
   } = props
 
   const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
@@ -119,6 +120,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   // ── Right panel resize ─────────────────────────────────
   const [rightWidth, setRightWidth] = React.useState(340)
   const [spCollapsed, setSpCollapsed] = React.useState(false)
+  const [livePrefs, setLivePrefs] = useState<SessionPrefs | null>(null)
   const rightWidthRef = React.useRef(rightWidth)
   React.useEffect(() => { rightWidthRef.current = rightWidth }, [rightWidth])
   React.useEffect(() => {
@@ -218,6 +220,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
               projects={projects}
               collapsed={spCollapsed}
               onToggleCollapse={() => setSpCollapsed(v => !v)}
+              onPrefsChange={(p) => { chatPrefsRef.current = p as unknown as Record<string, unknown> }}
             />
           </div>
         </>

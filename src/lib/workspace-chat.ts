@@ -23,6 +23,7 @@ export interface ChatActionsCtx {
   setIsSearching: React.Dispatch<React.SetStateAction<boolean>>
   newConversation: (initialMessages?: ChatMessage[]) => Promise<string | null>
   attachmentRef: React.MutableRefObject<AttachmentData | null>
+  chatPrefsRef: React.MutableRefObject<Record<string, unknown> | null>
 }
 
 export function createChatActions(ctx: ChatActionsCtx) {
@@ -81,6 +82,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
             conversation_id: convId,
             message: currentInput,
             ...(attachment ? { attachment: { name: attachment.name, mediaType: attachment.mediaType, base64: attachment.base64 } } : {}),
+            ...(ctx.chatPrefsRef.current ? { client_prefs: ctx.chatPrefsRef.current } : {}),
           }),
           signal: AbortSignal.timeout(60_000),
         }

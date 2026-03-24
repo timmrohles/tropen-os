@@ -261,6 +261,7 @@ export interface WorkspaceState {
   jungleSaving: boolean
   jungleAddConvOpen: number | null
   setJungleAddConvOpen: React.Dispatch<React.SetStateAction<number | null>>
+  chatPrefsRef: React.MutableRefObject<Record<string, unknown> | null>
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   searchWrapRef: React.RefObject<HTMLDivElement | null>
   contextMenuRef: React.RefObject<HTMLDivElement | null>

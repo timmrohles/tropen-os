@@ -591,16 +591,18 @@ serve(async (req) => {
     const organization = userProfile.organizations as { budget_limit: number | null };
 
     // 5. Präferenzen + Org-Settings
+    // client_prefs = live values from SessionPanel (no race condition vs. DB debounce)
+    const cp = (body as { client_prefs?: Record<string, unknown> }).client_prefs ?? {};
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
       supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode, web_search_enabled, link_previews").eq("user_id", user.id).maybeSingle(),
       supabase.from("organization_settings").select("ai_guide_name").eq("organization_id", userProfile.organization_id).maybeSingle(),
     ]);
-    const chatStyle        = userPrefs?.chat_style        ?? "structured";
-    const memorySize       = userPrefs?.memory_window     ?? 20;
-    const proactiveHints   = userPrefs?.proactive_hints   ?? true;
-    const thinkingMode     = userPrefs?.thinking_mode     ?? false;
-    const webSearchEnabled = (userPrefs as { web_search_enabled?: boolean } | null)?.web_search_enabled ?? false;
-    const linkPreviews     = (userPrefs as { link_previews?: boolean } | null)?.link_previews ?? true;
+    const chatStyle        = (cp.chat_style        as string  | undefined) ?? userPrefs?.chat_style        ?? "structured";
+    const memorySize       = (cp.memory_window     as number  | undefined) ?? userPrefs?.memory_window     ?? 20;
+    const proactiveHints   = (cp.proactive_hints   as boolean | undefined) ?? userPrefs?.proactive_hints   ?? true;
+    const thinkingMode     = (cp.thinking_mode     as boolean | undefined) ?? userPrefs?.thinking_mode     ?? false;
+    const webSearchEnabled = (cp.web_search_enabled as boolean | undefined) ?? (userPrefs as { web_search_enabled?: boolean } | null)?.web_search_enabled ?? false;
+    const linkPreviews     = (cp.link_previews     as boolean | undefined) ?? (userPrefs as { link_previews?: boolean } | null)?.link_previews ?? true;
     const aiGuideName      = orgSettings?.ai_guide_name   ?? "Toro";
 
     // 5b. Agent-System-Prompt

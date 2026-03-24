@@ -29,7 +29,10 @@ export interface SessionPanelProps {
   projects: Project[]
   collapsed?: boolean
   onToggleCollapse?: () => void
+  onPrefsChange?: (prefs: Prefs) => void
 }
+
+export type { Prefs as SessionPrefs }
 
 // ─────────────────────────────────────────────────────────
 // Constants
@@ -98,6 +101,7 @@ export default function SessionPanel({
   projects,
   collapsed: collapsedProp,
   onToggleCollapse,
+  onPrefsChange,
 }: SessionPanelProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -171,13 +175,18 @@ export default function SessionPanel({
     if (!userId) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      supabase.from('user_preferences').update(partial).eq('user_id', userId)
+      supabase.from('user_preferences').upsert(
+        { user_id: userId, ...partial },
+        { onConflict: 'user_id' }
+      )
     }, 500)
   }, [userId, supabase])
 
   function updatePref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
-    setPrefs(prev => ({ ...prev, [key]: value }))
+    const next = { ...prefs, [key]: value }
+    setPrefs(next)
     savePrefs({ [key]: value })
+    onPrefsChange?.(next)
   }
 
   async function openSkillDrawer() {

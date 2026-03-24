@@ -124,6 +124,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [jungleSaving, setJungleSaving] = useState(false)
   const [jungleAddConvOpen, setJungleAddConvOpen] = useState<number | null>(null)
 
+  // Live prefs ref — updated by WorkspaceLayout when SessionPanel changes prefs
+  // Passed to createChatActions so doSend() can include them in the API body
+  const chatPrefsRef = useRef<Record<string, unknown> | null>(null)
+
   // ── Refs ───────────────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const searchWrapRef = useRef<HTMLDivElement>(null)
@@ -341,6 +345,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     setMemoryExtracting, setChips, setIsSearching,
     newConversation: convActions.newConversation,
     attachmentRef,
+    chatPrefsRef,
   })
 
   // ── Computed ───────────────────────────────────────────
@@ -423,6 +428,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     jungleDragConv, setJungleDragConv,
     jungleSaving,
     jungleAddConvOpen, setJungleAddConvOpen,
+    chatPrefsRef,
     messagesEndRef, searchWrapRef, contextMenuRef,
     renameInputRef, projectRenameInputRef,
     escapeEditRef, escapeProjectEditRef,
