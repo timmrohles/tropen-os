@@ -5,13 +5,13 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
+import type { User } from '@supabase/supabase-js'
 import type { AccountRole } from '@/components/AccountSwitcher'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
   ShieldCheck, ClipboardText, ListChecks, ChartBar, Cpu, CurrencyEur,
-  FileText, Users, PaintBrush, ChatCircle, FolderOpen, Books, Compass,
-  Buildings, SquaresFour, RssSimple, Archive, Sparkle,
-  CaretLeft, CaretRight,
+  FileText, Users, PaintBrush, ChatCircle, FolderSimple, BookOpen,
+  Buildings, RssSimple, Sparkle, Robot, CaretLeft, CaretRight, GearSix,
 } from '@phosphor-icons/react'
 
 const VIEW_AS_KEY = 'tropen_view_as'
@@ -41,6 +41,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [isSuperadmin, setIsSuperadmin] = useState(false)
   const [dbRole, setDbRole] = useState<string | null>(null)
   const [viewAs, setViewAs] = useState<AccountRole>('superadmin')
+  const [user, setUser] = useState<User | null>(null)
 
   const isActive = (path: string, prefix?: string) =>
     prefix ? pathname.startsWith(prefix) : pathname === path || pathname.startsWith(path + '/')
@@ -68,9 +69,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       .maybeSingle()
       .then(({ data }) => { if (data) setBranding(data) })
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
+    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
+      if (!authUser) return
+      setUser(authUser)
+      const { data: profile } = await supabase.from('users').select('role').eq('id', authUser.id).maybeSingle()
       if (profile?.role === 'superadmin') setIsSuperadmin(true)
       setDbRole(profile?.role ?? null)
     })
@@ -93,42 +95,48 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const logoUrl = branding?.logo_url
 
   const superadminItems: NavItem[] = [
-    { href: '/superadmin/clients', icon: <ShieldCheck size={18} aria-hidden="true" />, label: 'Superadmin', matchPrefix: '/superadmin' },
-    { href: '/workspaces', icon: <SquaresFour size={18} aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-    { href: '/admin/qa', icon: <ClipboardText size={18} aria-hidden="true" />, label: 'QA', matchPrefix: '/admin/qa' },
-    { href: '/admin/todos', icon: <ListChecks size={18} aria-hidden="true" />, label: 'To-Dos', matchPrefix: '/admin/todos' },
-    { href: '/design-reference', icon: <Sparkle size={18} aria-hidden="true" />, label: 'Design Ref', matchPrefix: '/design-reference' },
+    { href: '/superadmin/clients', icon: <ShieldCheck size={18} weight="bold" aria-hidden="true" />, label: 'Superadmin', matchPrefix: '/superadmin' },
+    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    { href: '/admin/qa', icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'QA', matchPrefix: '/admin/qa' },
+    { href: '/admin/todos', icon: <ListChecks size={18} weight="bold" aria-hidden="true" />, label: 'To-Dos', matchPrefix: '/admin/todos' },
+    { href: '/design-reference', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Design Ref', matchPrefix: '/design-reference' },
   ]
 
   const adminPrimaryItems: NavItem[] = [
-    { href: '/dashboard', icon: <ChartBar size={18} aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-    { href: '/projects', icon: <FolderOpen size={18} aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/workspaces', icon: <SquaresFour size={18} aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    { href: '/dashboard', icon: <ChartBar size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
+    { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
+    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
   ]
   const adminItems: NavItem[] = [
-    { href: '/admin/models', icon: <Cpu size={18} aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' },
-    { href: '/admin/budget', icon: <CurrencyEur size={18} aria-hidden="true" />, label: 'Budget', matchPrefix: '/admin/budget' },
-    { href: '/admin/logs', icon: <FileText size={18} aria-hidden="true" />, label: 'Logs', matchPrefix: '/admin/logs' },
-    { href: '/admin/users', icon: <Users size={18} aria-hidden="true" />, label: 'User', matchPrefix: '/admin/users' },
-    { href: '/admin/branding', icon: <PaintBrush size={18} aria-hidden="true" />, label: 'Branding', matchPrefix: '/admin/branding' },
-    { href: '/department', icon: <Buildings size={18} aria-hidden="true" />, label: 'Department', matchPrefix: '/department' },
+    { href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' },
+    { href: '/admin/budget', icon: <CurrencyEur size={18} weight="bold" aria-hidden="true" />, label: 'Budget', matchPrefix: '/admin/budget' },
+    { href: '/admin/logs', icon: <FileText size={18} weight="bold" aria-hidden="true" />, label: 'Logs', matchPrefix: '/admin/logs' },
+    { href: '/admin/users', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'User', matchPrefix: '/admin/users' },
+    { href: '/admin/branding', icon: <PaintBrush size={18} weight="bold" aria-hidden="true" />, label: 'Branding', matchPrefix: '/admin/branding' },
+    { href: '/department', icon: <Buildings size={18} weight="bold" aria-hidden="true" />, label: 'Department', matchPrefix: '/department' },
   ]
 
   const memberPrimaryItems: NavItem[] = [
-    { href: '/chat', icon: <ChatCircle size={18} aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
-    { href: '/projects', icon: <FolderOpen size={18} aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
+    { href: '/chat', icon: <ChatCircle size={18} weight="bold" aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
+    { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
   ]
   const memberWorkspaceItems: NavItem[] = [
-    { href: '/workspaces', icon: <SquaresFour size={18} aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-    { href: '/feeds', icon: <RssSimple size={18} aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
-    { href: '/artifacts', icon: <Archive size={18} aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
-    { href: '/agenten', icon: <Compass size={18} aria-hidden="true" />, label: 'Agenten', matchPrefix: '/agenten' },
-    { href: '/knowledge', icon: <Books size={18} aria-hidden="true" />, label: 'Wissen', matchPrefix: '/knowledge' },
+    { href: '/artifacts', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
+    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    { href: '/knowledge', icon: <BookOpen size={18} weight="bold" aria-hidden="true" />, label: 'Wissen', matchPrefix: '/knowledge' },
+    { href: '/feeds', icon: <RssSimple size={18} weight="bold" aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
+    { href: '/agenten', icon: <Robot size={18} weight="bold" aria-hidden="true" />, label: 'Agenten', matchPrefix: '/agenten' },
   ]
   const memberBottomItems: NavItem[] = [
-    { href: '/dashboard', icon: <ChartBar size={18} aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-    ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
+    { href: '/dashboard', icon: <ChartBar size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
+    ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
   ]
+
+  const userName = user?.user_metadata?.full_name as string | undefined ?? user?.email ?? 'Account'
+  const userAvatar = user?.user_metadata?.avatar_url as string | undefined
+  const userInitial = (user?.user_metadata?.full_name as string | undefined)?.[0]?.toUpperCase()
+    ?? user?.email?.[0]?.toUpperCase()
+    ?? 'U'
 
   function NavLink({ item }: { item: NavItem }) {
     const active = isActive(item.href, item.matchPrefix)
@@ -177,6 +185,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       }} />
     )
   }
+
+  const isSettingsActive = pathname.startsWith('/settings')
 
   return (
     <aside
@@ -258,12 +268,45 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Bottom: only collapse toggle */}
+      {/* Bottom: collapse toggle + account link */}
       <div style={{
         flexShrink: 0,
         borderTop: '1px solid var(--sidebar-border)',
         padding: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
       }}>
+        {/* Account link */}
+        <Link
+          href="/settings"
+          aria-label={collapsed ? 'Einstellungen' : undefined}
+          title={collapsed ? 'Einstellungen' : undefined}
+          className={`sidebar-account${isSettingsActive ? ' sidebar-account--active' : ''}`}
+          style={{
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '0' : '8px 12px',
+          }}
+        >
+          <div className="sidebar-account-avatar">
+            {userAvatar ? (
+              <img src={userAvatar} alt="" aria-hidden="true" />
+            ) : (
+              <span aria-hidden="true">{userInitial}</span>
+            )}
+          </div>
+          {!collapsed && (
+            <>
+              <div className="sidebar-account-info">
+                <span className="sidebar-account-name">{userName}</span>
+                <span className="sidebar-account-role">Einstellungen</span>
+              </div>
+              <GearSix size={14} weight="bold" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }} aria-hidden="true" />
+            </>
+          )}
+        </Link>
+
+        {/* Collapse toggle */}
         <button
           type="button"
           onClick={onToggle}

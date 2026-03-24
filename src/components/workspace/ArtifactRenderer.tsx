@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { FloppyDisk, ArrowsOut, Code, FileText, Table, ListBullets, Atom, Play, ChatCircle, ArrowSquareOut, ProjectorScreen, CaretLeft, CaretRight, DownloadSimple, ChartBar } from '@phosphor-icons/react'
+import { FloppyDisk, ArrowsOut, Code, FileText, Table, ListBullets, Atom, Play, ChatCircle, ArrowSquareOut, ProjectorScreen, CaretLeft, CaretRight, DownloadSimple, ChartBar, Warning, ArrowClockwise } from '@phosphor-icons/react'
 import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
 
 interface ArtifactActionEvent {
@@ -18,6 +18,7 @@ interface ArtifactRendererProps {
   messageId?: string
   onSaved?: () => void
   onSendDirect?: (text: string) => void
+  isInSplitView?: boolean
 }
 
 // Strips ES module export syntax so Babel can eval the code in a script context.
@@ -159,6 +160,7 @@ export default function ArtifactRenderer({
   messageId,
   onSaved,
   onSendDirect,
+  isInSplitView = false,
 }: ArtifactRendererProps) {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -169,6 +171,9 @@ export default function ArtifactRenderer({
   const [expanded, setExpanded] = useState(false)
   const [lastAction, setLastAction] = useState<ArtifactActionEvent | null>(null)
   const [iframeHtml, setIframeHtml] = useState<string | null>(null)
+  const [transformError, setTransformError] = useState<string | null>(null)
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [currentSlide, setCurrentSlide] = useState(1)
   const [totalSlides, setTotalSlides] = useState(artifact.slideCount ?? 1)
   const [dynamicHeight, setDynamicHeight] = useState<number | null>(null)
@@ -177,6 +182,8 @@ export default function ArtifactRenderer({
   // Transform JSX server-side via sucrase — eliminates Babel CDN dependency in iframe
   useEffect(() => {
     if (artifact.artifactType !== 'react') return
+    setTransformError(null)
+    setIframeHtml(null)
     const normalized = normalizeArtifactCode(artifact.content)
     fetch('/api/artifacts/transform', {
       method: 'POST',
@@ -186,15 +193,15 @@ export default function ArtifactRenderer({
       .then(r => r.json())
       .then((data: { code?: string; error?: string }) => {
         if (data.error) {
-          setIframeHtml(buildReactIframeHtml(`throw new Error(${JSON.stringify(data.error)})`))
+          setTransformError(data.error)
         } else if (data.code) {
           setIframeHtml(buildReactIframeHtml(data.code))
         }
       })
       .catch(err => {
-        setIframeHtml(buildReactIframeHtml(`throw new Error(${JSON.stringify(String(err))})`))
+        setTransformError(String(err))
       })
-  }, [artifact.content, artifact.artifactType])
+  }, [artifact.content, artifact.artifactType, retryCount])
 
   // Listen for postMessage events from the sandboxed iframe
   useEffect(() => {
@@ -221,6 +228,7 @@ export default function ArtifactRenderer({
   const canSave = !!conversationId && !!organizationId && !saved
 
   // Parse chart config once — null on invalid JSON
+  // Must be before any early returns (Rules of Hooks)
   const chartIframeHtml = React.useMemo(() => {
     if (!isChart) return null
     try {
@@ -230,6 +238,36 @@ export default function ArtifactRenderer({
       return buildChartIframeHtml({ title: { text: 'Ungültige Chart-Konfiguration' }, series: [] })
     }
   }, [isChart, artifact.content])
+
+  function handleExportHtml() {
+    if (!iframeHtml) return
+    const blob = new Blob([iframeHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${artifact.name.replace(/\s+/g, '_')}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── Compact header — shown in chat when split-view is active ──────────────
+  if (isInSplitView && (isReact || isPresentation || isChart)) {
+    return (
+      <div className="artifact-header-only">
+        <span className="artifact-type-icon">{typeIcon(artifact.artifactType)}</span>
+        <span className="artifact-type-label">{typeLabel(artifact.artifactType)}</span>
+        <span className="artifact-name artifact-name--compact">{artifact.name}</span>
+        <div className="artifact-actions" style={{ marginLeft: 'auto' }}>
+          {canSave && (
+            <button onClick={() => void handleSave()} disabled={saving} title="Speichern" className="artifact-action-btn artifact-action-btn--icon" aria-label="Speichern">
+              <FloppyDisk size={13} weight="bold" />
+            </button>
+          )}
+          {saved && <span className="artifact-saved-badge">Gespeichert</span>}
+        </div>
+      </div>
+    )
+  }
 
   const previewHeight = isPresentation ? 480 : isChart ? 350 : (dynamicHeight ?? (expanded ? 520 : 300))
 
@@ -333,6 +371,16 @@ export default function ArtifactRenderer({
               <span>{exporting ? 'Exportiere…' : 'PPTX'}</span>
             </button>
           )}
+          {isReact && iframeHtml && (
+            <button
+              onClick={handleExportHtml}
+              title="Als HTML exportieren"
+              className="artifact-action-btn"
+            >
+              <DownloadSimple size={13} weight="bold" />
+              <span>HTML</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -362,7 +410,26 @@ export default function ArtifactRenderer({
         </>
       ) : isReact && previewOpen ? (
         <>
-          {iframeHtml ? (
+          {transformError ? (
+            <div className="artifact-error-card">
+              <div className="artifact-error-card__header">
+                <Warning size={14} weight="fill" aria-hidden="true" />
+                <span>Artifact konnte nicht geladen werden</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  <button className="artifact-action-btn" onClick={() => setRetryCount(c => c + 1)}>
+                    <ArrowClockwise size={13} weight="bold" />
+                    <span>Nochmal</span>
+                  </button>
+                  <button className="artifact-action-btn artifact-action-btn--ghost" onClick={() => setShowErrorDetails(v => !v)}>
+                    {showErrorDetails ? 'Ausblenden' : 'Details'}
+                  </button>
+                </div>
+              </div>
+              {showErrorDetails && (
+                <pre className="artifact-error-card__details">{transformError}</pre>
+              )}
+            </div>
+          ) : iframeHtml ? (
             <iframe
               ref={iframeRef}
               srcDoc={iframeHtml}
@@ -371,7 +438,7 @@ export default function ArtifactRenderer({
               title={artifact.name}
             />
           ) : (
-            <div style={{ height: previewHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+            <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
               Wird kompiliert…
             </div>
           )}
