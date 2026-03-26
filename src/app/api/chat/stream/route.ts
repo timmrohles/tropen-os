@@ -7,6 +7,7 @@ import { buildWorkspaceContext, buildCardContext, buildContextSnapshot, buildPre
 import { resolveWorkflow } from '@/lib/capability-resolver'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
 import { selectModel } from '@/lib/model-selector'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 
 const { modelId: DEFAULT_MODEL } = selectModel('chat')
 
@@ -38,6 +39,10 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     )
   }
+
+  // Budget check before any LLM work
+  const budget = await checkBudget(me.organization_id, 'claude-sonnet', workspaceId)
+  if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
   try {
     const scope = cardId ? 'card' : 'workspace'

@@ -105,8 +105,9 @@ export default function CardForm({ workspaceId, onCreated, onClose }: Props) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(26,23,20,0.45)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',

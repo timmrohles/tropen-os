@@ -8,6 +8,46 @@ async function getAuthUser() {
   return user
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const body = await req.json().catch(() => ({}))
+  const name = (body.name as string | undefined)?.trim()
+  if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
+
+  const { data: artifact } = await supabaseAdmin
+    .from('artifacts')
+    .select('organization_id')
+    .eq('id', id)
+    .single()
+
+  if (!artifact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { data: membership } = await supabaseAdmin
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .eq('organization_id', artifact.organization_id)
+    .single()
+
+  if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { data, error } = await supabaseAdmin
+    .from('artifacts')
+    .update({ name })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

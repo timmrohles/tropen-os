@@ -46,7 +46,7 @@ export async function PATCH(
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }) }
 
-  const allowedFields = ['title', 'goal', 'instructions']
+  const allowedFields = ['title', 'goal', 'instructions', 'emoji', 'context', 'archived_at']
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const key of allowedFields) {
     if (key in body) update[key] = body[key]

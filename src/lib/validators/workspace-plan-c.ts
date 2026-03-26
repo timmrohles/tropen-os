@@ -2,20 +2,25 @@
 import { z } from 'zod'
 
 export const createWorkspacePlanCSchema = z.object({
-  title: z.string().min(1).max(255),
-  goal: z.string().min(1).optional(),
-  domain: z.string().optional(),
+  title:       z.string().min(1).max(255),
+  description: z.string().max(500).optional(),
+  emoji:       z.string().max(10).optional(),
+  goal:        z.string().min(1).optional(),
+  domain:      z.string().optional(),
   departmentId: z.string().uuid().optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
+  meta:        z.record(z.string(), z.unknown()).optional(),
 })
 export type CreateWorkspacePlanCInput = z.infer<typeof createWorkspacePlanCSchema>
 
 export const updateWorkspacePlanCSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-  goal: z.string().min(1).optional(),
-  domain: z.string().optional(),
-  status: z.enum(['draft','active','exported','locked']).optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
+  title:       z.string().min(1).max(255).optional(),
+  goal:        z.string().min(1).optional(),
+  description: z.string().max(500).nullable().optional(),
+  emoji:       z.string().max(10).nullable().optional(),
+  domain:      z.string().optional(),
+  status:      z.enum(['draft','active','archived','exported','locked']).optional(),
+  archived_at: z.string().datetime().nullable().optional(),
+  meta:        z.record(z.string(), z.unknown()).optional(),
 })
 export type UpdateWorkspacePlanCInput = z.infer<typeof updateWorkspacePlanCSchema>
 

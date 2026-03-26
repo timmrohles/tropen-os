@@ -173,14 +173,14 @@ export default function ChatPanel({ workspaceId, cardId, color, placeholder }: P
         })
 
         if (!resp.ok || !resp.body) {
+          let errContent = 'Fehler beim Laden der Antwort.'
+          try {
+            const errData = await resp.json() as { message?: string; error?: string }
+            errContent = errData.message ?? errData.error ?? errContent
+          } catch { /* ignore parse errors */ }
           setMessages((prev) => [
             ...prev,
-            {
-              id: assistantId,
-              role: 'assistant',
-              content: 'Fehler beim Laden der Antwort.',
-              createdAt: new Date().toISOString(),
-            },
+            { id: assistantId, role: 'assistant', content: errContent, createdAt: new Date().toISOString() },
           ])
           setStreaming(false)
           return

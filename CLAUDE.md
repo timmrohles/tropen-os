@@ -140,6 +140,7 @@ Kein einziger Punkt ist optional.
 [ ] Nur className="btn btn-*" für Buttons — nie eigene button-styles?
 [ ] "Neu erstellen"-Aktionen immer in page-header-actions — nie in Sidebar/Content?
 [ ] Nur Phosphor Icons (@phosphor-icons/react), weight="bold" oder weight="fill"?
+[ ] Keine Emoji als Icons, keine anderen Icon-Libraries (HeroIcons, Lucide etc.)?
 [ ] Ausschließlich CSS-Variablen für Farben — keine Hex-Werte im Code?
 [ ] Kein manuelles paddingTop/paddingBottom — content-Klassen enthalten das automatisch?
 [ ] Kein background auf Page-Wrapper — Body-Gradient muss durchscheinen?
@@ -218,6 +219,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | Upstash Redis | @upstash/ratelimit | Rate Limiting in `src/proxy.ts` |
 | pnpm | — | Package Manager |
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
+| openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
 
 ### DB-Zugriff — kritische Constraint
 
@@ -242,6 +244,43 @@ Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
 Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
+
+### API-Key Management
+
+**Aktuell:** Anthropic API-Key gehört Tropen Research UG (nicht mehr persönlicher Account).
+
+**Env-Variablen:**
+- `ANTHROPIC_API_KEY` → Vercel Environment Variables
+- `ANTHROPIC_API_KEY` → Supabase Edge Function Secrets
+
+**Budget-System:**
+- `check_and_reserve_budget(org_id, p_workspace_id, estimated_cost)` RPC (Migration 005 + 012)
+- Kosten-Schätzungen: `src/lib/budget.ts` — `ESTIMATED_COSTS`
+- Enforcement: alle LLM-Call-Routes + Edge Function + Perspectives ✅
+- Fail-open: RPC-Fehler → Aufruf erlaubt (kein Ausfall wegen Budget-Check)
+- Budget erschöpft → HTTP 402, `code: 'BUDGET_EXHAUSTED'`
+
+**Enforcement-Status (Stand 2026-03-25):**
+| Route | Status |
+|-------|--------|
+| `supabase/functions/ai-chat` (Haupt-Chat) | ✅ |
+| `/api/perspectives/query` | ✅ |
+| `/api/chat/stream` (Canvas/Card-Chat) | ✅ |
+| `/api/images/generate` | ✅ |
+| `/api/tts` | ✅ |
+
+**Cloud-Budget-Alerts:**
+- Anthropic Console: Alert bei $100/Monat einrichten (TODO: manuell konfigurieren)
+- `organizations.budget_limit` (NUMERIC) — NULL = kein Limit
+- `departments.budget_limit` — NULL = kein Dept-Limit
+
+**Preiskalkulation (grob):**
+- claude-sonnet: ~$3 / 1M Input-Tokens → ~$0.004 pro Nachricht
+- claude-haiku: ~$0.25 / 1M Input-Tokens → ~$0.0004 pro Nachricht
+- DALL-E 3: ~$0.04 pro Bild
+- OpenAI TTS: ~$0.008 pro Anfrage
+- Typischer User: ~500K Tokens/Monat ≈ €1.50
+- Zielpreis: 29–49€/User/Monat → ~95% Marge
 
 ### Chart-Bibliotheken (ADR-005)
 
@@ -356,12 +395,56 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 - `weight="bold"` oder `weight="fill"` — nie andere weights
 - Größen: NavBar 18px · H1 22px · Cards/Listen 16px · Inline 14px
 - **Grün (`var(--accent)`) nur für Status, CTAs, aktive Zustände — nie in H1**
+- ❌ **Emoji als Icons verboten** — kein `📁`, `✅`, `🔔` o.ä. als funktionale UI-Icons
+- ❌ **Andere Icon-Libraries verboten** — kein Tailwind HeroIcons, Lucide, React Icons, Radix Icons
+- ❌ **Unicode-Zeichen als Icons verboten** — kein `→`, `×`, `✓` als interaktive Elemente
 
-#### Drawer-System
-- Backdrop: `rgba(0,0,0,0.4)`, Klick schließt
+#### Drawer-System / Modal-Backdrop
+- Backdrop-Standard: `className="modal-backdrop"` (reines Backdrop-Div) oder `className="modal-overlay"` (Backdrop + flex-center)
+- Farbe: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` — **niemals `rgba(0,0,0,...)`**
+- zIndex als inline `style={{ zIndex: N }}` ergänzen wenn CSS-Default nicht passt
 - Escape schließt immer
 - Animation: `200ms ease-out`
 - Kein Inline-Style in Drawer-Komponenten — CSS-Klassen aus `globals.css`
+
+#### Aktions-Icons — verbindliche Zuordnung
+
+**Nie eigene Icons erfinden — immer aus dieser Tabelle:**
+
+| Aktion | Icon (Phosphor) | Position | Sichtbar |
+|--------|----------------|----------|----------|
+| Öffnen / Detail | `ArrowSquareOut` | Karte hover | hover |
+| Bearbeiten | `PencilSimple` | [···] Menü | immer |
+| Archivieren | `Archive` | [···] Menü | immer |
+| Duplizieren | `Copy` | [···] Menü | immer |
+| Löschen | `Trash` | [···] Menü — immer ROT | immer |
+| Download | `DownloadSimple` | Karte hover | hover |
+| In Chat öffnen | `ChatCircle` | Karte hover | hover |
+| Neu erstellen | `Plus` | page-header-actions | immer |
+| Suchen | `MagnifyingGlass` | Filter-Bar links | immer |
+| Schließen (Modal) | `X` | oben rechts | immer |
+| Speichern | `FloppyDisk` | Button mit Label | immer |
+| Teilen | `ShareNetwork` | [···] Menü | immer |
+| Umbenennen | `PencilSimple` | [···] Menü | immer |
+
+**Karten-Aktionen — Standard-Pattern:**
+```
+Ruhezustand:  [Titel + Meta]
+Bei Hover:    [Titel + Meta] [↓] [···]
+Klick [···]:  Umbenennen / Bearbeiten
+              Archivieren
+              Duplizieren
+              ──────────────
+              Löschen        ← immer rot, immer unten
+```
+
+**Regeln:**
+- `Trash` / Löschen IMMER im [···] Menü — **nie direkt auf der Karte**
+- Archivieren ist KEINE destruktive Aktion — trotzdem im Menü
+- [···] = `DotsThree` Icon, `weight="bold"`
+- Hover-Aktionen: `opacity: 0` → `opacity: 1` über CSS `.card:hover .card-actions { opacity: 1 }`
+- Löschen: immer `className="dropdown-item dropdown-item--danger"`
+- Download/Öffnen dürfen direkt auf Karte sichtbar sein (hover, nicht destruktiv)
 
 #### Body-Gradient
 `background-attachment: fixed` auf `body` — Page-Wrapper dürfen **kein `background`** setzen, damit der Radial-Gradient durchscheint.
@@ -494,7 +577,7 @@ supabase functions deploy ai-chat
 ```
 
 **WICHTIG: Edge Function muss nach jeder Änderung an `supabase/functions/ai-chat/index.ts` manuell deployed werden!**
-Letzter Deploy: 2026-03-24 (Web Search + SPARK-Regeln: web_search_enabled, callAnthropic +tools/beta, streamAnthropic emittiert searching-Event + sources; buildSystemPrompt Regel 2+3 mit konkreten Beispielen + Direkt-Start-Triggern erweitert)
+Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Migration 071)
 
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
@@ -536,6 +619,44 @@ Letzte relevante Migrationen:
 | 20260322000065_perspectives.sql | perspective_avatars (scope/org/user/system, is_tabula_rasa, RLS), perspective_user_settings (pin/sort), 5 System-Avatare geseedet |
 | 20260324000066_user_prefs_link_previews.sql | user_preferences: link_previews BOOLEAN DEFAULT true |
 | 20260324000067_user_prefs_web_search.sql | user_preferences: web_search_enabled BOOLEAN DEFAULT false |
+| 20260325000070_user_prefs_emoji_style.sql | user_preferences: emoji_style VARCHAR DEFAULT 'minimal', suggestions_enabled BOOLEAN DEFAULT true |
+| 20260325000071_user_prefs_toro_address.sql | user_preferences: toro_address VARCHAR DEFAULT '', language_style TEXT DEFAULT '' |
+| 20260325000072_intention_guided.sql | conversations.intention: 'open' → NULL (migrated), CHECK updated to ('focused', 'guided') |
+| 20260325000073_projects_extend.sql | projects: emoji+context columns, goal+instructions→context migration; project_memory: deleted_at soft-delete + updated RLS; project_documents table + RLS; project-docs storage bucket; projects_with_stats view |
+| 20260325000074_projects_archive_merge.sql | projects: archived_at column; projects_with_stats view refreshed |
+| 20260325000075_workspaces_items.sql | workspaces: description+emoji+item_count columns, department_id nullable; workspace_items table + RLS + item_count trigger |
+| 20260325000076_workspace_members_share.sql | workspaces: share_token+share_role+share_active columns; workspace_members table + RLS |
+| 20260325000077_workspace_comments.sql | workspaces: comment_count column; workspace_comments table + RLS + comment_count trigger |
+| 20260325000078_workspace_comments_item.sql | workspace_comments: item_id UUID FK nullable (per-item comment threads) |
+| 20260325000079_workspaces_archive.sql | workspaces: archived_at TIMESTAMPTZ nullable + index (reversible soft-archive) |
+| 20260325000080_workspace_items_agent.sql | workspace_items: item_type constraint updated — adds 'agent', keeps 'note' for backwards-compat |
+| 20260325000081_org_assistant_image.sql | organization_settings: ai_assistant_image_url TEXT DEFAULT NULL |
+| 20260325000082_dashboard_widgets.sql | dashboard_widgets (user_id, org_id, widget_type, position, size, config, is_visible) + RLS; user_preferences: dashboard_setup_done BOOLEAN |
+| 20260325000083_rename_to_cockpit.sql | dashboard_widgets → cockpit_widgets; dashboard_setup_done → cockpit_setup_done; RLS policy recreated as cockpit_widgets_own |
+
+**Cockpit Widget System (Stand 2026-03-25):**
+Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
+Widgets: 8 Typen, alle mit echten Daten. API-Routes unter `/api/cockpit/*`.
+- `feed-highlights` → top 5 Feed-Artikel (letzte 24h, Score DESC)
+- `recommendation` → regelbasiert (kein LLM): Feeds → Inaktivität → Budget
+- `recent-activity` → letzte Chats + Artefakte des Users (max 6)
+- `projects` → aktive Projekte mit Chat-Count (max 4)
+- `artifact-stats` → Anzahl diese Woche + gesamt + letzte 3
+- `team-activity` → Admin-only: Chats + Artefakte der Org (letzte 2 Tage)
+- `budget` → Admin-only: Budget-% + Fortschrittsbalken + Euro-Werte
+- `quick_actions` → statisch: 6 Links (kein API-Call)
+Komponenten: `src/components/cockpit/widgets/` (8 Widget-Komponenten + shared.tsx)
+CSS-Klassen: `widget-content`, `widget-feed-*`, `widget-toro-*`, `widget-list-*`, `widget-budget-*`, `widget-quick-*`, `widget-skeleton-*`
+
+**Cockpit Widget-Roadmap (docs/plans/widget-katalog.md):**
+| Stufe | Wann | Widgets |
+|-------|------|---------|
+| 1 — intern | ✅ jetzt | W-01…W-08 (alle gebaut) |
+| 2 — MCP | Q3 2026 | W-09 E-Mail, W-11 Kalender, W-14 Slack, W-15 HubSpot, W-16 Analytics, W-17 Drive |
+| 3 — Agent | Q4 2026 | W-10 E-Mail-Prio ⭐, W-12 Meeting-Prep ⭐, W-13 Meeting-Scribe ⭐, W-18/W-19 Custom |
+Prioritäts-Agenten: E-Mail-Agent (Haiku, tägl. 07:00) → Kalender-Agent (Haiku, tägl. + 30min vor Meeting) → Meeting-Scribe (Whisper + Sonnet, on-demand)
+Pakete: Kommunikation / Vertrieb / Marketing / Custom
+widgetCatalog.ts braucht bei Stufe 2+: Felder `tier` (1/2/3) + `package` + `requiresMcp`
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
 
@@ -663,14 +784,21 @@ Details: `memory/project_pending_ui_tasks.md`
 
 | Task | Status | Notiz |
 |------|--------|-------|
+| Artifacts-Seite Redesign | ✅ gebaut | ArtifactMenu (DotsThree+Umbenennen+Löschen), alle 8 Typen, hover-actions, inline rename, empty-state mit ChatCircle-CTA (2026-03-25) |
+| Artefakte Vorschau Modal | ✅ gebaut | Klick auf Karte → ArtifactPreviewModal (ArtifactRenderer, Escape+Backdrop schließen, "Im Chat öffnen"), Mobile Fullscreen (2026-03-25). TODO: /artefakte/[id] eigene Seite wenn Sharing-Feature kommt |
 | Markdown-Rendering im Chat | ✅ bereits vorhanden | `react-markdown` + `remarkGfm` in `ChatMessage.tsx` — war fälschlich als offen notiert |
 | Artifact iframe-Höhe | ✅ gebaut | ResizeObserver + postMessage `iframe-resize` in `ArtifactRenderer.tsx`, max 800px (2026-03-23) |
 | Session-Panel Warnungen | ✅ gebaut | 5px-Dot + 11px-Text statt Warn-Boxen — `.sp-warning-badge` in `globals.css` (2026-03-23) |
+| Rechtes Panel Redesign | ✅ gebaut | `right-panel-*` CSS-Klassen, custom `PanelSelect` Komponente (`.dropdown`-System), Section-Icons (MapPin/Bird/Layout), Sidebar-Collapse-Button im Header, "Einklappen"-Text entfernt (2026-03-25) |
 | Voice-to-Text | ✅ gebaut | Web Speech API, Mic-Button im ChatInput (2026-03-20) — Hydration-Fix: `hasSpeech` via `useEffect` (2026-03-23) |
 | Dokument-Upload im Chat | ✅ gebaut | PDF/Bild Base64 via `attachmentRef` → Anthropic `document`/`image` content block (2026-03-23) |
 | PowerPoint-Export | ✅ gebaut | `pptxgenjs`, `/api/artifacts/export-pptx`, Button in `ArtifactRenderer.tsx` für Präsentations-Artifacts (2026-03-23) |
+| Text-to-Speech | ✅ gebaut | `useTTS` Hook, `/api/tts` (OpenAI tts-1, voice=nova), [🔊] Button in `MessageActions.tsx` (2026-03-25) |
+| Action Layer Hotfix | ✅ gebaut | ToroBadge außen rechts, DotsThree entfernt, neue Actions (Kürzen/E-Mail/Übersetzen/Bild/Perspektive), Mobile Bottom Sheet, `useMediaQuery` (2026-03-25) |
+| Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
 | Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
 | React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
+| Workspaces Redesign (Prompt A–C) | ✅ gebaut | workspace_items+members+comments (Mig 075–077); neue /workspaces page (client, grid+search+create); /workspaces/[id] Detail-Page (Tabs: Inhalte/Mitglieder/Kommentare/Einstellungen); /shared/[token] öffentliche Freigabe-Seite; workspace_items/members/comments/share API-Routes (2026-03-25) |
 
 ---
 

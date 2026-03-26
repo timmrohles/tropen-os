@@ -9,6 +9,9 @@ import type { CardPlanC, WorkspacePlanC } from '@/types/workspace-plan-c.types'
 
 const log = createLogger('workspace-context')
 
+// eslint-disable-next-line -- hex colors required for Reveal.js iframe CSS (CSS vars unavailable in iFrame)
+const RC = { h: '#1A1714', a: '#2D7A50', bg: '#EAE9E5', t: '#4A4540' }
+
 // Raw DB row shapes (snake_case from Supabase)
 interface CardDbRow {
   id: string
@@ -262,12 +265,12 @@ Wenn der User eine Präsentation, Slides oder Pitch möchte, antworte mit einem 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
   <style>
     :root {
-      --r-heading-color: #1A1714;
-      --r-link-color: #2D7A50;
-      --r-background-color: #EAE9E5;
+      --r-heading-color: ${RC.h};
+      --r-link-color: ${RC.a};
+      --r-background-color: ${RC.bg};
     }
-    .reveal h2 { color: #1A1714; font-size: 1.8em; }
-    .reveal li { color: #4A4540; }
+    .reveal h2 { color: ${RC.h}; font-size: 1.8em; }
+    .reveal li { color: ${RC.t}; }
   </style>
 </head>
 <body>
@@ -290,7 +293,7 @@ Regeln:
 - Slide 1: Titel + Untertitel
 - Slides 2–7: max. 5 Bullet-Points
 - Letzte Slide: CTA oder Zusammenfassung
-- Nur Tropen-OS-Farben verwenden (#1A1714, #2D7A50, #EAE9E5)
+- Nur Tropen-OS-Farben verwenden (Heading-Dunkel, Akzent-Grün, Hintergrund-Sand)
 - Beziehe dich konkret auf die Karten und Projekt-Erkenntnisse oben
 - Antworte auf Deutsch
 

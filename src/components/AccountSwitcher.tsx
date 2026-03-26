@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CaretDown } from '@phosphor-icons/react'
 
-export type AccountRole = 'superadmin' | 'org_admin' | 'member' | 'viewer'
+export type AccountRole = 'superadmin' | 'admin' | 'member' | 'viewer'
 
 interface AccountSwitcherProps {
   current: AccountRole
@@ -13,7 +13,7 @@ interface AccountSwitcherProps {
 const ACCOUNTS = [
   { role: 'superadmin' as const, label: 'Superadmin', shortLabel: 'Super',
     description: 'Vollzugriff auf alle Organisationen' },
-  { role: 'org_admin'  as const, label: 'Admin',       shortLabel: 'Admin',
+  { role: 'admin'      as const, label: 'Admin',        shortLabel: 'Admin',
     description: 'Organisations-Administrator' },
   { role: 'member'     as const, label: 'Member',      shortLabel: 'Member',
     description: 'Normales Mitglied — Chat, Projekte' },

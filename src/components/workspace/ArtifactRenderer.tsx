@@ -101,6 +101,7 @@ function buildChartIframeHtml(config: object): string {
   <div id="chart"></div>
   <script>
     var chart = echarts.init(document.getElementById('chart'), null, { renderer: 'canvas' })
+    // eslint-disable-next-line -- hex color palette injected into iframe JS (CSS vars unavailable in iFrame)
     var defaultColor = ['#2D7A50','#4A9E72','#86C9A4','#D4EDDE','#1a5c37','#5ab882']
     var option = ${JSON.stringify(config)}
     if (!option.color) option.color = defaultColor

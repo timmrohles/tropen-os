@@ -58,6 +58,12 @@ export function createChatActions(ctx: ChatActionsCtx) {
         ctx.sendingRef.current = false
         return
       }
+      // Auto-title from first 50 chars of the first user message
+      const autoTitle = currentInput.trim().slice(0, 50)
+      if (autoTitle) {
+        supabase.from('conversations').update({ title: autoTitle }).eq('id', convId)
+        ctx.setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, title: autoTitle } : c)))
+      }
     }
 
     if (!isNewConv) {
@@ -123,6 +129,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
             usage?: { cost_eur: number; tokens_input?: number; tokens_output?: number }
             sources?: SearchSource[]
             link_previews?: boolean
+            thinking?: string
           }
           try { parsed = JSON.parse(raw) as typeof parsed } catch { continue }
 
@@ -148,6 +155,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
                     model_used: parsed.routing?.model ?? null,
                     sources: parsed.sources?.length ? parsed.sources : undefined,
                     link_previews: parsed.link_previews ?? true,
+                    ...(parsed.thinking ? { thinking: parsed.thinking } : {}),
                   }
                 : m)
             )

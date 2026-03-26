@@ -16,13 +16,16 @@ import type { ChatMessageType } from '@/hooks/useWorkspaceState'
 import type { ChipItem, GuidedAction } from '@/lib/workspace-types'
 import ParrotIcon from '@/components/ParrotIcon'
 import { SaveArtifactModal } from './SaveArtifactModal'
+import PostToWorkspaceModal from './PostToWorkspaceModal'
 import ArtifactRenderer from './ArtifactRenderer'
 import MessageActions from './MessageActions'
+import ActionLayer from './ActionLayer'
 import GuidedModePicker from './GuidedModePicker'
 import GuidedStepCard from './GuidedStepCard'
 import GuidedSummary from './GuidedSummary'
 import { parseArtifacts } from '@/lib/chat/parse-artifacts'
 import SourcesBar from './SourcesBar'
+import ThinkingBlock from './ThinkingBlock'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -40,7 +43,9 @@ interface ChatMessageProps {
   onPerspectives?: (messageId: string) => void
   onRegenerate?: () => void
   onGuidedAction?: (action: GuidedAction) => void
+  onGenerateImage?: (content: string) => void
   isInSplitView?: boolean
+  suggestionsEnabled?: boolean
 }
 
 // ─── Workspace action marker ──────────────────────────────────────────────
@@ -298,14 +303,48 @@ export default function ChatMessage({
   onPerspectives,
   onRegenerate,
   onGuidedAction,
+  onGenerateImage,
   isInSplitView = false,
+  suggestionsEnabled = true,
 }: ChatMessageProps) {
   // Hooks müssen vor jedem early return stehen (Rules of Hooks)
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [saveModal, setSaveModal] = useState<{ content: string; language: string | null } | null>(null)
   const [flagState, setFlagState] = useState<'idle' | 'confirm' | 'done'>('idle')
   const [flagReason, setFlagReason] = useState('')
+  const [actionLayerOpen, setActionLayerOpen] = useState(false)
+  const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false)
   const router = useRouter()
+
+  function handleAction(id: string) {
+    switch (id) {
+      case 'perspective':
+        if (msg.id && onPerspectives) onPerspectives(msg.id)
+        break
+      case 'shorten':
+        onSendDirect?.('Bitte kürze deine letzte Antwort auf das Wesentliche.')
+        break
+      case 'email':
+        onSendDirect?.('Formuliere deine letzte Antwort als professionelle E-Mail. Für die Unterschrift verwende den Platzhalter "[Ihr Name]" — setze niemals deinen eigenen Namen ein.')
+        break
+      case 'translate':
+        onSendDirect?.('Übersetze deine letzte Antwort ins Englische.')
+        break
+      case 'image':
+        onGenerateImage?.(msg.content)
+        break
+      case 'regenerate':
+        onRegenerate?.()
+        break
+      case 'post_to_workspace':
+        setWorkspaceModalOpen(true)
+        break
+      case 'report':
+        setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')
+        break
+    }
+    setActionLayerOpen(false)
+  }
 
   // ── Guided Chat Mode rendering ───────────────────────────
   if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
@@ -345,7 +384,18 @@ export default function ChatMessage({
   const isUser = msg.role === 'user'
   const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
   const showActions = !isUser && !msg.pending && !!conversationId && !!msg.id
-  const hasArtifact = msg.content.includes('<artifact')
+
+  // Extract <suggestions> block from assistant content
+  const suggestionsMatch = !isUser ? msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/) : null
+  const suggestions: string[] = React.useMemo(() => {
+    if (!suggestionsMatch) return []
+    try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }
+  }, [suggestionsMatch])
+  const displayContent = suggestionsMatch
+    ? msg.content.replace(/<suggestions>[\s\S]*?<\/suggestions>/, '').trimEnd()
+    : msg.content
+
+  const hasArtifact = displayContent.includes('<artifact')
 
   async function handleBookmark() {
     if (!msg.id || !conversationId || bookmarkLoading) return
@@ -417,39 +467,43 @@ export default function ChatMessage({
           <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
         )}
 
-        <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
-          <div className="cmsg-content">
-            {isUser
-              ? msg.content
-              : renderAssistantContent(
-                  msg.content,
-                  mdComponents,
-                  showActions && organizationId && conversationId
-                    ? { conversationId, organizationId, messageId: msg.id ?? undefined, onSaved: onArtifactSaved, onSendDirect, isInSplitView }
-                    : undefined
-                )
-            }
-          </div>
-          {!isUser && msg.pending && (
-            <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
-          )}
-          {showActions && (
-            <MessageActions
-              messageId={msg.id ?? ''}
-              content={msg.content}
-              isBookmarked={isBookmarked}
-              bookmarkLoading={bookmarkLoading}
-              flagState={flagState}
-              isLastMessage={isLastAssistantMessage}
-              hasArtifact={hasArtifact}
-              isRegenerating={isStreaming && isLastAssistantMessage}
-              onBookmark={handleBookmark}
-              onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
-              onPerspectives={msg.id && onPerspectives ? () => onPerspectives(msg.id!) : undefined}
-              onRegenerate={onRegenerate}
-              onShareToChat={handleShareToChat}
-            />
-          )}
+        <div className="cmsg-bubble-wrap">
+          <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
+            {!isUser && msg.thinking && <ThinkingBlock content={msg.thinking} />}
+            <div className="cmsg-content">
+              {isUser
+                ? msg.content
+                : renderAssistantContent(
+                    displayContent,
+                    mdComponents,
+                    showActions && organizationId && conversationId
+                      ? { conversationId, organizationId, messageId: msg.id ?? undefined, onSaved: onArtifactSaved, onSendDirect, isInSplitView }
+                      : undefined
+                  )
+              }
+            </div>
+            {!isUser && msg.pending && (
+              <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
+            )}
+            {showActions && (
+              <MessageActions
+                content={msg.content}
+                isBookmarked={isBookmarked}
+                bookmarkLoading={bookmarkLoading}
+                flagState={flagState}
+                isLastMessage={isLastAssistantMessage}
+                onBookmark={handleBookmark}
+                onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
+              />
+            )}
+            {showActions && actionLayerOpen && (
+              <ActionLayer
+                isLastMessage={isLastAssistantMessage}
+                isStreaming={isStreaming && isLastAssistantMessage}
+                onAction={handleAction}
+                onClose={() => setActionLayerOpen(false)}
+              />
+            )}
 
           {flagState === 'confirm' && showActions && (
             <div style={{
@@ -514,7 +568,22 @@ export default function ChatMessage({
               </div>
             </div>
           )}
-        </div>
+          </div>{/* /cmsg-bubble */}
+
+          {/* ToroBadge — außen rechts an der Blase */}
+          {showActions && (
+            <button
+              className={`toro-avatar-badge${actionLayerOpen ? ' toro-avatar-badge--active' : ''}`}
+              onClick={() => setActionLayerOpen(v => !v)}
+              aria-label="Toro-Aktionen öffnen"
+              title="Was soll ich damit tun?"
+              aria-expanded={actionLayerOpen}
+              aria-haspopup="menu"
+            >
+              <ParrotIcon size={14} />
+            </button>
+          )}
+        </div>{/* /cmsg-bubble-wrap */}
 
         {isUser && (
           <div className="cmsg-avatar-user">{userInitial}</div>
@@ -523,6 +592,20 @@ export default function ChatMessage({
 
       {!isUser && !msg.pending && msg.sources && msg.sources.length > 0 && (msg.link_previews ?? true) && (
         <SourcesBar sources={msg.sources} />
+      )}
+
+      {!isUser && suggestionsEnabled && suggestions.length > 0 && (
+        <div className="suggestion-pills" role="group" aria-label="Weiterführende Vorschläge">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              className="suggestion-pill"
+              onClick={() => onSendDirect?.(s)}
+            >
+              {s} →
+            </button>
+          ))}
+        </div>
       )}
 
       {!isUser && isLastMessage && chips.length > 0 && (
@@ -538,6 +621,14 @@ export default function ChatMessage({
             </button>
           ))}
         </div>
+      )}
+
+      {workspaceModalOpen && conversationId && (
+        <PostToWorkspaceModal
+          conversationId={conversationId}
+          conversationTitle={msg.role === 'assistant' ? undefined : undefined}
+          onClose={() => setWorkspaceModalOpen(false)}
+        />
       )}
 
       {saveModal && conversationId && organizationId && (

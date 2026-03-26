@@ -34,6 +34,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     sendMessage,
     sendDirect,
     userInitial,
+    userFullName,
     projects,
     organizationId,
     assignToProject,
@@ -73,7 +74,50 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     if (data) setMessages(data as ChatMessage[])
   }, [activeConvId, setMessages])
 
+  const handleGenerateImage = useCallback(async (content: string) => {
+    const pendingId = `img-pending-${Date.now()}`
+    const cleanPrompt = content
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+      .slice(0, 900)
+
+    setMessages(prev => [...prev, {
+      id: pendingId,
+      role: 'assistant',
+      content: 'Bild wird generiert…',
+      pending: true,
+      model_used: null,
+      cost_eur: null,
+      tokens_input: null,
+      tokens_output: null,
+    } as ChatMessage])
+
+    try {
+      const res = await fetch('/api/images/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: cleanPrompt }),
+      })
+      if (res.ok) {
+        const { imageUrl, revisedPrompt } = await res.json() as { imageUrl: string; revisedPrompt: string }
+        setMessages(prev => prev.map(m =>
+          m.id === pendingId
+            ? { ...m, content: `![Generiertes Bild](${imageUrl})\n\n*Prompt: ${revisedPrompt}*`, pending: false }
+            : m
+        ))
+      } else {
+        setMessages(prev => prev.filter(m => m.id !== pendingId))
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => m.id !== pendingId))
+    }
+  }, [setMessages])
+
   // ── Split-screen artifact panel ────────────────────────
+  const [splitEnabled, setSplitEnabled] = React.useState(true)
   const [splitDismissedKey, setSplitDismissedKey] = React.useState<string | null>(null)
   const [splitWidth, setSplitWidth] = React.useState(480)
   const splitWidthRef = React.useRef(splitWidth)
@@ -95,7 +139,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   const splitArtifactKey = splitArtifact
     ? `${splitArtifact.name}::${splitArtifact.content.slice(0, 80)}`
     : null
-  const splitActive = !!splitArtifact && splitArtifactKey !== splitDismissedKey
+  const splitActive = splitEnabled && !!splitArtifact && splitArtifactKey !== splitDismissedKey
 
   function startSplitResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -118,9 +162,11 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
   }
 
   // ── Right panel resize ─────────────────────────────────
-  const [rightWidth, setRightWidth] = React.useState(340)
+  const [rightWidth, setRightWidth] = React.useState(240)
   const [spCollapsed, setSpCollapsed] = React.useState(false)
   const [livePrefs, setLivePrefs] = useState<SessionPrefs | null>(null)
+  const [contextStartIndex, setContextStartIndex] = React.useState(0)
+  React.useEffect(() => { setContextStartIndex(0) }, [activeConvId])
   const rightWidthRef = React.useRef(rightWidth)
   React.useEffect(() => { rightWidthRef.current = rightWidth }, [rightWidth])
   React.useEffect(() => {
@@ -163,6 +209,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         routing={routing}
         messagesEndRef={messagesEndRef as unknown as React.RefObject<HTMLDivElement>}
         userInitial={userInitial}
+        userName={userFullName}
         projects={projects}
         workspaceId={workspaceId}
         organizationId={organizationId ?? undefined}
@@ -172,6 +219,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onSendDirect={sendDirect}
         onRegenerate={regenerate}
         onGuidedAction={handleGuidedAction}
+        onGenerateImage={handleGenerateImage}
         isInSplitView={splitActive}
         onAssignToProject={assignToProject}
         contextPercent={contextPercent}
@@ -191,6 +239,9 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         pendingCurrentProjectId={pendingCurrentProjectId}
         onSetPendingCurrentProjectId={setPendingCurrentProjectId}
         isSearching={isSearching}
+        contextStartIndex={contextStartIndex}
+        onContextReset={() => setContextStartIndex(messages.length)}
+        suggestionsEnabled={livePrefs?.suggestions_enabled ?? true}
       />
 
       {/* ── Split Artifact Panel (Desktop only) ── */}
@@ -220,7 +271,14 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
               projects={projects}
               collapsed={spCollapsed}
               onToggleCollapse={() => setSpCollapsed(v => !v)}
-              onPrefsChange={(p) => { chatPrefsRef.current = p as unknown as Record<string, unknown> }}
+              onPrefsChange={(p) => {
+                setLivePrefs(p as unknown as SessionPrefs)
+                chatPrefsRef.current = p as unknown as Record<string, unknown>
+              }}
+              messageCount={messages.length}
+              onContextReset={() => setContextStartIndex(messages.length)}
+              splitEnabled={splitEnabled}
+              onToggleSplit={() => setSplitEnabled(v => !v)}
             />
           </div>
         </>

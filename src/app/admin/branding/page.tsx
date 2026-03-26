@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { PaintBrush } from '@phosphor-icons/react'
+import { PaintBrush, UploadSimple, X } from '@phosphor-icons/react'
 
 const PRESET_COLORS = ['var(--accent)', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
 
@@ -12,11 +12,13 @@ interface BrandingData {
   organization_display_name: string | null
   ai_guide_name: string
   ai_guide_description: string
+  ai_assistant_image_url: string | null
 }
 
 export default function BrandingPage() {
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const assistantImageInputRef = useRef<HTMLInputElement>(null)
 
   const [data, setData] = useState<BrandingData>({
     logo_url: null,
@@ -24,10 +26,12 @@ export default function BrandingPage() {
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
+    ai_assistant_image_url: null,
   })
   const [orgId, setOrgId] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadingAssistant, setUploadingAssistant] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -54,6 +58,7 @@ export default function BrandingPage() {
       .then((d: BrandingData) => {
         setData(d)
         if (d.logo_url) setLogoPreview(d.logo_url)
+        // ai_assistant_image_url stored directly in data, no separate preview state needed
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -81,6 +86,27 @@ export default function BrandingPage() {
     reader.onload = (e) => setLogoPreview(e.target?.result as string)
     reader.readAsDataURL(file)
     setUploading(false)
+  }
+
+  async function uploadAssistantImage(file: File) {
+    if (!file.type.startsWith('image/')) { setError('Bitte ein Bild auswaehlen.'); return }
+    if (file.size > 2 * 1024 * 1024) { setError('Bild max. 2 MB.'); return }
+    setUploadingAssistant(true)
+    setError('')
+    const path = `${orgId || 'tmp'}/assistant-image.png`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('org-assets')
+      .upload(path, file, { upsert: true, contentType: file.type })
+    if (uploadError) {
+      setError('Upload fehlgeschlagen. Pruefe ob Bucket "org-assets" existiert.')
+      setUploadingAssistant(false)
+      return
+    }
+    const { data: { publicUrl } } = supabase.storage
+      .from('org-assets')
+      .getPublicUrl(uploadData.path)
+    setData((prev) => ({ ...prev, ai_assistant_image_url: publicUrl }))
+    setUploadingAssistant(false)
   }
 
   async function save() {
@@ -227,6 +253,56 @@ export default function BrandingPage() {
               value={data.ai_guide_description}
               onChange={(e) => setData((d) => ({ ...d, ai_guide_description: e.target.value }))}
             />
+          </div>
+
+          {/* Assistent-Bild */}
+          <div style={s.field}>
+            <label style={s.label}>Assistent-Symbol</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {data.ai_assistant_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={data.ai_assistant_image_url}
+                  alt={data.ai_guide_name}
+                  style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8, border: '1px solid var(--border)' }}
+                />
+              ) : (
+                <video
+                  src="/animations/Parrot.webm"
+                  autoPlay loop muted playsInline
+                  style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8, opacity: 0.6 }}
+                />
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => assistantImageInputRef.current?.click()}
+                disabled={uploadingAssistant}
+              >
+                <UploadSimple size={14} weight="bold" aria-hidden="true" />
+                {uploadingAssistant ? 'Wird hochgeladen…' : 'Bild hochladen'}
+              </button>
+              {data.ai_assistant_image_url && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setData((d) => ({ ...d, ai_assistant_image_url: null }))}
+                >
+                  <X size={14} weight="bold" aria-hidden="true" />
+                  Standard
+                </button>
+              )}
+              <input
+                ref={assistantImageInputRef}
+                type="file"
+                accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAssistantImage(f) }}
+              />
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6 }}>
+              PNG, SVG oder JPG, quadratisch empfohlen. Leer lassen fuer Standard-Toro.
+            </span>
           </div>
 
           {error && <div style={s.errorBox}>{error}</div>}

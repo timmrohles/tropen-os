@@ -12,6 +12,7 @@ export const TODOS_CONCEPTS: Todo[] = [
   {
     id: 'chart-tremor',
     titel: 'Tremor Migration — App-UI Charts (Dashboard, SessionPanel)',
+    // eslint-disable-next-line -- hex in description text, not a UI color
     beschreibung: 'Erledigt: Tremor-Theme auf Tropen-Grün (#2D7A50) aktualisiert (tailwind.config.js). CostChart + RoutingPanel BarList: emerald → green. SessionPanel: AreaChart für per-message Kosten (ab 2 Datenpunkten).',
     status: 'erledigt',
     kategorie: 'Charts & Visualisierung',
@@ -163,6 +164,221 @@ export const TODOS_CONCEPTS: Todo[] = [
     kategorie: 'Superadmin',
     prioritaet: 'niedrig',
     referenz: 'src/app/superadmin/clients/page.tsx als Muster',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Plan L — MCP-Integrationen
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'plan-l-mcp',
+    titel: 'Plan L — MCP-Integrationen (Figma, Slack, Google Drive, Notion, HubSpot…)',
+    beschreibung: 'Toro verbindet sich via Model Context Protocol mit externen Apps. Variante A (Start): fremde MCP-Server (Figma, Slack, Google Drive etc.) via OAuth — keine eigene Infrastruktur. Variante B (später): eigene MCP-Server für interne Tools. User autorisiert einmalig, Toro liest/schreibt danach direkt im Chat. Vollständiges Konzept: docs/plans/mcp-integrations-konzept.md',
+    status: 'geplant',
+    kategorie: 'Integrationen',
+    prioritaet: 'hoch',
+    referenz: 'docs/plans/mcp-integrations-konzept.md',
+  },
+  {
+    id: 'mcp-01-vorarbeit',
+    titel: 'Manuelle Vorarbeit: OAuth-Apps anlegen (Timm)',
+    beschreibung: '1. Google Cloud Console: Gmail API + Calendar API + Drive API aktivieren. OAuth 2.0 Client ID erstellen (Typ: Web Application). Redirect URIs: https://app.tropen.io/api/auth/callback/google + http://localhost:3000/api/auth/callback/google. GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in .env.\n\n2. Slack API: Neue App anlegen. Scopes: channels:read, chat:write, users:read. Redirect URI: https://app.tropen.io/api/auth/callback/slack. SLACK_CLIENT_ID + SLACK_CLIENT_SECRET in .env.\n\n3. MCP_ENCRYPTION_KEY generieren: openssl rand -hex 32',
+    status: 'offen',
+    kategorie: 'Integrationen',
+    prioritaet: 'hoch',
+    referenz: 'docs/plans/mcp-integrations-konzept.md',
+  },
+  {
+    id: 'mcp-02-build',
+    titel: 'MCP-Verbindungen bauen (Settings + OAuth + DB + Widgets)',
+    beschreibung: 'DSGVO-Design-Prinzipien (nicht verhandelbar): Tokens → AES-256 verschlüsselt in DB. Rohe Daten (E-Mails, Kalender-Details, Slack-Nachrichten) → NIEMALS in DB. Widget-Cache → nur verarbeitete Ergebnisse. Trennen → alles sofort gelöscht. Scope minimal halten (nur readonly). Aufgaben: Migration mcp_connections + mcp_widget_cache (RLS). crypto.ts (AES-256-GCM). OAuth-Flow /api/auth/mcp/[provider] + /api/auth/callback/[provider] (CSRF via State). MCP-Client (getMCPClient, Token-Refresh). Settings Tab "Verbindungen" (VerbindungenSection). Widget-Integration (CTA wenn nicht verbunden). Trennen-API + Cache-Cleanup.',
+    status: 'offen',
+    kategorie: 'Integrationen',
+    prioritaet: 'hoch',
+    referenz: 'docs/plans/mcp-integrations-konzept.md',
+  },
+  {
+    id: 'mcp-03-agenten',
+    titel: 'Prioritäts-Agenten: E-Mail, Kalender, Meeting (nach MCP-Build)',
+    beschreibung: 'Drei Agenten die MCP-Verbindungen nutzen: 1. E-Mail-Agent (Haiku, tägl. 07:00) — liest Gmail, priorisiert, schreibt in Widget-Cache. 2. Kalender-Agent (Haiku, tägl. + 30min vor Meeting) — liest Calendar, zeigt Tagesüberblick + Meeting-Vorbereitung. 3. Meeting-Scribe (Whisper + Sonnet, on-demand) — transkribiert + fasst Meeting zusammen. Voraussetzung: mcp-02-build erledigt.',
+    status: 'offen',
+    kategorie: 'Integrationen',
+    prioritaet: 'hoch',
+    referenz: 'docs/plans/mcp-integrations-konzept.md',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Rollen-System — offene TODOs
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'roles-member-readonly',
+    titel: 'Member-Rolle: Modelle-Seite read-only',
+    beschreibung: 'NavBar für member zeigt Modelle-Link — aber die Seite soll read-only sein (keine Änderungen). Aktuell: kein Schutz vorhanden. Lösung: OrgRole-Check in /admin/models page.tsx oder API-Route.',
+    status: 'offen',
+    kategorie: 'Rollen & Berechtigungen',
+    prioritaet: 'mittel',
+    referenz: 'src/components/NavBar.tsx + memory.md',
+  },
+  {
+    id: 'roles-viewer-readonly',
+    titel: 'Viewer-Rolle: alle Admin-Seiten read-only (Edits deaktivieren)',
+    beschreibung: 'Viewer sieht dieselben Nav-Links wie Admin, aber alle Seiten sollen read-only sein — Buttons/Formulare deaktiviert. Noch nicht implementiert. Ansatz: useOrgRole() Hook + disabled-State auf allen Edit-Aktionen.',
+    status: 'offen',
+    kategorie: 'Rollen & Berechtigungen',
+    prioritaet: 'mittel',
+    referenz: 'memory.md — Role Architecture',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // AI FIRST — Abgeleitet aus 18 Newslettern (Nov 2025 – März 2026)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Toro / KI-Verhalten
+  {
+    id: 'ai-first-toro-values',
+    titel: 'Toro Werte-Hierarchie im Systemprompt (AI FIRST 1.1)',
+    beschreibung: 'Explizite Werte-Hierarchie in supabase/functions/ai-chat/index.ts: 1. Ehrlichkeit, 2. Datensparsamkeit, 3. Relevanz, 4. Effizienz. Toro erklärt sich als Entität von [Org-Name] auf Tropen OS — kein generischer Assistent. Reine Prompt-Arbeit, kein Code.',
+    status: 'geplant',
+    kategorie: 'Toro / KI-Verhalten',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Werte statt Regeln" (08.02.26)',
+  },
+  {
+    id: 'ai-first-toro-delegate',
+    titel: 'Toro "Was du nicht delegieren solltest"-Logik (AI FIRST 1.2)',
+    beschreibung: 'Systemprompt ergänzen: Toro unterscheidet implizit ob Wert im Ergebnis oder im Prozess liegt. Bei Letzterem (Kreativarbeit, Beziehungsaufbau, Reflexion) weist Toro hin, ohne zu blockieren. 30 Minuten, reine Prompt-Ergänzung.',
+    status: 'geplant',
+    kategorie: 'Toro / KI-Verhalten',
+    prioritaet: 'niedrig',
+    referenz: 'AI FIRST "Was du nicht an KI abgeben solltest" (16.11.25)',
+  },
+
+  // Onboarding
+  {
+    id: 'ai-first-onboarding-texts',
+    titel: 'Onboarding-Texte neu schreiben — AI-First Einstiegspfad (AI FIRST 2.1)',
+    beschreibung: 'Schlüsselbotschaft: "In 30 Minuten hast du deinen ersten echten Kontext hochgeladen und deinen ersten Agenten aktiv." Step 1: Erwartung setzen. Step 3: erstes Wissen mitbringen statt nur Team einladen. Neuer Step 5: erster Skill als Guided Workflow. Kein Code.',
+    status: 'geplant',
+    kategorie: 'Onboarding',
+    prioritaet: 'hoch',
+    referenz: 'AI FIRST "Guide: Richtig mit KI in 2026" (11.01.26)',
+  },
+  {
+    id: 'ai-first-onboarding-workflow',
+    titel: '"Erste Stunde"-Guided Workflow anlegen (AI FIRST 2.2)',
+    beschreibung: 'System-Guided-Workflow "onboarding-first-skill" (scope=system). Schritte: Scout (welche Aufgabe?), Planer (welche Infos braucht Toro?), Ausführer (Capability aktivieren), Reviewer (erste Antwort bewerten). Als letzter Onboarding-Schritt eingeblendet.',
+    status: 'geplant',
+    kategorie: 'Onboarding',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST SPARK-Methode (07.12.25)',
+  },
+  {
+    id: 'ai-first-onboarding-progress',
+    titel: 'Onboarding Progress-Tracker: 3 Meilensteine sichtbar machen (AI FIRST 2.3)',
+    beschreibung: 'User gilt als "operativ" wenn: (1) ersten Kontext hochgeladen, (2) ersten Skill aktiviert, (3) erste Chat-Session abgeschlossen. Kleines "Erste Schritte"-Widget im Dashboard, das verschwindet wenn alle 3 erledigt. State in user_metadata oder eigener onboarding_progress-Tabelle.',
+    status: 'geplant',
+    kategorie: 'Onboarding',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "8 Wochen KI-Betriebssystem" (01.03.26)',
+  },
+
+  // Agenten-System (AI FIRST)
+  {
+    id: 'ai-first-agent-types',
+    titel: '3 Agenten-Typen als offizielle Sprache einführen (AI FIRST 3.1)',
+    beschreibung: 'OS-Agent (Toro), Pipeline-Agent (Feeds), Standalone-Agent (Marketing-Agenten). feature-registry.md + Agenten-Seite: Badge/Label pro Agent. CLAUDE.md: Typ-Klassifikation bei Agenten-Prompts. Dokumentation + kleiner UI-Prompt.',
+    status: 'geplant',
+    kategorie: 'Agenten',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Der Agentic Layer" (22.03.26)',
+  },
+  {
+    id: 'ai-first-governance-badge',
+    titel: 'Governance-Badge (🟢🟡🔴) pro Agent/Capability sichtbar (AI FIRST 3.2)',
+    beschreibung: 'DB: capabilities + agents um governance_level (enum: green|yellow|red) erweitern (Migration). UI: Badge in Agenten-Liste + Capability-Karte mit Tooltip. Onboarding: Governance-Konzept erklären. Stärkt Vertrauen bei KMU-Admins.',
+    status: 'geplant',
+    kategorie: 'Agenten',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Das KI-Skill-Playbook" (15.03.26)',
+  },
+  {
+    id: 'ai-first-skill-anatomy',
+    titel: 'Guided Workflow "Skill erstellen" — 5-teilige Skill-Anatomie (AI FIRST 3.3)',
+    beschreibung: 'Neuer Guided Workflow für Skill-Anlage: (1) Aufgabe, (2) Ein/Ausgaben, (3) SOP Schritt-für-Schritt, (4) Kontext-Bedarf, (5) Definition of Done, (6) Governance-Stufe. Erscheint beim Anlegen einer neuen Capability/Skill. Kleines Formular-Schritte-UI.',
+    status: 'geplant',
+    kategorie: 'Agenten',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Das KI-Skill-Playbook" (15.03.26)',
+  },
+
+  // Kontext-System & Wissensbasis
+  {
+    id: 'ai-first-context-model',
+    titel: '3-stufiges Kontext-Modell dokumentieren (AI FIRST 4.1)',
+    beschreibung: 'Kern-Kontext (immer geladen), Aufgaben-Kontext (Skill-spezifisch), Hintergrund-Kontext (auf Abruf). In rag-architecture.md und CLAUDE.md dokumentieren. Wissensbasis-Seite optional nach Stufe gruppieren.',
+    status: 'geplant',
+    kategorie: 'Kontext & Wissensbasis',
+    prioritaet: 'niedrig',
+    referenz: 'AI FIRST "Die 5 Bausteine" (08.03.26)',
+  },
+  {
+    id: 'ai-first-knowledge-cta',
+    titel: '"Wissensbasis aufbauen" als zentralen First Value kommunizieren (AI FIRST 4.2)',
+    beschreibung: 'Onboarding + Wissensbasis-Seite: "Toro kennt deinen Kontext — deshalb liefert er bessere Ergebnisse als ein generischer Chatbot". Prominenter CTA "Dein erstes Dokument hochladen". Empty State: nicht "Noch keine Einträge", sondern "Toro braucht Kontext". Nur Texte.',
+    status: 'geplant',
+    kategorie: 'Kontext & Wissensbasis',
+    prioritaet: 'hoch',
+    referenz: 'AI FIRST "Unser KI-Tool Stack" (02.11.25)',
+  },
+
+  // Feedback-Layer
+  {
+    id: 'ai-first-feedback-layer',
+    titel: 'Feedback-Layer für Skill-Verbesserungen (AI FIRST 5.1)',
+    beschreibung: 'Nächster großer Plan nach J2. skill_feedback Tabelle (skill_id, agent_run_id, feedback_type, suggestion, status). Nach jedem Agenten-Run Toro um Feedback bitten. Skill-Owner-View in Library mit offenen Items. Skill-Owner-Rolle definieren.',
+    status: 'geplant',
+    kategorie: 'Agenten',
+    prioritaet: 'hoch',
+    referenz: 'AI FIRST "Die 5 Bausteine" (08.03.26) — eigener Plan nach J2',
+  },
+
+  // Marketing & Positionierung
+  {
+    id: 'ai-first-terminology',
+    titel: 'Terminologie an AI FIRST angleichen (AI FIRST 6.1)',
+    beschreibung: 'UI-Labels und Onboarding-Texte: "Capabilities anlegen" → "Skills dokumentieren", "Agenten konfigurieren" → "Agenten-Team aufbauen", "Workspace erstellen" → "Arbeitsbereich einrichten". "Dein KI-Betriebssystem" auf Login-Screen. Nur Texte, kein Refactoring.',
+    status: 'geplant',
+    kategorie: 'Marketing & Positionierung',
+    prioritaet: 'niedrig',
+    referenz: 'AI FIRST alle Artikel',
+  },
+  {
+    id: 'ai-first-player-coach',
+    titel: '"Player-AI-Coach" Rollenverschiebung kommunizieren (AI FIRST 6.2)',
+    beschreibung: 'Onboarding Step 1: "Du wirst zum Player-AI-Coach deines Teams." Kernbotschaft: nicht "KI ersetzt euch", sondern "ihr führt KI". Landing Page + architecture.md ergänzen. 1 Stunde, Texte + Docs.',
+    status: 'geplant',
+    kategorie: 'Marketing & Positionierung',
+    prioritaet: 'niedrig',
+    referenz: 'AI FIRST "AI-First Teamaufbau" (14.12.25)',
+  },
+  {
+    id: 'ai-first-feeds-position',
+    titel: 'Feeds als "Automatische Wissensquelle" positionieren (AI FIRST 6.3)',
+    beschreibung: 'Feeds-Seite: Tagline "Automatische Wissensquelle — Toro beobachtet das Netz für dich". Onboarding: Feeds als Schritt 3 ("Richte deinen ersten automatischen Feed ein"). Antwortet auf "Wir haben keine Zeit, die Wissensbasis manuell zu pflegen". Nur Texte.',
+    status: 'geplant',
+    kategorie: 'Marketing & Positionierung',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Unser KI-Tool Stack" (02.11.25)',
+  },
+
+  // GenAI Framework
+  {
+    id: 'ai-first-genai-framework',
+    titel: 'GenAI Framework in Toro-Einstiegsdialog einbauen (AI FIRST 7.1)',
+    beschreibung: 'Toro-Begrüßung bei 0 Nachrichten: "Ich kann dir bei zwei Dingen helfen: Analysieren + Erstellen. Je mehr Kontext ich habe, desto besser meine Unterstützung." Als Toro-Nachricht, nicht als Popup. Prompt-Ergänzung in Edge Function, 30 Minuten.',
+    status: 'geplant',
+    kategorie: 'Toro / KI-Verhalten',
+    prioritaet: 'mittel',
+    referenz: 'AI FIRST "Das GenAI Framework" (30.11.25)',
   },
 
   // ══════════════════════════════════════════════════════════════════════════

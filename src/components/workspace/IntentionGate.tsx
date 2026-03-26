@@ -1,99 +1,62 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useMemo } from 'react'
+import { Target, Lightning } from '@phosphor-icons/react'
+import Link from 'next/link'
 
 interface IntentionGateProps {
-  onSelect: (intention: 'focused' | 'open') => void
-  onSkip: () => void
+  userName?: string
+  onFocused: () => void
+  onGuided: () => void
 }
 
-function getGreeting(): string {
-  const h = new Date().getHours()
-  if (h >= 5 && h < 11) return 'Guten Morgen.'
-  if (h >= 11 && h < 18) return 'Hallo.'
-  return 'Guten Abend.'
-}
-
-export default function IntentionGate({ onSelect, onSkip }: IntentionGateProps) {
-  const [hovered, setHovered] = useState<'focused' | 'open' | null>(null)
-
-  function handleKey(e: React.KeyboardEvent, intention: 'focused' | 'open') {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSelect(intention)
-    }
-  }
-
-  function handleSkipKey(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSkip()
-    }
-  }
+export default function IntentionGate({ userName, onFocused, onGuided }: IntentionGateProps) {
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours()
+    const name = userName ? `, ${userName}` : ''
+    if (hour >= 5 && hour < 12) return `Guten Morgen${name}.`
+    if (hour >= 12 && hour < 18) return `Hallo${name}.`
+    return `Guten Abend${name}.`
+  }, [userName])
 
   return (
-    <div className="igate">
-      <video
-        src="/parrot.webm"
-        autoPlay loop muted playsInline
-        style={{ width: 56, height: 56, objectFit: 'contain' }}
-        onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none' }}
-      />
-      <p className="igate-question">{getGreeting()} Was steht heute an?</p>
+    <div className="intention-gate" role="region" aria-label="Chat-Einstieg">
+      <div className="intention-gate-icon" aria-hidden="true">🦜</div>
 
-      <div className="igate-options">
-        <div
-          className="card igate-card"
-          role="button"
-          tabIndex={0}
-          onClick={() => onSelect('focused')}
-          onKeyDown={(e) => handleKey(e, 'focused')}
-          onMouseEnter={() => setHovered('focused')}
-          onMouseLeave={() => setHovered(null)}
-          style={{
-            cursor: 'pointer',
-            borderColor: hovered === 'focused' ? 'var(--accent)' : undefined,
-          }}
-          aria-label="Gezielt — ich habe ein konkretes Ziel"
-        >
-          <div className="igate-card-icon">🎯</div>
-          <div className="igate-card-text">
-            <strong>Gezielt</strong>
-            <span>Ich habe ein konkretes Ziel</span>
-          </div>
-        </div>
-
-        <div
-          className="card igate-card"
-          role="button"
-          tabIndex={0}
-          onClick={() => onSelect('open')}
-          onKeyDown={(e) => handleKey(e, 'open')}
-          onMouseEnter={() => setHovered('open')}
-          onMouseLeave={() => setHovered(null)}
-          style={{
-            cursor: 'pointer',
-            borderColor: hovered === 'open' ? 'var(--accent)' : undefined,
-          }}
-          aria-label="Offen — ich denke nach, schaue was entsteht"
-        >
-          <div className="igate-card-icon">🔍</div>
-          <div className="igate-card-text">
-            <strong>Offen</strong>
-            <span>Ich denke nach, schaue was entsteht</span>
-          </div>
-        </div>
+      <div className="intention-gate-greeting">
+        <h2 className="intention-gate-title">{greeting}</h2>
+        <p className="intention-gate-subtitle">Was steht heute an?</p>
       </div>
 
-      <button
-        className="igate-skip"
-        onClick={onSkip}
-        onKeyDown={handleSkipKey}
-        tabIndex={0}
-        aria-label="Einfach loslegen — kein Ziel wählen"
-      >
-        oder einfach loslegen ↓
-      </button>
+      <div className="intention-gate-cards">
+        <Link
+          href="/chat"
+          className="card intention-gate-card"
+          aria-label="Gezielt starten — an einem Chat weiterarbeiten"
+        >
+          <div className="intention-gate-card-icon">
+            <Target size={22} weight="fill" color="var(--accent)" aria-hidden="true" />
+          </div>
+          <div className="intention-gate-card-text">
+            <span className="intention-gate-card-title">Gezielt</span>
+            <span className="intention-gate-card-sub">An einem Chat weiterarbeiten</span>
+          </div>
+        </Link>
+
+        <button
+          className="card intention-gate-card"
+          onClick={onGuided}
+          aria-label="Geführt starten — Toro führt dich Schritt für Schritt"
+        >
+          <div className="intention-gate-card-icon">
+            <Lightning size={22} weight="fill" color="var(--accent)" aria-hidden="true" />
+          </div>
+          <div className="intention-gate-card-text">
+            <span className="intention-gate-card-title">Geführt</span>
+            <span className="intention-gate-card-sub">Toro führt dich Schritt für Schritt</span>
+          </div>
+        </button>
+      </div>
     </div>
   )
 }

@@ -247,9 +247,9 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: 0,
   },
   error: {
-    background: '#1a0a0a',
-    border: '1px solid #3a1a1a',
-    color: '#f87171',
+    background: 'var(--error-bg)',
+    border: '1px solid var(--error-border)',
+    color: 'var(--error)',
     borderRadius: 7,
     padding: '10px 14px',
     fontSize: 13,

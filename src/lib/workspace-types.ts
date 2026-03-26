@@ -35,7 +35,7 @@ export interface Conversation {
   project_id: string | null
   agent_id: string | null
   deleted_at: string | null
-  intention: 'focused' | 'open' | null
+  intention: 'focused' | 'guided' | null
   current_project_id: string | null
   drift_detected: boolean | null
 }
@@ -104,6 +104,7 @@ export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_u
   guidedData?: GuidedData
   sources?: SearchSource[]
   link_previews?: boolean
+  thinking?: string
 }
 
 export interface ChipItem {
@@ -282,8 +283,8 @@ export interface WorkspaceState {
   memoryExtracting: boolean
   isSearching: boolean
   setIsSearching: React.Dispatch<React.SetStateAction<boolean>>
-  pendingIntention: 'focused' | 'open' | null
-  setPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'open' | null>>
+  pendingIntention: 'focused' | 'guided' | null
+  setPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'guided' | null>>
   pendingCurrentProjectId: string | null
   setPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
   isMobile: boolean

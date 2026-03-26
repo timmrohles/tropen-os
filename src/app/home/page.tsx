@@ -5,6 +5,8 @@ import AnnouncementsFeed from '@/components/home/AnnouncementsFeed'
 import ChatCTA from '@/components/home/ChatCTA'
 import FeatureGrid from '@/components/home/FeatureGrid'
 import RecentlyUsed from '@/components/home/RecentlyUsed'
+import { OrgHealthSection } from '@/components/home/OrgHealthSection'
+import { OrgOnboardingProgress } from '@/components/home/OrgOnboardingProgress'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -121,6 +123,8 @@ export default async function HomePage() {
 
       <ChatCTA workspaceId={workspaceId} />
       <FeatureGrid />
+      <OrgHealthSection />
+      <OrgOnboardingProgress />
 
       {((recentChats.length > 0) || recentWorkspaces.length > 0) && (
         <RecentlyUsed

@@ -248,18 +248,60 @@ ALTER TABLE organization_settings
 
 ---
 
-## 8. Offene Fragen
+## 8. Ergänzungen (Stand 2026-03-25)
+
+### Ergänzung 1 — Agenten-Widgets
+
+Agenten befüllen direkt Cockpit-Widgets — nicht nur Feeds/Karten/Live:
+
+| Agent | Widget | Typ |
+|-------|--------|-----|
+| E-Mail-Agent (Haiku, tägl. 07:00) | W-10 `email_priority` | Stufe 3 |
+| Kalender-Agent (Haiku, tägl. + 30min vor Meeting) | W-12 `meeting_prep` | Stufe 3 |
+| Meeting-Scribe (Whisper + Sonnet, on-demand) | W-13 `meeting_notes` | Stufe 3 |
+
+Mechanismus: `n8n Workflow → POST /api/agents/webhook/[type] → agent_runs speichern → Widget liest aus agent_runs`
+
+### Ergänzung 2 — MCP vs. n8n (kein Widerspruch)
+
+MCP und n8n sind keine Konkurrenten — sie ergänzen sich auf verschiedenen Ebenen:
+
+| | MCP | n8n |
+|---|-----|-----|
+| **Wer verbindet** | User direkt (OAuth in Settings) | Agent im Hintergrund (Cron) |
+| **Wann** | Live / on-demand | Geplant / automatisch |
+| **Daten** | Einfache Anzeige | Verarbeitung + Transformation |
+| **Beispiel Kalender** | "Zeig mir heutige Termine" (live) | "Bereite jedes Meeting vor" (Agent) |
+
+Kalender-Widget nutzt beide Wege:
+- MCP → Stufe 2 Widget: live-Anzeige heutiger Termine
+- n8n → Stufe 3 Widget: Agent bereitet Meeting-Kontext vor
+
+### Ergänzung 3 — Pakete konfigurieren n8n-Credentials automatisch
+
+Das Konzept sprach von "Org-Credentials". Diese werden jetzt über MCP-Verbindungen + Paket-Aktivierung gesteuert:
+
+- **Kommunikations-Paket** aktiviert → Gmail + Google Calendar Credentials auto-konfiguriert in n8n
+- **Vertrieb-Paket** aktiviert → HubSpot + Slack Credentials
+- `organization_settings.n8n_credentials` speichert nur Konfigurationsstatus (`{ gmail: { configured: true } }`) — nie echte Keys
+
+n8n erhält dieselben Tokens wie MCP — kein doppeltes Credential-Management.
+
+---
+
+## 9. Offene Fragen
 
 ### Vor Phase 2 klären
 
 | Frage | Priorität |
 |-------|-----------|
 | Hosting-Provider | ✅ Entschieden: Hetzner VPS Frankfurt (EU, DSGVO-konform, ~$5-10/Monat) |
-| Welche Org-Credentials in Phase 2? (Slack, Gmail, Webhook?) | 🔴 Hoch |
+| Welche Org-Credentials in Phase 2? | ✅ Entschieden: Gmail + Google Calendar (via MCP OAuth) + Slack (via MCP OAuth) |
 | Wie komplex dürfen Toro-generierte Workflows sein? | 🟡 Mittel |
 | Wie wird n8n Workspace bei Org-Löschung bereinigt? | 🟡 Mittel |
 
 ### Vor Phase 4 klären (nicht jetzt)
+
 
 | Frage | Priorität |
 |-------|-----------|

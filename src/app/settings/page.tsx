@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { GearSix } from '@phosphor-icons/react'
+import { GearSix, User, Brain, Lightning, Plugs, Buildings, Sliders, ShieldCheck, ChartBar } from '@phosphor-icons/react'
 import { ProfileSection } from './_components/ProfileSection'
 import { KIContextSection } from './_components/KIContextSection'
 import { SkillsSection } from './_components/SkillsSection'
@@ -11,6 +11,7 @@ import { FromOrgSection } from './_components/FromOrgSection'
 import { PreferencesSection } from './_components/PreferencesSection'
 import { SecuritySection } from './_components/SecuritySection'
 import { OrganizationSection } from './_components/OrganizationSection'
+import { KostenVerbrauchSection } from './_components/KostenVerbrauchSection'
 
 type SettingsTab =
   | 'profile'
@@ -21,15 +22,16 @@ type SettingsTab =
   | 'preferences'
   | 'security'
   | 'organization'
+  | 'kosten'
 
 const TABS = [
-  { id: 'profile' as const,      label: 'Profil' },
-  { id: 'ki-context' as const,   label: 'Mein KI-Kontext' },
-  { id: 'skills' as const,       label: 'Meine Skills' },
-  { id: 'connections' as const,  label: 'Verbindungen' },
-  { id: 'from-org' as const,     label: 'Von meiner Org' },
-  { id: 'preferences' as const,  label: 'Präferenzen' },
-  { id: 'security' as const,     label: 'Sicherheit' },
+  { id: 'profile' as const,      label: 'Profil',           icon: User },
+  { id: 'ki-context' as const,   label: 'Mein KI-Kontext',  icon: Brain },
+  { id: 'skills' as const,       label: 'Meine Skills',     icon: Lightning },
+  { id: 'connections' as const,  label: 'Verbindungen',     icon: Plugs },
+  { id: 'from-org' as const,     label: 'Von meiner Org',   icon: Buildings },
+  { id: 'preferences' as const,  label: 'Präferenzen',      icon: Sliders },
+  { id: 'security' as const,     label: 'Sicherheit',       icon: ShieldCheck },
 ]
 
 export default function SettingsPage() {
@@ -40,7 +42,8 @@ export default function SettingsPage() {
   useEffect(() => {
     // Support hash-style navigation: /settings#ki-kontext
     const hash = window.location.hash.replace('#', '')
-    if (hash && TABS.find(t => t.id === hash)) setActiveTab(hash as SettingsTab)
+    const allTabIds: SettingsTab[] = [...TABS.map(t => t.id), 'organization', 'kosten']
+    if (hash && allTabIds.includes(hash as SettingsTab)) setActiveTab(hash as SettingsTab)
 
     // Check admin status
     const load = async () => {
@@ -56,7 +59,8 @@ export default function SettingsPage() {
 
   const visibleTabs = [
     ...TABS,
-    ...(isAdmin ? [{ id: 'organization' as const, label: 'Organisation' }] : []),
+    ...(isAdmin ? [{ id: 'organization' as const, label: 'Organisation', icon: Buildings }] : []),
+    ...(isAdmin ? [{ id: 'kosten' as const, label: 'Kosten & Verbrauch', icon: ChartBar }] : []),
   ]
 
   return (
@@ -72,7 +76,7 @@ export default function SettingsPage() {
 
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Einstellungs-Bereiche">
-          {visibleTabs.map(({ id, label }) => (
+          {visibleTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               className={`settings-nav-item${activeTab === id ? ' settings-nav-item--active' : ''}`}
@@ -82,6 +86,7 @@ export default function SettingsPage() {
               }}
               aria-current={activeTab === id ? 'page' : undefined}
             >
+              <Icon size={14} weight="bold" aria-hidden="true" />
               {label}
             </button>
           ))}
@@ -96,6 +101,7 @@ export default function SettingsPage() {
           {activeTab === 'preferences'  && <PreferencesSection />}
           {activeTab === 'security'     && <SecuritySection />}
           {activeTab === 'organization' && isAdmin && <OrganizationSection />}
+          {activeTab === 'kosten'       && isAdmin && <KostenVerbrauchSection />}
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ export async function GET() {
 
   const { data: prefs } = await supabaseAdmin
     .from('user_preferences')
-    .select('language, chat_style, model_preference')
+    .select('language, chat_style, model_preference, toro_address, language_style')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -37,13 +37,18 @@ export async function PATCH(req: NextRequest) {
     })
     .eq('id', user.id)
 
-  if (body.language !== undefined || body.chat_style !== undefined) {
+  const prefsUpdate: Record<string, string> = {}
+  if (body.language !== undefined)       prefsUpdate.language = body.language
+  if (body.chat_style !== undefined)     prefsUpdate.chat_style = body.chat_style
+  if (body.toro_address !== undefined)   prefsUpdate.toro_address = body.toro_address
+  if (body.language_style !== undefined) prefsUpdate.language_style = body.language_style
+
+  if (Object.keys(prefsUpdate).length > 0) {
     await supabaseAdmin
       .from('user_preferences')
       .upsert({
         user_id: user.id,
-        ...(body.language !== undefined && { language: body.language }),
-        ...(body.chat_style !== undefined && { chat_style: body.chat_style }),
+        ...prefsUpdate,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
   }

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
-import { Eye, Plus, PencilSimple, Trash, Copy } from '@phosphor-icons/react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Eye, Plus, PencilSimple, Trash, Copy, DotsThree } from '@phosphor-icons/react'
 import AvatarFormDrawer from './_components/AvatarFormDrawer'
 
 interface Avatar {
@@ -23,6 +23,54 @@ const TAB_LABELS: Record<Tab, string> = {
   system: 'System',
   org:    'Organisation',
   user:   'Meine Avatare',
+}
+
+function AvatarMenu({ avatar, onEdit, onDelete, deleting }: {
+  avatar: Avatar
+  onEdit: (a: Avatar) => void
+  onDelete: (a: Avatar) => void
+  deleting: string | null
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
+      <button
+        className="btn-icon"
+        onClick={() => setOpen(p => !p)}
+        aria-label="Mehr Optionen"
+        title="Mehr"
+      >
+        <DotsThree size={16} weight="bold" />
+      </button>
+      {open && (
+        <div className="dropdown animate-dropdown" style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, minWidth: 160, zIndex: 50 }}>
+          <button className="dropdown-item" onClick={() => { setOpen(false); onEdit(avatar) }}>
+            <PencilSimple size={14} weight="bold" /> Bearbeiten
+          </button>
+          <div className="dropdown-divider" />
+          <button
+            className="dropdown-item dropdown-item--danger"
+            onClick={() => { setOpen(false); onDelete(avatar) }}
+            disabled={deleting === avatar.id}
+          >
+            <Trash size={14} weight="bold" />
+            {deleting === avatar.id ? 'Wird gelöscht…' : 'Löschen'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function PerspectivesPage() {
@@ -156,7 +204,7 @@ export default function PerspectivesPage() {
                 <span className="chip" style={{ fontSize: 10 }}>{avatar.model_id.split('-').slice(0, 2).join('-')}</span>
               </div>
 
-              <div style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => handleCopy(avatar)}
@@ -168,28 +216,12 @@ export default function PerspectivesPage() {
                   {copying === avatar.id ? '…' : 'Kopieren'}
                 </button>
                 {avatar.scope === 'user' && (
-                  <>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => handleEdit(avatar)}
-                      title="Bearbeiten"
-                      aria-label={`${avatar.name} bearbeiten`}
-                    >
-                      <PencilSimple size={13} weight="bold" aria-hidden="true" />
-                      Bearbeiten
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      style={{ marginLeft: 'auto' }}
-                      onClick={() => handleDelete(avatar)}
-                      disabled={deleting === avatar.id}
-                      title="Löschen"
-                      aria-label={`${avatar.name} löschen`}
-                    >
-                      <Trash size={13} weight="bold" aria-hidden="true" />
-                      {deleting === avatar.id ? '…' : ''}
-                    </button>
-                  </>
+                  <AvatarMenu
+                    avatar={avatar}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    deleting={deleting}
+                  />
                 )}
               </div>
             </div>

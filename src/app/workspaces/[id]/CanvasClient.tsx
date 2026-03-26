@@ -6,7 +6,32 @@ import {
   Tray, ArrowsClockwise, Export as ExportIcon,
 } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
-import type { CanvasCard, CanvasWorkspace } from './page'
+export type CanvasCard = {
+  id: string
+  title: string
+  description: string | null
+  role: string | null
+  type: string | null
+  status: string
+  stale_reason: string | null
+  sources: unknown[] | null
+  sort_order: number
+  content: unknown | null
+  capability_id: string | null
+  outcome_id: string | null
+  source: 'manual' | 'chat_artifact' | null
+  source_conversation_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CanvasWorkspace = {
+  id: string
+  title: string
+  goal: string | null
+  status: string
+  meta: Record<string, unknown>
+}
 import ChatPanel from '@/components/ws/ChatPanel'
 import CardTile from '@/components/workspaces/CardTile'
 
@@ -262,7 +287,7 @@ function CreateCardModal({ workspaceId, onCreated, onClose }: ModalProps) {
     <div
       role="dialog" aria-modal="true" aria-labelledby="ccm-heading"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      className="modal-overlay" style={{ zIndex: 1000, padding: 24 }}
     >
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 460, position: 'relative', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
         <h2 id="ccm-heading" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>Neue Karte erstellen</h2>

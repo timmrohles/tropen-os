@@ -99,7 +99,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [chips, setChips] = useState<ChipItem[]>([])
 
   // Intention system — pending state bis newConversation() aufgerufen wird
-  const [pendingIntention, setPendingIntention] = useState<'focused' | 'open' | null>(null)
+  const [pendingIntention, setPendingIntention] = useState<'focused' | 'guided' | null>(null)
   const [pendingCurrentProjectId, setPendingCurrentProjectId] = useState<string | null>(null)
 
   // Web search

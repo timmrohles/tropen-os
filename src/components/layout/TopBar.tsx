@@ -40,6 +40,9 @@ export default function TopBar() {
     if (stored === ('solo' as string)) {
       sessionStorage.setItem(VIEW_AS_KEY, 'member')
       setViewAs('member')
+    } else if (stored === ('org_admin' as string)) {
+      sessionStorage.setItem(VIEW_AS_KEY, 'admin')
+      setViewAs('admin')
     } else if (stored) {
       setViewAs(stored)
     }
@@ -293,10 +296,10 @@ export default function TopBar() {
                 Ansicht als
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {(['superadmin', 'org_admin', 'member', 'viewer'] as const).map((role) => {
+                {(['superadmin', 'admin', 'member', 'viewer'] as const).map((role) => {
                   const labels: Record<string, { label: string; desc: string }> = {
                     superadmin: { label: 'Superadmin', desc: 'Vollzugriff auf alle Organisationen' },
-                    org_admin:  { label: 'Admin',      desc: 'Organisations-Administrator' },
+                    admin:      { label: 'Admin',      desc: 'Organisations-Administrator' },
                     member:     { label: 'Member',     desc: 'Normales Mitglied — Chat, Projekte' },
                     viewer:     { label: 'Viewer',     desc: 'Lese-Zugriff, keine Erstellung' },
                   }

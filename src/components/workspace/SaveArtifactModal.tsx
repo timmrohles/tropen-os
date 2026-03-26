@@ -34,7 +34,7 @@ export function SaveArtifactModal({
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      className="modal-overlay" style={{ zIndex: 300 }}
       onClick={onCancel}
     >
       <div

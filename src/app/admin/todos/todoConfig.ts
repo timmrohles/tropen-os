@@ -4,11 +4,11 @@ import { TODOS } from './todoData'
 // ── Konstanten & Helpers ───────────────────────────────────────────────────────
 
 export const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
-  offen:     { label: 'Offen',     bg: 'var(--accent-subtle)',  color: 'var(--accent)' },
+  offen:     { label: 'Bereit',    bg: 'var(--accent-subtle)',  color: 'var(--accent)' },
   in_arbeit: { label: 'In Arbeit', bg: 'var(--accent-subtle)',  color: 'var(--accent)' },
   erledigt:  { label: 'Erledigt',  bg: 'var(--success-bg)',     color: 'var(--success)' },
   blockiert: { label: 'Blockiert', bg: 'var(--error-bg)',       color: 'var(--error)' },
-  geplant:   { label: 'Geplant',   bg: 'var(--info-bg)',        color: 'var(--info)' },
+  geplant:   { label: 'Backlog',   bg: 'var(--info-bg)',        color: 'var(--info)' },
   teilweise: { label: 'Teilweise', bg: 'var(--warning-bg)',     color: 'var(--warning)' },
 }
 

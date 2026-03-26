@@ -44,12 +44,22 @@ export default function ChatInput({ input, setInput, sending, onSubmit, attachme
   const [hasSpeech, setHasSpeech] = useState(false)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
   const [attachment, setAttachment] = useState<{ name: string; sizeKb: number; isImage: boolean } | null>(null)
   const [attachError, setAttachError] = useState<string | null>(null)
 
   useEffect(() => {
     setHasSpeech(!!getSpeechRecognition())
   }, [])
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [input])
 
   const toggleRecording = useCallback(() => {
     const SR = getSpeechRecognition()
@@ -98,7 +108,6 @@ export default function ChatInput({ input, setInput, sending, onSubmit, attachme
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string
-      // strip "data:...;base64," prefix
       const base64 = dataUrl.split(',')[1] ?? ''
       const data: AttachmentData = {
         name: file.name,
@@ -119,14 +128,24 @@ export default function ChatInput({ input, setInput, sending, onSubmit, attachme
     setAttachError(null)
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (!sending && (input.trim() || attachment)) {
+        formRef.current?.requestSubmit()
+      }
+    }
+  }
+
   const hasAttachment = !!attachmentRef
+  const canSend = !sending && (!!input.trim() || !!attachment)
 
   return (
     <div className="cinput-wrap-outer">
       {/* Attachment preview */}
       {attachment && (
         <div className="cinput-attachment">
-          <span className="cinput-attachment-icon">{attachment.isImage ? '🖼' : '📄'}</span>
+          <Paperclip size={13} weight="bold" aria-hidden="true" />
           <span className="cinput-attachment-name">{attachment.name}</span>
           <span className="cinput-attachment-size">{attachment.sizeKb} KB</span>
           <button
@@ -143,7 +162,7 @@ export default function ChatInput({ input, setInput, sending, onSubmit, attachme
         <div className="cinput-attach-error">{attachError}</div>
       )}
 
-      <form onSubmit={onSubmit} className="cinput-row">
+      <form ref={formRef} onSubmit={onSubmit} className="cinput-container">
         {/* Hidden file input */}
         {hasAttachment && (
           <input
@@ -155,53 +174,64 @@ export default function ChatInput({ input, setInput, sending, onSubmit, attachme
           />
         )}
 
-        {/* Paperclip button */}
-        {hasAttachment && (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={`cinput-attach-btn${attachment ? ' cinput-attach-btn--active' : ''}`}
-            aria-label="Datei anhängen"
-            title="PDF oder Bild anhängen (einmalige Analyse)"
-            disabled={sending}
-          >
-            <Paperclip size={17} weight="bold" />
-          </button>
-        )}
-
-        {hasSpeech && (
-          <button
-            type="button"
-            onClick={toggleRecording}
-            className={`cinput-mic${recording ? ' cinput-mic--active' : ''}`}
-            aria-label={recording ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
-            title={recording ? 'Aufnahme stoppen' : 'Spracheingabe'}
-          >
-            {recording
-              ? <MicrophoneSlash size={18} weight="fill" />
-              : <Microphone size={18} weight="bold" />
-            }
-          </button>
-        )}
-        <input
+        <textarea
+          ref={textareaRef}
           className="cinput-field"
           placeholder="Nachricht eingeben…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={sending}
           autoFocus
+          rows={1}
+          aria-label="Nachricht an Toro"
+          aria-multiline="true"
         />
-        <button
-          className="cinput-send"
-          type="submit"
-          disabled={sending || (!input.trim() && !attachment)}
-          aria-label={sending ? 'Nachricht wird gesendet…' : 'Nachricht senden'}
-        >
-          {sending
-            ? <span className="cinput-sending">…</span>
-            : <PaperPlaneRight size={20} weight="fill" />
-          }
-        </button>
+
+        {/* Actions bar */}
+        <div className="cinput-actions">
+          <div className="cinput-actions-left">
+            {hasAttachment && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`cinput-action-btn${attachment ? ' cinput-action-btn--active' : ''}`}
+                aria-label="Datei anhängen"
+                title="PDF oder Bild anhängen"
+                disabled={sending}
+              >
+                <Paperclip size={16} weight="bold" aria-hidden="true" />
+              </button>
+            )}
+
+            {hasSpeech && (
+              <button
+                type="button"
+                onClick={toggleRecording}
+                className={`cinput-action-btn${recording ? ' cinput-action-btn--recording' : ''}`}
+                aria-label={recording ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
+                title={recording ? 'Aufnahme stoppen' : 'Spracheingabe'}
+              >
+                {recording
+                  ? <MicrophoneSlash size={16} weight="fill" aria-hidden="true" />
+                  : <Microphone size={16} weight="bold" aria-hidden="true" />
+                }
+              </button>
+            )}
+          </div>
+
+          <button
+            className="cinput-send"
+            type="submit"
+            disabled={!canSend}
+            aria-label={sending ? 'Nachricht wird gesendet…' : 'Nachricht senden'}
+          >
+            {sending
+              ? <span className="cinput-sending">…</span>
+              : <PaperPlaneRight size={16} weight="fill" aria-hidden="true" />
+            }
+          </button>
+        </div>
       </form>
     </div>
   )

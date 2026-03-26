@@ -3,11 +3,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
-  CaretLeft, CaretRight, CaretDown, X,
-  FolderOpen, Sliders, Plugs, Eye,
-  ChartBar, PencilSimple, MagnifyingGlass, Compass, ClipboardText, Sparkle,
+  CaretRight, Brain,
+  ArrowCounterClockwise, GearSix, ArrowRight,
+  MapPin, Bird, Layout,
 } from '@phosphor-icons/react'
 import ParrotIcon from '@/components/ParrotIcon'
+import { PanelSelect } from './PanelSelect'
 import type { Project } from '@/hooks/useWorkspaceState'
 
 // ─────────────────────────────────────────────────────────
@@ -15,9 +16,9 @@ import type { Project } from '@/hooks/useWorkspaceState'
 // ─────────────────────────────────────────────────────────
 
 interface Prefs {
-  chat_style: 'clear' | 'structured' | 'detailed'
-  memory_window: number
-  proactive_hints: boolean
+  chat_style: 'knapp' | 'normal' | 'ausführlich' | 'geführt'
+  emoji_style: 'none' | 'minimal' | 'normal'
+  suggestions_enabled: boolean
   thinking_mode: boolean
   link_previews: boolean
   web_search_enabled: boolean
@@ -30,6 +31,10 @@ export interface SessionPanelProps {
   collapsed?: boolean
   onToggleCollapse?: () => void
   onPrefsChange?: (prefs: Prefs) => void
+  messageCount?: number
+  onContextReset?: () => void
+  splitEnabled?: boolean
+  onToggleSplit?: () => void
 }
 
 export type { Prefs as SessionPrefs }
@@ -38,58 +43,18 @@ export type { Prefs as SessionPrefs }
 // Constants
 // ─────────────────────────────────────────────────────────
 
-const STYLE_OPTIONS: Array<{ value: Prefs['chat_style']; label: string; desc: string }> = [
-  { value: 'clear',      label: 'Klar',        desc: 'Kurz und direkt' },
-  { value: 'structured', label: 'Strukturiert', desc: 'Mit Überschriften und Listen' },
-  { value: 'detailed',   label: 'Ausführlich',  desc: 'Detailliert mit Beispielen' },
-]
-const STYLE_LABELS: Record<Prefs['chat_style'], string> = {
-  clear: 'Klar', structured: 'Strukturiert', detailed: 'Ausführlich',
-}
-
-interface LibrarySkill {
-  id: string
-  name: string
-  title: string
-  icon: string | null
-  description: string | null
-}
-
-const SKILL_ICONS: Record<string, React.ElementType> = {
-  analyst:         ChartBar,
-  writer:          PencilSimple,
-  researcher:      MagnifyingGlass,
-  strategist:      Compass,
-  project_manager: ClipboardText,
-}
-
-function SkillIcon({ name, size = 12 }: { name: string; size?: number }) {
-  const Icon = SKILL_ICONS[name.toLowerCase()] ?? Sparkle
-  return <Icon size={size} weight="bold" />
-}
-
-const MCP_ITEMS = [
-  { id: 'gdrive',   label: 'Google Drive', connected: false },
-  { id: 'hubspot',  label: 'HubSpot',      connected: false },
-  { id: 'slack',    label: 'Slack',        connected: false },
+const STYLE_OPTIONS: Array<{ value: Prefs['chat_style']; label: string }> = [
+  { value: 'knapp',       label: 'Knapp' },
+  { value: 'normal',      label: 'Normal' },
+  { value: 'ausführlich', label: 'Ausführlich' },
+  { value: 'geführt',     label: 'Geführt' },
 ]
 
-// ─────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────
-
-function SectionLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="sp-section-label">
-      {icon}
-      <span>{children}</span>
-    </div>
-  )
-}
-
-function Divider() {
-  return <div className="sp-divider" />
-}
+const EMOJI_OPTIONS: Array<{ value: Prefs['emoji_style']; label: string }> = [
+  { value: 'none',    label: 'Keine' },
+  { value: 'minimal', label: 'Dezent' },
+  { value: 'normal',  label: 'Normal' },
+]
 
 // ─────────────────────────────────────────────────────────
 // Main Component
@@ -102,6 +67,10 @@ export default function SessionPanel({
   collapsed: collapsedProp,
   onToggleCollapse,
   onPrefsChange,
+  messageCount = 0,
+  onContextReset,
+  splitEnabled = true,
+  onToggleSplit,
 }: SessionPanelProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -113,29 +82,15 @@ export default function SessionPanel({
   }
 
   const [prefs, setPrefs] = useState<Prefs>({
-    chat_style: 'structured',
-    memory_window: 20,
-    proactive_hints: true,
+    chat_style: 'normal',
+    emoji_style: 'minimal',
+    suggestions_enabled: true,
     thinking_mode: false,
     link_previews: true,
     web_search_enabled: false,
   })
   const [userId, setUserId] = useState<string | null>(null)
-  const [styleDropOpen, setStyleDropOpen] = useState(false)
-  const styleDropRef = useRef<HTMLDivElement>(null)
-  const [skillDrawerOpen, setSkillDrawerOpen] = useState(false)
-  const [librarySkills, setLibrarySkills] = useState<LibrarySkill[]>([])
-  const [activeSkillIds, setActiveSkillIds] = useState<Set<string>>(new Set())
-  const [skillsLoading, setSkillsLoading] = useState(false)
-  const [comingSoonMsg, setComingSoonMsg] = useState<string | null>(null)
-  const comingSoonTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function showComingSoon(label: string) {
-    if (comingSoonTimer.current) clearTimeout(comingSoonTimer.current)
-    setComingSoonMsg(`${label} — Integration kommt bald`)
-    comingSoonTimer.current = setTimeout(() => setComingSoonMsg(null), 4000)
-  }
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -143,33 +98,28 @@ export default function SessionPanel({
       setUserId(user.id)
       const { data } = await supabase
         .from('user_preferences')
-        .select('chat_style, memory_window, proactive_hints, thinking_mode, link_previews, web_search_enabled')
+        .select('chat_style, emoji_style, suggestions_enabled, thinking_mode, link_previews, web_search_enabled')
         .eq('user_id', user.id)
         .maybeSingle()
       if (data) {
+        const raw = data as Record<string, unknown>
+        const rawStyle = raw.chat_style as string | undefined
+        let chatStyle: Prefs['chat_style'] = 'normal'
+        if (rawStyle === 'knapp' || rawStyle === 'normal' || rawStyle === 'ausführlich' || rawStyle === 'geführt') {
+          chatStyle = rawStyle
+        }
         setPrefs({
-          chat_style: (data.chat_style as Prefs['chat_style']) ?? 'structured',
-          memory_window: (data as { memory_window?: number }).memory_window ?? 20,
-          proactive_hints: (data as { proactive_hints?: boolean }).proactive_hints ?? true,
-          thinking_mode: (data as { thinking_mode?: boolean }).thinking_mode ?? false,
-          link_previews: (data as { link_previews?: boolean }).link_previews ?? true,
-          web_search_enabled: (data as { web_search_enabled?: boolean }).web_search_enabled ?? false,
+          chat_style: chatStyle,
+          emoji_style: (raw.emoji_style as Prefs['emoji_style']) ?? 'minimal',
+          suggestions_enabled: (raw.suggestions_enabled as boolean) ?? true,
+          thinking_mode: (raw.thinking_mode as boolean) ?? false,
+          link_previews: (raw.link_previews as boolean) ?? true,
+          web_search_enabled: (raw.web_search_enabled as boolean) ?? false,
         })
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  useEffect(() => {
-    if (!styleDropOpen) return
-    function onDown(e: MouseEvent) {
-      if (styleDropRef.current && !styleDropRef.current.contains(e.target as Node)) {
-        setStyleDropOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [styleDropOpen])
 
   const savePrefs = useCallback((partial: Partial<Prefs>) => {
     if (!userId) return
@@ -189,303 +139,196 @@ export default function SessionPanel({
     onPrefsChange?.(next)
   }
 
-  async function openSkillDrawer() {
-    setSkillDrawerOpen(true)
-    if (librarySkills.length > 0) return
-    setSkillsLoading(true)
-    try {
-      const res = await fetch('/api/library/skills')
-      if (res.ok) {
-        const data = await res.json() as { skills: LibrarySkill[] }
-        setLibrarySkills(data.skills ?? [])
-      }
-    } catch {
-      // silently ignore
-    } finally {
-      setSkillsLoading(false)
-    }
-  }
-
-  function toggleSkill(id: string) {
-    setActiveSkillIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   const activeProject = projects.find(p => p.id === activeConvProjectId) ?? null
 
-  // ── Collapsed State ─────────────────────────────────────
+  // ── Collapsed ────────────────────────────────────────────
 
   if (collapsed) {
     return (
-      <div className="sp-collapsed">
-        <button className="sp-collapse-btn" onClick={() => setCollapsed(false)} title="Panel öffnen">
+      <div className="rp-collapsed">
+        <button
+          className="rp-collapsed-btn"
+          onClick={() => setCollapsed(false)}
+          title="Panel öffnen"
+          aria-label="Panel öffnen"
+        >
           <CaretRight size={13} weight="bold" />
         </button>
-        <div className="sp-parrot" title="Toro ist hier">
+        <div className="rp-collapsed-parrot" aria-hidden="true">
           <ParrotIcon size={20} />
         </div>
       </div>
     )
   }
 
-  // ── Full Panel ──────────────────────────────────────────
+  // ── Full Panel ───────────────────────────────────────────
 
   return (
-    <div className="sp sidebar-scroll">
+    <aside className="right-panel" aria-label="Chat-Einstellungen">
 
       {/* Header */}
-      <div className="sp-header">
-        <span className="sp-header-label">Chat</span>
-        <button className="sp-header-btn" onClick={() => setCollapsed(true)} title="Panel einklappen">
-          <CaretLeft size={14} weight="bold" />
+      <div className="right-panel-header">
+        <span className="right-panel-header-title">Chat</span>
+        <button
+          className="right-panel-close"
+          onClick={() => setCollapsed(true)}
+          aria-label="Panel schließen"
+        >
+          <CaretRight size={14} weight="bold" />
         </button>
       </div>
 
       {/* ── KONTEXT ── */}
-      <div className="sp-section">
-        <SectionLabel icon={<FolderOpen size={10} weight="bold" />}>Kontext</SectionLabel>
-        <div className="sp-context-row">
-          <span className={`sp-context-dot${activeProject ? ' sp-context-dot--active' : ''}`} />
-          {activeProject ? (
-            <span className="sp-context-name">{activeProject.title}</span>
-          ) : (
-            <span className="sp-context-name" style={{ color: 'var(--text-tertiary)' }}>Freier Chat</span>
-          )}
+      <div className="right-panel-section">
+        <div className="right-panel-section-header">
+          <MapPin size={12} weight="fill" aria-hidden="true" />
+          <span className="right-panel-section-label">Kontext</span>
+        </div>
+        <div className="right-panel-context">
+          <span className={`right-panel-context-dot${activeProject ? ' right-panel-context-dot--active' : ''}`} />
+          <span className="right-panel-context-label">
+            {activeProject ? activeProject.title : 'Freier Chat'}
+          </span>
         </div>
       </div>
 
-      <Divider />
+      <div className="right-panel-divider" />
 
-      {/* ── TORO KONFIGURIEREN ── */}
-      <div className="sp-section">
-        <SectionLabel icon={<Sliders size={10} weight="bold" />}>Toro konfigurieren</SectionLabel>
-
-        {/* Skills */}
-        <div className="sp-field">
-          <div className="sp-field-header">
-            <label className="sp-select-label" style={{ margin: 0 }}>Skills</label>
-            <button className="sp-skill-add" onClick={openSkillDrawer} title="Skills verwalten">
-              + Hinzufügen
-            </button>
-          </div>
-          <div className="sp-skill-chips">
-            {activeSkillIds.size === 0 && (
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Keine Skills aktiv</span>
-            )}
-            {librarySkills.filter(s => activeSkillIds.has(s.id)).map(skill => (
-              <span key={skill.id} className="skill-chip-active">
-                <SkillIcon name={skill.name} size={11} />
-                {skill.title}
-                <button
-                  className="skill-chip-remove"
-                  onClick={() => toggleSkill(skill.id)}
-                  aria-label={`${skill.title} entfernen`}
-                >
-                  <X size={10} weight="bold" />
-                </button>
-              </span>
-            ))}
-          </div>
+      {/* ── TORO ── */}
+      <div className="right-panel-section">
+        <div className="right-panel-section-header">
+          <Bird size={12} weight="fill" aria-hidden="true" />
+          <span className="right-panel-section-label">Toro</span>
         </div>
 
-        {/* Skill Drawer */}
-        {skillDrawerOpen && (
-          <>
-            <div
-              className="sp-drawer-backdrop"
-              onClick={() => setSkillDrawerOpen(false)}
-              aria-hidden="true"
+        <PanelSelect
+          id="rp-chat-style"
+          label="Antwort-Stil"
+          value={prefs.chat_style}
+          options={STYLE_OPTIONS}
+          onChange={v => updatePref('chat_style', v as Prefs['chat_style'])}
+        />
+
+        <PanelSelect
+          id="rp-emoji-style"
+          label="Emojis"
+          value={prefs.emoji_style}
+          options={EMOJI_OPTIONS}
+          onChange={v => updatePref('emoji_style', v as Prefs['emoji_style'])}
+        />
+
+        <div className="right-panel-toggle-row">
+          <div className="right-panel-toggle-info">
+            <span className="right-panel-toggle-label">Weiterführende Vorschläge</span>
+            <span className="right-panel-toggle-hint">Toro schlägt nächste Schritte vor</span>
+          </div>
+          <label className="right-panel-toggle" aria-label="Weiterführende Vorschläge">
+            <input
+              type="checkbox"
+              checked={prefs.suggestions_enabled}
+              onChange={e => updatePref('suggestions_enabled', e.target.checked)}
             />
-            <div className="sp-drawer">
-              <div className="sp-drawer-header">
-                <span className="sp-drawer-title">Skills</span>
-                <button className="sp-drawer-close" onClick={() => setSkillDrawerOpen(false)} aria-label="Schließen">
-                  <X size={14} weight="bold" />
-                </button>
-              </div>
-              <div className="sp-drawer-body">
-                {skillsLoading && <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Lädt…</span>}
-                {!skillsLoading && librarySkills.map(skill => (
-                  <div key={skill.id} className="sp-drawer-row">
-                    <span className="sp-drawer-row-icon">
-                      <SkillIcon name={skill.name} size={13} />
-                    </span>
-                    <div className="sp-drawer-row-info">
-                      <span className="sp-drawer-row-title">{skill.title}</span>
-                      {skill.description && (
-                        <span className="sp-drawer-row-desc">{skill.description}</span>
-                      )}
-                    </div>
-                    <button
-                      className={`sp-drawer-row-btn${activeSkillIds.has(skill.id) ? ' sp-drawer-row-btn--active' : ''}`}
-                      onClick={() => toggleSkill(skill.id)}
-                    >
-                      {activeSkillIds.has(skill.id) ? 'Entfernen' : 'Hinzufügen'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
+            <span className="right-panel-toggle-slider" />
+          </label>
+        </div>
+
+        <div className="right-panel-toggle-row">
+          <div className="right-panel-toggle-info">
+            <span className="right-panel-toggle-label">
+              <Brain size={12} weight="bold" aria-hidden="true" style={{ verticalAlign: 'middle', marginRight: 3 }} />
+              Toro denkt laut nach
+            </span>
+            <span className="right-panel-toggle-hint">Zeigt Denkprozess · mehr Token</span>
+          </div>
+          <label className="right-panel-toggle" aria-label="Toro denkt laut nach">
+            <input
+              type="checkbox"
+              checked={prefs.thinking_mode}
+              onChange={e => updatePref('thinking_mode', e.target.checked)}
+            />
+            <span className="right-panel-toggle-slider" />
+          </label>
+        </div>
+
+        {messageCount > 20 && onContextReset && (
+          <div style={{ paddingTop: 6, paddingBottom: 2, paddingLeft: 16, paddingRight: 16 }}>
+            <button
+              className="right-panel-reset-btn"
+              onClick={onContextReset}
+              aria-label="Kontext zurücksetzen"
+            >
+              <ArrowCounterClockwise size={13} weight="bold" aria-hidden="true" />
+              Kontext zurücksetzen
+            </button>
+          </div>
         )}
-
-        {/* Gedächtnis-Slider */}
-        <div className="sp-field">
-          <div className="sp-slider-row">
-            <label className="sp-slider-label">Gedächtnis</label>
-            <span className="sp-slider-value">{prefs.memory_window} Nachr.</span>
-          </div>
-          <input
-            type="range"
-            min={5} max={50} step={5}
-            value={prefs.memory_window}
-            onChange={e => updatePref('memory_window', Number(e.target.value))}
-            className="sp-slider"
-          />
-        </div>
-
-        {/* Antwort-Stil */}
-        <div className="sp-field">
-          <label className="sp-select-label">Antwort-Stil</label>
-          <div className="sp-select-wrap" ref={styleDropRef}>
-            <button
-              className="sp-select-trigger"
-              onClick={() => setStyleDropOpen(v => !v)}
-            >
-              {STYLE_LABELS[prefs.chat_style]}
-              <CaretDown
-                size={14} weight="bold"
-                style={{
-                  color: 'var(--text-tertiary)',
-                  flexShrink: 0,
-                  transform: styleDropOpen ? 'rotate(180deg)' : undefined,
-                  transition: 'transform 0.15s',
-                }}
-              />
-            </button>
-            {styleDropOpen && (
-              <div className="sp-select-menu">
-                {STYLE_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    className={`sp-select-option${prefs.chat_style === opt.value ? ' sp-select-option--active' : ''}`}
-                    onClick={() => { updatePref('chat_style', opt.value); setStyleDropOpen(false) }}
-                  >
-                    <span className="sp-select-opt-label">{opt.label}</span>
-                    <span className="sp-select-opt-desc">{opt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Proaktive Hinweise */}
-        <div className="sp-field">
-          <div className="sp-toggle-row">
-            <span className="sp-toggle-label">💡 Proaktive Hinweise</span>
-            <button
-              className={`sp-toggle-btn${prefs.proactive_hints ? ' sp-toggle-btn--on' : ''}`}
-              onClick={() => updatePref('proactive_hints', !prefs.proactive_hints)}
-              title={prefs.proactive_hints ? 'Deaktivieren' : 'Aktivieren'}
-            >
-              <span className={`sp-toggle-thumb${prefs.proactive_hints ? ' sp-toggle-thumb--on' : ''}`} />
-            </button>
-          </div>
-          <p className="sp-toggle-note">Toro schlägt nächste Schritte vor.</p>
-        </div>
-
-        {/* Thinking Mode */}
-        <div className="sp-field">
-          <div className="sp-toggle-row">
-            <span className="sp-toggle-label">Toro denkt laut nach</span>
-            <button
-              className={`sp-toggle-btn${prefs.thinking_mode ? ' sp-toggle-btn--on' : ''}`}
-              onClick={() => updatePref('thinking_mode', !prefs.thinking_mode)}
-              title={prefs.thinking_mode ? 'Deaktivieren' : 'Aktivieren'}
-            >
-              <span className={`sp-toggle-thumb${prefs.thinking_mode ? ' sp-toggle-thumb--on' : ''}`} />
-            </button>
-          </div>
-          <p className="sp-toggle-note">Experimentell — zeigt Toros Denkprozess</p>
-        </div>
       </div>
 
-      <Divider />
-
-      {/* ── VERBINDUNGEN (MCP) ── */}
-      <div className="sp-section">
-        <SectionLabel icon={<Plugs size={10} weight="bold" />}>Verbindungen</SectionLabel>
-        {MCP_ITEMS.map(item => (
-          <button
-            key={item.id}
-            className="sp-mcp-row sp-mcp-row--btn"
-            onClick={() => !item.connected && showComingSoon(item.label)}
-            title={item.connected ? undefined : `${item.label} verbinden`}
-          >
-            <span className={`sp-mcp-dot${item.connected ? ' sp-mcp-dot--on' : ''}`} />
-            <span className="sp-mcp-label">{item.label}</span>
-            <span className="sp-mcp-status">{item.connected ? 'verbunden' : 'nicht verbunden'}</span>
-          </button>
-        ))}
-        {comingSoonMsg && (
-          <div className="sp-coming-soon-toast">{comingSoonMsg}</div>
-        )}
-        <button className="sp-mcp-add" disabled title="Bald verfügbar">
-          + Weitere verbinden →
-        </button>
-      </div>
-
-      <Divider />
+      <div className="right-panel-divider" />
 
       {/* ── ANSICHT ── */}
-      <div className="sp-section">
-        <SectionLabel icon={<Eye size={10} weight="bold" />}>Ansicht</SectionLabel>
-
-        {/* Split-View — Placeholder */}
-        <div className="sp-field">
-          <div className="sp-toggle-row">
-            <span className="sp-toggle-label">Geteilter Bildschirm</span>
-            <button className="btn btn-ghost btn-sm" disabled>Aktivieren</button>
-          </div>
-          <p className="sp-toggle-note">Chat links · Artefakt rechts</p>
+      <div className="right-panel-section">
+        <div className="right-panel-section-header">
+          <Layout size={12} weight="fill" aria-hidden="true" />
+          <span className="right-panel-section-label">Ansicht</span>
         </div>
 
-        {/* Live-Suche */}
-        <div className="sp-field">
-          <div className="sp-toggle-row">
-            <span className="sp-toggle-label">Live-Suche</span>
-            <button
-              className={`sp-toggle-btn${prefs.web_search_enabled ? ' sp-toggle-btn--on' : ''}`}
-              onClick={() => updatePref('web_search_enabled', !prefs.web_search_enabled)}
-              title={prefs.web_search_enabled ? 'Deaktivieren' : 'Aktivieren'}
-            >
-              <span className={`sp-toggle-thumb${prefs.web_search_enabled ? ' sp-toggle-thumb--on' : ''}`} />
-            </button>
+        <div className="right-panel-toggle-row">
+          <div className="right-panel-toggle-info">
+            <span className="right-panel-toggle-label">Geteilter Bildschirm</span>
+            <span className="right-panel-toggle-hint">Chat links · Artefakt rechts</span>
           </div>
-          <p className="sp-toggle-note">Toro sucht im Web nach aktuellen Infos</p>
+          <label className="right-panel-toggle" aria-label="Geteilter Bildschirm">
+            <input
+              type="checkbox"
+              checked={splitEnabled}
+              onChange={() => onToggleSplit?.()}
+            />
+            <span className="right-panel-toggle-slider" />
+          </label>
         </div>
 
-        {/* Link-Vorschauen */}
-        <div className="sp-field">
-          <div className="sp-toggle-row">
-            <span className="sp-toggle-label">Links anzeigen</span>
-            <button
-              className={`sp-toggle-btn${prefs.link_previews ? ' sp-toggle-btn--on' : ''}`}
-              onClick={() => updatePref('link_previews', !prefs.link_previews)}
-              title={prefs.link_previews ? 'Deaktivieren' : 'Aktivieren'}
-            >
-              <span className={`sp-toggle-thumb${prefs.link_previews ? ' sp-toggle-thumb--on' : ''}`} />
-            </button>
+        <div className="right-panel-toggle-row">
+          <div className="right-panel-toggle-info">
+            <span className="right-panel-toggle-label">Live-Suche</span>
+            <span className="right-panel-toggle-hint">Toro sucht im Web · mehr Token</span>
           </div>
-          <p className="sp-toggle-note">URL-Vorschauen im Chat</p>
+          <label className="right-panel-toggle" aria-label="Live-Suche">
+            <input
+              type="checkbox"
+              checked={prefs.web_search_enabled}
+              onChange={e => updatePref('web_search_enabled', e.target.checked)}
+            />
+            <span className="right-panel-toggle-slider" />
+          </label>
+        </div>
+
+        <div className="right-panel-toggle-row">
+          <div className="right-panel-toggle-info">
+            <span className="right-panel-toggle-label">Links anzeigen</span>
+            <span className="right-panel-toggle-hint">URL-Vorschau nach Suche</span>
+          </div>
+          <label className="right-panel-toggle" aria-label="Links anzeigen">
+            <input
+              type="checkbox"
+              checked={prefs.link_previews}
+              onChange={e => updatePref('link_previews', e.target.checked)}
+            />
+            <span className="right-panel-toggle-slider" />
+          </label>
         </div>
       </div>
 
-    </div>
+      {/* Einstellungen — immer unten */}
+      <div style={{ marginTop: 'auto' }}>
+        <div className="right-panel-divider" />
+        <a href="/settings" className="right-panel-settings-link">
+          <GearSix size={14} weight="bold" aria-hidden="true" />
+          Einstellungen
+          <ArrowRight size={12} weight="bold" aria-hidden="true" style={{ marginLeft: 'auto' }} />
+        </a>
+      </div>
+
+    </aside>
   )
 }

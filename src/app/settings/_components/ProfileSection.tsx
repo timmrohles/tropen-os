@@ -7,7 +7,7 @@ interface ProfileData {
   full_name?: string
   email?: string
   salutation?: string
-  prefs?: { language?: string; chat_style?: string }
+  prefs?: { language?: string; chat_style?: string; toro_address?: string; language_style?: string }
 }
 
 export function ProfileSection() {
@@ -16,6 +16,8 @@ export function ProfileSection() {
   const [salutation, setSalutation] = useState('')
   const [language, setLanguage] = useState('de')
   const [chatStyle, setChatStyle] = useState('structured')
+  const [toroAddress, setToroAddress] = useState('')
+  const [languageStyle, setLanguageStyle] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -28,6 +30,8 @@ export function ProfileSection() {
         setSalutation(d.salutation ?? '')
         setLanguage(d.prefs?.language ?? 'de')
         setChatStyle(d.prefs?.chat_style ?? 'structured')
+        setToroAddress(d.prefs?.toro_address ?? '')
+        setLanguageStyle(d.prefs?.language_style ?? '')
       })
   }, [])
 
@@ -37,7 +41,7 @@ export function ProfileSection() {
     await fetch('/api/settings/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: fullName, salutation, language, chat_style: chatStyle }),
+      body: JSON.stringify({ full_name: fullName, salutation, language, chat_style: chatStyle, toro_address: toroAddress, language_style: languageStyle }),
     })
     setSaving(false)
     setSaved(true)
@@ -94,6 +98,32 @@ export function ProfileSection() {
             <option value="structured">Strukturiert</option>
             <option value="detailed">Ausführlich</option>
           </select>
+        </div>
+
+        <div className="settings-field">
+          <label className="settings-label" htmlFor="toro-address">Toro spricht mich an mit</label>
+          <input
+            id="toro-address"
+            type="text"
+            className="settings-input"
+            placeholder='z. B. "du", "Sie", "Chef"'
+            value={toroAddress}
+            onChange={e => setToroAddress(e.target.value)}
+          />
+          <p className="settings-hint">Wie soll Toro dich ansprechen?</p>
+        </div>
+
+        <div className="settings-field">
+          <label className="settings-label" htmlFor="language-style">Sprachstil</label>
+          <textarea
+            id="language-style"
+            className="settings-input"
+            style={{ minHeight: 80, resize: 'vertical' }}
+            placeholder='z. B. "Kurz und direkt, keine Floskeln. Bullet Points bevorzugt."'
+            value={languageStyle}
+            onChange={e => setLanguageStyle(e.target.value)}
+          />
+          <p className="settings-hint">Persönliche Schreibstil-Hinweise für Toro</p>
         </div>
 
         <button

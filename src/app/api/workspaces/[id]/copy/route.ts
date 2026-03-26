@@ -14,50 +14,46 @@ export async function POST(_req: Request, { params }: Params) {
   const ws = await requireWorkspaceAccess(id, me)
   if (!ws) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
-  // Create workspace copy
   const { data: copy, error: wsErr } = await supabaseAdmin
     .from('workspaces')
     .insert({
-      title: `${ws.title} (Kopie)`,
-      domain: ws.domain ?? 'custom',
-      goal: ws.goal ?? null,
-      meta: ws.meta ?? null,
-      department_id: ws.departmentId ?? null,
-      status: 'draft',
-      created_by: me.id,
+      title:          `${(ws as unknown as { title: string }).title} (Kopie)`,
+      description:    (ws as unknown as { description: string | null }).description ?? null,
+      emoji:          (ws as unknown as { emoji: string | null }).emoji ?? null,
+      organization_id: me.organization_id,
+      created_by:     me.id,
+      status:         'draft',
+      meta:           (ws as unknown as { meta: Record<string, unknown> | null }).meta ?? {},
     })
-    .select('id, title')
+    .select('id, title, description, emoji, status, item_count, comment_count, created_at')
     .single()
 
   if (wsErr || !copy) {
+    log.error('[copy] workspace insert failed', { error: wsErr?.message })
     return NextResponse.json({ error: wsErr?.message ?? 'Fehler beim Kopieren' }, { status: 500 })
   }
 
   // Add creator as participant
   await supabaseAdmin.from('workspace_participants').insert({
-    workspace_id: copy.id,
-    user_id: me.id,
-    role: 'admin',
-  })
+    workspace_id: copy.id, user_id: me.id, role: 'admin',
+  }).then()
 
-  // Copy cards (without history)
-  const { data: cards } = await supabaseAdmin
-    .from('cards')
-    .select()
+  // Copy workspace_items (without id/created_at — new rows)
+  const { data: items } = await supabaseAdmin
+    .from('workspace_items')
+    .select('item_type, item_id, title, description, meta')
     .eq('workspace_id', id)
-    .is('deleted_at', null)
-    .neq('status', 'archived')
 
-  if (cards && cards.length > 0) {
-    await supabaseAdmin.from('cards').insert(
-      cards.map(({ id: _id, created_at: _ca, updated_at: _ua, ...card }) => ({
-        ...card,
+  if (items && items.length > 0) {
+    await supabaseAdmin.from('workspace_items').insert(
+      items.map(item => ({
+        ...item,
         workspace_id: copy.id,
-        status: 'draft',
-        created_by: me.id,
+        organization_id: me.organization_id,
+        added_by: me.id,
       }))
     )
   }
 
-  return NextResponse.json(copy, { status: 201 })
+  return NextResponse.json({ ...copy, item_count: items?.length ?? 0 }, { status: 201 })
 }

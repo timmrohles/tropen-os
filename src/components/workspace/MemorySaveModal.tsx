@@ -132,7 +132,8 @@ export default function MemorySaveModal({ open, onClose, projectId, conversation
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.45)',
+        background: 'rgba(26,23,20,0.45)',
+        backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
       onClick={onClose}

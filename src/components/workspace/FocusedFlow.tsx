@@ -13,7 +13,7 @@ interface FocusedFlowProps {
   setInput: (v: string) => void
   sending: boolean
   onSubmit: (e: React.FormEvent) => void
-  onSetPendingIntention: (v: 'focused' | 'open') => void
+  onSetPendingIntention: (v: 'focused' | 'guided') => void
   onSetPendingCurrentProjectId: (id: string | null) => void
 }
 
@@ -143,11 +143,11 @@ export default function FocusedFlow({
     <div className="igate">
       <p className="igate-question">An welchem Projekt arbeitest du?</p>
 
-      <div className="igate-chips">
+      <div className="suggestion-pills" style={{ justifyContent: 'center', maxWidth: 480 }}>
         {shownProjects.map((p) => (
           <button
             key={p.id}
-            className="chip"
+            className="suggestion-pill"
             onClick={() => handlePickProject(p)}
           >
             {p.title}
@@ -156,12 +156,12 @@ export default function FocusedFlow({
         {projects.length > MAX_PROJECTS && (
           <a
             href={`/workspaces/${workspaceId}/projects`}
-            className="chip"
+            className="suggestion-pill"
           >
             Alle Projekte →
           </a>
         )}
-        <a href="/projects/new" className="chip">
+        <a href="/projects" className="suggestion-pill">
           Neues Projekt →
         </a>
       </div>

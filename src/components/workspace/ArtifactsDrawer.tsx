@@ -87,13 +87,8 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 200,
-          animation: 'fadeIn 200ms ease-out',
-        }}
+        className="modal-backdrop"
+        style={{ zIndex: 200 }}
       />
 
       {/* Drawer panel */}

@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: Params) {
   const workspace = await requireWorkspaceAccess(id, me)
   if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
-  return NextResponse.json(workspace)
+  return NextResponse.json({ ...workspace, current_user_id: me.id })
 }
 
 export async function PATCH(request: Request, { params }: Params) {
@@ -31,10 +31,13 @@ export async function PATCH(request: Request, { params }: Params) {
   if (valErr) return valErr
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  if (body.title !== undefined) updates.title = body.title.trim()
-  if (body.goal !== undefined) updates.goal = body.goal.trim()
-  if (body.domain !== undefined) updates.domain = body.domain.trim()
-  if (body.status !== undefined) updates.status = body.status
+  if (body.title !== undefined)       updates.title       = body.title.trim()
+  if (body.description !== undefined) updates.description = body.description
+  if (body.emoji !== undefined)       updates.emoji       = body.emoji
+  if (body.goal !== undefined)        updates.goal        = body.goal.trim()
+  if (body.domain !== undefined)      updates.domain      = body.domain.trim()
+  if (body.status !== undefined)      updates.status      = body.status
+  if (body.archived_at !== undefined) updates.archived_at = body.archived_at
   if (body.meta !== undefined) {
     // Merge meta — never replace (project convention)
     const { data: current } = await supabaseAdmin

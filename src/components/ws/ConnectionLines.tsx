@@ -31,6 +31,7 @@ export default function ConnectionLines({ connections, cards, selectedCardId }: 
   const cardMap = new Map(cards.map((c) => [c.id, c]))
 
   return (
+    // eslint-disable-next-line -- SVG canvas for connection lines rendering, no Phosphor equivalent
     <svg
       style={{
         position: 'absolute',

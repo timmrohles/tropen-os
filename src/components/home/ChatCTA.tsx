@@ -4,10 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { ArrowRight } from '@phosphor-icons/react'
+import { useAssistantName } from '@/hooks/useAssistantName'
+import { ToroBird } from '@/components/ui/ToroBird'
 
 export default function ChatCTA({ workspaceId }: { workspaceId: string | null }) {
   const router = useRouter()
   const [creating, setCreating] = useState(false)
+  const assistantName = useAssistantName()
 
   async function handleStart() {
     if (!workspaceId || creating) return
@@ -54,13 +57,13 @@ export default function ChatCTA({ workspaceId }: { workspaceId: string | null })
           padding: '20px 24px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ fontSize: 28 }} aria-hidden="true">🦜</span>
+            <ToroBird size={40} style={{ flexShrink: 0, borderRadius: 8 }} />
             <div>
               <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-inverse)' }}>
                 {creating ? 'Chat wird erstellt…' : 'Chat starten'}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-inverse)', marginTop: 2, opacity: 0.8 }}>
-                Frag Toro — er hilft dir sofort weiter
+                Frag {assistantName} — {assistantName} hilft dir sofort weiter
               </div>
             </div>
           </div>

@@ -174,7 +174,7 @@ export default function DistributionsPanel({ sourceId, projects, workspaces }: P
                 <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>(1–10)</span>
               </div>
 
-              {error && <p style={{ fontSize: 12, color: 'var(--error, #e53e3e)', margin: 0 }}>{error}</p>}
+              {error && <p style={{ fontSize: 12, color: 'var(--error)', margin: 0 }}>{error}</p>}
 
               <div style={{ display: 'flex', gap: 8 }}>
                 <button

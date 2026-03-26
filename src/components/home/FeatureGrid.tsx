@@ -1,15 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { SquaresFour, RssSimple, Robot, Books } from '@phosphor-icons/react'
+import { SquaresFour, RssSimple, Robot, ArrowRight } from '@phosphor-icons/react'
 
 const FEATURES = [
   {
     href: '/workspaces',
     Icon: SquaresFour,
     title: 'Workspaces',
-    description: 'Komplexe Vorhaben strukturieren — von der Idee zum fertigen Ergebnis',
-    example: 'z.B. Businessplan, Marktanalyse, Strategie',
+    description: 'Inhalte sammeln und mit Kollegen oder externen Partnern teilen',
+    example: 'z.B. Kampagnen, Projekt-Reviews, Kunden-Präsentationen',
   },
   {
     href: '/feeds',
@@ -25,20 +25,13 @@ const FEATURES = [
     description: 'Wiederkehrende Aufgaben automatisch erledigen lassen',
     example: 'z.B. Wöchentlicher Report, Monitoring, Alerts',
   },
-  {
-    href: '/knowledge',
-    Icon: Books,
-    title: 'Wissen',
-    description: 'Dein Wissen hochladen — Toro nutzt es automatisch',
-    example: 'z.B. Handbücher, Richtlinien, Produktinfos',
-  },
 ] as const
 
 export default function FeatureGrid() {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridTemplateColumns: 'repeat(3, 1fr)',
       gridAutoRows: '1fr',
       gap: 16, marginBottom: 32,
     }}>
@@ -65,8 +58,8 @@ export default function FeatureGrid() {
                 {example}
               </p>
               <div style={{ marginTop: 'auto' }}>
-                <span className="btn btn-sm btn-primary" style={{ pointerEvents: 'none' }}>
-                  Öffnen →
+                <span className="btn btn-ghost btn-sm" style={{ pointerEvents: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  Öffnen <ArrowRight size={13} weight="bold" aria-hidden="true" />
                 </span>
               </div>
             </div>

@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
   const { data, error, count } = await supabaseAdmin
     .from('projects')
-    .select('id, department_id, title, goal, instructions, meta, created_by, created_at, updated_at, project_memory(count)', { count: 'exact' })
+    .select('id, department_id, title, goal, instructions, emoji, context, meta, created_by, created_at, updated_at, project_memory(count)', { count: 'exact' })
     .eq('department_id', department_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })

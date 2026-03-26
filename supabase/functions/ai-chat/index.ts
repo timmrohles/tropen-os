@@ -87,8 +87,12 @@ function buildSystemPrompt(p: {
   taskType:             string;
   agent:                string;
   chatStyle:            string;
-  proactiveHints:       boolean;
+  emojiStyle:           string;
+  suggestionsEnabled:   boolean;
   thinkingMode:         boolean;
+  webSearchEnabled:     boolean;
+  toroAddress:          string;
+  languageStyle:        string;
   agentSystemPrompt:    string | null;
   workflowSystemPrompt: string | null;
   projectContext:       string | null;
@@ -281,19 +285,32 @@ function App() {
 `);
 
   lines.push(`Du bist ${p.aiGuideName}, ein intelligenter KI-Arbeitsassistent.`);
+  if (p.toroAddress) lines.push(`Sprich den User immer mit "${p.toroAddress}" an.`);
   lines.push(`Antworte auf Deutsch, präzise und professionell.`);
   lines.push(`Kennzeichne Unsicherheiten explizit. Du bist ein KI-System – weise darauf hin wenn relevant.`);
+  lines.push(`Schließe Antworten NIEMALS mit brieflichen Grußformeln wie "Mit freundlichen Grüßen", "Viele Grüße", "Herzliche Grüße" oder ähnlichem ab. Du bist ein Chat-Assistent, kein Briefschreiber. Bei E-Mail-Entwürfen: Nutze "[Ihr Name]" als Platzhalter für die Unterschrift — setze NIEMALS deinen eigenen Namen ein.`);
+  if (p.languageStyle) lines.push(`\nPersönliche Sprachstil-Präferenzen des Users:\n${p.languageStyle}`);
 
-  if (p.chatStyle === "clear" || p.chatStyle === "concise" || p.chatStyle === "kompakt")
+  if (p.chatStyle === "knapp" || p.chatStyle === "clear" || p.chatStyle === "concise" || p.chatStyle === "kompakt")
     lines.push("Antworte knapp und direkt – kein Fülltext, maximal 3–4 Sätze wenn möglich.");
-  else if (p.chatStyle === "detailed" || p.chatStyle === "ausführlich")
+  else if (p.chatStyle === "ausführlich" || p.chatStyle === "detailed")
     lines.push("Antworte ausführlich mit klaren Abschnitten, Beispielen und Erklärungen.");
-  else if (p.chatStyle === "kreativ")
-    lines.push("Antworte kreativ und experimentell. Nutze Metaphern und unerwartete Analogien.");
+  else if (p.chatStyle === "geführt")
+    lines.push("Führe den User schrittweise durch das Thema: erkläre jeden Schritt einzeln und frage nach Bestätigung bevor du weitergehst.");
   else
     lines.push("Antworte strukturiert mit Markdown wenn sinnvoll.");
 
-  if (p.proactiveHints) lines.push('Schlage am Ende jeder Antwort 1–2 konkrete nächste Schritte vor, wenn sinnvoll. Format: "💡 Als nächstes könntest du: [Vorschlag]". Nicht bei einfachen Faktenfragen.');
+  if (p.emojiStyle === "none")
+    lines.push("Verwende KEINE Emojis in deinen Antworten.");
+  else if (p.emojiStyle === "minimal")
+    lines.push("Verwende Emojis sehr sparsam — maximal 1–2 pro Antwort, nur wenn sie echten Mehrwert bringen.");
+
+  if (p.webSearchEnabled) {
+    lines.push("Du hast Zugriff auf das Internet über das web_search Tool. Nutze es aktiv wenn der User nach aktuellen Informationen, News, Preisen, Videos oder sonstigen Web-Inhalten fragt. Suche zuerst, dann antworte.");
+  } else {
+    lines.push("Du hast KEINEN Internetzugang. Wenn der User nach aktuellen Informationen fragt (News, Preise, Videos, aktuelle Events, Wetter etc.), weise kurz darauf hin: \"Live-Suche ist gerade deaktiviert — ich kann nur auf mein Trainingswissen zurückgreifen. Du kannst sie im rechten Panel aktivieren (kostet etwas mehr Token).\" Dann antworte trotzdem so gut du kannst mit deinem Wissen.");
+  }
+  if (p.suggestionsEnabled) lines.push('Am Ende jeder inhaltlich relevanten Antwort (nicht bei einfachen Faktenfragen oder Ja/Nein-Antworten) füge exakt diesen Block ein:\n<suggestions>["Vorschlag 1", "Vorschlag 2", "Vorschlag 3"]</suggestions>\nDie Vorschläge sind kurze, konkrete Fortsetzungsfragen oder Aktionen (max. 8 Wörter). Nur wenn Folge-Aktionen wirklich sinnvoll sind.');
   if (p.thinkingMode)   lines.push("Erkläre deinen Denkprozess Schritt für Schritt bevor du antwortest.");
 
   if (p.workflowSystemPrompt) {
@@ -361,7 +378,7 @@ async function hashUserId(userId: string): Promise<string> {
 // Provider API Calls
 // ─────────────────────────────────────────
 
-function callAnthropic(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string, attachment?: AttachmentParam, webSearchEnabled = false) {
+function callAnthropic(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string, attachment?: AttachmentParam, webSearchEnabled = false, thinkingEnabled = false) {
   // Build user content: multi-part when attachment present, plain string otherwise
   type ContentBlock =
     | { type: "text"; text: string }
@@ -384,17 +401,31 @@ function callAnthropic(apiModelId: string, systemPrompt: string, history: Histor
     "anthropic-version": "2023-06-01",
     "content-type": "application/json",
   };
-  if (webSearchEnabled) {
-    headers["anthropic-beta"] = "web-search-2025-03-05";
-  }
+  const betaHeaders: string[] = [];
+  if (webSearchEnabled) betaHeaders.push("web-search-2025-03-05");
+  if (thinkingEnabled) betaHeaders.push("interleaved-thinking-2025-01-31");
+  if (betaHeaders.length > 0) headers["anthropic-beta"] = betaHeaders.join(",");
+
   const tools = webSearchEnabled
     ? [{ type: "web_search_20260209", name: "web_search" }]
     : undefined;
+  const thinkingParam = thinkingEnabled
+    ? { type: "enabled", budget_tokens: 10000 }
+    : undefined;
+  const maxTokens = thinkingEnabled ? 16000 : 4096;
 
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers,
-    body: JSON.stringify({ model: apiModelId, max_tokens: 4096, system: systemPrompt, messages, stream: true, ...(tools ? { tools } : {}) }),
+    body: JSON.stringify({
+      model: apiModelId,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages,
+      stream: true,
+      ...(tools ? { tools } : {}),
+      ...(thinkingParam ? { thinking: thinkingParam } : {}),
+    }),
   });
 }
 
@@ -420,14 +451,16 @@ interface WebSearchResult { url: string; title: string; page_age?: string }
 async function streamAnthropic(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   send: (obj: Record<string, unknown>) => void
-): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string; sources: WebSearchResult[] }> {
+): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string; sources: WebSearchResult[]; thinking: string }> {
   const decoder = new TextDecoder();
   let buffer = "";
   let fullAnswer = "";
+  let thinking = "";
   let tokensIn = 0;
   let tokensOut = 0;
   const sources: WebSearchResult[] = [];
   let searchStarted = false;
+  let currentBlockType: string | undefined;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -448,6 +481,7 @@ async function streamAnthropic(
       if (type === "content_block_start") {
         const block = parsed.content_block as Record<string, unknown> | undefined;
         const blockType = block?.type as string | undefined;
+        currentBlockType = blockType;
 
         // Web search tool invocation
         if ((blockType === "server_tool_use" || blockType === "tool_use") &&
@@ -471,9 +505,13 @@ async function streamAnthropic(
             }
           }
         }
+      } else if (type === "content_block_stop") {
+        currentBlockType = undefined;
       } else if (type === "content_block_delta") {
-        const delta = parsed.delta as { type?: string; text?: string } | undefined;
-        if (delta?.type === "text_delta" && delta.text) {
+        const delta = parsed.delta as { type?: string; text?: string; thinking?: string } | undefined;
+        if (delta?.type === "thinking_delta" && delta.thinking) {
+          thinking += delta.thinking;
+        } else if ((delta?.type === "text_delta" || currentBlockType === "text") && delta?.text) {
           fullAnswer += delta.text;
           send({ type: "chunk", content: delta.text });
         }
@@ -486,7 +524,7 @@ async function streamAnthropic(
       }
     }
   }
-  return { tokensIn, tokensOut, fullAnswer, sources };
+  return { tokensIn, tokensOut, fullAnswer, sources, thinking };
 }
 
 async function streamOpenAI(
@@ -594,7 +632,7 @@ serve(async (req) => {
     // client_prefs = live values from SessionPanel (no race condition vs. DB debounce)
     const cp = (body as { client_prefs?: Record<string, unknown> }).client_prefs ?? {};
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
-      supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode, web_search_enabled, link_previews").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode, web_search_enabled, link_previews, emoji_style, suggestions_enabled, toro_address, language_style").eq("user_id", user.id).maybeSingle(),
       supabase.from("organization_settings").select("ai_guide_name").eq("organization_id", userProfile.organization_id).maybeSingle(),
     ]);
     const chatStyle        = (cp.chat_style        as string  | undefined) ?? userPrefs?.chat_style        ?? "structured";
@@ -602,8 +640,12 @@ serve(async (req) => {
     const proactiveHints   = (cp.proactive_hints   as boolean | undefined) ?? userPrefs?.proactive_hints   ?? true;
     const thinkingMode     = (cp.thinking_mode     as boolean | undefined) ?? userPrefs?.thinking_mode     ?? false;
     const webSearchEnabled = (cp.web_search_enabled as boolean | undefined) ?? (userPrefs as { web_search_enabled?: boolean } | null)?.web_search_enabled ?? false;
-    const linkPreviews     = (cp.link_previews     as boolean | undefined) ?? (userPrefs as { link_previews?: boolean } | null)?.link_previews ?? true;
-    const aiGuideName      = orgSettings?.ai_guide_name   ?? "Toro";
+    const linkPreviews       = (cp.link_previews       as boolean | undefined) ?? (userPrefs as { link_previews?: boolean } | null)?.link_previews ?? true;
+    const emojiStyle         = (cp.emoji_style         as string  | undefined) ?? (userPrefs as { emoji_style?: string } | null)?.emoji_style ?? "minimal";
+    const suggestionsEnabled = (cp.suggestions_enabled as boolean | undefined) ?? (userPrefs as { suggestions_enabled?: boolean } | null)?.suggestions_enabled ?? true;
+    const toroAddress        = (userPrefs as { toro_address?: string } | null)?.toro_address ?? "";
+    const languageStyle      = (userPrefs as { language_style?: string } | null)?.language_style ?? "";
+    const aiGuideName        = orgSettings?.ai_guide_name ?? "Toro";
 
     // 5b. Agent-System-Prompt
     let agentSystemPrompt: string | null = null;
@@ -644,7 +686,7 @@ serve(async (req) => {
     const needsAnthropic = webSearchEnabled || thinkingMode;
     if (needsAnthropic && provider !== "anthropic") {
       provider   = "anthropic";
-      apiModelId = "claude-sonnet-4-20250514";
+      apiModelId = "claude-sonnet-4-6";
     }
 
     console.log(`Modell: ${apiModelId} (${provider})${wp ? " [workflow_plan]" : ` | Klasse: ${effectiveClass}`}`);
@@ -760,7 +802,8 @@ serve(async (req) => {
     // 13. System-Prompt bauen
     const systemPrompt = buildSystemPrompt({
       aiGuideName, taskType: task_type, agent, chatStyle,
-      proactiveHints, thinkingMode, agentSystemPrompt,
+      emojiStyle, suggestionsEnabled, thinkingMode, webSearchEnabled,
+      toroAddress, languageStyle, agentSystemPrompt,
       workflowSystemPrompt: wp?.system_prompt ?? null,
       projectContext, projectMemory, knowledgeContext,
     });
@@ -779,7 +822,7 @@ serve(async (req) => {
     console.log(`LLM Call: ${provider}/${apiModelId}`);
     let llmResponse: Response;
     if (provider === "anthropic") {
-      llmResponse = await callAnthropic(apiModelId, systemPrompt, history, message, attachment, webSearchEnabled);
+      llmResponse = await callAnthropic(apiModelId, systemPrompt, history, message, attachment, webSearchEnabled, thinkingMode);
     } else if (provider === "openai") {
       llmResponse = await callOpenAI(apiModelId, systemPrompt, history, message);
     } else {
@@ -804,11 +847,11 @@ serve(async (req) => {
         const hashedUserId = await hashUserId(user.id);
 
         try {
-          let tokensIn = 0, tokensOut = 0, fullAnswer = "";
+          let tokensIn = 0, tokensOut = 0, fullAnswer = "", thinking = "";
           let sources: WebSearchResult[] = [];
 
           if (provider === "anthropic") {
-            ({ tokensIn, tokensOut, fullAnswer, sources } = await streamAnthropic(reader, send));
+            ({ tokensIn, tokensOut, fullAnswer, sources, thinking } = await streamAnthropic(reader, send));
           } else {
             ({ tokensIn, tokensOut, fullAnswer } = await streamOpenAI(reader, send));
           }
@@ -839,6 +882,7 @@ serve(async (req) => {
             memory_usage_ratio:  Math.round(memoryUsageRatio * 100) / 100,
             link_previews:       linkPreviews,
             ...(sources.length > 0 ? { sources } : {}),
+            ...(thinking ? { thinking } : {}),
           });
 
           logRouting(supabase, {

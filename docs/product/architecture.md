@@ -212,3 +212,62 @@ Prompt 06 → Transformations-Engine
 Prompt 07 → UI (Projekte + Workspaces)
 Prompt 08 → Feeds
 ```
+
+---
+
+## UI-Konsistenz-Standards (Stand 2026-03-25)
+
+Verbindliche Layout-Regeln für alle App-Seiten.
+Vollständige Patterns: `src/components/_DESIGN_REFERENCE.tsx` Sections 18–19.
+
+### Filter-Bar Layout
+
+```
+┌─────────────────────────────────┐  ← max-width: 400px
+│  🔍  Suchen…                    │  ← .search-bar-container + MagnifyingGlass links
+└─────────────────────────────────┘
+[Alle] [Entwurf] [Aktiv] [Archiviert]  ← .page-filter-row, immer DARUNTER
+```
+
+- `.search-bar-container` — Wrapper mit `position: relative; max-width: 400px`
+- `.page-filter-row` — Chips-Zeile mit `display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px`
+- **Chips niemals neben dem Suchfeld** — immer in eigener Zeile darunter
+- Suchfeld nie `width: 100%` — max-width 400px ist das Limit
+
+### Scrollbars
+
+Global via `globals.css` — kein per-Komponenten-Override nötig:
+- `scrollbar-width: thin` (Firefox)
+- `4px` Webkit-Scrollbar, Farbe `var(--text-tertiary)` / `var(--border)`
+
+### Empty States
+
+```tsx
+<div style={{ padding: '48px 24px', textAlign: 'center' }}>
+  <Icon size={32} weight="fill" color="var(--text-tertiary)" />
+  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+    Noch keine [Entitäten]
+  </p>
+  <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px' }}>
+    Was diese Entität ist + nächster Schritt.
+  </p>
+  <button className="btn btn-primary">+ [Neue Entität]</button>
+</div>
+```
+
+- Icon: 32px, `weight="fill"`, `var(--text-tertiary)`
+- Beschreibungstext erklärt den Zweck der Entität
+- CTA: `btn btn-primary` — **nie ghost als primäre Aktion**
+
+### Seiten-spezifische Icon-Zuordnungen
+
+| Seite | H1-Icon |
+|-------|---------|
+| Chats | `ChatCircle` |
+| Artefakte | `Sparkle` |
+| Agenten | `Robot` |
+| Projekte | `FolderOpen` |
+| Workspaces (Departments) | `ShareNetwork` |
+| Feeds | `Newspaper` |
+| Dashboard | `House` |
+| Einstellungen | `Gear` |

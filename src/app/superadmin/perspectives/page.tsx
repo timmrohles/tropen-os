@@ -81,8 +81,8 @@ const s: Record<string, React.CSSProperties> = {
   formActions: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' },
   deleteConfirm: {
     marginTop: 12, padding: '12px 16px', borderRadius: 8,
-    background: 'color-mix(in srgb, var(--error, #e53e3e) 10%, transparent)',
-    border: '1px solid color-mix(in srgb, var(--error, #e53e3e) 30%, transparent)',
+    background: 'color-mix(in srgb, var(--error) 10%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--error) 30%, transparent)',
     fontSize: 13, color: 'var(--text-primary)',
   },
   editHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 },
@@ -427,10 +427,10 @@ export default function PerspectivesPage() {
               <button
                 className="btn btn-ghost"
                 onClick={() => setDeleteConfirm(true)}
-                style={{ color: 'var(--error, #e53e3e)', marginLeft: 'auto' }}
+                style={{ color: 'var(--error)', marginLeft: 'auto' }}
               >
                 <Trash size={14} weight="fill" aria-hidden="true" />
-                Loschen
+                Löschen
               </button>
             )}
           </div>
@@ -439,11 +439,11 @@ export default function PerspectivesPage() {
           {deleteConfirm && !isNew && (
             <div style={s.deleteConfirm}>
               <p style={{ margin: '0 0 10px', fontWeight: 500 }}>
-                Avatar &ldquo;{selected?.name}&rdquo; wirklich loschen?
+                Avatar &ldquo;{selected?.name}&rdquo; wirklich löschen?
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-primary" style={{ background: 'var(--error, #e53e3e)' }} onClick={handleDelete} disabled={deleting}>
-                  {deleting ? 'Loscht...' : 'Ja, loschen'}
+                <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Löscht…' : 'Ja, löschen'}
                 </button>
                 <button className="btn btn-ghost" onClick={() => setDeleteConfirm(false)}>
                   Abbrechen

@@ -23,7 +23,7 @@ export async function GET() {
 
   const { data } = await supabaseAdmin
     .from('organization_settings')
-    .select('logo_url, primary_color, organization_display_name, ai_guide_name, ai_guide_description, members_see_models')
+    .select('logo_url, primary_color, organization_display_name, ai_guide_name, ai_guide_description, members_see_models, ai_assistant_image_url')
     .eq('organization_id', me.organization_id)
     .maybeSingle()
 
@@ -33,6 +33,7 @@ export async function GET() {
     organization_display_name: null,
     ai_guide_name: 'Toro',
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
+    ai_assistant_image_url: null,
   })
 }
 
@@ -47,7 +48,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 })
   }
 
-  const allowed = ['logo_url', 'primary_color', 'organization_display_name', 'ai_guide_name', 'ai_guide_description', 'members_see_models']
+  const allowed = ['logo_url', 'primary_color', 'organization_display_name', 'ai_guide_name', 'ai_guide_description', 'members_see_models', 'ai_assistant_image_url']
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const key of allowed) {
     if (key in body) update[key] = body[key]

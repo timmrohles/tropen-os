@@ -108,7 +108,8 @@ export default function AvatarFormDrawer({ open, avatar, onClose, onSaved }: Ava
   return (
     <>
       <div
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400 }}
+        className="modal-backdrop"
+        style={{ zIndex: 400 }}
         onClick={onClose}
         aria-hidden="true"
       />

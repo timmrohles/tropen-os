@@ -11,8 +11,9 @@ import type { FeedItem, FeedSource, FeedTopic } from '@/types/feeds'
 import {
   BookmarkSimple, ArrowSquareOut, CheckCircle, DotsThree,
   ThumbsDown, Archive, Trash, Rss, MagnifyingGlass,
-  EyeSlash, ArrowCounterClockwise, Tag, Plus, X,
+  EyeSlash, ArrowCounterClockwise, Tag, Plus, X, ShareNetwork,
 } from '@phosphor-icons/react'
+import WorkspacePicker from '@/components/workspaces/WorkspacePicker'
 import SourcesView from './SourcesView'
 import DataView from './DataView'
 import NotificationBadge from './_components/NotificationBadge'
@@ -38,6 +39,7 @@ export default function FeedsPage() {
   const [activeTopic, setActiveTopic] = useState<string | null>(null)
   const [search, setSearch]           = useState('')
   const [menuOpen, setMenuOpen]       = useState<string | null>(null)
+  const [workspacePicker, setWorkspacePicker] = useState<{ id: string; title: string } | null>(null)
 
   // Topic modal state
   const [topicModal, setTopicModal]         = useState(false)
@@ -180,7 +182,7 @@ export default function FeedsPage() {
         {item.keyFacts && item.keyFacts.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
             {item.keyFacts.slice(0, 4).map((f, i) => (
-              <span key={i} className="chip" style={{ fontSize: 12 }}>• {f}</span>
+              <span key={i} style={{ fontSize: 11, color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 99, padding: '2px 8px' }}>• {f}</span>
             ))}
           </div>
         )}
@@ -272,6 +274,10 @@ export default function FeedsPage() {
                     }}>
                     <Archive size={14} weight="bold" aria-hidden="true" /> Archivieren
                   </button>
+                  <button role="menuitem" className="dropdown-item"
+                    onClick={() => { setMenuOpen(null); setWorkspacePicker({ id: item.id, title: item.title }) }}>
+                    <ShareNetwork size={14} weight="bold" aria-hidden="true" /> In Workspace ablegen
+                  </button>
                   <div className="dropdown-divider" />
                   <button role="menuitem" className="dropdown-item dropdown-item--danger"
                     onClick={async () => {
@@ -330,27 +336,25 @@ export default function FeedsPage() {
       {/* ── ARTICLES / SAVED / DISMISSED ──────────────────────────────────── */}
       {(view === 'articles' || view === 'saved' || view === 'dismissed') && (
         <>
-          {/* Search — full width row */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ position: 'relative' as const }}>
-              <MagnifyingGlass
-                size={14} weight="bold" color="var(--text-tertiary)"
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' as const }}
-                aria-hidden="true"
-              />
-              <input
-                style={{ width: '100%', padding: '8px 12px 8px 30px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' as const }}
-                placeholder="Feeds durchsuchen…"
-                value={search}
-                aria-label="Feed-Suche"
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
+          {/* Search */}
+          <div className="search-bar-container" style={{ marginBottom: 12 }}>
+            <MagnifyingGlass
+              size={14} weight="bold" aria-hidden="true"
+              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' as const }}
+            />
+            <input
+              className="input"
+              placeholder="Feeds durchsuchen…"
+              value={search}
+              aria-label="Feed-Suche"
+              onChange={(e) => handleSearch(e.target.value)}
+              style={{ paddingLeft: 34 }}
+            />
           </div>
 
           {/* Topic filter pills — scrollable row (not on dismissed) */}
           {view !== 'dismissed' && (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto' as const, scrollbarWidth: 'none' as const, paddingBottom: 2 }}>
+            <div className="page-filter-row" style={{ marginBottom: 20, overflowX: 'auto' as const, scrollbarWidth: 'none' as const, flexWrap: 'nowrap' as const }}>
               <button className={`chip${activeTopic === null ? ' chip--active' : ''}`} onClick={() => handleTopicChange(null)}>
                 Alle
               </button>
@@ -427,7 +431,7 @@ export default function FeedsPage() {
       {/* ── TOPIC MODAL ──────────────────────────────────────────────────── */}
       {topicModal && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          className="modal-overlay" style={{ zIndex: 100, padding: 16 }}
           onClick={() => setTopicModal(false)}
           role="dialog"
           aria-modal="true"
@@ -501,6 +505,15 @@ export default function FeedsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {workspacePicker && (
+        <WorkspacePicker
+          itemType="feed_source"
+          itemId={workspacePicker.id}
+          itemTitle={workspacePicker.title}
+          onClose={() => setWorkspacePicker(null)}
+        />
       )}
     </div>
   )

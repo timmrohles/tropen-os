@@ -9,9 +9,9 @@ import type { User } from '@supabase/supabase-js'
 import type { AccountRole } from '@/components/AccountSwitcher'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
-  ShieldCheck, ClipboardText, ListChecks, ChartBar, Cpu, CurrencyEur,
-  FileText, Users, PaintBrush, ChatCircle, FolderSimple, BookOpen,
-  Buildings, RssSimple, Sparkle, Robot, CaretLeft, CaretRight, GearSix,
+  ShieldCheck, ClipboardText, ListChecks, Speedometer, Cpu, CurrencyEur,
+  FileText, Users, PaintBrush, ChatCircle, FolderSimple,
+  Buildings, RssSimple, Sparkle, Robot, CaretLeft, CaretRight, GearSix, ShareNetwork,
 } from '@phosphor-icons/react'
 
 const VIEW_AS_KEY = 'tropen_view_as'
@@ -52,6 +52,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     if (stored === ('solo' as string)) {
       sessionStorage.setItem(VIEW_AS_KEY, 'member')
       setViewAs('member')
+    } else if (stored === ('org_admin' as string)) {
+      sessionStorage.setItem(VIEW_AS_KEY, 'admin')
+      setViewAs('admin')
     } else if (stored) {
       setViewAs(stored)
     }
@@ -83,8 +86,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const showSuperadminNav = isSuperadmin && viewAs === 'superadmin'
   const showAdminNav = !showSuperadminNav && (
-    (isSuperadmin && (viewAs === 'org_admin' || viewAs === 'viewer')) ||
-    (!isSuperadmin && (dbRole === 'org_admin' || dbRole === 'viewer'))
+    (isSuperadmin && (viewAs === 'admin' || viewAs === 'viewer')) ||
+    (!isSuperadmin && (dbRole === 'admin' || dbRole === 'viewer'))
   )
   const showMemberNav = !showSuperadminNav && !showAdminNav && (
     (isSuperadmin && viewAs === 'member') ||
@@ -103,9 +106,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   ]
 
   const adminPrimaryItems: NavItem[] = [
-    { href: '/dashboard', icon: <ChartBar size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
+    { href: '/cockpit', icon: <Speedometer size={18} weight="bold" aria-hidden="true" />, label: 'Cockpit', matchPrefix: '/cockpit' },
     { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    { href: '/workspaces', icon: <ShareNetwork size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
   ]
   const adminItems: NavItem[] = [
     { href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' },
@@ -116,27 +119,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/department', icon: <Buildings size={18} weight="bold" aria-hidden="true" />, label: 'Department', matchPrefix: '/department' },
   ]
 
-  const memberPrimaryItems: NavItem[] = [
+  // Member nav — Dashboard top, then core items, then Feeds/Agenten
+  const memberTopItems: NavItem[] = [
+    { href: '/cockpit', icon: <Speedometer size={18} weight="bold" aria-hidden="true" />, label: 'Cockpit', matchPrefix: '/cockpit' },
+  ]
+  const memberCoreItems: NavItem[] = [
     { href: '/chat', icon: <ChatCircle size={18} weight="bold" aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
     { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-  ]
-  const memberWorkspaceItems: NavItem[] = [
     { href: '/artifacts', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
-    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-    { href: '/knowledge', icon: <BookOpen size={18} weight="bold" aria-hidden="true" />, label: 'Wissen', matchPrefix: '/knowledge' },
+    { href: '/workspaces', icon: <ShareNetwork size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
+  ]
+  const memberFeedItems: NavItem[] = [
     { href: '/feeds', icon: <RssSimple size={18} weight="bold" aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
     { href: '/agenten', icon: <Robot size={18} weight="bold" aria-hidden="true" />, label: 'Agenten', matchPrefix: '/agenten' },
   ]
-  const memberBottomItems: NavItem[] = [
-    { href: '/dashboard', icon: <ChartBar size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-    ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
-  ]
 
   const userName = user?.user_metadata?.full_name as string | undefined ?? user?.email ?? 'Account'
-  const userAvatar = user?.user_metadata?.avatar_url as string | undefined
-  const userInitial = (user?.user_metadata?.full_name as string | undefined)?.[0]?.toUpperCase()
-    ?? user?.email?.[0]?.toUpperCase()
-    ?? 'U'
 
   function NavLink({ item }: { item: NavItem }) {
     const active = isActive(item.href, item.matchPrefix)
@@ -206,38 +205,51 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         transition: 'width 200ms ease-out',
       }}
     >
-      {/* Logo */}
-      <Link
-        href="/"
-        aria-label="Tropen OS — Startseite"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          gap: 10,
-          padding: collapsed ? '0' : '0 14px',
-          height: 'var(--header-height)',
-          textDecoration: 'none',
-          flexShrink: 0,
-          borderBottom: '1px solid var(--sidebar-border)',
-        }}
-      >
-        {logoUrl ? (
-          <Image
-            src={logoUrl} alt={displayName ?? 'Logo'}
-            width={28} height={28}
-            style={{ maxHeight: 28, width: 'auto', objectFit: 'contain' }}
-            unoptimized
-          />
-        ) : (
-          <ParrotIcon size={28} />
-        )}
+      {/* Logo + Collapse Button */}
+      <div style={{ display: 'flex', alignItems: 'center', height: 'var(--header-height)', flexShrink: 0, borderBottom: '1px solid var(--sidebar-border)' }}>
+        <Link
+          href="/"
+          aria-label="Tropen OS — Startseite"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: 10,
+            padding: collapsed ? '0' : '0 14px',
+            flex: 1,
+            height: '100%',
+            textDecoration: 'none',
+            overflow: 'hidden',
+          }}
+        >
+          {logoUrl ? (
+            <Image
+              src={logoUrl} alt={displayName ?? 'Logo'}
+              width={28} height={28}
+              style={{ maxHeight: 28, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
+              unoptimized
+            />
+          ) : (
+            <ParrotIcon size={28} />
+          )}
+          {!collapsed && (
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {displayName ?? 'Tropen OS'}
+            </span>
+          )}
+        </Link>
         {!collapsed && (
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
-            {displayName ?? 'Tropen OS'}
-          </span>
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={onToggle}
+            aria-label="Navigation einklappen"
+            title="Navigation einklappen"
+          >
+            <CaretLeft size={14} weight="bold" aria-hidden="true" />
+          </button>
         )}
-      </Link>
+      </div>
 
       {/* Nav */}
       <nav
@@ -258,11 +270,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
           {showMemberNav && (
             <>
-              {memberPrimaryItems.map(item => <NavLink key={item.href} item={item} />)}
+              {memberTopItems.map(item => <NavLink key={item.href} item={item} />)}
               <Divider />
-              {memberWorkspaceItems.map(item => <NavLink key={item.href} item={item} />)}
+              {memberCoreItems.map(item => <NavLink key={item.href} item={item} />)}
               <Divider />
-              {memberBottomItems.map(item => <NavLink key={item.href} item={item} />)}
+              {memberFeedItems.map(item => <NavLink key={item.href} item={item} />)}
             </>
           )}
         </ul>
@@ -280,7 +292,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Neuer Chat */}
         {showMemberNav && (
           <Link
-            href="/chat"
+            href="/chat/new"
             aria-label={collapsed ? 'Neuer Chat' : undefined}
             title={collapsed ? 'Neuer Chat' : undefined}
             style={{
@@ -307,7 +319,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </Link>
         )}
 
-        {/* Account link */}
+        {/* Account link — no avatar, TopBar has the primary account UI */}
         <Link
           href="/settings"
           aria-label={collapsed ? 'Einstellungen' : undefined}
@@ -315,24 +327,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           className={`sidebar-account${isSettingsActive ? ' sidebar-account--active' : ''}`}
           style={{
             justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? '0' : '8px 12px',
+            padding: collapsed ? '0' : '0 12px',
           }}
         >
-          <div className="sidebar-account-avatar">
-            {userAvatar ? (
-              <img src={userAvatar} alt="" aria-hidden="true" />
-            ) : (
-              <span aria-hidden="true">{userInitial}</span>
-            )}
-          </div>
+          <GearSix size={18} weight="bold" aria-hidden="true" style={{ flexShrink: 0 }} />
           {!collapsed && (
-            <>
-              <div className="sidebar-account-info">
-                <span className="sidebar-account-name">{userName}</span>
-                <span className="sidebar-account-role">Einstellungen</span>
-              </div>
-              <GearSix size={14} weight="bold" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }} aria-hidden="true" />
-            </>
+            <div className="sidebar-account-info">
+              <span className="sidebar-account-name">{userName}</span>
+              <span className="sidebar-account-role">Einstellungen</span>
+            </div>
           )}
         </Link>
 
@@ -374,7 +377,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             ? <CaretRight size={18} weight="bold" aria-hidden="true" />
             : <CaretLeft size={18} weight="bold" aria-hidden="true" />
           }
-          {!collapsed && <span>Einklappen</span>}
         </button>
       </div>
     </aside>
