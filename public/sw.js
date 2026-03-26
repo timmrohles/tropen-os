@@ -44,8 +44,8 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/auth/') ||
     url.hostname.includes('supabase') ||
-    url.hostname.includes('dify') ||
-    url.hostname.includes('sentry')
+    url.hostname.includes('sentry') ||
+    url.hostname.includes('anthropic')
   ) {
     return
   }
@@ -64,8 +64,11 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/animations/') ||
+    url.pathname.startsWith('/_next/static/') ||
     url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.webm')
+    url.pathname.endsWith('.webm') ||
+    url.pathname.endsWith('.woff2') ||
+    url.pathname.endsWith('.css')
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {

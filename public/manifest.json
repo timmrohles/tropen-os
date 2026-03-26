@@ -5,8 +5,8 @@
   "start_url": "/workspace",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#1A1714",
-  "theme_color": "#a3b554",
+  "background_color": "#EAE9E5",
+  "theme_color": "#2D7A50",
   "lang": "de",
   "icons": [
     {

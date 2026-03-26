@@ -10,8 +10,8 @@ export default function OfflinePage() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg-base, var(--bg-base))',
-      color: 'var(--text-primary, var(--text-primary))',
+      background: 'var(--bg-base)',
+      color: 'var(--text-primary)',
       gap: 16,
       padding: 24,
       textAlign: 'center',
@@ -36,7 +36,7 @@ export default function OfflinePage() {
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
           Keine Verbindung
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary, var(--text-secondary))', marginTop: 8, maxWidth: 320 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 8, maxWidth: 320 }}>
           Toro ist gerade nicht erreichbar. Bitte prüfe deine Internetverbindung und versuche es erneut.
         </p>
       </div>
@@ -48,7 +48,7 @@ export default function OfflinePage() {
           border: 'none',
           borderRadius: 8,
           padding: '10px 20px',
-          color: '#0d2418',
+          color: 'var(--text-primary)',
           fontWeight: 700,
           fontSize: 14,
           cursor: 'pointer',
