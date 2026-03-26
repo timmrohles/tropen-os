@@ -38,13 +38,17 @@ export const metadata: Metadata = {
     title: 'Tropen OS',
     statusBarStyle: 'black-translucent',
   },
+  icons: {
+    icon: '/icons/icon-192.svg',
+    apple: '/icons/icon-192.svg',
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: 'var(--accent)',
+  themeColor: '#2D7A50',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

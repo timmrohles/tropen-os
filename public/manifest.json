@@ -1,8 +1,10 @@
 {
+  "id": "/workspace",
   "name": "Tropen OS",
   "short_name": "Tropen OS",
   "description": "Responsible AI Department für den Mittelstand",
   "start_url": "/workspace",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#EAE9E5",
@@ -13,16 +15,27 @@
       "src": "/icons/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
-  "screenshots": [],
   "categories": ["productivity", "business"],
   "shortcuts": [
     {
@@ -36,6 +49,12 @@
       "short_name": "Projekte",
       "url": "/projects",
       "description": "Meine Projekte öffnen"
+    },
+    {
+      "name": "Feeds",
+      "short_name": "Feeds",
+      "url": "/feeds",
+      "description": "Feed-Quellen verwalten"
     }
   ]
 }

@@ -50,12 +50,24 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigations-Requests: Network-first, Offline-Fallback
+  // Navigations-Requests: Network-first mit Cache-Fallback, dann Offline-Seite
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(OFFLINE_URL).then((r) => r ?? new Response('Offline', { status: 503 }))
-      )
+      fetch(request)
+        .then((response) => {
+          // Cache successful navigations for offline fallback
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(() =>
+          caches.match(request).then((cached) => {
+            if (cached) return cached
+            return caches.match(OFFLINE_URL).then((r) => r ?? new Response('Offline', { status: 503 }))
+          })
+        )
     )
     return
   }
