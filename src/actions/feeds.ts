@@ -7,6 +7,7 @@ import {
   createFeedSchemaSchema,
   createDistributionSchema,
 } from '@/lib/validators/feeds'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 import { recordNotRelevant } from '@/lib/feeds/feedback'
 import { processItem } from '@/lib/feeds/pipeline'
 import { fetchRss } from '@/lib/feeds/fetchers/rss'
@@ -111,6 +112,11 @@ export async function createFeedSource(formData: FormData | Record<string, unkno
   if (!parsed.success) return { error: parsed.error.message }
   const b = parsed.data
 
+  if (b.url) {
+    const { safe, reason } = await isSafeUrl(b.url)
+    if (!safe) return { error: `URL nicht erlaubt: ${reason}` }
+  }
+
   const config: Record<string, unknown> = b.config ?? {}
   if (b.type === 'email' && !config.inbound_address) {
     const { randomUUID } = await import('crypto')
@@ -145,6 +151,12 @@ export async function updateFeedSource(id: string, input: Record<string, unknown
   const parsed = updateFeedSourceSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.message }
   const b = parsed.data
+
+  if (b.url !== undefined) {
+    const { safe, reason } = await isSafeUrl(b.url)
+    if (!safe) return { error: `URL nicht erlaubt: ${reason}` }
+  }
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (b.name !== undefined) updates.name = b.name
   if (b.url !== undefined) updates.url = b.url
