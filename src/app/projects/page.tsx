@@ -7,7 +7,7 @@ import {
 } from '@phosphor-icons/react'
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('projects')
+const log = createLogger('projects/page')
 
 type ProjectWithMemory = {
   id:             string
@@ -72,7 +72,7 @@ export default function ProjectsPage() {
       setDepartmentId(deptId)
       if (deptId) await loadProjects(deptId)
     } catch (err) {
-      logger.error('loadDepartment error:', err)
+      log.error('[projects] loadDepartment error:', err)
     } finally {
       setLoading(false)
     }

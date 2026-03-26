@@ -1,6 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { Card } from '@/db/schema'
 import type { CardHistoryEntry } from '@/types/workspace-plan-c.types'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('lib/card-history')
 
 // ---------------------------------------------------------------------------
 // Mapper: snake_case DB row → camelCase Card
@@ -47,7 +50,10 @@ export async function writeCardSnapshot(
     .select()
     .single()
 
-  if (error) throw new Error(`writeCardSnapshot failed: ${error.message}`)
+  if (error) {
+    log.warn(`writeCardSnapshot failed: ${error.message}`)
+    throw new Error(`writeCardSnapshot failed: ${error.message}`)
+  }
   return mapCardHistory(data)
 }
 

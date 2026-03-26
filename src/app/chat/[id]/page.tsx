@@ -1,9 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import ChatListClient from './ChatPageClient'
+import SingleChatClient from './SingleChatClient'
 
-export default async function ChatPage() {
+export default async function SingleChatPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -17,5 +21,6 @@ export default async function ChatPage() {
 
   if (!membership?.workspace_id) redirect('/dashboard')
 
-  return <ChatListClient workspaceId={membership.workspace_id} />
+  const { id } = await params
+  return <SingleChatClient workspaceId={membership.workspace_id} convId={id} />
 }
