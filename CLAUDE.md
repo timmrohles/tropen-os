@@ -282,7 +282,7 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 - Typischer User: ~500K Tokens/Monat ≈ €1.50
 - Zielpreis: 29–49€/User/Monat → ~95% Marge
 
-### Chart-Bibliotheken (ADR-005)
+### Chart-Bibliotheken (ADR-008)
 
 | Kontext | Bibliothek | Warum |
 |---------|-----------|-------|
@@ -827,7 +827,7 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/adr/*.md` | Architecture Decision Records (aktuell ADR-001 bis ADR-005) |
+| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-018) |
 | `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
