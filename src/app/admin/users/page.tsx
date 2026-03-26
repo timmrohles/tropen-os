@@ -19,7 +19,8 @@ export default function UsersPage() {
 
   async function load() {
     const res = await fetch('/api/admin/users')
-    setUsers(await res.json())
+    const json = await res.json() as { data: OrgUser[] }
+    setUsers(json.data ?? [])
     setLoading(false)
   }
 

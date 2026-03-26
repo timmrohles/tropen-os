@@ -1,7 +1,8 @@
 import { createLogger } from '@/lib/logger'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
+import { parsePaginationParams } from '@/lib/api/pagination'
 const log = createLogger('admin/users')
 
 async function getAdminUser() {
@@ -21,17 +22,26 @@ async function getAdminUser() {
   return me as { organization_id: string; role: string }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const me = await getAdminUser()
   if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
 
-  const { data: users } = await supabaseAdmin
+  const { searchParams } = new URL(request.url)
+  const { limit, offset } = parsePaginationParams(searchParams)
+
+  const { data: users, error, count } = await supabaseAdmin
     .from('users')
-    .select('id, email, full_name, role, is_active, created_at')
+    .select('id, email, full_name, role, is_active, created_at', { count: 'exact' })
     .eq('organization_id', me.organization_id)
     .order('created_at')
+    .range(offset, offset + limit - 1)
 
-  return NextResponse.json(users ?? [])
+  if (error) {
+    log.error('GET /api/admin/users failed', { error: error.message })
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+
+  return NextResponse.json({ data: users ?? [], total: count ?? 0, limit, offset })
 }
 
 export async function POST(request: Request) {
