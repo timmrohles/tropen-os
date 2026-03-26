@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   PlayCircle, PauseCircle, DotsThree, ArrowClockwise, Trash, PencilSimple,
-  ClockCounterClockwise, ArrowSquareOut, Warning, Lock, X,
+  ClockCounterClockwise, ArrowSquareOut, Warning, Lock, X, Check,
 } from '@phosphor-icons/react'
 import type { FeedDataSource, FeedDataRecord } from '@/types/feeds'
 
@@ -134,7 +134,10 @@ export default function DataView() {
     setLoading(true)
     try {
       const res = await fetch('/api/feeds/data-sources')
-      if (res.ok) setSources(await res.json())
+      if (res.ok) {
+        const json = await res.json() as { data: FeedDataSource[] }
+        setSources(json.data ?? [])
+      }
     } finally {
       setLoading(false)
     }
@@ -429,7 +432,7 @@ export default function DataView() {
 
             {/* Error state */}
             {src.lastError && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '8px 10px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', fontSize: 12, color: '#92400E', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '8px 10px', borderRadius: 6, background: 'var(--warning-bg)', border: '1px solid var(--warning)', fontSize: 12, color: 'var(--warning)', marginBottom: 8 }}>
                 <Warning size={14} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
                 <span>Letzter Fetch fehlgeschlagen: {src.lastError}</span>
               </div>
@@ -499,7 +502,7 @@ export default function DataView() {
       {/* ── CREATE / EDIT MODAL ─────────────────────────────────────────────── */}
       {modalOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          className="modal-overlay" style={{ zIndex: 100, padding: 16 }}
           onClick={() => setModalOpen(false)}
           role="dialog"
           aria-modal="true"
@@ -520,7 +523,7 @@ export default function DataView() {
             </div>
 
             {formError && (
-              <div style={{ padding: '10px 14px', background: '#FFF5F5', border: '1px solid #FED7D7', borderRadius: 8, fontSize: 13, color: '#C53030', marginBottom: 16 }}>
+              <div style={{ padding: '10px 14px', background: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: 8, fontSize: 13, color: 'var(--error)', marginBottom: 16 }}>
                 {formError}
               </div>
             )}
@@ -709,7 +712,7 @@ export default function DataView() {
       {/* ── HISTORY DRAWER ──────────────────────────────────────────────────── */}
       {historySource && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(26,23,20,0.45)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)', zIndex: 100, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end' }}
           onClick={() => setHistorySource(null)}
           role="dialog"
           aria-modal="true"
@@ -766,8 +769,8 @@ export default function DataView() {
                         </td>
                         <td style={{ padding: '8px 10px' }}>
                           {rec.error
-                            ? <span style={{ color: '#C53030', fontWeight: 600 }}>✗ {rec.httpStatus ?? 'Fehler'}</span>
-                            : <span style={{ color: 'var(--accent)', fontWeight: 600 }}>✓ OK</span>}
+                            ? <span style={{ color: 'var(--error)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={13} weight="bold" />{rec.httpStatus ?? 'Fehler'}</span>
+                            : <span style={{ color: 'var(--accent)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={13} weight="bold" />OK</span>}
                         </td>
                         <td style={{ padding: '8px 0 8px 10px', color: 'var(--text-tertiary)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                           {rec.fetchDurationMs != null ? `${rec.fetchDurationMs}ms` : '—'}

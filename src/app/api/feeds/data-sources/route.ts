@@ -6,6 +6,7 @@ import { validateBody } from '@/lib/validators'
 import { createDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
 import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
+import { parsePaginationParams } from '@/lib/api/pagination'
 import type { FeedDataSource } from '@/types/feeds'
 
 const log = createLogger('api:feeds:data-sources')
@@ -45,22 +46,31 @@ function mapSource(r: Record<string, unknown>): FeedDataSource {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabaseAdmin
+  const { searchParams } = new URL(req.url)
+  const { limit, offset } = parsePaginationParams(searchParams)
+
+  const { data, error, count } = await supabaseAdmin
     .from('feed_data_sources')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', me.id)
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) {
     log.error('list data sources failed', { error: error.message })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json((data ?? []).map((r) => mapSource(r as Record<string, unknown>)))
+  return NextResponse.json({
+    data: (data ?? []).map((r) => mapSource(r as Record<string, unknown>)),
+    total: count ?? 0,
+    limit,
+    offset,
+  })
 }
 
 export async function POST(req: NextRequest) {
