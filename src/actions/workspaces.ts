@@ -10,20 +10,34 @@ import {
   type CreateWorkspaceInput,
   type UpdateWorkspaceInput,
 } from '@/lib/validators/workspace'
-import type { Workspace, WorkspaceParticipant } from '@/db/schema'
+import type { Workspace, WorkspaceParticipant, Card } from '@/db/schema'
 import type { WorkspaceWithDetails, WorkspaceMeta, ParticipantWithUser } from '@/types/workspace'
 
 // ---------------------------------------------------------------------------
 // Row mapper — Supabase snake_case → Drizzle camelCase
 // ---------------------------------------------------------------------------
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapWorkspace(row: any): Workspace {
+interface WorkspaceRow {
+  id: string
+  department_id: string | null
+  title: string
+  description: string | null
+  domain: string
+  goal: string | null
+  template_id: string | null
+  meta: Record<string, unknown>
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+function mapWorkspace(row: WorkspaceRow): Workspace {
   return {
     id: row.id,
     departmentId: row.department_id ?? null,
     title: row.title,
     description: row.description ?? null,
-    domain: row.domain,
+    domain: row.domain as Workspace['domain'],
     goal: row.goal ?? null,
     templateId: row.template_id ?? null,
     meta: row.meta ?? {},
@@ -34,13 +48,20 @@ function mapWorkspace(row: any): Workspace {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapParticipant(row: any): WorkspaceParticipant {
+interface ParticipantRow {
+  id: string
+  workspace_id: string
+  user_id: string
+  role: string
+  joined_at: string
+}
+
+function mapParticipant(row: ParticipantRow): WorkspaceParticipant {
   return {
     id: row.id,
     workspaceId: row.workspace_id,
     userId: row.user_id,
-    role: row.role,
+    role: row.role as WorkspaceParticipant['role'],
     joinedAt: new Date(row.joined_at),
   }
 }
@@ -174,23 +195,22 @@ export async function getWorkspace(id: string): Promise<WorkspaceWithDetails> {
   return {
     ...workspace,
     participants,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    cards: (cardRows ?? []).map((c: any) => ({
-      id: c.id,
-      workspaceId: c.workspace_id,
-      type: c.type,
-      title: c.title,
-      description: c.description ?? null,
-      status: c.status,
-      model: c.model ?? null,
-      positionX: c.position_x,
-      positionY: c.position_y,
-      fields: c.fields ?? [],
-      sortOrder: c.sort_order,
-      createdBy: c.created_by ?? null,
-      createdAt: new Date(c.created_at),
-      updatedAt: new Date(c.updated_at),
-      deletedAt: c.deleted_at ? new Date(c.deleted_at) : null,
+    cards: (cardRows ?? []).map((c: Record<string, unknown>): Card => ({
+      id: c.id as string,
+      workspaceId: c.workspace_id as string,
+      type: c.type as Card['type'],
+      title: c.title as string,
+      description: (c.description as string) ?? null,
+      status: c.status as Card['status'],
+      model: (c.model as string) ?? null,
+      positionX: c.position_x as number,
+      positionY: c.position_y as number,
+      fields: (c.fields as Card['fields']) ?? [],
+      sortOrder: c.sort_order as number,
+      createdBy: (c.created_by as string) ?? null,
+      createdAt: new Date(c.created_at as string),
+      updatedAt: new Date(c.updated_at as string),
+      deletedAt: c.deleted_at ? new Date(c.deleted_at as string) : null,
     })),
     department,
   }
