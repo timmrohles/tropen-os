@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data: data ?? [], total: count ?? 0 })
+  return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
 // POST /api/workspaces
