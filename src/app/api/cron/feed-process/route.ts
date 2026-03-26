@@ -3,7 +3,26 @@ import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { runStage2, runStage3 } from '@/lib/feeds/pipeline'
 
-function mapSchemaRow(row: any) {
+interface FeedSchemaRow {
+  id: string
+  department_id: string | null
+  user_id: string
+  name: string
+  description: string | null
+  include_keywords: string[]
+  exclude_keywords: string[]
+  languages: string[]
+  max_age_days: number
+  scoring_prompt: string
+  min_score: number
+  extraction_prompt: string
+  output_structure: string
+  monthly_token_budget: number | null
+  created_at: string
+  updated_at: string
+}
+
+function mapSchemaRow(row: FeedSchemaRow) {
   return {
     id: row.id,
     departmentId: row.department_id ?? null,
@@ -68,7 +87,7 @@ export async function GET() {
           continue
         }
 
-        const schema = mapSchemaRow(schemaRow)
+        const schema = mapSchemaRow(schemaRow as unknown as FeedSchemaRow)
 
         const rawItem = {
           title: item.raw_title ?? '',
@@ -78,7 +97,8 @@ export async function GET() {
           sourceId: item.feed_source_id,
         }
 
-        const stage2Result = await runStage2(item.id, rawItem, schema as any)
+        // Schema is mapped from feed_schemas, not feed_sources — type mismatch is structural
+        const stage2Result = await runStage2(item.id, rawItem, schema as unknown as Parameters<typeof runStage2>[2])
 
         const update: Record<string, unknown> = {
           stage2_score: stage2Result.score,
@@ -88,7 +108,7 @@ export async function GET() {
         }
 
         if (stage2Result.score >= schema.minScore) {
-          const stage3Result = await runStage3(item.id, rawItem, schema as any)
+          const stage3Result = await runStage3(item.id, rawItem, schema as unknown as Parameters<typeof runStage3>[2])
           update.stage3_output = stage3Result
           update.stage3_processed_at = new Date().toISOString()
           stage3Also++
