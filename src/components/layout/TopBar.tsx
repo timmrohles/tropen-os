@@ -20,6 +20,7 @@ export default function TopBar() {
   const supabase = createClient()
   const router = useRouter()
 
+  const [mounted, setMounted] = useState(false)
   const [isSuperadmin, setIsSuperadmin] = useState(false)
   const [viewAs, setViewAs] = useState<AccountRole>('superadmin')
   const [userInitial, setUserInitial] = useState('?')
@@ -36,6 +37,7 @@ export default function TopBar() {
   const accountPanelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    setMounted(true)
     const stored = sessionStorage.getItem(VIEW_AS_KEY) as AccountRole | null
     if (stored === ('solo' as string)) {
       sessionStorage.setItem(VIEW_AS_KEY, 'member')
@@ -162,41 +164,25 @@ export default function TopBar() {
     textAlign: 'left',
   }
 
+  if (!mounted) return <header className="top-bar" role="banner" aria-label="App-Header" />
+
   return (
     <header className="top-bar" role="banner" aria-label="App-Header">
+      {/* Chat slot — filled by ChatHeaderStrip portal after client mount */}
+      <div id="topbar-chat-slot" style={{ flex: '1 1 0%', minWidth: 0, overflow: 'hidden' }} />
+
       {/* Bell */}
       <button
         ref={notifBtnRef}
         type="button"
+        className="topbar-bell"
         aria-label={unreadCount > 0 ? `${unreadCount} ungelesene Benachrichtigungen` : 'Benachrichtigungen'}
         aria-haspopup="true"
         aria-expanded={notifOpen}
         onClick={handleBellClick}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 32,
-          height: 32,
-          borderRadius: 'var(--radius-md)',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--sidebar-text)',
-          position: 'relative',
-          transition: 'background var(--t-fast)',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--sidebar-hover)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
       >
         <Bell size={18} weight={unreadCount > 0 ? 'fill' : 'bold'} color={unreadCount > 0 ? 'var(--accent)' : 'currentColor'} aria-hidden="true" />
-        {unreadCount > 0 && (
-          <span style={{
-            position: 'absolute', top: 4, right: 4,
-            width: 7, height: 7, borderRadius: '50%',
-            background: 'var(--accent)',
-          }} aria-hidden="true" />
-        )}
+        {unreadCount > 0 && <span className="topbar-bell__badge" aria-hidden="true" />}
       </button>
 
       {/* Notification panel */}
@@ -230,40 +216,13 @@ export default function TopBar() {
         aria-expanded={accountOpen}
         aria-label="Account-Menü"
         onClick={handleAccountClick}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 7,
-          height: 32,
-          padding: '0 10px',
-          borderRadius: 'var(--radius-md)',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--sidebar-text)',
-          fontSize: 13,
-          transition: 'background var(--t-fast)',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--sidebar-hover)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+        className="topbar-account"
       >
         {/* Avatar */}
-        <span style={{
-          width: 26,
-          height: 26,
-          borderRadius: '50%',
-          background: 'var(--active-bg)',
-          color: '#fff',
-          fontSize: 11,
-          fontWeight: 700,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }} aria-hidden="true">
+        <span className="topbar-account__avatar" aria-hidden="true">
           {userInitial}
         </span>
-        <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="topbar-account__name">
           {userName || 'Account'}
         </span>
         <CaretDown size={12} weight="bold" aria-hidden="true" />

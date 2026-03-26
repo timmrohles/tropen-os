@@ -797,6 +797,11 @@ Details: `memory/project_pending_ui_tasks.md`
 | Action Layer Hotfix | ✅ gebaut | ToroBadge außen rechts, DotsThree entfernt, neue Actions (Kürzen/E-Mail/Übersetzen/Bild/Perspektive), Mobile Bottom Sheet, `useMediaQuery` (2026-03-25) |
 | Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
 | Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
+| Hydration-Fehler TopBar + ChatHeaderStrip | ✅ behoben | TopBar `mounted` guard (kein SSR); Bell+Account als CSS-Klassen; ChatHeaderStrip portalt in `#topbar-chat-slot` statt fixed overlay (2026-03-26) |
+| Chat Auto-Scroll während Streaming | ✅ gebaut | `lastMsgContent`-Effect in `useWorkspaceState.ts` mit `behavior: 'instant'` — scrollt bei jedem Streaming-Chunk (2026-03-26) |
+| Chat-Menü Dropdown weiß | ✅ gebaut | `.wl-conv-menu` auf `#ffffff` + `var(--border)` + `var(--text-secondary)` — Löschen in Rot lesbar (2026-03-26) |
+| Chat-Menü: Zusammenfassung | ✅ gebaut | Menü-Eintrag sendet Prompt an Toro: Chat als teilbares Dokument-Artefakt zusammenfassen (2026-03-26) |
+| Chat-Menü: Übersicht Artefakte | ✅ gebaut | `artifactsView` State in ChatArea; ersetzt Chat-Nachrichten durch alle Artefakte via ArtifactRenderer; "← Zurück"-Button (2026-03-26) |
 | React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
 | Workspaces Redesign (Prompt A–C) | ✅ gebaut | workspace_items+members+comments (Mig 075–077); neue /workspaces page (client, grid+search+create); /workspaces/[id] Detail-Page (Tabs: Inhalte/Mitglieder/Kommentare/Einstellungen); /shared/[token] öffentliche Freigabe-Seite; workspace_items/members/comments/share API-Routes (2026-03-25) |
 

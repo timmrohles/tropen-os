@@ -311,6 +311,14 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messageCount])
 
+  // Scroll to bottom during streaming as content grows
+  const lastMsgContent = sending ? (messages[messages.length - 1]?.content ?? '') : ''
+  useEffect(() => {
+    if (!sending) return
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMsgContent])
+
   // ── Action factories ────────────────────────────────────
 
   const convActions = createConversationActions({

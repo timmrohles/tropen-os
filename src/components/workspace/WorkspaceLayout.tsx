@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import ChatArea from './ChatArea'
 import SessionPanel, { type SessionPrefs } from './SessionPanel'
 import SplitArtifactPanel from './SplitArtifactPanel'
@@ -39,6 +39,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     organizationId,
     assignToProject,
     renameConversation,
+    deleteConversation,
     messagesEndRef,
     contextPercent,
     showMemoryModal,
@@ -62,7 +63,11 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     chatPrefsRef,
   } = props
 
-  const activeConvProjectId = conversations.find((c) => c.id === activeConvId)?.project_id ?? null
+  const activeConv = conversations.find((c) => c.id === activeConvId) ?? null
+  const activeConvProjectId = activeConv?.project_id ?? null
+
+  // Search drawer state — controlled here, opened by ChatHeaderStrip
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false)
 
   const onRefreshMessages = useCallback(async () => {
     if (!activeConvId) return
@@ -224,6 +229,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         isInSplitView={splitActive}
         onAssignToProject={assignToProject}
         onRenameConversation={renameConversation}
+        onDeleteConversation={deleteConversation}
         contextPercent={contextPercent}
         activeConvProjectId={activeConvProjectId}
         onRefreshMessages={onRefreshMessages}
@@ -244,6 +250,10 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         contextStartIndex={contextStartIndex}
         onContextReset={() => setContextStartIndex(messages.length)}
         suggestionsEnabled={livePrefs?.suggestions_enabled ?? true}
+        isMobile={isMobile}
+        searchDrawerOpen={searchDrawerOpen}
+        onSearchDrawerClose={() => setSearchDrawerOpen(false)}
+        onOpenSearch={() => setSearchDrawerOpen(true)}
       />
 
       {/* ── Split Artifact Panel (Desktop only) ── */}

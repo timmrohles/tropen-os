@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useState, useCallback, useImperativeHandle, forwardRef, useRef } from 'react'
-import { Paperclip, BookmarkSimple, MagnifyingGlass, FolderSimple, X } from '@phosphor-icons/react'
-import Link from 'next/link'
+import React, { useEffect, useImperativeHandle, useRef, useState, useCallback, forwardRef } from 'react'
+import { createPortal } from 'react-dom'
+import { DotsThree, FolderSimple, MagnifyingGlass, PencilSimple, Trash, TextAlignLeft, SquaresFour, X } from '@phosphor-icons/react'
 import ArtifactsDrawer from './ArtifactsDrawer'
 
 interface ProjectItem {
@@ -16,10 +16,12 @@ interface ChatHeaderStripProps {
   projectId?: string | null
   projects?: ProjectItem[]
   workspaceId?: string
-  onOpenBookmarks?: () => void
   onOpenSearch?: () => void
   onRenameConversation?: (id: string, title: string) => void
   onAssignToProject?: (convId: string, projectId: string | null) => void
+  onDeleteConversation?: (id: string) => void
+  onSummarizeArtifacts?: () => void
+  onShowArtifactsView?: () => void
 }
 
 export interface ChatHeaderStripHandle {
@@ -33,42 +35,49 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
     projectId,
     projects = [],
     workspaceId,
-    onOpenBookmarks,
     onOpenSearch,
     onRenameConversation,
     onAssignToProject,
+    onDeleteConversation,
+    onSummarizeArtifacts,
+    onShowArtifactsView,
   }, ref) {
     const [artifactCount, setArtifactCount] = useState(0)
-    const [bookmarkCount, setBookmarkCount] = useState(0)
     const [drawerOpen, setDrawerOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+    const [slotEl, setSlotEl] = useState<Element | null>(null)
 
     // Rename state
     const [editing, setEditing] = useState(false)
     const [editValue, setEditValue] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
 
-    // Project dropdown state
+    // Menu state
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
+    const menuBtnRef = useRef<HTMLButtonElement>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Project sub-menu
     const [projOpen, setProjOpen] = useState(false)
-    const projRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => { setMounted(true) }, [])
+
+    // Find the topbar slot after mount
+    useEffect(() => {
+      if (mounted) setSlotEl(document.getElementById('topbar-chat-slot'))
+    }, [mounted])
 
     const fetchCounts = useCallback(async () => {
       if (!conversationId || conversationId.startsWith('temp-')) {
         setArtifactCount(0)
-        setBookmarkCount(0)
         return
       }
       try {
-        const [artRes, bmRes] = await Promise.all([
-          fetch(`/api/artifacts?conversationId=${conversationId}`),
-          fetch(`/api/bookmarks?conversationId=${conversationId}`),
-        ])
-        if (artRes.ok) {
-          const arts = await artRes.json()
+        const res = await fetch(`/api/artifacts?conversationId=${conversationId}`)
+        if (res.ok) {
+          const arts = await res.json()
           setArtifactCount(Array.isArray(arts) ? arts.length : 0)
-        }
-        if (bmRes.ok) {
-          const bms = await bmRes.json()
-          setBookmarkCount(Array.isArray(bms) ? bms.length : 0)
         }
       } catch {
         // silently ignore
@@ -80,28 +89,42 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
     useEffect(() => {
       setDrawerOpen(false)
       setEditing(false)
+      setMenuOpen(false)
+      setProjOpen(false)
       fetchCounts()
     }, [conversationId, fetchCounts])
 
-    // Close project dropdown on outside click
+    // Close menu on outside click
     useEffect(() => {
-      if (!projOpen) return
+      if (!menuOpen) return
       function onDown(e: MouseEvent) {
-        if (projRef.current && !projRef.current.contains(e.target as Node)) {
+        if (
+          !menuBtnRef.current?.contains(e.target as Node) &&
+          !dropdownRef.current?.contains(e.target as Node)
+        ) {
+          setMenuOpen(false)
           setProjOpen(false)
         }
       }
       document.addEventListener('mousedown', onDown)
       return () => document.removeEventListener('mousedown', onDown)
-    }, [projOpen])
+    }, [menuOpen])
+
+    function handleMenuToggle() {
+      if (!menuOpen) {
+        const rect = menuBtnRef.current?.getBoundingClientRect()
+        if (rect) setMenuPos({ top: rect.bottom + 4, left: rect.left })
+      }
+      setMenuOpen(v => !v)
+      setProjOpen(false)
+    }
 
     function startEdit() {
+      setMenuOpen(false)
+      setProjOpen(false)
       setEditValue(conversationTitle ?? '')
       setEditing(true)
-      setTimeout(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      }, 30)
+      setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select() }, 30)
     }
 
     function commitRename() {
@@ -122,249 +145,191 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
 
     if (!conversationId) return null
 
-    return (
-      <>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '0 16px',
-            height: 36,
-            background: 'rgba(255,255,255,0.03)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            flexShrink: 0,
-            minWidth: 0,
-          }}
-        >
-          {/* ── LEFT: title + project ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+    // Dropdown portal to body — fixed position, no z-index conflicts
+    const dropdown = mounted && menuOpen && menuPos ? createPortal(
+      <div
+        ref={dropdownRef}
+        className="wl-conv-menu"
+        role="menu"
+        style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+      >
+        {onRenameConversation && (
+          <button className="wl-conv-menu__item" role="menuitem" onClick={startEdit}>
+            <PencilSimple size={13} weight="bold" aria-hidden="true" />
+            Umbenennen
+          </button>
+        )}
 
-            {/* Chat title */}
-            {editing ? (
-              <input
-                ref={inputRef}
-                value={editValue}
-                onChange={e => setEditValue(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitRename()
-                  if (e.key === 'Escape') cancelEdit()
-                }}
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 5,
-                  color: 'var(--sidebar-text)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  padding: '2px 6px',
-                  outline: 'none',
-                  width: 220,
-                  maxWidth: '40vw',
-                }}
-              />
-            ) : (
+        {onAssignToProject && (
+          <button
+            className="wl-conv-menu__item"
+            role="menuitem"
+            onClick={() => setProjOpen(v => !v)}
+            style={{ justifyContent: 'space-between' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', columnGap: 8 }}>
+              <FolderSimple size={13} weight="fill" aria-hidden="true" />
+              {activeProject ? activeProject.title : 'Projekt zuordnen'}
+            </span>
+            <span style={{ fontSize: 11, opacity: 0.5 }}>›</span>
+          </button>
+        )}
+
+        {projOpen && onAssignToProject && (
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 4 }}>
+            {projects.map(p => (
               <button
-                onClick={startEdit}
-                title="Umbenennen"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '2px 4px',
-                  borderRadius: 4,
-                  cursor: 'text',
-                  color: 'rgba(255,255,255,0.70)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  maxWidth: 260,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  textAlign: 'left',
-                  transition: 'background 120ms',
+                key={p.id}
+                className="wl-conv-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  onAssignToProject(conversationId, p.id)
+                  setMenuOpen(false)
+                  setProjOpen(false)
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none' }}
+                style={{ paddingLeft: 28, fontWeight: p.id === projectId ? 600 : 400, color: p.id === projectId ? 'var(--accent)' : undefined }}
               >
-                {conversationTitle ?? 'Neue Unterhaltung'}
+                <FolderSimple size={12} weight="fill" aria-hidden="true" />
+                {p.title}
+              </button>
+            ))}
+            {projectId && (
+              <button
+                className="wl-conv-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  onAssignToProject(conversationId, null)
+                  setMenuOpen(false)
+                  setProjOpen(false)
+                }}
+                style={{ paddingLeft: 28, color: 'rgba(255,255,255,0.4)' }}
+              >
+                <X size={12} weight="bold" aria-hidden="true" />
+                Aus Projekt lösen
               </button>
             )}
-
-            {/* Project chip */}
-            {onAssignToProject && (
-              <div ref={projRef} style={{ position: 'relative', flexShrink: 0 }}>
-                <button
-                  onClick={() => setProjOpen(v => !v)}
-                  title={activeProject ? `Projekt: ${activeProject.title}` : 'Projekt zuordnen'}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    background: activeProject ? 'rgba(45,122,80,0.18)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${activeProject ? 'rgba(45,122,80,0.4)' : 'rgba(255,255,255,0.10)'}`,
-                    borderRadius: 12,
-                    padding: '1px 8px 1px 6px',
-                    cursor: 'pointer',
-                    color: activeProject ? 'rgba(120,220,150,0.9)' : 'rgba(255,255,255,0.40)',
-                    fontSize: 11,
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    transition: 'background 120ms',
-                    maxWidth: 160,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  <FolderSimple size={11} weight="fill" aria-hidden="true" />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {activeProject ? activeProject.title : 'Projekt'}
-                  </span>
-                </button>
-
-                {projOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    marginTop: 4,
-                    background: 'var(--sidebar-bg)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 8,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                    zIndex: 200,
-                    minWidth: 180,
-                    padding: '4px 0',
-                  }}>
-                    {projects.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          onAssignToProject(conversationId, p.id)
-                          setProjOpen(false)
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          width: '100%',
-                          padding: '7px 12px',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: p.id === projectId ? 'var(--accent)' : 'rgba(255,255,255,0.75)',
-                          fontSize: 13,
-                          textAlign: 'left',
-                          fontWeight: p.id === projectId ? 600 : 400,
-                          transition: 'background 80ms',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none' }}
-                      >
-                        <FolderSimple size={13} weight="fill" aria-hidden="true" />
-                        {p.title}
-                      </button>
-                    ))}
-                    {projectId && (
-                      <>
-                        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
-                        <button
-                          onClick={() => {
-                            onAssignToProject(conversationId, null)
-                            setProjOpen(false)
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            width: '100%',
-                            padding: '7px 12px',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'rgba(255,255,255,0.45)',
-                            fontSize: 13,
-                            textAlign: 'left',
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)' }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none' }}
-                        >
-                          <X size={13} weight="bold" aria-hidden="true" />
-                          Aus Projekt lösen
-                        </button>
-                      </>
-                    )}
-                    {projects.length === 0 && (
-                      <div style={{ padding: '8px 12px', color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
-                        Keine Projekte vorhanden
-                      </div>
-                    )}
-                  </div>
-                )}
+            {projects.length === 0 && (
+              <div style={{ padding: '6px 12px 6px 28px', color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
+                Keine Projekte
               </div>
             )}
           </div>
+        )}
 
-          {/* ── RIGHT: artifacts / bookmarks / search / department ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            {artifactCount > 0 && (
-              <button
-                onClick={() => setDrawerOpen(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text-muted)', fontSize: 12, padding: 0,
-                }}
-              >
-                <Paperclip size={13} weight="bold" />
-                <span>{artifactCount} Artefakt{artifactCount === 1 ? '' : 'e'}</span>
-              </button>
-            )}
-
-            {bookmarkCount > 0 && (
-              <button
-                onClick={() => onOpenBookmarks?.()}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text-muted)', fontSize: 12, padding: 0,
-                }}
-              >
-                <BookmarkSimple size={13} weight="bold" />
-                <span>{bookmarkCount} Lesezeichen</span>
-              </button>
-            )}
-
+        {artifactCount > 0 && (
+          <>
+            <div className="wl-conv-menu__divider" />
             <button
-              onClick={() => onOpenSearch?.()}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
-                padding: 4, borderRadius: 4,
-              }}
-              title="Nachrichten durchsuchen"
-              aria-label="Nachrichten durchsuchen"
+              className="wl-conv-menu__item"
+              role="menuitem"
+              onClick={() => { setDrawerOpen(true); setMenuOpen(false) }}
             >
-              <MagnifyingGlass size={13} weight="bold" />
+              {artifactCount} Artefakt{artifactCount === 1 ? '' : 'e'}
             </button>
+            {onSummarizeArtifacts && (
+              <button
+                className="wl-conv-menu__item"
+                role="menuitem"
+                onClick={() => { setMenuOpen(false); onSummarizeArtifacts() }}
+              >
+                <TextAlignLeft size={13} weight="bold" aria-hidden="true" />
+                Zusammenfassung
+              </button>
+            )}
+            {onShowArtifactsView && (
+              <button
+                className="wl-conv-menu__item"
+                role="menuitem"
+                onClick={() => { setMenuOpen(false); onShowArtifactsView() }}
+              >
+                <SquaresFour size={13} weight="bold" aria-hidden="true" />
+                Übersicht Artefakte
+              </button>
+            )}
+          </>
+        )}
 
-            <Link
-              href={workspaceId && conversationId
-                ? `/workspace?ws=${workspaceId}&conv=${conversationId}`
-                : '/workspace'}
-              style={{
-                color: 'var(--text-muted)',
-                fontSize: 12,
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
+        {onDeleteConversation && (
+          <>
+            <div className="wl-conv-menu__divider" />
+            <button
+              className="wl-conv-menu__item wl-conv-menu__item--danger"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false)
+                onDeleteConversation(conversationId)
               }}
             >
-              Department →
-            </Link>
-          </div>
+              <Trash size={13} weight="bold" aria-hidden="true" />
+              Löschen
+            </button>
+          </>
+        )}
+      </div>,
+      document.body
+    ) : null
+
+    // Header content portaled into #topbar-chat-slot
+    const headerContent = (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0 }} aria-label="Chat-Kopfzeile">
+        {/* Left: title + menu button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 0%', minWidth: 0 }}>
+          {editing ? (
+            <input
+              ref={inputRef}
+              className="wl-conv-header__input"
+              value={editValue}
+              onChange={e => setEditValue(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitRename()
+                if (e.key === 'Escape') cancelEdit()
+              }}
+            />
+          ) : (
+            <span className="wl-conv-header__name" title={conversationTitle ?? 'Neue Unterhaltung'}>
+              {conversationTitle ?? 'Neue Unterhaltung'}
+            </span>
+          )}
+
+          {!editing && (
+            <button
+              ref={menuBtnRef}
+              className="wl-conv-header__btn"
+              onClick={handleMenuToggle}
+              title="Chat-Optionen"
+              aria-label="Chat-Optionen"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 5,
+                padding: '2px 5px',
+              }}
+            >
+              <DotsThree size={15} weight="bold" aria-hidden="true" />
+            </button>
+          )}
         </div>
+
+        {/* Right: search */}
+        <button
+          className="wl-conv-header__btn"
+          onClick={() => onOpenSearch?.()}
+          title="Nachrichten durchsuchen"
+          aria-label="Nachrichten durchsuchen"
+        >
+          <MagnifyingGlass size={14} weight="bold" aria-hidden="true" />
+        </button>
+      </div>
+    )
+
+    return (
+      <>
+        {mounted && slotEl && createPortal(headerContent, slotEl)}
+
+        {dropdown}
 
         <ArtifactsDrawer
           conversationId={conversationId}

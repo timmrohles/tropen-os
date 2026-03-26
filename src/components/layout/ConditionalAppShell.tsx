@@ -14,9 +14,14 @@ const NO_SHELL_PREFIXES = [
   '/shared/',  // public shared workspace pages — no auth required
 ]
 
+// Exact paths that render without app shell
+const NO_SHELL_EXACT = [
+  '/',  // marketing landing page (logged-out)
+]
+
 export default function ConditionalAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const noShell = NO_SHELL_PREFIXES.some(p => pathname.startsWith(p))
+  const noShell = NO_SHELL_EXACT.includes(pathname) || NO_SHELL_PREFIXES.some(p => pathname.startsWith(p))
 
   if (noShell) {
     return <main>{children}</main>

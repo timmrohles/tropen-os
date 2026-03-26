@@ -85,9 +85,9 @@ export default function SearchDrawer({ open, onClose, workspaceId, onOpenConvers
         style={{ zIndex: 200 }}
       />
       <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Suche" style={{
-        position: 'fixed', top: 52, left: 0, right: 0, zIndex: 201,
-        background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        position: 'fixed', top: 52, left: 'var(--current-sidebar-offset, 0px)', right: 0, zIndex: 201,
+        background: '#ffffff', borderBottom: '1px solid var(--border)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
         animation: 'slideDown 200ms ease-out',
         maxHeight: 'calc(100vh - 52px)', overflowY: 'auto',
       }}>

@@ -1499,6 +1499,87 @@ body {
 .wl-root { display: flex; height: 100vh; overflow: hidden; }
 .wl-root--mobile { padding-top: 48px; }
 
+/* Chat header overlay — fixed over topbar, client-only (no SSR) */
+.wl-conv-header-overlay {
+  position: fixed;
+  top: 0;
+  left: var(--current-sidebar-offset, 240px);
+  /* right: leaves room for Bell (32px) + Account (~148px) + no extra gap = 180px */
+  right: 180px;
+  height: var(--topbar-height, 56px);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 10px;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.85);
+  transition: left 200ms ease-out;
+}
+.wl-conv-header-overlay__left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  pointer-events: auto;
+}
+.wl-conv-header-overlay .wl-conv-header__btn {
+  pointer-events: auto;
+}
+
+/* Workspace conversation header */
+.wl-conv-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 36px; flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.wl-conv-header__title {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.wl-conv-header__name {
+  font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 320px;
+}
+.wl-conv-header__input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 5px;
+  color: rgba(255,255,255,0.9);
+  font-size: 13px; font-weight: 500;
+  padding: 2px 8px; outline: none;
+  width: 240px; max-width: 40vw;
+}
+.wl-conv-header__btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.5); border-radius: 5px;
+  transition: background 120ms, color 120ms; flex-shrink: 0;
+}
+.wl-conv-header__btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+.wl-conv-menu {
+  position: absolute; top: 100%; left: 0; margin-top: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 200; min-width: 180px; padding: 4px 0;
+}
+.wl-conv-menu__item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 12px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-secondary); font-size: 13px;
+  text-align: left; transition: background 80ms;
+}
+.wl-conv-menu__item:hover { background: var(--bg-inset, #f4f3f0); }
+.wl-conv-menu__item--danger { color: var(--color-danger); }
+.wl-conv-menu__item--danger:hover { background: rgba(220,50,50,0.06); }
+.wl-conv-menu__divider { height: 1px; background: var(--border); margin: 4px 0; }
+
 /* Resize Handles */
 .wl-resize-handle { width: 4px; flex-shrink: 0; cursor: col-resize; background: transparent; transition: background var(--t-fast); position: relative; z-index: 10; }
 .wl-resize-handle::after { content: ''; position: absolute; inset: 0 -3px; }
@@ -2164,6 +2245,72 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .top-bar { transition: none; }
+}
+
+/* TopBar buttons — className-based to avoid SSR inline-style shorthand expansion */
+.topbar-bell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  position: relative;
+  transition: background var(--t-fast);
+  flex-shrink: 0;
+}
+.topbar-bell:hover { background: var(--sidebar-hover); }
+
+.topbar-bell__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.topbar-account {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  transition: background var(--t-fast);
+  flex-shrink: 0;
+}
+.topbar-account:hover { background: var(--sidebar-hover); }
+
+.topbar-account__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--active-bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topbar-account__name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Main content area — shifts right of sidebar on desktop */

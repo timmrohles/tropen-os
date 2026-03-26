@@ -8,6 +8,8 @@ import FocusedFlow from './FocusedFlow'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
+import ArtifactRenderer from './ArtifactRenderer'
+import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
 import ContextBar from './ContextBar'
 import ChatContextStrip from './ChatContextStrip'
 import BookmarksDrawer from './BookmarksDrawer'
@@ -35,6 +37,7 @@ interface ChatAreaProps {
   onRegenerate: () => void
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
   onRenameConversation?: (id: string, title: string) => void
+  onDeleteConversation?: (id: string) => Promise<void>
   contextPercent: number
   activeConvProjectId: string | null
   onRefreshMessages: () => void
@@ -59,6 +62,11 @@ interface ChatAreaProps {
   contextStartIndex?: number
   onContextReset?: () => void
   suggestionsEnabled?: boolean
+  isMobile?: boolean
+  // Search drawer controlled from WorkspaceLayout (header search button)
+  searchDrawerOpen?: boolean
+  onSearchDrawerClose?: () => void
+  onOpenSearch?: () => void
 }
 
 export default function ChatArea({
@@ -78,8 +86,9 @@ export default function ChatArea({
   onSendMessage,
   onSendDirect,
   onRegenerate,
-  onAssignToProject: _onAssignToProject,
+  onAssignToProject,
   onRenameConversation,
+  onDeleteConversation,
   contextPercent,
   activeConvProjectId,
   onRefreshMessages,
@@ -104,12 +113,34 @@ export default function ChatArea({
   contextStartIndex = 0,
   onContextReset,
   suggestionsEnabled = true,
+  isMobile = false,
+  searchDrawerOpen = false,
+  onSearchDrawerClose,
+  onOpenSearch,
 }: ChatAreaProps) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
-  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false)
   const [perspectivesMessageId, setPerspectivesMessageId] = useState<string | null>(null)
   const headerRef = useRef<ChatHeaderStripHandle>(null)
+
+  // Artefakte-Übersicht
+  const [artifactsView, setArtifactsView] = useState(false)
+  const [artifactsViewItems, setArtifactsViewItems] = useState<Array<{ id: string; name: string; type: string; language: string | null; content: string }>>([])
+  const [artifactsViewLoading, setArtifactsViewLoading] = useState(false)
+
+  useEffect(() => { if (!activeConvId) setArtifactsView(false) }, [activeConvId])
+
+  async function openArtifactsView() {
+    if (!activeConvId) return
+    setArtifactsView(true)
+    setArtifactsViewLoading(true)
+    try {
+      const res = await fetch(`/api/artifacts?conversationId=${activeConvId}`)
+      if (res.ok) setArtifactsViewItems(await res.json())
+    } finally {
+      setArtifactsViewLoading(false)
+    }
+  }
 
   // Derive focused-mode context from the active conversation
   const activeConv = conversations.find(c => c.id === activeConvId) ?? null
@@ -153,29 +184,32 @@ export default function ChatArea({
       else next.delete(messageId)
       return next
     })
-    headerRef.current?.refresh()
-  }
-
-  function handleArtifactSaved() {
-    headerRef.current?.refresh()
   }
 
   return (
     <div className="carea">
       {activeConvId ? (
         <>
-          <ChatHeaderStrip
-            ref={headerRef}
-            conversationId={activeConvId}
-            conversationTitle={activeConv?.title ?? null}
-            projectId={activeConvProjectId}
-            projects={projects}
-            workspaceId={workspaceId}
-            onOpenBookmarks={() => setBookmarksDrawerOpen(true)}
-            onOpenSearch={() => setSearchDrawerOpen(true)}
-            onRenameConversation={onRenameConversation}
-            onAssignToProject={_onAssignToProject}
-          />
+          {/* ChatHeaderStrip renders into #topbar-chat-slot via portal (desktop only) */}
+          {!isMobile && (
+            <ChatHeaderStrip
+              ref={headerRef}
+              conversationId={activeConvId}
+              conversationTitle={activeConv?.title ?? null}
+              projectId={activeConvProjectId}
+              projects={projects}
+              workspaceId={workspaceId}
+              onOpenSearch={onOpenSearch}
+              onRenameConversation={onRenameConversation}
+              onAssignToProject={onAssignToProject}
+              onDeleteConversation={onDeleteConversation}
+              onSummarizeArtifacts={() => onSendDirect(
+                'Bitte fasse unser gesamtes Gespräch als Dokument-Artefakt zusammen — mit den wichtigsten Themen, Erkenntnissen und Ergebnissen. Das Artefakt soll so aufbereitet sein, dass es eigenständig geteilt werden kann.'
+              )}
+              onShowArtifactsView={openArtifactsView}
+            />
+          )}
+
           {isFocused && focusedProject && (
             <ChatContextStrip
               projectName={focusedProject.title}
@@ -210,7 +244,46 @@ export default function ChatArea({
             </div>
           )}
 
-          <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log">
+          {/* Artefakte-Übersicht */}
+          {artifactsView && (
+            <div className="carea-messages" style={{ gap: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Artefakte dieses Chats
+                </span>
+                <button
+                  onClick={() => setArtifactsView(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '2px 6px', borderRadius: 4 }}
+                >
+                  ← Zurück zum Chat
+                </button>
+              </div>
+              {artifactsViewLoading ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Laden…</div>
+              ) : artifactsViewItems.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Keine Artefakte in diesem Chat.</div>
+              ) : (
+                artifactsViewItems.map(art => (
+                  <div key={art.id}>
+                    <ArtifactRenderer
+                      artifact={{
+                        segType: 'artifact',
+                        artifactType: art.type as ArtifactSegment['artifactType'],
+                        name: art.name,
+                        language: art.language ?? undefined,
+                        content: art.content,
+                      }}
+                      conversationId={activeConvId ?? undefined}
+                      organizationId={organizationId}
+                      onSendDirect={onSendDirect}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log" style={artifactsView ? { display: 'none' } : undefined}>
             {messages.map((msg, i) => {
               const isLast = i === messages.length - 1
               const isLastAssistant = isLast && msg.role === 'assistant'
@@ -229,7 +302,7 @@ export default function ChatArea({
                     organizationId={organizationId}
                     bookmarkedIds={bookmarkedIds}
                     onBookmarkChange={handleBookmarkChange}
-                    onArtifactSaved={handleArtifactSaved}
+                    onArtifactSaved={() => headerRef.current?.refresh()}
                     onSendDirect={onSendDirect}
                     isLastMessage={isLast}
                     isLastAssistantMessage={isLastAssistant}
@@ -314,7 +387,7 @@ export default function ChatArea({
           />
           <SearchDrawer
             open={searchDrawerOpen}
-            onClose={() => setSearchDrawerOpen(false)}
+            onClose={() => onSearchDrawerClose?.()}
             workspaceId={workspaceId}
           />
 

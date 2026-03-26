@@ -68,6 +68,12 @@ Migration: `011_superadmin.sql` — erweitert `users_role_check` um `'superadmin
 | ✅ Fertig | **Plan J2b** — agents ALTER + agent_runs + agent-engine + /api/agents/** | ✅ 2026-03-18 |
 | ✅ Fertig | **Plan J2c** — Scheduled Trigger (Cron daily 7h), Webhook HMAC, vercel.json | ✅ 2026-03-18 |
 | ✅ Fertig | **Plan K** — Geteilte Chats (Share-Link, /s/[token], Team-Antwort) | ✅ 2026-03-19 |
+| ✅ Fertig | TopBar Hydration-Fix — `mounted` guard, Bell+Account als CSS-Klassen, `#topbar-chat-slot` Portal-Target | ✅ 2026-03-26 |
+| ✅ Fertig | ChatHeaderStrip Portal-Rewrite — portalt in `#topbar-chat-slot` (fixed overlay war durch overflow:hidden geclippt) | ✅ 2026-03-26 |
+| ✅ Fertig | Chat Auto-Scroll Streaming — scrollt bei jedem Streaming-Chunk (`lastMsgContent`-Effect, `behavior: instant`) | ✅ 2026-03-26 |
+| ✅ Fertig | Chat-Menü Dropdown weiß — `.wl-conv-menu` auf `#ffffff`, Löschen rot lesbar | ✅ 2026-03-26 |
+| ✅ Fertig | Chat-Menü: Zusammenfassung — sendet Prompt an Toro: Chat als teilbares Dokument-Artefakt | ✅ 2026-03-26 |
+| ✅ Fertig | Chat-Menü: Übersicht Artefakte — `artifactsView` View-Mode in ChatArea; alle Artefakte via ArtifactRenderer | ✅ 2026-03-26 |
 | 🟢 Niedrig | Prompt-Bibliothek Phase 3 | ⬜ Offen |
 | 🟢 Niedrig | Wissenschafts-Paket | ⬜ Offen |
 
