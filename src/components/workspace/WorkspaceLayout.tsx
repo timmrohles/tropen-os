@@ -38,6 +38,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
     projects,
     organizationId,
     assignToProject,
+    renameConversation,
     messagesEndRef,
     contextPercent,
     showMemoryModal,
@@ -222,6 +223,7 @@ export default function WorkspaceLayout(props: WorkspaceLayoutProps) {
         onGenerateImage={handleGenerateImage}
         isInSplitView={splitActive}
         onAssignToProject={assignToProject}
+        onRenameConversation={renameConversation}
         contextPercent={contextPercent}
         activeConvProjectId={activeConvProjectId}
         onRefreshMessages={onRefreshMessages}

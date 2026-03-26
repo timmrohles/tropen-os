@@ -34,6 +34,7 @@ interface ChatAreaProps {
   onSendDirect: (text: string) => void
   onRegenerate: () => void
   onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
+  onRenameConversation?: (id: string, title: string) => void
   contextPercent: number
   activeConvProjectId: string | null
   onRefreshMessages: () => void
@@ -78,6 +79,7 @@ export default function ChatArea({
   onSendDirect,
   onRegenerate,
   onAssignToProject: _onAssignToProject,
+  onRenameConversation,
   contextPercent,
   activeConvProjectId,
   onRefreshMessages,
@@ -165,9 +167,14 @@ export default function ChatArea({
           <ChatHeaderStrip
             ref={headerRef}
             conversationId={activeConvId}
+            conversationTitle={activeConv?.title ?? null}
+            projectId={activeConvProjectId}
+            projects={projects}
             workspaceId={workspaceId}
             onOpenBookmarks={() => setBookmarksDrawerOpen(true)}
             onOpenSearch={() => setSearchDrawerOpen(true)}
+            onRenameConversation={onRenameConversation}
+            onAssignToProject={_onAssignToProject}
           />
           {isFocused && focusedProject && (
             <ChatContextStrip
