@@ -350,7 +350,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             display: 'flex',
             alignItems: 'center',
             gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? 'center' : 'flex-start',
+            justifyContent: collapsed ? 'center' : 'flex-end',
             width: '100%',
             height: 'var(--nav-item-height)',
             padding: collapsed ? '0' : '0 12px',
