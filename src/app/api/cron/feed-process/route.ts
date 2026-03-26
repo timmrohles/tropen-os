@@ -80,7 +80,7 @@ export async function GET() {
 
         const stage2Result = await runStage2(item.id, rawItem, schema as any)
 
-        const update: Record<string, any> = {
+        const update: Record<string, unknown> = {
           stage2_score: stage2Result.score,
           stage2_reason: stage2Result.reason,
           stage2_processed_at: new Date().toISOString(),
@@ -99,13 +99,14 @@ export async function GET() {
         await supabaseAdmin.from('feed_items').update(update).eq('id', item.id)
 
         processed++
-      } catch (err: any) {
-        errors.push(`[${item.id}] ${err.message}`)
+      } catch (err: unknown) {
+        errors.push(`[${item.id}] ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 
     return NextResponse.json({ processed, stage2Only, stage3Also, errors }, { status: 200 })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

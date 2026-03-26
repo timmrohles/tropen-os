@@ -32,8 +32,8 @@ export async function GET() {
         if (result.errors?.length) {
           errors.push(...result.errors.map((e: string) => `[${source.id}] ${e}`))
         }
-      } catch (err: any) {
-        errors.push(`[${source.id}] ${err.message}`)
+      } catch (err: unknown) {
+        errors.push(`[${source.id}] ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 
@@ -46,7 +46,8 @@ export async function GET() {
       },
       { status: 200 }
     )
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

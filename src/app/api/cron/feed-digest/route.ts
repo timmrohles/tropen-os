@@ -27,7 +27,7 @@ export async function GET() {
       try {
         const result = await sendDigestNow(distribution.id)
         totalSent += result.sent ?? 0
-      } catch (err: any) {
+      } catch {
         // swallow per-item errors and continue
       }
     }
@@ -39,7 +39,8 @@ export async function GET() {
       },
       { status: 200 }
     )
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
