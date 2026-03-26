@@ -1,4 +1,3 @@
-import React from 'react'
 import { ClipboardText } from '@phosphor-icons/react/dist/ssr'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 

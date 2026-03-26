@@ -41,20 +41,7 @@ export default function OfflinePage() {
         </p>
       </div>
 
-      <button
-        onClick={() => window.location.reload()}
-        style={{
-          background: 'var(--accent)',
-          border: 'none',
-          borderRadius: 8,
-          padding: '10px 20px',
-          color: 'var(--text-primary)',
-          fontWeight: 700,
-          fontSize: 14,
-          cursor: 'pointer',
-          marginTop: 8,
-        }}
-      >
+      <button className="btn btn-primary" onClick={() => window.location.reload()}>
         Erneut versuchen
       </button>
     </div>
