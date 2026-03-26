@@ -24,6 +24,7 @@
     "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.64",
     "@anthropic-ai/sdk": "^0.78.0",
     "@neondatabase/serverless": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",
@@ -35,6 +36,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "ai": "^6.0.138",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.1",
     "langsmith": "^0.5.10",
@@ -42,6 +44,7 @@
     "openai": "^6.29.0",
     "pg": "^8.20.0",
     "postgres": "^3.4.8",
+    "pptxgenjs": "^4.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
