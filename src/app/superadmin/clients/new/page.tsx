@@ -70,7 +70,7 @@ export default function NewClientPage() {
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <div className="page-header" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">Neuer Client</h1>
           <p className="page-header-sub">Neue Organisation anlegen und ersten Admin einladen</p>

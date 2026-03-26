@@ -3,11 +3,14 @@
 // LangSmith-Tracing ist transparent eingebaut — kein Umbau der Call-Sites nötig.
 
 import OpenAI from 'openai'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('langsmith')
 
 if (!process.env.LANGSMITH_API_KEY && process.env.NODE_ENV === 'production') {
-  console.error('[LangSmith] LANGSMITH_API_KEY fehlt — LLM-Calls werden nicht getrackt')
+  logger.error('LANGSMITH_API_KEY fehlt — LLM-Calls werden nicht getrackt')
 } else if (!process.env.LANGSMITH_API_KEY) {
-  console.warn('[LangSmith] API Key nicht gesetzt — Tracing deaktiviert')
+  logger.warn('API Key nicht gesetzt — Tracing deaktiviert')
 }
 
 // Direkte OpenAI-Instanz — kein wrapOpenAI, da es bei Streaming-Responses

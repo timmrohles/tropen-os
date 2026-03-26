@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { triggerFetch } from '@/actions/feeds'
 
 export async function GET() {
+  const h = await headers()
+  const auth = h.get('authorization')
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { data: sources, error } = await supabaseAdmin
       .from('feed_sources')

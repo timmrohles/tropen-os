@@ -164,7 +164,7 @@ export default function NewWorkspacePage() {
 
   return (
     <div className="content-narrow" style={s.page}>
-      <div className="page-header" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">Neuen Workspace erstellen</h1>
         </div>

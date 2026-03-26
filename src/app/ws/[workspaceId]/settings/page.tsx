@@ -122,7 +122,7 @@ export default function WorkspaceSettingsPage() {
 
   return (
     <div className="content-narrow">
-      <div className="page-header" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">Workspace-Einstellungen</h1>
           <p className="page-header-sub">Name und Einstellungen dieses Departments</p>

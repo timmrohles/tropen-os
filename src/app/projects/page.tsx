@@ -5,6 +5,9 @@ import { createClient } from '@/utils/supabase/client'
 import {
   FolderOpen, Plus, Trash, FloppyDisk, Brain,
 } from '@phosphor-icons/react'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('projects')
 
 type ProjectWithMemory = {
   id:             string
@@ -69,7 +72,7 @@ export default function ProjectsPage() {
       setDepartmentId(deptId)
       if (deptId) await loadProjects(deptId)
     } catch (err) {
-      console.error('[projects] loadDepartment error:', err)
+      logger.error('loadDepartment error:', err)
     } finally {
       setLoading(false)
     }

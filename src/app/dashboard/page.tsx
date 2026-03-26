@@ -252,7 +252,7 @@ export default async function DashboardPage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Header */}
-        <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-header">
           <div className="page-header-text">
             <h1 className="page-header-title">Dashboard</h1>
             <p className="page-header-sub">{isPrivileged ? 'Organisations-Übersicht' : 'Deine Nutzung'}</p>
