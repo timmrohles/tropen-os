@@ -1240,6 +1240,7 @@ body {
   padding: 8px 12px;
   border-radius: var(--radius-md);
   text-decoration: none;
+  color: var(--sidebar-text);
   transition: background var(--t-fast);
   cursor: pointer;
   width: 100%;
