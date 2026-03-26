@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 import type { FeedDataSource } from '@/types/feeds'
 
 const log = createLogger('api:feeds:data-sources')
@@ -68,6 +69,12 @@ export async function POST(req: NextRequest) {
 
   const { data: body, error: validationError } = await validateBody(req, createDataSourceSchema)
   if (validationError) return validationError
+
+  const { safe, reason } = await isSafeUrl(body.url)
+  if (!safe) {
+    log.warn('SSRF blocked on data source create', { url: body.url, reason })
+    return NextResponse.json({ error: `URL nicht erlaubt: ${reason}` }, { status: 422 })
+  }
 
   const { data, error } = await supabaseAdmin
     .from('feed_data_sources')
