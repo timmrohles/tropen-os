@@ -10,7 +10,7 @@ import {
   estimateFeedCost, estimateArticlesPerWeek, formatCostPerWeek,
 } from '@/lib/feed-cost-estimator'
 import {
-  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise,
+  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise, X,
 } from '@phosphor-icons/react'
 import RunHistoryPanel from './_components/RunHistoryPanel'
 import DistributionsPanel from './_components/DistributionsPanel'
@@ -60,7 +60,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
       fetch('/api/workspaces').then(r => r.json()),
     ]).then(([pJson, wJson]: [Record<string, unknown>, Record<string, unknown>]) => {
       setProjects(((pJson.projects ?? []) as Record<string, unknown>[]).map((p) => ({ id: p.id as string, name: p.name as string })))
-      setWorkspaces(((wJson.workspaces ?? []) as Record<string, unknown>[]).map((w) => ({ id: w.id as string, name: w.name as string })))
+      setWorkspaces(((wJson.data ?? []) as Record<string, unknown>[]).map((w) => ({ id: w.id as string, name: w.name as string })))
     }).catch(() => { /* silently ignore fetch errors */ })
   }, [])
 
@@ -181,7 +181,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
               className="card"
               style={{
                 padding: '16px 18px', cursor: 'pointer',
-                borderLeft: src.status === 'active' ? '3px solid var(--accent)' : src.status === 'error' ? '3px solid #E53E3E' : '3px solid var(--border)',
+                borderLeft: src.status === 'active' ? '3px solid var(--accent)' : src.status === 'error' ? '3px solid var(--error)' : '3px solid var(--border)',
                 opacity: src.status === 'active' ? 1 : 0.65,
                 outline: editing?.id === src.id ? '2px solid var(--accent)' : undefined,
                 position: 'relative',
@@ -246,7 +246,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                 <span>Min. Score: {src.minScore}</span>
                 {src.lastFetchedAt && <span>Zuletzt: {new Date(src.lastFetchedAt).toLocaleDateString('de-DE')}</span>}
                 {src.errorCount > 0 && (
-                  <span style={{ color: '#E53E3E', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ color: 'var(--error)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                     <Warning size={12} weight="fill" aria-hidden="true" /> {src.errorCount} Fehler
                   </span>
                 )}
@@ -333,10 +333,10 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
         <div className="card" style={{ padding: 24, marginTop: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <span className="card-header-label">Quelle bearbeiten</span>
-            <button className="btn-icon" aria-label="Schließen" onClick={() => setEditing(null)}>✕</button>
+            <button className="btn-icon" aria-label="Schließen" onClick={() => setEditing(null)}><X size={14} weight="bold" /></button>
           </div>
           {editError && (
-            <div style={{ padding: '10px 14px', background: '#FFF5F5', border: '1px solid #FED7D7', borderRadius: 8, fontSize: 13, color: '#C53030', marginBottom: 16 }}>
+            <div style={{ padding: '10px 14px', background: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: 8, fontSize: 13, color: 'var(--error)', marginBottom: 16 }}>
               {editError}
             </div>
           )}
