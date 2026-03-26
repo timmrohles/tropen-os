@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { updateDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 
 const log = createLogger('api:feeds:data-sources:[id]')
 
@@ -28,6 +29,14 @@ export async function PATCH(
   const { id } = await params
   const { data: body, error: validationError } = await validateBody(req, updateDataSourceSchema)
   if (validationError) return validationError
+
+  if (body.url !== undefined) {
+    const { safe, reason } = await isSafeUrl(body.url)
+    if (!safe) {
+      log.warn('SSRF blocked on data source update', { url: body.url, reason })
+      return NextResponse.json({ error: `URL nicht erlaubt: ${reason}` }, { status: 422 })
+    }
+  }
 
   // Build update payload (only defined fields)
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
