@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import {
   Robot, Lock,
-  Plus, Trash, FloppyDisk,
+  Plus, Trash, FloppyDisk, ShareNetwork,
 } from '@phosphor-icons/react'
+import WorkspacePicker from '@/components/workspaces/WorkspacePicker'
 import { TEMPLATES } from '@/lib/prompt-templates'
 
 type Tab = 'agents' | 'community' | 'templates'
@@ -24,7 +25,7 @@ const EMPTY_AGENT_FORM: { name: string; description: string; system_prompt: stri
 }
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#fff', border: '1px solid var(--border-medium)',
+  width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)',
   borderRadius: 8, padding: '8px 12px', color: 'var(--text-primary)',
   fontSize: 13, boxSizing: 'border-box', outline: 'none',
   fontFamily: 'var(--font-sans, system-ui)',
@@ -42,14 +43,15 @@ export default function AgentenPage() {
   const [agentSaving, setAgentSaving] = useState(false)
   const [agentDeleteConfirm, setAgentDeleteConfirm] = useState(false)
   const [creatingAgent, setCreatingAgent] = useState(false)
+  const [workspacePicker, setWorkspacePicker] = useState(false)
 
   // Agents tab
   useEffect(() => {
     if (tab !== 'agents') return
     setAgentsLoading(true)
     fetch('/api/agents')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setAgents(Array.isArray(data) ? data : []))
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then((json: { data: Agent[] }) => setAgents(json.data ?? []))
       .finally(() => setAgentsLoading(false))
   }, [tab])
 
@@ -153,7 +155,21 @@ export default function AgentenPage() {
             {agentsLoading ? (
               <p style={s.empty}>Lade Agenten…</p>
             ) : agents.length === 0 && !creatingAgent ? (
-              <p style={s.empty}>Noch keine Agenten — erstelle deinen ersten.</p>
+              <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <Robot size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+                  Noch keine Agenten
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+                  Agenten sind autonome Toro-Instanzen mit eigenem System-Prompt und definierten Aufgaben.
+                </p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => { setCreatingAgent(true); setSelectedAgent(null); setAgentForm(EMPTY_AGENT_FORM) }}
+                >
+                  <Plus size={14} weight="bold" /> Ersten Agenten erstellen
+                </button>
+              </div>
             ) : agents.length > 0 ? (
               <div style={s.grid}>
                 {agents.map(a => (
@@ -190,6 +206,11 @@ export default function AgentenPage() {
                   <button className="btn btn-primary" onClick={handleAgentSave} disabled={agentSaving || !agentForm.name.trim()}>
                     <FloppyDisk size={14} weight="bold" /> {agentSaving ? 'Speichere…' : 'Speichern'}
                   </button>
+                  {selectedAgent && (
+                    <button className="btn btn-ghost" onClick={() => setWorkspacePicker(true)}>
+                      <ShareNetwork size={14} weight="bold" /> In Workspace
+                    </button>
+                  )}
                   {selectedAgent && (
                     agentDeleteConfirm ? (
                       <>
@@ -236,6 +257,15 @@ export default function AgentenPage() {
             </div>
           </div>
         )}
+
+      {workspacePicker && selectedAgent && (
+        <WorkspacePicker
+          itemType="agent"
+          itemId={selectedAgent.id}
+          itemTitle={selectedAgent.name}
+          onClose={() => setWorkspacePicker(false)}
+        />
+      )}
     </div>
   )
 }
