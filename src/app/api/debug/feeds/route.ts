@@ -3,8 +3,26 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 
+async function assertSuperadmin(): Promise<{ userId: string } | NextResponse> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data: profile } = await supabaseAdmin
+    .from('users').select('role').eq('id', user.id).maybeSingle()
+  if (profile?.role !== 'superadmin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return { userId: user.id }
+}
+
 // POST /api/debug/feeds — hard-delete all deleted feed_items so feed-fetch can re-insert them
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  const guard = await assertSuperadmin()
+  if (guard instanceof NextResponse) return guard
+
   const { error, count } = await supabaseAdmin
     .from('feed_items')
     .delete({ count: 'exact' })
@@ -14,8 +32,13 @@ export async function POST() {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  const guard = await assertSuperadmin()
+  if (guard instanceof NextResponse) return guard
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const { count: totalInDB } = await supabaseAdmin
     .from('feed_items').select('id', { count: 'exact' })
@@ -50,14 +73,8 @@ export async function GET() {
         .neq('status', 'deleted')
     : { count: null }
 
-  const { data: profile } = user
-    ? await supabaseAdmin.from('users').select('organization_id, role').eq('id', user.id).maybeSingle()
-    : { data: null }
-
   return NextResponse.json({
-    loggedInAs: user?.email ?? null,
-    userOrgId: profile?.organization_id ?? null,
-    userRole: profile?.role ?? null,
+    userRole: 'superadmin',
     getAuthUserResult: me ? { orgId: me.organization_id, role: me.role } : null,
     totalItemsInDB: totalInDB,
     totalNotDeleted,

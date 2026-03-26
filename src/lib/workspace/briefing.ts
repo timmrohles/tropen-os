@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('lib/workspace/briefing')
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export interface BriefingInput {
   goal: string
@@ -25,11 +25,11 @@ Ausgangslage: ${input.baseline}
 Komplexität: ${input.complexity}
 Zusammenarbeit: ${input.collaboration}`
 
-  let response
+  let text: string
   try {
-    response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+    const result = await generateText({
+      model: anthropic('claude-haiku-4-5-20251001'),
+      maxOutputTokens: 1024,
       system: `Du bist Toro, der KI-Assistent von Tropen OS.
 Basierend auf den Angaben des Users schlägst du 3–5 Workspace-Karten vor.
 Antworte AUSSCHLIESSLICH als reines JSON-Array. Kein Text davor oder danach. Keine Backticks. Kein Markdown.
@@ -37,12 +37,11 @@ Beispiel:
 [{"title":"Briefing","card_type":"input","description":"Ausgangsinformationen sammeln"},{"title":"Analyse","card_type":"process","description":"Daten auswerten"}]`,
       messages: [{ role: 'user', content: userPrompt }],
     })
+    text = result.text.trim()
   } catch (apiErr) {
-    log.error('[briefing] Anthropic API error:', apiErr)
+    log.error('[briefing] AI SDK error:', apiErr)
     throw apiErr
   }
-
-  const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 
   const validate = (arr: unknown[]): CardSuggestion[] =>
     arr.filter(

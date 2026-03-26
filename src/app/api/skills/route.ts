@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapSkill } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/api/pagination'
 
 export const runtime = 'nodejs'
 
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(request.url)
+  const { limit, offset } = parsePaginationParams(url.searchParams)
   const scopeFilter = url.searchParams.get('scope')       // optional: 'system' | 'org' | 'user'
   const activeOnly = url.searchParams.get('active') !== 'false'
 
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabaseAdmin
     .from('skills')
-    .select('*')
+    .select('*', { count: 'exact' })
     .is('deleted_at', null)
     .or(orFilter)
     .order('scope', { ascending: true })
@@ -38,16 +40,21 @@ export async function GET(request: NextRequest) {
   if (activeOnly) query = query.eq('is_active', true)
   if (scopeFilter) query = query.eq('scope', scopeFilter)
 
-  const { data, error } = await query
+  query = query.range(offset, offset + limit - 1)
+
+  const { data, error, count } = await query
 
   if (error) {
     log.error('GET /api/skills failed', { error: error.message })
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 
-  const skills = (data ?? []).map((row) => mapSkill(row as Record<string, unknown>))
-
-  return NextResponse.json({ skills })
+  return NextResponse.json({
+    data: (data ?? []).map((row) => mapSkill(row as Record<string, unknown>)),
+    total: count ?? 0,
+    limit,
+    offset,
+  })
 }
 
 // ─── POST /api/skills ─────────────────────────────────────────────────────────

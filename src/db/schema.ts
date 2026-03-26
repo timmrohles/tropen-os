@@ -36,7 +36,7 @@ export const cardTypeEnum = pgEnum('card_type', [
 ])
 
 export const cardStatusEnum = pgEnum('card_status', [
-  'waiting', 'active', 'review', 'done', 'archived',
+  'draft', 'ready', 'stale', 'processing', 'error',
 ])
 
 export const connectionTypeEnum = pgEnum('connection_type', [
@@ -152,7 +152,7 @@ export const cards = pgTable('cards', {
   type: cardTypeEnum('type').notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
-  status: cardStatusEnum('status').notNull().default('waiting'),
+  status: cardStatusEnum('status').notNull().default('draft'),
   model: varchar('model', { length: 64 }).default('claude'),
   positionX: integer('position_x').default(0).notNull(),
   positionY: integer('position_y').default(0).notNull(),

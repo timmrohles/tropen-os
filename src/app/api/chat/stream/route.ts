@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { streamText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
+import { buildWorkspaceContext, buildCardContext, buildContextSnapshot, buildPresentationContext } from '@/lib/context-builder'
 import { resolveWorkflow } from '@/lib/capability-resolver'
+import { logRoutingDecision } from '@/lib/qa/routing-logger'
+import { selectModel } from '@/lib/model-selector'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const { modelId: DEFAULT_MODEL } = selectModel('chat')
 
 export async function POST(req: NextRequest) {
   const me = await getAuthUser()
@@ -19,6 +21,7 @@ export async function POST(req: NextRequest) {
     content:       string
     capabilityId?: string
     outcomeId?:    string
+    mode?:         'presentation'
   }
 
   try {
@@ -27,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { workspaceId, cardId, content, capabilityId, outcomeId } = body
+  const { workspaceId, cardId, content, capabilityId, outcomeId, mode } = body
   const userId = me.id
 
   if (!workspaceId || !content) {
@@ -36,6 +39,10 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     )
   }
+
+  // Budget check before any LLM work
+  const budget = await checkBudget(me.organization_id, 'claude-sonnet', workspaceId)
+  if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
   try {
     const scope = cardId ? 'card' : 'workspace'
@@ -72,7 +79,9 @@ export async function POST(req: NextRequest) {
     // Build system prompt
     const baseSystemPrompt = cardId
       ? await buildCardContext(cardId)
-      : await buildWorkspaceContext(workspaceId)
+      : mode === 'presentation'
+        ? await buildPresentationContext(workspaceId)
+        : await buildWorkspaceContext(workspaceId)
 
     const systemPrompt = capabilitySystemPrompt
       ? `${capabilitySystemPrompt}\n\n${baseSystemPrompt}`
@@ -108,32 +117,30 @@ export async function POST(req: NextRequest) {
     let tokensInput: number | null = null
     let tokensOutput: number | null = null
 
+    const routingReason = capabilityId ? `capability:${capabilityId}` : 'direct'
+    const taskType = cardId ? 'card-chat' : 'workspace-chat'
+    const streamStart = Date.now()
+
     const encoder = new TextEncoder()
 
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          const stream = anthropic.messages.stream({
-            model: modelId,
+          const result = streamText({
+            model: anthropic(modelId),
             system: systemPrompt,
             messages: apiMessages,
-            max_tokens: 2048,
+            maxOutputTokens: 2048,
           })
 
-          for await (const event of stream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
-              const chunk = event.delta.text
-              accumulatedText += chunk
-              controller.enqueue(encoder.encode(chunk))
-            }
+          for await (const chunk of result.textStream) {
+            accumulatedText += chunk
+            controller.enqueue(encoder.encode(chunk))
           }
 
-          const finalMessage = await stream.finalMessage()
-          tokensInput = finalMessage.usage?.input_tokens ?? null
-          tokensOutput = finalMessage.usage?.output_tokens ?? null
+          const usage = await result.usage
+          tokensInput = usage.inputTokens ?? null
+          tokensOutput = usage.outputTokens ?? null
 
           // Save complete response to DB
           await supabaseAdmin.from('workspace_messages').insert({
@@ -143,15 +150,34 @@ export async function POST(req: NextRequest) {
             role: 'assistant',
             content: accumulatedText,
             context_snapshot: contextSnapshot,
-            model: 'claude-sonnet-4-6',
+            model: 'claude-sonnet-4.6',
             tokens_input: tokensInput,
             tokens_output: tokensOutput,
             user_id: userId,
           })
 
+          logRoutingDecision({
+            taskType,
+            modelSelected: modelId,
+            routingReason,
+            latencyMs: Date.now() - streamStart,
+            status: 'success',
+            userId,
+          })
+
           controller.close()
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler'
+
+          logRoutingDecision({
+            taskType,
+            modelSelected: modelId,
+            routingReason,
+            latencyMs: Date.now() - streamStart,
+            status: 'error',
+            errorMessage,
+            userId,
+          })
 
           try {
             await supabaseAdmin.from('workspace_messages').insert({

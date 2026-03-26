@@ -254,6 +254,9 @@ Verboten: Altes Dunkelgrün (#0d1f16, #134e3a, #a3b554)
 | `.page-header` | Jeder Seiten-Header (Pflicht) |
 | `.chip` / `.chip--active` | Filter-Tabs |
 | `.list-row` | Listen-Einträge |
+| `.modal-backdrop` | Reines Overlay-Backdrop (position fixed, blur) |
+| `.modal-overlay` | Backdrop + Flex-Centering für Modals |
+| `.carea-input-inner` | Chat-Input max-width Wrapper (760px, zentriert) |
 
 ### Drawer-Regeln
 
@@ -263,7 +266,44 @@ Verboten: Altes Dunkelgrün (#0d1f16, #134e3a, #a3b554)
 | Unten | Perspectives, Guided Workflows |
 | Oben | Artefakte, Suche |
 
-Backdrop: `rgba(0,0,0,0.4)` · Animation: `200ms ease-out` · Escape schließt immer
+Backdrop: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` · Animation: `200ms ease-out` · Escape schließt immer
+
+### Modal / Overlay Klassen (verbindlich)
+
+| Klasse | Verwendung |
+|--------|-----------|
+| `.modal-backdrop` | Reines Backdrop-Div (kein Inhalt darin) — position fixed, inset 0, blur |
+| `.modal-overlay` | Backdrop + Flex-Container für zentrierten Modal-Inhalt |
+
+```tsx
+// ✅ RICHTIG — reines Backdrop
+<div className="modal-backdrop" style={{ zIndex: 200 }} onClick={onClose} />
+<div role="dialog" style={{ position: 'fixed', ... }}>Panel-Inhalt</div>
+
+// ✅ RICHTIG — zentrierter Modal
+<div className="modal-overlay" style={{ zIndex: 300 }} onClick={onClose}>
+  <div onClick={e => e.stopPropagation()}>Modal-Inhalt</div>
+</div>
+
+// ❌ FALSCH — nie rgba(0,0,0,...) für Backdrops
+<div style={{ background: 'rgba(0,0,0,0.4)' }} />
+```
+
+### Chat-Input Layout (Desktop)
+
+```tsx
+// Wrapper mit schmalen Seiten-Padding
+<div className="carea-input-wrap">
+  {/* max-width 760px, zentriert */}
+  <div className="carea-input-inner">
+    <ChatInput ... />
+    <p className="chat-ai-disclaimer">…</p>
+  </div>
+</div>
+```
+
+`.carea-input-wrap`: horizontales Padding 16px, `border-top`, `bg-chat`
+`.carea-input-inner`: `max-width: 760px; margin: 0 auto` — zentriert auf Desktop
 
 ---
 
@@ -528,6 +568,19 @@ Immer prüfen bevor gebaut wird:
     Hook meldet "searchParams is async" für new URL(request.url).searchParams.
     Das ist die Web-Standard-API — nicht das Next.js-Prop.
     Fix: Warnung ignorieren.
+
+⚠️  Modal-Backdrop-Regression
+    Neue Modals/Drawer verwenden rgba(0,0,0,0.4/0.5) statt Design-Standard.
+    Fix: Immer .modal-backdrop (reines Backdrop) oder .modal-overlay (zentrierter Modal) verwenden.
+    Standard: rgba(26,23,20,0.45) + backdrop-filter: blur(2px).
+    zIndex als inline style ergänzen wenn CSS-Klassen-Default nicht passt.
+
+⚠️  Icon-Regression (Inline-SVG statt Phosphor)
+    Komponenten verwenden Inline-SVGs (<svg>...</svg>) statt Phosphor Icons.
+    Tritt typischerweise bei YouTube-Thumbnails, Logos, Illustrationen auf.
+    Fix: Jeden Inline-SVG durch passendes Phosphor-Icon ersetzen.
+    Ausnahme: ParrotIcon.tsx (Brand-SVG, in IGNORE-Liste des CI-Linters).
+    CI-Check: lint-design-system.mjs prüft auf <svg> in .tsx-Komponenten außerhalb IGNORE.
 ```
 
 ---
@@ -548,6 +601,7 @@ Immer prüfen bevor gebaut wird:
 🔴 supabaseAdmin im Frontend
 🔴 Dateien > 500 Zeilen ohne Begründung
 🔴 background auf Page-Wrapper
+🔴 rgba(0,0,0,...) für Modal-Backdrops — immer .modal-backdrop / .modal-overlay
 🔴 Eigene Box-Styles statt .card
 ```
 

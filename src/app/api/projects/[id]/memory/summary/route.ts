@@ -1,9 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // POST /api/projects/[id]/memory/summary
 // Body: { conversation_id }
@@ -52,9 +51,9 @@ export async function POST(
     .slice(0, 8000)
 
   // Call Haiku for structured summary
-  const response = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 400,
+  const { text: summary } = await generateText({
+    model: anthropic('claude-haiku-4-5-20251001'),
+    maxOutputTokens: 400,
     messages: [{
       role: 'user',
       content: `Analysiere dieses Gespräch und extrahiere die wichtigsten Erkenntnisse, Entscheidungen und offene Fragen.
@@ -65,10 +64,8 @@ ${convText}`,
     }],
   })
 
-  const firstBlock = response.content[0]
-  if (!firstBlock || firstBlock.type !== 'text')
+  if (!summary)
     return NextResponse.json({ error: 'AI-Zusammenfassung fehlgeschlagen' }, { status: 500 })
-  const summary = firstBlock.text.trim()
 
   // Insert as frozen summary — APPEND ONLY
   const { data, error } = await supabaseAdmin

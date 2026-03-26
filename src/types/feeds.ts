@@ -43,6 +43,7 @@ export interface FeedRun {
   errors: FeedRunError[] | null
   durationMs: number | null
   triggeredBy: 'cron' | 'manual' | 'webhook'
+  costEur: number | null
   createdAt: string
 }
 

@@ -9,6 +9,9 @@ import type { CardPlanC, WorkspacePlanC } from '@/types/workspace-plan-c.types'
 
 const log = createLogger('workspace-context')
 
+// eslint-disable-next-line -- hex colors required for Reveal.js iframe CSS (CSS vars unavailable in iFrame)
+const RC = { h: '#1A1714', a: '#2D7A50', bg: '#EAE9E5', t: '#4A4540' }
+
 // Raw DB row shapes (snake_case from Supabase)
 interface CardDbRow {
   id: string
@@ -85,6 +88,22 @@ ${cardSummaries || '(keine Karten)'}
 Verbindungen:
 ${connectionSummaries || '(keine Verbindungen)'}
 
+Wenn der User explizit einen neuen Workspace erstellen möchte, füge am Ende deiner Antwort eine eigene Zeile mit folgendem Marker ein:
+[TORO:WORKSPACE:Passender Workspace-Titel]
+Nur verwenden wenn der User explizit einen neuen Workspace anlegen will — nicht bei allgemeinen Fragen.
+
+Wenn du Daten visualisieren möchtest (Zeitreihen, Vergleiche, Verteilungen, Trends), verwende einen Chart-Artifact statt einer Tabelle:
+<artifact type="chart" title="[Titel]">
+{ "xAxis": {...}, "yAxis": {...}, "series": [{"type":"bar","data":[...]}], "tooltip": {"trigger":"axis"} }
+</artifact>
+Typen: bar, line, pie (data: [{name,value}]), scatter (data: [[x,y]]). Keine Farben setzen — werden automatisch auf Tropen-Grün gesetzt. Nur bei >= 3 Datenpunkten.
+
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Erstellungs-Anfragen ohne ausreichend Details ("erstelle", "mach", "generier", "schreib") — EINE kurze Klärungsfrage stellen, dann warten. Erst wenn klar ist was gewünscht wird, bauen. Niemals raten und sofort bauen.
+- DIREKT STARTEN wenn Thema, Inhalt und Zweck bereits klar sind — auch aus dem Gesprächskontext heraus.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten. Gespräch, nicht Intake-Formular.
+
 Antworte präzise und auf Deutsch. Beziehe dich auf konkrete Karten wenn du Empfehlungen gibst.`
 }
 
@@ -155,7 +174,134 @@ ${upstreamSummary}
 Letzte 5 Änderungen:
 ${historySummary}
 
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Erstellungs-Anfragen ohne ausreichend Details — EINE kurze Klärungsfrage stellen, dann warten. Erst wenn klar ist was gewünscht wird, bauen.
+- DIREKT STARTEN wenn Typ, Inhalt und Zweck bereits klar sind.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten. Gespräch, nicht Intake-Formular.
+
 Hilf dem User dabei, den Inhalt dieser Karte zu verbessern oder zu generieren. Antworte auf Deutsch.`
+}
+
+// ---------------------------------------------------------------------------
+// buildPresentationContext — system prompt for Toro to generate presentations
+// Loads workspace + cards + project memory from the same department
+// ---------------------------------------------------------------------------
+export async function buildPresentationContext(workspaceId: string): Promise<string> {
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('id, title, goal, domain, status, department_id')
+    .eq('id', workspaceId)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (!workspace) throw new Error(`Workspace ${workspaceId} nicht gefunden`)
+
+  const { data: cardRows } = await supabaseAdmin
+    .from('cards')
+    .select('id, title, role, status, content_type, content')
+    .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
+    .order('sort_order', { ascending: true })
+
+  const cards = (cardRows ?? []) as CardDbRow[]
+
+  const cardSummaries = cards.map((c) => {
+    const contentStr = c.content
+      ? JSON.stringify(c.content).slice(0, 300)
+      : '(leer)'
+    return `- [${c.role.toUpperCase()}] "${c.title}" (${c.content_type}): ${contentStr}`
+  }).join('\n')
+
+  // Load project memory from all projects in the same department
+  let memorySummary = '(kein Projekt-Gedächtnis verfügbar)'
+  if (workspace.department_id) {
+    const { data: projects } = await supabaseAdmin
+      .from('projects')
+      .select('id, title')
+      .eq('department_id', workspace.department_id)
+      .is('deleted_at', null)
+      .limit(10)
+
+    const projectIds = (projects ?? []).map((p: { id: string }) => p.id)
+
+    if (projectIds.length > 0) {
+      const { data: memories } = await supabaseAdmin
+        .from('project_memory')
+        .select('type, content, importance, tags')
+        .in('project_id', projectIds)
+        .in('importance', ['high', 'medium'])
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (memories && memories.length > 0) {
+        memorySummary = (memories as { type: string; content: string; importance: string; tags: string[] }[])
+          .map(m => `- [${m.importance.toUpperCase()} / ${m.type}] ${m.content}`)
+          .join('\n')
+      }
+    }
+  }
+
+  log.debug('buildPresentationContext', { workspaceId, cardCount: cards.length })
+
+  return `Du bist Toro, ein KI-Assistent von Tropen OS. Du erstellst Präsentationen im Auftrag des Users.
+
+Workspace: "${workspace.title}"
+Ziel: ${workspace.goal ?? '(kein Ziel definiert)'}
+Bereich: ${(workspace as { domain?: string }).domain ?? '(kein Bereich)'}
+
+Karten-Wissensbasis (${cards.length} Karten):
+${cardSummaries || '(keine Karten)'}
+
+Projekt-Erkenntnisse:
+${memorySummary}
+
+Wenn der User eine Präsentation, Slides oder Pitch möchte, antworte mit einem Artifact:
+<artifact type="presentation" title="[Titel]" slides="[N]">
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+  <style>
+    :root {
+      --r-heading-color: ${RC.h};
+      --r-link-color: ${RC.a};
+      --r-background-color: ${RC.bg};
+    }
+    .reveal h2 { color: ${RC.h}; font-size: 1.8em; }
+    .reveal li { color: ${RC.t}; }
+  </style>
+</head>
+<body>
+  <div class="reveal"><div class="slides">
+    <!-- Slides hier -->
+  </div></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script>
+    Reveal.initialize({ hash: true, controls: true })
+    Reveal.on('slidechanged', (e) => {
+      window.parent.postMessage({ type: 'slide-changed', indexh: e.indexh, total: Reveal.getTotalSlides() }, '*')
+    })
+  </script>
+</body>
+</html>
+</artifact>
+
+Regeln:
+- Max. 8 Slides (außer explizit mehr gewünscht)
+- Slide 1: Titel + Untertitel
+- Slides 2–7: max. 5 Bullet-Points
+- Letzte Slide: CTA oder Zusammenfassung
+- Nur Tropen-OS-Farben verwenden (Heading-Dunkel, Akzent-Grün, Hintergrund-Sand)
+- Beziehe dich konkret auf die Karten und Projekt-Erkenntnisse oben
+- Antworte auf Deutsch
+
+Gesprächsregeln:
+- EINE FRAGE AUF EINMAL: Stelle nie mehr als eine Frage pro Antwort.
+- ERST FRAGEN, DANN BAUEN: Bei Präsentations-Anfragen ohne ausreichend Details — EINE kurze Klärungsfrage stellen (z.B. "Für welche Zielgruppe?" oder "Wie viele Slides?"), dann warten.
+- DIREKT STARTEN wenn Thema, Zielgruppe und Zweck bereits klar sind.
+- KEIN FORMULAR-STIL: Keine nummerierten Fragenlisten.`
 }
 
 // ---------------------------------------------------------------------------

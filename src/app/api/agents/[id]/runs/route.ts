@@ -18,6 +18,23 @@ export async function GET(
   const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '20', 10), 100)
   const offset = parseInt(searchParams.get('offset') ?? '0', 10)
 
+  // Verify agent is accessible to this user's org before exposing run history
+  const { data: agent } = await supabaseAdmin
+    .from('agents')
+    .select('organization_id, scope, user_id')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (!agent) return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
+
+  const accessible =
+    ['system', 'package'].includes(agent.scope as string) ||
+    (agent.scope === 'org' && agent.organization_id === me.organization_id) ||
+    (agent.scope === 'user' && agent.user_id === me.id) ||
+    me.role === 'superadmin'
+
+  if (!accessible) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const { data, error, count } = await supabaseAdmin
     .from('agent_runs')
     .select('*', { count: 'exact' })

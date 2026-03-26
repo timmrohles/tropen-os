@@ -6,7 +6,32 @@ import {
   Tray, ArrowsClockwise, Export as ExportIcon,
 } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
-import type { CanvasCard, CanvasWorkspace } from './page'
+export type CanvasCard = {
+  id: string
+  title: string
+  description: string | null
+  role: string | null
+  type: string | null
+  status: string
+  stale_reason: string | null
+  sources: unknown[] | null
+  sort_order: number
+  content: unknown | null
+  capability_id: string | null
+  outcome_id: string | null
+  source: 'manual' | 'chat_artifact' | null
+  source_conversation_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CanvasWorkspace = {
+  id: string
+  title: string
+  goal: string | null
+  status: string
+  meta: Record<string, unknown>
+}
 import ChatPanel from '@/components/ws/ChatPanel'
 import CardTile from '@/components/workspaces/CardTile'
 
@@ -97,7 +122,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
             {cards.length} {cards.length === 1 ? 'Karte' : 'Karten'}
           </span>
           {staleCount > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#F59E0B' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--warning)' }}>
               <Warning size={14} weight="fill" aria-hidden="true" />
               {staleCount} veraltet
             </span>
@@ -139,7 +164,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
             </div>
             {cards.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
-                <SquaresFour size={40} weight="thin" style={{ marginBottom: 12, opacity: 0.4 }} aria-hidden="true" />
+                <SquaresFour size={40} weight="bold" style={{ marginBottom: 12, opacity: 0.4 }} aria-hidden="true" />
                 <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Noch keine Karten</p>
                 <p style={{ fontSize: 13 }}>Füge deine erste Karte hinzu um zu beginnen.</p>
               </div>
@@ -187,7 +212,7 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
                     {saveState === 'saving' ? 'Wird gespeichert…' : 'Speichern'}
                   </button>
                   {saveState === 'saved' && <span style={{ fontSize: 13, color: 'var(--accent)' }}>Gespeichert ✓</span>}
-                  {saveState === 'error' && <span style={{ fontSize: 13, color: '#EF4444' }}>Fehler beim Speichern</span>}
+                  {saveState === 'error' && <span style={{ fontSize: 13, color: 'var(--error)' }}>Fehler beim Speichern</span>}
                 </div>
               </div>
             </div>
@@ -213,8 +238,8 @@ export default function CanvasClient({ workspaceId, initialWorkspace, initialCar
 
 const ROLE_OPTIONS = [
   { value: 'input',   label: 'Eingabe',  icon: <Tray size={15} weight="fill" aria-hidden="true" />,            description: 'Rohdaten, Briefings, Dokumente',        color: 'var(--accent)',  bg: 'var(--accent-light)' },
-  { value: 'process', label: 'Analyse',  icon: <ArrowsClockwise size={15} weight="fill" aria-hidden="true" />, description: 'KI verarbeitet, vergleicht, bewertet',   color: '#8B5CF6',        bg: '#EDE9FE'             },
-  { value: 'output',  label: 'Ergebnis', icon: <ExportIcon size={15} weight="fill" aria-hidden="true" />,      description: 'Fertige Outputs und Deliverables',       color: '#F59E0B',        bg: '#FEF3C7'             },
+  { value: 'process', label: 'Analyse',  icon: <ArrowsClockwise size={15} weight="fill" aria-hidden="true" />, description: 'KI verarbeitet, vergleicht, bewertet',   color: 'var(--tropen-process)',  bg: 'var(--tropen-process-bg)' },
+  { value: 'output',  label: 'Ergebnis', icon: <ExportIcon size={15} weight="fill" aria-hidden="true" />,      description: 'Fertige Outputs und Deliverables',       color: 'var(--tropen-output)',   bg: 'var(--tropen-output-bg)'  },
 ] as const
 
 interface ModalProps {
@@ -262,7 +287,7 @@ function CreateCardModal({ workspaceId, onCreated, onClose }: ModalProps) {
     <div
       role="dialog" aria-modal="true" aria-labelledby="ccm-heading"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      className="modal-overlay" style={{ zIndex: 1000, padding: 24 }}
     >
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 460, position: 'relative', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
         <h2 id="ccm-heading" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>Neue Karte erstellen</h2>
@@ -302,7 +327,7 @@ function CreateCardModal({ workspaceId, onCreated, onClose }: ModalProps) {
             <textarea id="ccm-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Kurze Erklärung…" style={{ ...inp, resize: 'vertical', minHeight: 68 }} />
           </div>
 
-          {error && <p role="alert" style={{ fontSize: 13, color: '#EF4444', marginBottom: 12 }}>{error}</p>}
+          {error && <p role="alert" style={{ fontSize: 13, color: 'var(--error)', marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button type="submit" disabled={isPending} className="btn btn-primary" aria-busy={isPending}>

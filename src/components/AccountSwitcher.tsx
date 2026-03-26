@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CaretDown } from '@phosphor-icons/react'
 
-export type AccountRole = 'superadmin' | 'org_admin' | 'member' | 'viewer'
+export type AccountRole = 'superadmin' | 'admin' | 'member' | 'viewer'
 
 interface AccountSwitcherProps {
   current: AccountRole
@@ -13,7 +13,7 @@ interface AccountSwitcherProps {
 const ACCOUNTS = [
   { role: 'superadmin' as const, label: 'Superadmin', shortLabel: 'Super',
     description: 'Vollzugriff auf alle Organisationen' },
-  { role: 'org_admin'  as const, label: 'Admin',       shortLabel: 'Admin',
+  { role: 'admin'      as const, label: 'Admin',        shortLabel: 'Admin',
     description: 'Organisations-Administrator' },
   { role: 'member'     as const, label: 'Member',      shortLabel: 'Member',
     description: 'Normales Mitglied — Chat, Projekte' },
@@ -76,7 +76,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
           <div
             role="presentation"
             aria-hidden="true"
-            style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 390 }}
             onClick={() => setOpen(false)}
           />
           <ul
@@ -84,7 +84,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
             aria-label="Konto wechseln"
             className="animate-dropdown"
             style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 20,
+              position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 400,
               background: 'var(--bg-surface-solid)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',

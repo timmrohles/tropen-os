@@ -11,7 +11,7 @@ const NO_SHELL_PREFIXES = [
   '/reset-password',
   '/auth',
   '/onboarding',
-  '/workspaces/', // canvas routes — use position:fixed full-viewport layout
+  '/shared/',  // public shared workspace pages — no auth required
 ]
 
 export default function ConditionalAppShell({ children }: { children: React.ReactNode }) {

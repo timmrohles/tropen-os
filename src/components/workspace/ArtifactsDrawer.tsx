@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
-import { X, Code, Table, FileText, ListBullets, DownloadSimple } from '@phosphor-icons/react'
+import { X, Code, Table, FileText, ListBullets, DownloadSimple, Atom } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface Artifact {
   id: string
   name: string
-  type: 'code' | 'table' | 'document' | 'list'
+  type: 'code' | 'table' | 'document' | 'list' | 'react' | 'data' | 'image' | 'other'
   language: string | null
   content: string
   created_at: string
@@ -24,10 +24,12 @@ interface ArtifactsDrawerProps {
 
 function typeIcon(type: Artifact['type']) {
   switch (type) {
+    case 'react':    return <Atom size={16} weight="bold" />
     case 'code':     return <Code size={16} weight="bold" />
     case 'table':    return <Table size={16} weight="bold" />
     case 'document': return <FileText size={16} weight="bold" />
     case 'list':     return <ListBullets size={16} weight="bold" />
+    default:         return <Code size={16} weight="bold" />
   }
 }
 
@@ -85,13 +87,8 @@ export default function ArtifactsDrawer({ conversationId, workspaceId, open, onC
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 200,
-          animation: 'fadeIn 200ms ease-out',
-        }}
+        className="modal-backdrop"
+        style={{ zIndex: 200 }}
       />
 
       {/* Drawer panel */}

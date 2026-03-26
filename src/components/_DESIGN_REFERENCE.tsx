@@ -30,6 +30,7 @@ import {
   Warning, Info, X, CaretDown, DotsThree,
   FolderOpen, ChatCircle, Brain, Leaf, Buildings,
   Sparkle, List, GridFour,
+  DownloadSimple, PencilSimple, Archive, Copy,
 } from '@phosphor-icons/react'
 
 // ─── Guard: nur in Entwicklung sichtbar ──────────────────────────────────────
@@ -699,9 +700,230 @@ className="bg-[#a3b554]"              // auch in Tailwind verboten`}
       </Section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          14. ANIMATIONS
+          14. MODALS / DRAWERS — BACKDROP STANDARD
       ══════════════════════════════════════════════════════════════════ */}
-      <Section title="14. Animationen">
+      <Section title="14. Modals & Drawers — Backdrop Standard">
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
+              Alle Backdrops verwenden <strong>rgba(26,23,20,0.45) + blur(2px)</strong> — nie rgba(0,0,0,...).
+              Zwei Klassen: <code className="t-mono">.modal-backdrop</code> für reine Backdrop-Divs,
+              <code className="t-mono">.modal-overlay</code> für Backdrop + zentrierten Inhalt.
+            </p>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Klasse', 'Verwendung'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '6px 12px 6px 0',
+                      color: 'var(--text-tertiary)', fontWeight: 600, fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['.modal-backdrop', 'Reines Backdrop-Div — kein Inhalt darin; zIndex via inline style'],
+                  ['.modal-overlay',  'Backdrop + flex center für zentrierte Modals; default z-index: 400'],
+                ].map(([cls, usage]) => (
+                  <tr key={cls} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px 8px 0' }}>
+                      <code className="t-mono" style={{ color: 'var(--accent)' }}>{cls}</code>
+                    </td>
+                    <td style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>{usage}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <Code>{`{/* ✅ Reines Backdrop (Drawer/Panel) */}
+<div className="modal-backdrop" style={{ zIndex: 200 }} onClick={onClose} />
+<div role="dialog" style={{ position: 'fixed', top: 0, right: 0, ... }}>Panel</div>
+
+{/* ✅ Zentrierter Modal */}
+<div className="modal-overlay" style={{ zIndex: 300 }} onClick={onClose}>
+  <div onClick={e => e.stopPropagation()}>Modal-Inhalt</div>
+</div>
+
+{/* ✅ Drawer mit flex-end — kein modal-overlay möglich */}
+<div style={{
+  position: 'fixed', inset: 0,
+  background: 'rgba(26,23,20,0.45)',
+  backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
+  zIndex: 100, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end'
+}} onClick={onClose}>
+
+{/* ❌ FALSCH — nie schwarze Backdrops */}
+<div style={{ background: 'rgba(0,0,0,0.4)' }} />
+<div style={{ background: 'rgba(0,0,0,0.5)' }} />`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          15. CHAT INPUT — DESKTOP LAYOUT
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="15. Chat Input — Desktop Layout">
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              Chat-Eingabe ist auf Desktop auf <strong>760px zentriert</strong>.
+              Äußerer <code className="t-mono">.carea-input-wrap</code> spannt volle Breite,
+              innerer <code className="t-mono">.carea-input-inner</code> begrenzt auf max 760px.
+            </p>
+          </div>
+        </div>
+        <Code>{`{/* ✅ RICHTIG */}
+<div className="carea-input-wrap">
+  <div className="carea-input-inner">
+    <ChatInput ... />
+    <p className="chat-ai-disclaimer">…</p>
+  </div>
+</div>
+
+{/* ❌ FALSCH — maxWidth direkt am wrap */}
+<div className="carea-input-wrap" style={{ maxWidth: 760 }}>
+  <ChatInput />
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          16. KARTEN-AKTIONEN & ICON-STANDARD
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="16. Karten-Aktionen & Icon-Standard">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header">
+            <span className="card-header-label">Verbindliche Regel</span>
+          </div>
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              <strong>Trash / Löschen niemals direkt auf der Karte.</strong> Immer im [···] Menü.
+              Hover-Aktionen (Download, Öffnen) dürfen direkt auf der Karte erscheinen — opacity: 0 → 1.
+            </p>
+          </div>
+        </div>
+
+        {/* Ruhezustand */}
+        <p className="t-label" style={{ marginBottom: 8 }}>Ruhezustand</p>
+        <div style={{ maxWidth: 300, marginBottom: 20 }}>
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Projektname</div>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>vor 2 Std. · 3 Chats</div>
+          </div>
+        </div>
+
+        {/* Hover mit Aktionen */}
+        <p className="t-label" style={{ marginBottom: 8 }}>Hover — Aktionen sichtbar</p>
+        <div style={{ maxWidth: 300, marginBottom: 20 }}>
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Projektname</div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>vor 2 Std. · 3 Chats</div>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="btn-icon" title="Download" aria-label="Download">
+                  <DownloadSimple size={14} weight="bold" />
+                </button>
+                <button className="btn-icon" title="Mehr" aria-label="Mehr Optionen">
+                  <DotsThree size={14} weight="bold" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* [···] Menü */}
+        <p className="t-label" style={{ marginBottom: 8 }}>[···] Menü — Standard-Inhalt</p>
+        <div style={{ maxWidth: 220, marginBottom: 20 }}>
+          <div className="dropdown">
+            <button className="dropdown-item">
+              <PencilSimple size={14} weight="bold" /> Bearbeiten
+            </button>
+            <button className="dropdown-item">
+              <Archive size={14} weight="bold" /> Archivieren
+            </button>
+            <button className="dropdown-item">
+              <Copy size={14} weight="bold" /> Duplizieren
+            </button>
+            <div className="dropdown-divider" />
+            <button className="dropdown-item dropdown-item--danger">
+              <Trash size={14} weight="bold" /> Löschen
+            </button>
+          </div>
+        </div>
+
+        {/* Icon-Tabelle */}
+        <p className="t-label" style={{ marginBottom: 8 }}>Icon-Zuordnung (verbindlich)</p>
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-body" style={{ padding: 16 }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Aktion', 'Icon', 'Wo'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '6px 12px 6px 0',
+                      color: 'var(--text-tertiary)', fontWeight: 600, fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Öffnen',      'ArrowSquareOut', 'Karte hover'],
+                  ['Bearbeiten',  'PencilSimple',   '[···] Menü'],
+                  ['Archivieren', 'Archive',        '[···] Menü'],
+                  ['Duplizieren', 'Copy',           '[···] Menü'],
+                  ['Löschen 🔴',  'Trash',          '[···] Menü — danger'],
+                  ['Download',    'DownloadSimple', 'Karte hover'],
+                  ['In Chat',     'ChatCircle',     'Karte hover'],
+                  ['Neu',         'Plus',           'page-header-actions'],
+                  ['Suchen',      'MagnifyingGlass','Filter-Bar'],
+                  ['Schließen',   'X',              'Modal oben rechts'],
+                  ['Speichern',   'FloppyDisk',     'Button mit Label'],
+                  ['Teilen',      'ShareNetwork',   '[···] Menü'],
+                ].map(([action, icon, where]) => (
+                  <tr key={action} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '6px 12px 6px 0', color: 'var(--text-primary)' }}>{action}</td>
+                    <td style={{ padding: '6px 12px 6px 0' }}>
+                      <code className="t-mono" style={{ color: 'var(--accent)', fontSize: 11 }}>{icon}</code>
+                    </td>
+                    <td style={{ padding: '6px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>{where}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <Code>{`{/* ✅ RICHTIG — Hover-Aktionen + [···] Menü */}
+<div className="card" style={{ padding: '14px 16px' }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+    <div>{/* Titel + Meta */}</div>
+    <div className="card-actions">           {/* opacity: 0, card:hover → opacity: 1 */}
+      <button className="btn-icon" title="Download">
+        <DownloadSimple size={14} weight="bold" />
+      </button>
+      <button className="btn-icon" title="Mehr">
+        <DotsThree size={14} weight="bold" />
+      </button>
+    </div>
+  </div>
+</div>
+
+{/* ✅ RICHTIG — Löschen im Menü, mit danger */}
+<button className="dropdown-item dropdown-item--danger">
+  <Trash size={14} weight="bold" /> Löschen
+</button>
+
+{/* ❌ FALSCH — Trash direkt auf Karte */}
+<button className="btn-icon" onClick={handleDelete}>
+  <Trash size={14} weight="bold" />
+</button>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          17. ANIMATIONS
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="17. Animationen">
         <Row label="Einblenden (.animate-in)">
           <div className="card animate-in" style={{ padding: 16 }}>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -726,6 +948,134 @@ className="bg-[#a3b554]"              // auch in Tailwind verboten`}
 
 {/* Drawer — immer 200ms ease-out */}
 style={{ transition: 'transform 200ms ease-out' }}`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          18. FILTER-BAR — SUCHFELD + CHIPS-LAYOUT
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="18. Filter-Bar — Suchfeld + Chips-Layout (Konsistenz-Standard)">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header">
+            <span className="card-header-label">Verbindliche Regel</span>
+          </div>
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              <strong>Suchfeld max-width: 400px.</strong> Chips/Filter-Pills <strong>immer darunter</strong> —
+              niemals in einer Zeile neben dem Suchfeld. Beide Elemente haben Klassen aus globals.css.
+            </p>
+            {/* Live-Beispiel */}
+            <div className="search-bar-container" style={{ marginBottom: 12 }}>
+              <MagnifyingGlass
+                size={14}
+                weight="bold"
+                color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+              />
+              <input
+                className="input"
+                placeholder="Suchen…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+            <div className="page-filter-row">
+              <button className="chip chip--active">Alle</button>
+              <button className="chip">Entwurf</button>
+              <button className="chip">Aktiv</button>
+              <button className="chip">Archiviert</button>
+            </div>
+          </div>
+        </div>
+        <Code>{`{/* ✅ RICHTIG — Suchfeld + Chips darunter */}
+<div className="search-bar-container">
+  <MagnifyingGlass
+    size={14} weight="bold" color="var(--text-tertiary)"
+    style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+  />
+  <input className="input" placeholder="Suchen…" style={{ paddingLeft: 34 }} />
+</div>
+<div className="page-filter-row">
+  <button className="chip chip--active">Alle</button>
+  <button className="chip">Kategorie A</button>
+</div>
+
+{/* ❌ FALSCH — Chips neben dem Suchfeld */}
+<div style={{ display: 'flex', gap: 8 }}>
+  <input style={{ flex: 1 }} placeholder="Suchen…" />
+  <button className="chip chip--active">Alle</button>
+</div>
+
+{/* ❌ FALSCH — Suchfeld 100% breit */}
+<input style={{ width: '100%' }} placeholder="Suchen…" />`}
+        </Code>
+
+        {/* Scrollbar-Standard */}
+        <div className="card" style={{ marginTop: 24 }}>
+          <div className="card-header">
+            <span className="card-header-label">Dezente Scrollbars (global)</span>
+          </div>
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+              Globale Scrollbars: <code className="t-mono">scrollbar-width: thin</code> (Firefox)
+              und <code className="t-mono">4px</code> Scrollbar-Track/Thumb (WebKit).
+              Farbe: <code className="t-mono">var(--border)</code> / <code className="t-mono">var(--text-tertiary)</code>.
+              Kein manuelles Überschreiben pro Komponente nötig — gilt automatisch via globals.css.
+            </p>
+          </div>
+        </div>
+        <Code>{`/* globals.css — global, kein Override nötig */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          19. EMPTY STATES
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="19. Empty States — Standard-Pattern">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 40, textAlign: 'center' }}>
+            <ChatCircle size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+              Noch keine Chats
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Starte ein neues Gespräch um loszulegen.
+            </p>
+            <button className="btn btn-primary">
+              <Plus size={14} weight="bold" /> Neuen Chat starten
+            </button>
+          </div>
+        </div>
+        <Code>{`{/* Empty State — verbindliches Pattern */}
+{items.length === 0 && (
+  <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+    <IconName size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+      Noch keine [Entitäten]
+    </p>
+    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+      Erklärungstext was diese Entität ist + was man jetzt tun kann.
+    </p>
+    <button className="btn btn-primary">
+      <Plus size={14} weight="bold" /> [Neue Entität] erstellen
+    </button>
+  </div>
+)}
+
+{/* Regeln:
+  - Icon: 32px, weight="fill", color="var(--text-tertiary)"
+  - Titel: 14px, fontWeight 600, color="var(--text-primary)"
+  - Beschreibung: 13px, color="var(--text-tertiary)", lineHeight 1.5
+  - CTA: btn btn-primary mit Plus-Icon
+  - KEIN btn-ghost als primäre Aktion im Empty State
+*/}`}
         </Code>
       </Section>
 

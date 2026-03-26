@@ -10,8 +10,10 @@ import {
   estimateFeedCost, estimateArticlesPerWeek, formatCostPerWeek,
 } from '@/lib/feed-cost-estimator'
 import {
-  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise,
+  PauseCircle, PlayCircle, DotsThree, PencilSimple, Copy, Trash, Warning, ArrowClockwise, X,
 } from '@phosphor-icons/react'
+import RunHistoryPanel from './_components/RunHistoryPanel'
+import DistributionsPanel from './_components/DistributionsPanel'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
@@ -39,6 +41,9 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   const [fetchMsg, setFetchMsg]         = useState<Record<string, string>>({})
   const [runHistory, setRunHistory]     = useState<FeedRun[]>([])
   const [loadingRuns, setLoadingRuns]   = useState(false)
+  const [expandedPanel, setExpandedPanel] = useState<Record<string, 'runs' | 'outputs' | null>>({})
+  const [projects, setProjects]           = useState<{ id: string; name: string }[]>([])
+  const [workspaces, setWorkspaces]       = useState<{ id: string; name: string }[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -48,6 +53,30 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/projects').then(r => r.json()),
+      fetch('/api/workspaces').then(r => r.json()),
+    ]).then(([pJson, wJson]: [Record<string, unknown>, Record<string, unknown>]) => {
+      setProjects(((pJson.projects ?? []) as Record<string, unknown>[]).map((p) => ({ id: p.id as string, name: p.name as string })))
+      setWorkspaces(((wJson.data ?? []) as Record<string, unknown>[]).map((w) => ({ id: w.id as string, name: w.name as string })))
+    }).catch(() => { /* silently ignore fetch errors */ })
+  }, [])
+
+  const fetchRuns = useCallback(async (sourceId: string) => {
+    setLoadingRuns(true)
+    setRunHistory([])
+    try {
+      const res = await fetch(`/api/feeds/${sourceId}/runs?limit=5`)
+      if (res.ok) {
+        const data = await res.json() as { runs: FeedRun[] }
+        setRunHistory(data.runs)
+      }
+    } finally {
+      setLoadingRuns(false)
+    }
+  }, [])
 
   const handlePause = async (src: FeedSource) => {
     const res = await fetch(`/api/feeds/${src.id}/pause`, { method: 'POST' })
@@ -99,17 +128,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     setEditMinScore(src.minScore)
     setEditError('')
     setMenuOpen(null)
-    setRunHistory([])
-    setLoadingRuns(true)
-    try {
-      const res = await fetch(`/api/feeds/${src.id}/runs?limit=5`)
-      if (res.ok) {
-        const data = await res.json() as { runs: FeedRun[] }
-        setRunHistory(data.runs)
-      }
-    } finally {
-      setLoadingRuns(false)
-    }
+    await fetchRuns(src.id)
   }
 
   const handleSave = async () => {
@@ -162,7 +181,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
               className="card"
               style={{
                 padding: '16px 18px', cursor: 'pointer',
-                borderLeft: src.status === 'active' ? '3px solid var(--accent)' : src.status === 'error' ? '3px solid #E53E3E' : '3px solid var(--border)',
+                borderLeft: src.status === 'active' ? '3px solid var(--accent)' : src.status === 'error' ? '3px solid var(--error)' : '3px solid var(--border)',
                 opacity: src.status === 'active' ? 1 : 0.65,
                 outline: editing?.id === src.id ? '2px solid var(--accent)' : undefined,
                 position: 'relative',
@@ -227,7 +246,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                 <span>Min. Score: {src.minScore}</span>
                 {src.lastFetchedAt && <span>Zuletzt: {new Date(src.lastFetchedAt).toLocaleDateString('de-DE')}</span>}
                 {src.errorCount > 0 && (
-                  <span style={{ color: '#E53E3E', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ color: 'var(--error)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                     <Warning size={12} weight="fill" aria-hidden="true" /> {src.errorCount} Fehler
                   </span>
                 )}
@@ -270,6 +289,41 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                   ))}
                 </div>
               )}
+
+              {/* Panel-Toggles */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  className={`chip${expandedPanel[src.id] === 'runs' ? ' chip--active' : ''}`}
+                  onClick={() => setExpandedPanel(p => ({ ...p, [src.id]: p[src.id] === 'runs' ? null : 'runs' }))}
+                >
+                  Run-Historie
+                </button>
+                <button
+                  className={`chip${expandedPanel[src.id] === 'outputs' ? ' chip--active' : ''}`}
+                  onClick={() => setExpandedPanel(p => ({ ...p, [src.id]: p[src.id] === 'outputs' ? null : 'outputs' }))}
+                >
+                  Outputs
+                </button>
+              </div>
+
+              {expandedPanel[src.id] === 'runs' && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <RunHistoryPanel
+                    runs={runHistory}
+                    loading={loadingRuns}
+                    onRefresh={() => fetchRuns(src.id)}
+                  />
+                </div>
+              )}
+              {expandedPanel[src.id] === 'outputs' && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DistributionsPanel
+                    sourceId={src.id}
+                    projects={projects}
+                    workspaces={workspaces}
+                  />
+                </div>
+              )}
             </div>
           )
         })}
@@ -279,10 +333,10 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
         <div className="card" style={{ padding: 24, marginTop: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <span className="card-header-label">Quelle bearbeiten</span>
-            <button className="btn-icon" aria-label="Schließen" onClick={() => setEditing(null)}>✕</button>
+            <button className="btn-icon" aria-label="Schließen" onClick={() => setEditing(null)}><X size={14} weight="bold" /></button>
           </div>
           {editError && (
-            <div style={{ padding: '10px 14px', background: '#FFF5F5', border: '1px solid #FED7D7', borderRadius: 8, fontSize: 13, color: '#C53030', marginBottom: 16 }}>
+            <div style={{ padding: '10px 14px', background: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: 8, fontSize: 13, color: 'var(--error)', marginBottom: 16 }}>
               {editError}
             </div>
           )}
@@ -353,28 +407,11 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
           {/* Run-History */}
           <div style={{ marginTop: 24 }}>
             <div className="card-divider" style={{ marginBottom: 16 }} />
-            <span className="card-section-label">Letzte Runs</span>
-            {loadingRuns ? (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Wird geladen…</div>
-            ) : runHistory.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>Noch keine Runs.</div>
-            ) : (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {runHistory.map((run) => {
-                  const statusColor = run.status === 'success' ? 'var(--accent)' : run.status === 'partial' ? '#F7A44A' : '#E53E3E'
-                  return (
-                    <div key={run.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--text-secondary)' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, flexShrink: 0 }} aria-hidden="true" />
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
-                        {new Date(run.startedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span>{run.itemsFound} gefunden · {run.itemsDistributed} verteilt</span>
-                      {run.durationMs && <span style={{ color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{(run.durationMs / 1000).toFixed(1)}s</span>}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            <RunHistoryPanel
+              runs={runHistory}
+              loading={loadingRuns}
+              onRefresh={() => editing && fetchRuns(editing.id)}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>

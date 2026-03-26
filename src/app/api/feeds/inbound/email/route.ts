@@ -2,7 +2,8 @@
 // Receives Resend inbound email webhooks.
 // Each email becomes a feed item for the matching email source.
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { emailInboundSchema } from '@/lib/validators/feeds'
 import { computeContentHash } from '@/lib/feeds/pipeline'
@@ -10,7 +11,25 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api:feeds:inbound:email')
 
-export async function POST(request: Request) {
+function validateWebhookSecret(request: NextRequest): boolean {
+  const secret = process.env.RESEND_INBOUND_SECRET
+  if (!secret) return false
+  const authHeader = request.headers.get('authorization') ?? ''
+  const provided = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+  if (!provided) return false
+  try {
+    return timingSafeEqual(Buffer.from(provided), Buffer.from(secret))
+  } catch {
+    return false
+  }
+}
+
+export async function POST(request: NextRequest) {
+  if (!validateWebhookSecret(request)) {
+    log.warn('[email inbound] unauthorized — invalid webhook secret')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body: unknown
   try {
     body = await request.json()

@@ -1,18 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { getWorkspace } from '@/actions/workspaces'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import Link from 'next/link'
-
-const MONO = "'DM Mono', 'Courier New', monospace"
 
 const s: Record<string, React.CSSProperties> = {
   root: {
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
-    background: '#080808',
-    fontFamily: MONO,
-    color: '#e0e0e0',
+    background: 'var(--bg-base)',
     overflow: 'hidden',
   },
   topBar: {
@@ -20,38 +16,38 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '0 20px',
-    height: 48,
-    background: '#0e0e0e',
-    borderBottom: '1px solid #1e1e1e',
+    height: 44,
+    background: 'var(--bg-nav)',
+    backdropFilter: 'blur(12px)',
+    borderBottom: '1px solid var(--border)',
     flexShrink: 0,
   },
   backLink: {
-    color: '#444444',
+    color: 'var(--text-tertiary)',
     textDecoration: 'none',
     fontSize: 13,
-    fontFamily: MONO,
-    letterSpacing: '0.01em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
   },
   sep: {
-    color: '#1e1e1e',
+    color: 'var(--border)',
     fontSize: 16,
   },
   title: {
     fontSize: 13,
-    fontWeight: 500,
-    color: '#e0e0e0',
-    fontFamily: MONO,
-    letterSpacing: '0.02em',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
   },
   domain: {
     fontSize: 11,
-    color: '#444444',
-    background: '#1e1e1e',
-    padding: '2px 8px',
-    borderRadius: 3,
-    fontFamily: MONO,
+    color: 'var(--text-tertiary)',
+    background: 'var(--bg-base)',
+    border: '1px solid var(--border)',
+    padding: '1px 8px',
+    borderRadius: 4,
     textTransform: 'uppercase',
-    letterSpacing: '0.06em',
+    letterSpacing: '0.05em',
   },
   navLinks: {
     marginLeft: 'auto',
@@ -61,13 +57,11 @@ const s: Record<string, React.CSSProperties> = {
   },
   navLink: {
     fontSize: 12,
-    color: '#444444',
+    color: 'var(--text-secondary)',
     textDecoration: 'none',
     padding: '4px 10px',
-    borderRadius: 4,
-    fontFamily: MONO,
-    letterSpacing: '0.02em',
-    transition: 'color 0.15s',
+    borderRadius: 6,
+    transition: 'color 0.15s, background 0.15s',
   },
   content: {
     flex: 1,
@@ -88,12 +82,14 @@ export default async function WorkspaceLayout({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  let workspace
-  try {
-    workspace = await getWorkspace(workspaceId)
-  } catch {
-    redirect('/workspaces')
-  }
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('id, title, domain, status')
+    .eq('id', workspaceId)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (!workspace) redirect('/workspaces')
 
   return (
     <div style={s.root}>
@@ -105,11 +101,6 @@ export default async function WorkspaceLayout({
         <span style={s.title}>{workspace.title}</span>
         {workspace.domain && workspace.domain !== 'custom' && (
           <span style={s.domain}>{workspace.domain}</span>
-        )}
-        {workspace.department && (
-          <span style={{ ...s.domain, background: 'transparent', color: '#444444' }}>
-            {workspace.department.name}
-          </span>
         )}
         <nav style={s.navLinks} aria-label="Workspace Navigation">
           <Link href={`/ws/${workspaceId}/canvas`} style={s.navLink}>

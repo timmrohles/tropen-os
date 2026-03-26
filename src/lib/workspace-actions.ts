@@ -7,7 +7,6 @@ export interface ConversationActionsCtx {
   supabase: SupabaseClient
   workspaceId: string
   activeConvId: string | null
-  activeAgentId: string | null
   conversations: Conversation[]
   trashConvs: Conversation[]
   selectedIds: Set<string>
@@ -36,6 +35,10 @@ export interface ConversationActionsCtx {
   setSearch: React.Dispatch<React.SetStateAction<string>>
   setPeriodFilter: React.Dispatch<React.SetStateAction<'all' | 'today' | 'week' | 'month'>>
   setTaskFilter: React.Dispatch<React.SetStateAction<'all' | 'chat' | 'summarize' | 'research' | 'create' | 'extract'>>
+  pendingIntention: 'focused' | 'guided' | null
+  setPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'guided' | null>>
+  pendingCurrentProjectId: string | null
+  setPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
 }
 
 export function createConversationActions(ctx: ConversationActionsCtx) {
@@ -47,7 +50,8 @@ export function createConversationActions(ctx: ConversationActionsCtx) {
     const now = new Date().toISOString()
     const tempId = `temp-${now}`
     const optimistic: Conversation = {
-      id: tempId, title: defaultConvTitle(), created_at: now, task_type: null, project_id: null, agent_id: ctx.activeAgentId, deleted_at: null
+      id: tempId, title: defaultConvTitle(), created_at: now, task_type: null, project_id: null, agent_id: null, deleted_at: null,
+      intention: ctx.pendingIntention ?? null, current_project_id: ctx.pendingCurrentProjectId ?? null, drift_detected: null,
     }
     ctx.setConversations((prev) => [optimistic, ...prev])
     ctx.setActiveConvId(tempId)
@@ -62,12 +66,17 @@ export function createConversationActions(ctx: ConversationActionsCtx) {
         workspace_id: workspaceId,
         user_id: user.id,
         title: defaultConvTitle(),
-        agent_id: ctx.activeAgentId ?? null,
+        agent_id: null,
+        conversation_type: 'chat',
+        intention: ctx.pendingIntention ?? null,
+        current_project_id: ctx.pendingCurrentProjectId ?? null,
       })
-      .select('id, title, created_at, project_id, task_type, agent_id, deleted_at')
+      .select('id, title, created_at, project_id, task_type, agent_id, deleted_at, intention, current_project_id')
       .single()
 
     if (data) {
+      ctx.setPendingIntention(null)
+      ctx.setPendingCurrentProjectId(null)
       ctx.setConversations((prev) => prev.map((c) => (c.id === tempId ? data as Conversation : c)))
       ctx.setActiveConvId((data as Conversation).id)
       return (data as Conversation).id

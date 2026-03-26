@@ -22,33 +22,58 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   return { id: user.id, organization_id: profile.organization_id, role: profile.role }
 }
 
-// Returns true if user is a participant in the workspace (any role).
-// Superadmins bypass all workspace checks.
+// Returns true if user can read the workspace.
+// Org admins/owners can read all workspaces in their org.
+// Members need to be in workspace_members.
 export async function canReadWorkspace(
   workspaceId: string,
   me: AuthUser
 ): Promise<boolean> {
   if (me.role === 'superadmin') return true
+  // Org admins and owners have org-wide read access
+  if (['admin', 'owner'].includes(me.role)) {
+    const { data } = await supabaseAdmin
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspaceId)
+      .eq('organization_id', me.organization_id)
+      .is('deleted_at', null)
+      .maybeSingle()
+    return !!data
+  }
+  // Members need an explicit workspace_members entry
   const { data } = await supabaseAdmin
-    .from('workspace_participants')
+    .from('workspace_members')
     .select('role')
     .eq('workspace_id', workspaceId)
     .eq('user_id', me.id)
+    .eq('status', 'active')
     .maybeSingle()
   return !!data
 }
 
-// Returns true if user is admin or member (can write).
+// Returns true if user can write to the workspace.
 export async function canWriteWorkspace(
   workspaceId: string,
   me: AuthUser
 ): Promise<boolean> {
   if (me.role === 'superadmin') return true
+  if (['admin', 'owner'].includes(me.role)) {
+    const { data } = await supabaseAdmin
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspaceId)
+      .eq('organization_id', me.organization_id)
+      .is('deleted_at', null)
+      .maybeSingle()
+    return !!data
+  }
   const { data } = await supabaseAdmin
-    .from('workspace_participants')
+    .from('workspace_members')
     .select('role')
     .eq('workspace_id', workspaceId)
     .eq('user_id', me.id)
+    .eq('status', 'active')
     .maybeSingle()
   return !!data && ['admin', 'member'].includes(data.role)
 }

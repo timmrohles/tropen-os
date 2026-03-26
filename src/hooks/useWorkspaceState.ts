@@ -6,7 +6,8 @@ import { createClient } from '@/utils/supabase/client'
 import {
   PERIODS, TASK_TYPES, matchesPeriod,
   type Conversation, type Project, type ChatMessage, type JungleProject,
-  type PeriodValue, type TaskValue, type WorkspaceState,
+  type PeriodValue, type TaskValue, type WorkspaceState, type ChipItem,
+  type AttachmentData,
 } from '@/lib/workspace-types'
 import { createConversationActions } from '@/lib/workspace-actions'
 import { createJungleActions } from '@/lib/workspace-jungle'
@@ -23,7 +24,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   // ── State ──────────────────────────────────────────────
   const [workspaceName, setWorkspaceName] = useState('')
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeConvId, setActiveConvId] = useState<string | null>(null)
+  const [activeConvId, setActiveConvId] = useState<string | null>(initialConvId ?? null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
 
   const contextTokens = useMemo(() => estimateConversationTokens(messages), [messages])
@@ -33,8 +34,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   )
 
   const sendingRef = useRef(false)
+  const attachmentRef = useRef<AttachmentData | null>(null)
   const [input, setInput] = useState('')
-  const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<PeriodValue>('all')
   const [taskFilter, setTaskFilter] = useState<TaskValue>('all')
@@ -94,9 +95,22 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [mergeProjectDropOpen, setMergeProjectDropOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
-  // Memory modal
+  // Chips
+  const [chips, setChips] = useState<ChipItem[]>([])
+
+  // Intention system — pending state bis newConversation() aufgerufen wird
+  const [pendingIntention, setPendingIntention] = useState<'focused' | 'guided' | null>(null)
+  const [pendingCurrentProjectId, setPendingCurrentProjectId] = useState<string | null>(null)
+
+  // Web search
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Memory modal + extraction indicator
   const [showMemoryModal, setShowMemoryModal] = useState(false)
+  const [shareModalConvId, setShareModalConvId] = useState<string | null>(null)
+  const [memoryExtracting, setMemoryExtracting] = useState(false)
   const warnedConvRef = useRef<Set<string>>(new Set())
+  const introCheckedRef = useRef<Set<string>>(new Set())
 
   // Mobile
   const [isMobile, setIsMobile] = useState(false)
@@ -109,6 +123,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   const [jungleDragConv, setJungleDragConv] = useState<string | null>(null)
   const [jungleSaving, setJungleSaving] = useState(false)
   const [jungleAddConvOpen, setJungleAddConvOpen] = useState<number | null>(null)
+
+  // Live prefs ref — updated by WorkspaceLayout when SessionPanel changes prefs
+  // Passed to createChatActions so doSend() can include them in the API body
+  const chatPrefsRef = useRef<Record<string, unknown> | null>(null)
 
   // ── Refs ───────────────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -216,7 +234,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         supabase.from('departments').select('name').eq('id', workspaceId).single(),
         supabase
           .from('conversations')
-          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at')
+          .select('id, title, created_at, project_id, task_type, agent_id, deleted_at, intention, current_project_id, drift_detected')
           .eq('workspace_id', workspaceId)
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
@@ -247,15 +265,45 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   useEffect(() => {
     if (!activeConvId) return
     if (sendingRef.current) return
-    // Restore agent from conversation
-    const conv = conversations.find(c => c.id === activeConvId)
-    if (conv) setActiveAgentId(conv.agent_id ?? null)
     supabase
       .from('messages')
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
       .eq('conversation_id', activeConvId)
       .order('created_at')
-      .then(({ data }) => setMessages((data ?? []) as ChatMessage[]))
+      .then(({ data }) => {
+        const loaded = (data ?? []) as ChatMessage[]
+        setMessages(loaded)
+        // Projekt-Einstieg: fire once per new conversation with no messages
+        const conv = conversations.find(c => c.id === activeConvId)
+        if (
+          loaded.length === 0 &&
+          conv?.project_id &&
+          activeConvId &&
+          !introCheckedRef.current.has(activeConvId)
+        ) {
+          introCheckedRef.current.add(activeConvId)
+          fetch('/api/chat/project-intro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversationId: activeConvId }),
+          })
+            .then(r => r.ok ? r.json() as Promise<{ message: string }> : null)
+            .then(res => {
+              if (res?.message) {
+                setMessages([{
+                  id: `intro-${activeConvId}`,
+                  role: 'assistant',
+                  content: res.message,
+                  model_used: 'claude-haiku-4-5-20251001',
+                  cost_eur: null,
+                  tokens_input: null,
+                  tokens_output: null,
+                }])
+              }
+            })
+            .catch(() => {/* non-blocking */})
+        }
+      })
   }, [activeConvId])
 
   const messageCount = messages.length
@@ -267,13 +315,15 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const convActions = createConversationActions({
     supabase, workspaceId,
-    activeConvId, activeAgentId, conversations, trashConvs, selectedIds, newProjectName,
+    activeConvId, conversations, trashConvs, selectedIds, newProjectName,
     setConversations, setActiveConvId, setMessages, setDeleting, setConfirmDeleteId,
     setTrashConvs, setTrashCount, setTrashLoading, setProjects,
     setCreatingProject, setNewProjectName, setEditingConvId, setEditingProjectId,
     setContextMenuId, setContextMenuSubmenu, setDragConvId, setDragOverId,
     setRouting, setSelectMode, setSelectedIds, setError, setSearch,
     setPeriodFilter, setTaskFilter,
+    pendingIntention, setPendingIntention,
+    pendingCurrentProjectId, setPendingCurrentProjectId,
   })
 
   const jungleActions = createJungleActions({
@@ -289,9 +339,13 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
 
   const chatActions = createChatActions({
     supabase, workspaceId,
-    activeConvId, activeAgentId, input, sending, conversations, sendingRef,
+    activeConvId,
+    input, sending, messages, conversations, sendingRef,
     setInput, setSending, setError, setMessages, setRouting, setConversations,
+    setMemoryExtracting, setChips, setIsSearching,
     newConversation: convActions.newConversation,
+    attachmentRef,
+    chatPrefsRef,
   })
 
   // ── Computed ───────────────────────────────────────────
@@ -330,7 +384,6 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     confirmDeleteId, setConfirmDeleteId,
     deleting, routing, sending,
     error, setError,
-    activeAgentId, setActiveAgentId,
     projects, setProjects,
     collapsedProjects, setCollapsedProjects,
     editingConvId, setEditingConvId,
@@ -361,6 +414,13 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     mergeProjectDropOpen, setMergeProjectDropOpen,
     toastMsg,
     showMemoryModal, setShowMemoryModal,
+    shareModalConvId, setShareModalConvId,
+    chips, setChips,
+    attachmentRef,
+    memoryExtracting,
+    isSearching, setIsSearching,
+    pendingIntention, setPendingIntention,
+    pendingCurrentProjectId, setPendingCurrentProjectId,
     isMobile, navOpen, setNavOpen,
     jungleSummary,
     jungleProjects, setJungleProjects,
@@ -368,6 +428,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
     jungleDragConv, setJungleDragConv,
     jungleSaving,
     jungleAddConvOpen, setJungleAddConvOpen,
+    chatPrefsRef,
     messagesEndRef, searchWrapRef, contextMenuRef,
     renameInputRef, projectRenameInputRef,
     escapeEditRef, escapeProjectEditRef,

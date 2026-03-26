@@ -35,6 +35,9 @@ export interface Conversation {
   project_id: string | null
   agent_id: string | null
   deleted_at: string | null
+  intention: 'focused' | 'guided' | null
+  current_project_id: string | null
+  drift_detected: boolean | null
 }
 
 export interface Project {
@@ -50,9 +53,72 @@ export interface Project {
   conversations?: string[]
 }
 
+// ─── Guided Chat Mode types ───────────────────────────────────────────────
+
+export interface GuidedOption {
+  label: string
+  value: string
+  isCustom?: boolean
+}
+
+export interface GuidedStep {
+  id: string
+  phase: 'scout' | 'planner' | 'executor'
+  question: string
+  options: GuidedOption[]
+}
+
+export interface GuidedAnswer {
+  stepId: string
+  question: string
+  answer: string
+}
+
+export interface GuidedData {
+  type: 'picker' | 'step' | 'summary'
+  steps: GuidedStep[]
+  currentStepIndex: number
+  answers: GuidedAnswer[]
+  originalMessage: string
+  category: string
+  convId: string
+}
+
+export type GuidedAction =
+  | { type: 'select_mode'; messageId: string; mode: 'guided' | 'direct' | 'open' }
+  | { type: 'answer_step'; messageId: string; value: string; label: string }
+  | { type: 'confirm_summary'; messageId: string }
+  | { type: 'edit_step'; messageId: string; stepIndex: number }
+
+// ─────────────────────────────────────────────────────────
+
+export interface SearchSource {
+  url: string
+  title: string
+  page_age?: string
+}
+
 export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'> {
   id?: string
   pending?: boolean
+  guidedData?: GuidedData
+  sources?: SearchSource[]
+  link_previews?: boolean
+  thinking?: string
+}
+
+export interface ChipItem {
+  label: string
+  prompt: string
+}
+
+export type AttachmentMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf'
+
+export interface AttachmentData {
+  name: string
+  mediaType: AttachmentMediaType
+  base64: string
+  sizeKb: number
 }
 
 export interface JungleProject {
@@ -125,8 +191,6 @@ export interface WorkspaceState {
   sending: boolean
   error: string
   setError: React.Dispatch<React.SetStateAction<string>>
-  activeAgentId: string | null
-  setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>
   projects: Project[]
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   collapsedProjects: Set<string>
@@ -186,6 +250,8 @@ export interface WorkspaceState {
   toastMsg: string
   showMemoryModal: boolean
   setShowMemoryModal: React.Dispatch<React.SetStateAction<boolean>>
+  shareModalConvId: string | null
+  setShareModalConvId: React.Dispatch<React.SetStateAction<string | null>>
   jungleSummary: string
   jungleProjects: JungleProject[]
   setJungleProjects: React.Dispatch<React.SetStateAction<JungleProject[]>>
@@ -196,6 +262,7 @@ export interface WorkspaceState {
   jungleSaving: boolean
   jungleAddConvOpen: number | null
   setJungleAddConvOpen: React.Dispatch<React.SetStateAction<number | null>>
+  chatPrefsRef: React.MutableRefObject<Record<string, unknown> | null>
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   searchWrapRef: React.RefObject<HTMLDivElement | null>
   contextMenuRef: React.RefObject<HTMLDivElement | null>
@@ -210,6 +277,16 @@ export interface WorkspaceState {
   activePeriodLabel: string | undefined
   hasActiveFilters: boolean
   contextPercent: number
+  chips: ChipItem[]
+  setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
+  attachmentRef: React.MutableRefObject<AttachmentData | null>
+  memoryExtracting: boolean
+  isSearching: boolean
+  setIsSearching: React.Dispatch<React.SetStateAction<boolean>>
+  pendingIntention: 'focused' | 'guided' | null
+  setPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'guided' | null>>
+  pendingCurrentProjectId: string | null
+  setPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
   isMobile: boolean
   navOpen: boolean
   setNavOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -239,6 +316,9 @@ export interface WorkspaceState {
   toggleSelect: (id: string) => void
   bulkSoftDelete: () => Promise<void>
   sendMessage: (e: React.FormEvent) => Promise<void>
+  sendDirect: (text: string) => Promise<void>
+  regenerate: () => Promise<void>
+  handleGuidedAction: (action: GuidedAction) => void
   logout: () => Promise<void>
   handleLogout: () => Promise<void>
 }

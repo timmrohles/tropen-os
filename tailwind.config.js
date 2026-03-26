@@ -12,11 +12,11 @@ module.exports = {
         // Light Tremor theme (unused – app is always dark)
         tremor: {
           brand: {
-            faint: '#f0fdfa',
-            muted: '#ccfbf1',
-            subtle: '#5eead4',
-            DEFAULT: '#14b8a6',
-            emphasis: '#0f766e',
+            faint:    '#f0f9f4',
+            muted:    '#d4edde',
+            subtle:   '#86c9a4',
+            DEFAULT:  '#2D7A50',
+            emphasis: '#1a5c37',
             inverted: '#ffffff'
           },
           background: {
@@ -35,14 +35,14 @@ module.exports = {
             inverted: '#000000'
           }
         },
-        // Dark Tremor theme – zinc palette + teal accent
+        // Dark Tremor theme – zinc palette + Tropen Green accent
         'dark-tremor': {
           brand: {
-            faint: '#042f2e',
-            muted: '#134e4a',
-            subtle: '#0f766e',
-            DEFAULT: '#14b8a6',
-            emphasis: '#2dd4bf',
+            faint:    '#0d2318',
+            muted:    '#1a4a2e',
+            subtle:   '#2D7A50',
+            DEFAULT:  '#3d9966',
+            emphasis: '#5ab882',
             inverted: '#ffffff'
           },
           background: {

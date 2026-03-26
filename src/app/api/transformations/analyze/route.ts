@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { analyzeSchema } from '@/lib/validators/transformations'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request: Request) {
   const me = await getAuthUser()
@@ -71,13 +70,11 @@ Antworte NUR mit einem JSON-Array (max. 2 Einträge), keine weiteren Texte:
   }
 ]`
 
-  const msg = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 512,
+  const { text: raw } = await generateText({
+    model: anthropic('claude-haiku-4-5-20251001'),
+    maxOutputTokens: 512,
     messages: [{ role: 'user', content: prompt }],
   })
-
-  const raw = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '[]'
 
   let suggestions: unknown[] = []
   try {

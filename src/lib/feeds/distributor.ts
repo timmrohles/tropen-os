@@ -64,7 +64,26 @@ export async function distributeItem(itemId: string): Promise<void> {
         const { error } = await supabaseAdmin.from('feed_notifications').insert(notifications)
         if (error) log.error('[distributor] notification insert failed', { error: error.message })
       }
+    } else if (d.target_type === 'project') {
+      const content = [
+        src.summary,
+        ...(Array.isArray(src.key_facts) ? (src.key_facts as string[]).map((f: string) => `• ${f}`) : []),
+        src.url ? `Quelle: ${src.url}` : '',
+      ].filter(Boolean).join('\n')
+
+      const { error } = await supabaseAdmin.from('project_memory').insert({
+        project_id: d.target_id,
+        organization_id: src.organization_id,
+        content,
+        memory_type: 'feed_item',
+        source_url: src.url ?? null,
+        metadata: {
+          feed_source_id: src.source_id,
+          item_id: itemId,
+          title: src.title,
+        },
+      })
+      if (error) log.error('[distributor] project memory inject failed', { error: error.message })
     }
-    // project inject: add to project_knowledge (Plan D — not yet implemented)
   }
 }

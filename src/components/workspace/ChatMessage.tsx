@@ -1,17 +1,20 @@
 'use client'
 
-import React, { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import {
-  CheckCircle, Warning, Lightbulb, Leaf,
-  ChartBar, Wrench, ArrowRight,
-  BookmarkSimple, FloppyDisk, ThumbsDown,
-} from '@phosphor-icons/react'
+import React, { useCallback, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
+import type { ChipItem, GuidedAction } from '@/lib/workspace-types'
 import ParrotIcon from '@/components/ParrotIcon'
+import { SaveArtifactModal } from './SaveArtifactModal'
+import PostToWorkspaceModal from './PostToWorkspaceModal'
+import MessageActions from './MessageActions'
+import ActionLayer from './ActionLayer'
+import GuidedModePicker from './GuidedModePicker'
+import GuidedStepCard from './GuidedStepCard'
+import GuidedSummary from './GuidedSummary'
+import SourcesBar from './SourcesBar'
+import ThinkingBlock from './ThinkingBlock'
+import { makeMdComponents, renderAssistantContent } from './chat-renderers'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -21,245 +24,17 @@ interface ChatMessageProps {
   bookmarkedIds?: Set<string>
   onBookmarkChange?: (messageId: string, bookmarked: boolean) => void
   onArtifactSaved?: () => void
-}
-
-// ─── Icon map: emoji marker → Phosphor icon ─────────────────────────────────
-
-const ICON_MAP: Array<{ marker: string; icon: React.ReactNode }> = [
-  { marker: '✅', icon: <CheckCircle size={15} weight="fill" className="cmsg-icon cmsg-icon--check" /> },
-  { marker: '⚠️', icon: <Warning size={15} weight="fill" className="cmsg-icon cmsg-icon--warn" /> },
-  { marker: '💡', icon: <Lightbulb size={15} weight="fill" className="cmsg-icon cmsg-icon--tip" /> },
-  { marker: '🌱', icon: <Leaf size={15} weight="fill" className="cmsg-icon cmsg-icon--eco" /> },
-  { marker: '📊', icon: <ChartBar size={15} weight="fill" className="cmsg-icon cmsg-icon--data" /> },
-  { marker: '🔧', icon: <Wrench size={15} weight="fill" className="cmsg-icon cmsg-icon--tech" /> },
-  { marker: '→',  icon: <ArrowRight size={15} weight="bold" className="cmsg-icon cmsg-icon--arrow" /> },
-]
-
-// ─── Markdown component factory (accepts artifact save callback) ───────────
-
-function makeMdComponents(
-  onSaveArtifact?: (content: string, language: string | null) => void
-) {
-  return {
-    code({ className, children, ...props }: React.ComponentProps<'code'>) {
-      const match = /language-(\w+)/.exec(className ?? '')
-      const isBlock = !!match
-      const codeContent = String(children).replace(/\n$/, '')
-      const language = match ? match[1] : null
-
-      return isBlock ? (
-        <div style={{ position: 'relative' }}>
-          <SyntaxHighlighter
-            style={oneDark}
-            language={language ?? undefined}
-            PreTag="div"
-            customStyle={{ borderRadius: 6, fontSize: 13, margin: '8px 0' }}
-          >
-            {codeContent}
-          </SyntaxHighlighter>
-          {onSaveArtifact && (
-            <button
-              onClick={() => onSaveArtifact(codeContent, language)}
-              title="Als Artefakt speichern"
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 8,
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                borderRadius: 4,
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.7)',
-                padding: '2px 6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 11,
-              }}
-            >
-              <FloppyDisk size={12} />
-              Speichern
-            </button>
-          )}
-        </div>
-      ) : (
-        <code className="cmsg-inline-code" {...props}>{children}</code>
-      )
-    },
-  }
-}
-
-// ─── Content renderer (accepts components factory result) ─────────────────
-
-function renderAssistantContent(
-  content: string,
-  mdComponents: ReturnType<typeof makeMdComponents>
-): React.ReactNode[] {
-  const lines = content.split('\n')
-  const result: React.ReactNode[] = []
-  let mdBuffer: string[] = []
-  let inCodeBlock = false
-  let bufferKey = 0
-
-  const flushMd = () => {
-    if (mdBuffer.length === 0) return
-    const text = mdBuffer.join('\n')
-    result.push(
-      <ReactMarkdown key={`md-${bufferKey++}`} remarkPlugins={[remarkGfm]} components={mdComponents as never}>
-        {text}
-      </ReactMarkdown>
-    )
-    mdBuffer = []
-  }
-
-  for (const [i, line] of lines.entries()) {
-    if (line.startsWith('```')) inCodeBlock = !inCodeBlock
-
-    if (!inCodeBlock) {
-      const entry = ICON_MAP.find(({ marker }) => line.startsWith(marker))
-      if (entry) {
-        flushMd()
-        const text = line.slice(entry.marker.length).trim()
-        result.push(
-          <div key={`icon-${i}`} className="cmsg-icon-line">
-            {entry.icon}
-            <span>{text}</span>
-          </div>
-        )
-        continue
-      }
-    }
-
-    mdBuffer.push(line)
-  }
-
-  flushMd()
-  return result
-}
-
-// ─── Save artifact modal (simple prompt-style) ────────────────────────────
-
-interface SaveArtifactModalProps {
-  content: string
-  language: string | null
-  conversationId: string
-  organizationId: string
-  onDone: () => void
-  onCancel: () => void
-}
-
-function SaveArtifactModal({ content, language, conversationId, organizationId, onDone, onCancel }: SaveArtifactModalProps) {
-  const [name, setName] = useState(language ? `${language}-snippet` : 'code-snippet')
-  const [saving, setSaving] = useState(false)
-
-  async function handleSave() {
-    if (!name.trim()) return
-    setSaving(true)
-    try {
-      await fetch('/api/artifacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          organizationId,
-          name: name.trim(),
-          type: 'code',
-          language,
-          content,
-        }),
-      })
-      onDone()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        zIndex: 300,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onCancel}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: 24,
-          width: 340,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-        }}
-      >
-        <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 15 }}>
-          Artefakt speichern
-        </div>
-        <div>
-          <label style={{ color: 'var(--text-secondary)', fontSize: 12, display: 'block', marginBottom: 6 }}>
-            Name
-          </label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            style={{
-              width: '100%',
-              background: 'var(--bg-input)',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '8px 10px',
-              color: 'var(--text-primary)',
-              fontSize: 13,
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '7px 14px',
-              color: 'var(--text-secondary)',
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-            style={{
-              background: 'var(--accent)',
-              border: 'none',
-              borderRadius: 6,
-              padding: '7px 14px',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: saving ? 'default' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? 'Speichern…' : 'Speichern'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  onSendDirect?: (text: string) => void
+  isLastMessage?: boolean
+  isLastAssistantMessage?: boolean
+  isStreaming?: boolean
+  chips?: ChipItem[]
+  onPerspectives?: (messageId: string) => void
+  onRegenerate?: () => void
+  onGuidedAction?: (action: GuidedAction) => void
+  onGenerateImage?: (content: string) => void
+  isInSplitView?: boolean
+  suggestionsEnabled?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -272,15 +47,107 @@ export default function ChatMessage({
   bookmarkedIds,
   onBookmarkChange,
   onArtifactSaved,
+  onSendDirect,
+  isLastMessage = false,
+  isLastAssistantMessage = false,
+  isStreaming = false,
+  chips = [],
+  onPerspectives,
+  onRegenerate,
+  onGuidedAction,
+  onGenerateImage,
+  isInSplitView = false,
+  suggestionsEnabled = true,
 }: ChatMessageProps) {
-  const isUser = msg.role === 'user'
-  const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
+  // Hooks müssen vor jedem early return stehen (Rules of Hooks)
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [saveModal, setSaveModal] = useState<{ content: string; language: string | null } | null>(null)
   const [flagState, setFlagState] = useState<'idle' | 'confirm' | 'done'>('idle')
   const [flagReason, setFlagReason] = useState('')
+  const [actionLayerOpen, setActionLayerOpen] = useState(false)
+  const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false)
+  const router = useRouter()
 
+  function handleAction(id: string) {
+    switch (id) {
+      case 'perspective':
+        if (msg.id && onPerspectives) onPerspectives(msg.id)
+        break
+      case 'shorten':
+        onSendDirect?.('Bitte kürze deine letzte Antwort auf das Wesentliche.')
+        break
+      case 'email':
+        onSendDirect?.('Formuliere deine letzte Antwort als professionelle E-Mail. Für die Unterschrift verwende den Platzhalter "[Ihr Name]" — setze niemals deinen eigenen Namen ein.')
+        break
+      case 'translate':
+        onSendDirect?.('Übersetze deine letzte Antwort ins Englische.')
+        break
+      case 'image':
+        onGenerateImage?.(msg.content)
+        break
+      case 'regenerate':
+        onRegenerate?.()
+        break
+      case 'post_to_workspace':
+        setWorkspaceModalOpen(true)
+        break
+      case 'report':
+        setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')
+        break
+    }
+    setActionLayerOpen(false)
+  }
+
+  // ── Guided Chat Mode rendering ───────────────────────────
+  if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
+    const gd = msg.guidedData
+    const msgId = msg.id
+    return (
+      <div className="cmsg cmsg--assistant">
+        <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
+        <div className="cmsg-bubble cmsg-bubble--assistant">
+          <div className="cmsg-content">
+            {msg.role === 'guided_picker' && (
+              <GuidedModePicker
+                onSelect={mode => onGuidedAction({ type: 'select_mode', messageId: msgId, mode })}
+              />
+            )}
+            {msg.role === 'guided_step' && (
+              <GuidedStepCard
+                step={gd.steps[gd.currentStepIndex]}
+                stepNumber={gd.currentStepIndex + 1}
+                totalSteps={gd.steps.length}
+                onAnswer={(value, label) => onGuidedAction({ type: 'answer_step', messageId: msgId, value, label })}
+              />
+            )}
+            {msg.role === 'guided_summary' && (
+              <GuidedSummary
+                answers={gd.answers}
+                onConfirm={() => onGuidedAction({ type: 'confirm_summary', messageId: msgId })}
+                onEdit={stepIndex => onGuidedAction({ type: 'edit_step', messageId: msgId, stepIndex })}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const isUser = msg.role === 'user'
+  const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
   const showActions = !isUser && !msg.pending && !!conversationId && !!msg.id
+
+  // Extract <suggestions> block from assistant content
+  const suggestionsMatch = !isUser ? msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/) : null
+  const suggestions: string[] = React.useMemo(() => {
+    if (!suggestionsMatch) return []
+    try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }
+  }, [suggestionsMatch])
+  const displayContent = suggestionsMatch
+    ? msg.content.replace(/<suggestions>[\s\S]*?<\/suggestions>/, '').trimEnd()
+    : msg.content
+
+  const hasArtifact = displayContent.includes('<artifact')
 
   async function handleBookmark() {
     if (!msg.id || !conversationId || bookmarkLoading) return
@@ -326,6 +193,21 @@ export default function ChatMessage({
     setSaveModal({ content, language })
   }
 
+  const handleShareToChat = useCallback(async () => {
+    try {
+      const res = await fetch('/api/conversations/new-from-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: msg.content, source_message_id: msg.id }),
+      })
+      if (!res.ok) return
+      const { conversation_id } = await res.json() as { conversation_id: string }
+      router.push(`?conv=${conversation_id}`)
+    } catch {
+      // silently ignore
+    }
+  }, [msg.content, msg.id, router])
+
   const mdComponents = makeMdComponents(
     showActions && organizationId ? handleSaveArtifact : undefined
   )
@@ -337,70 +219,43 @@ export default function ChatMessage({
           <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
         )}
 
-        <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
-          <div className="cmsg-content">
-            {isUser
-              ? msg.content
-              : renderAssistantContent(msg.content, mdComponents)
-            }
-          </div>
-          {!isUser && msg.pending && (
-            <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
-          )}
-          {!isUser && !msg.pending && msg.cost_eur != null && (
-            <div className="cmsg-meta">€{msg.cost_eur.toFixed(4)} · {msg.model_used}</div>
-          )}
-          {!isUser && !msg.pending && (
-            <div className="cmsg-ki-label" aria-label="KI-generierter Inhalt gemäß Art. 50 KI-VO">
-              KI-generiert · Toro
+        <div className="cmsg-bubble-wrap">
+          <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
+            {!isUser && msg.thinking && <ThinkingBlock content={msg.thinking} />}
+            <div className="cmsg-content">
+              {isUser
+                ? msg.content
+                : renderAssistantContent(
+                    displayContent,
+                    mdComponents,
+                    showActions && organizationId && conversationId
+                      ? { conversationId, organizationId, messageId: msg.id ?? undefined, onSaved: onArtifactSaved, onSendDirect, isInSplitView }
+                      : undefined
+                  )
+              }
             </div>
-          )}
-
-          {showActions && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <button
-                onClick={handleBookmark}
-                disabled={bookmarkLoading}
-                title={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
-                aria-label={isBookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: bookmarkLoading ? 'default' : 'pointer',
-                  color: isBookmarked ? 'var(--accent)' : 'var(--text-muted)',
-                  padding: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  opacity: bookmarkLoading ? 0.5 : 1,
-                  transition: 'color 150ms',
-                }}
-              >
-                <BookmarkSimple size={14} weight={isBookmarked ? 'fill' : 'regular'} />
-              </button>
-
-              {flagState === 'done' ? (
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 2 }}>Gemeldet</span>
-              ) : (
-                <button
-                  onClick={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
-                  title="Antwort als fehlerhaft melden (Art. 14 KI-VO)"
-                  aria-label="Antwort als fehlerhaft melden"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: flagState === 'confirm' ? '#f87171' : 'var(--text-muted)',
-                    padding: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    transition: 'color 150ms',
-                  }}
-                >
-                  <ThumbsDown size={14} weight={flagState === 'confirm' ? 'fill' : 'regular'} />
-                </button>
-              )}
-            </div>
-          )}
+            {!isUser && msg.pending && (
+              <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
+            )}
+            {showActions && (
+              <MessageActions
+                content={msg.content}
+                isBookmarked={isBookmarked}
+                bookmarkLoading={bookmarkLoading}
+                flagState={flagState}
+                isLastMessage={isLastAssistantMessage}
+                onBookmark={handleBookmark}
+                onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
+              />
+            )}
+            {showActions && actionLayerOpen && (
+              <ActionLayer
+                isLastMessage={isLastAssistantMessage}
+                isStreaming={isStreaming && isLastAssistantMessage}
+                onAction={handleAction}
+                onClose={() => setActionLayerOpen(false)}
+              />
+            )}
 
           {flagState === 'confirm' && showActions && (
             <div style={{
@@ -465,12 +320,68 @@ export default function ChatMessage({
               </div>
             </div>
           )}
-        </div>
+          </div>{/* /cmsg-bubble */}
+
+          {/* ToroBadge — außen rechts an der Blase */}
+          {showActions && (
+            <button
+              className={`toro-avatar-badge${actionLayerOpen ? ' toro-avatar-badge--active' : ''}`}
+              onClick={() => setActionLayerOpen(v => !v)}
+              aria-label="Toro-Aktionen öffnen"
+              title="Was soll ich damit tun?"
+              aria-expanded={actionLayerOpen}
+              aria-haspopup="menu"
+            >
+              <ParrotIcon size={14} />
+            </button>
+          )}
+        </div>{/* /cmsg-bubble-wrap */}
 
         {isUser && (
           <div className="cmsg-avatar-user">{userInitial}</div>
         )}
       </div>
+
+      {!isUser && !msg.pending && msg.sources && msg.sources.length > 0 && (msg.link_previews ?? true) && (
+        <SourcesBar sources={msg.sources} />
+      )}
+
+      {!isUser && suggestionsEnabled && suggestions.length > 0 && (
+        <div className="suggestion-pills" role="group" aria-label="Weiterführende Vorschläge">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              className="suggestion-pill"
+              onClick={() => onSendDirect?.(s)}
+            >
+              {s} →
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!isUser && isLastMessage && chips.length > 0 && (
+        <div className="suggestion-pills" role="list" aria-label="Vorschläge">
+          {chips.map(chip => (
+            <button
+              key={chip.label}
+              className="suggestion-pill"
+              role="listitem"
+              onClick={() => onSendDirect?.(chip.prompt)}
+            >
+              {chip.label} →
+            </button>
+          ))}
+        </div>
+      )}
+
+      {workspaceModalOpen && conversationId && (
+        <PostToWorkspaceModal
+          conversationId={conversationId}
+          conversationTitle={msg.role === 'assistant' ? undefined : undefined}
+          onClose={() => setWorkspaceModalOpen(false)}
+        />
+      )}
 
       {saveModal && conversationId && organizationId && (
         <SaveArtifactModal

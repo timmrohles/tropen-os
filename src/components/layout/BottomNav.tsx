@@ -1,98 +1,135 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
-import { ChatCircle, FolderOpen, RssSimple, ChartBar } from '@phosphor-icons/react'
+import {
+  ChartBar, ChatCircle, FolderSimple, DotsThreeCircle,
+  Sparkle, ShareNetwork, RssSimple, Robot, GearSix, X,
+} from '@phosphor-icons/react'
+import type { Icon as PhosphorIconType } from '@phosphor-icons/react'
 
 interface NavItem {
   href: string
-  icon: React.ReactNode
   label: string
-  matchPrefix?: string
+  Icon: PhosphorIconType
+  matchPrefix: string
 }
 
+const PRIMARY_NAV: NavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', Icon: ChartBar,      matchPrefix: '/dashboard' },
+  { href: '/chat',      label: 'Chat',      Icon: ChatCircle,    matchPrefix: '/chat'      },
+  { href: '/projects',  label: 'Projekte',  Icon: FolderSimple,  matchPrefix: '/projects'  },
+]
+
+const MORE_NAV: NavItem[] = [
+  { href: '/artefakte',  label: 'Artefakte',  Icon: Sparkle,       matchPrefix: '/artefakte'  },
+  { href: '/workspaces', label: 'Workspaces', Icon: ShareNetwork,  matchPrefix: '/workspaces' },
+  { href: '/feeds',      label: 'Feeds',      Icon: RssSimple,     matchPrefix: '/feeds'      },
+  { href: '/agenten',    label: 'Agenten',    Icon: Robot,         matchPrefix: '/agenten'    },
+]
+
 export default function BottomNav() {
-  const supabase = createClient()
   const pathname = usePathname()
-  const [dbRole, setDbRole] = useState<string | null>(null)
+  const [showMore, setShowMore] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
 
+  const isActive = (prefix: string) => pathname.startsWith(prefix)
+  const moreActive = MORE_NAV.some(item => isActive(item.matchPrefix))
+
+  // Close on Escape
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-      setDbRole(profile?.role ?? null)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const isActive = (prefix?: string, href?: string) =>
-    prefix ? pathname.startsWith(prefix) : pathname === href
-
-  const adminItems: NavItem[] = [
-    { href: '/dashboard', icon: <ChartBar size={22} weight="fill" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-    { href: '/projects', icon: <FolderOpen size={22} weight="fill" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/feeds', icon: <RssSimple size={22} weight="fill" aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
-    { href: '/chat', icon: <ChatCircle size={22} weight="fill" aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
-  ]
-
-  const memberItems: NavItem[] = [
-    { href: '/chat', icon: <ChatCircle size={22} weight="fill" aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
-    { href: '/projects', icon: <FolderOpen size={22} weight="fill" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/feeds', icon: <RssSimple size={22} weight="fill" aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
-    { href: '/dashboard', icon: <ChartBar size={22} weight="fill" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-  ]
-
-  const items = dbRole === 'member' ? memberItems : adminItems
+    if (!showMore) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowMore(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [showMore])
 
   return (
-    <nav
-      aria-label="Hauptnavigation"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 'var(--bottom-nav-height)',
-        background: 'var(--bg-nav)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        zIndex: 200,
-        // Safe area inset for iOS
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-    >
-      {items.map((item) => {
-        const active = isActive(item.matchPrefix, item.href)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? 'page' : undefined}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 3,
-              height: '100%',
-              textDecoration: 'none',
-              color: active ? 'var(--accent)' : 'var(--text-tertiary)',
-              fontSize: 10,
-              fontWeight: active ? 600 : 400,
-              transition: 'color var(--t-fast)',
-            }}
+    <>
+      <nav className="bottom-nav" aria-label="Hauptnavigation">
+        {PRIMARY_NAV.map(({ href, label, Icon, matchPrefix }) => {
+          const active = isActive(matchPrefix)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`bottom-nav-item${active ? ' bottom-nav-item--active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+              aria-label={label}
+            >
+              <Icon size={22} weight={active ? 'fill' : 'bold'} aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
+          )
+        })}
+
+        <button
+          className={`bottom-nav-item${moreActive ? ' bottom-nav-item--active' : ''}`}
+          onClick={() => setShowMore(true)}
+          aria-label="Mehr anzeigen"
+          aria-expanded={showMore}
+          aria-haspopup="dialog"
+        >
+          <DotsThreeCircle size={22} weight={moreActive ? 'fill' : 'bold'} aria-hidden="true" />
+          <span>Mehr</span>
+        </button>
+      </nav>
+
+      {/* More Sheet */}
+      {showMore && (
+        <>
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowMore(false)}
+            aria-hidden="true"
+          />
+          <div
+            ref={sheetRef}
+            className="bottom-nav-sheet"
+            role="dialog"
+            aria-label="Weitere Navigation"
+            aria-modal="true"
           >
-            {item.icon}
-            <span>{item.label}</span>
-          </Link>
-        )
-      })}
-    </nav>
+            <div className="bottom-nav-sheet-handle" aria-hidden="true" />
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowMore(false)}
+              aria-label="Schließen"
+            >
+              <X size={16} weight="bold" />
+            </button>
+
+            <div className="bottom-nav-sheet-items">
+              {MORE_NAV.map(({ href, label, Icon, matchPrefix }) => {
+                const active = isActive(matchPrefix)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`bottom-nav-sheet-item${active ? ' bottom-nav-sheet-item--active' : ''}`}
+                    onClick={() => setShowMore(false)}
+                  >
+                    <Icon size={20} weight={active ? 'fill' : 'bold'} aria-hidden="true" />
+                    {label}
+                  </Link>
+                )
+              })}
+
+              <div className="bottom-nav-sheet-divider" />
+
+              <Link
+                href="/settings"
+                className="bottom-nav-sheet-item"
+                onClick={() => setShowMore(false)}
+              >
+                <GearSix size={20} weight="bold" aria-hidden="true" />
+                Einstellungen
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   )
 }

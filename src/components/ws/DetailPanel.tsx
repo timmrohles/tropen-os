@@ -5,171 +5,39 @@ import { updateCardStatus, updateCardField } from '@/actions/cards'
 import type { Card, CardStatus, CardType } from '@/db/schema'
 import ChatPanel from '@/components/ws/ChatPanel'
 
-const MONO = "'DM Mono', 'Courier New', monospace"
-
 const TYPE_COLORS: Record<CardType, string> = {
-  input: '#00C9A7',
-  process: '#7C6FF7',
-  output: '#F7A44A',
+  input:   'var(--accent)',
+  process: '#8B5CF6',
+  output:  '#F59E0B',
+}
+
+const TYPE_LABELS: Record<CardType, string> = {
+  input:   'Eingabe',
+  process: 'Verarbeitung',
+  output:  'Ergebnis',
 }
 
 const STATUS_OPTIONS: { value: CardStatus; label: string }[] = [
-  { value: 'waiting', label: 'Wartend' },
-  { value: 'active', label: 'Aktiv' },
-  { value: 'review', label: 'Review' },
-  { value: 'done', label: 'Fertig' },
-  { value: 'archived', label: 'Archiviert' },
+  { value: 'draft',      label: 'Entwurf' },
+  { value: 'ready',      label: 'Bereit' },
+  { value: 'processing', label: 'In Bearbeitung' },
+  { value: 'stale',      label: 'Veraltet' },
+  { value: 'error',      label: 'Fehler' },
 ]
 
-interface CardField {
-  key: string
-  label: string
-  value?: string
-}
+interface CardField { key: string; label: string; value?: string }
 
-const s: Record<string, React.CSSProperties> = {
-  panel: {
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    width: 320,
-    height: '100vh',
-    background: '#0e0e0e',
-    borderLeft: '1px solid #1e1e1e',
-    display: 'flex',
-    flexDirection: 'column',
-    zIndex: 100,
-    fontFamily: MONO,
-    color: '#e0e0e0',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 8,
-    padding: '14px 16px',
-    borderBottom: '1px solid #1e1e1e',
-    flexShrink: 0,
-  },
-  headerInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  typeBadge: {
-    fontSize: 9,
-    padding: '2px 6px',
-    borderRadius: 3,
-    fontFamily: MONO,
-    letterSpacing: '0.08em',
-    fontWeight: 600,
-    display: 'inline-block',
-    marginBottom: 6,
-    border: '1px solid',
-  },
-  title: {
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#e0e0e0',
-    fontFamily: MONO,
-    lineHeight: 1.35,
-    marginBottom: 4,
-  },
-  closeBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#444444',
-    fontSize: 18,
-    cursor: 'pointer',
-    lineHeight: 1,
-    padding: 4,
-    fontFamily: MONO,
-    flexShrink: 0,
-  },
-  body: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    scrollbarWidth: 'thin' as const,
-  },
-  section: {
-    padding: '12px 16px',
-    borderBottom: '1px solid #1e1e1e',
-  },
-  sectionTitle: {
-    fontSize: 10,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.1em',
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 11,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.06em',
-    display: 'block',
-    marginBottom: 4,
-  },
-  select: {
-    width: '100%',
-    background: '#080808',
-    border: '1px solid #1e1e1e',
-    borderRadius: 4,
-    padding: '6px 10px',
-    color: '#e0e0e0',
-    fontSize: 12,
-    fontFamily: MONO,
-    outline: 'none',
-    cursor: 'pointer',
-    appearance: 'none' as const,
-  },
-  fieldRow: {
-    marginBottom: 10,
-  },
-  fieldInput: {
-    width: '100%',
-    background: '#080808',
-    border: '1px solid #1e1e1e',
-    borderRadius: 4,
-    padding: '6px 10px',
-    color: '#e0e0e0',
-    fontSize: 12,
-    fontFamily: MONO,
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-    transition: 'border-color 0.15s',
-  },
-  chatSection: {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    borderTop: '1px solid #1e1e1e',
-  },
-  chatTitle: {
-    fontSize: 10,
-    color: '#444444',
-    fontFamily: MONO,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.1em',
-    padding: '8px 16px',
-    borderBottom: '1px solid #1e1e1e',
-    flexShrink: 0,
-  },
-  chatWrap: {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  savedIndicator: {
-    fontSize: 10,
-    color: '#00C9A7',
-    fontFamily: MONO,
-    marginTop: 4,
-    height: 14,
-  },
+const inp: React.CSSProperties = {
+  width: '100%',
+  background: 'var(--bg-base)',
+  border: '1px solid var(--border)',
+  borderRadius: 6,
+  padding: '7px 10px',
+  color: 'var(--text-primary)',
+  fontSize: 13,
+  outline: 'none',
+  boxSizing: 'border-box' as const,
+  transition: 'border-color 0.15s',
 }
 
 interface Props {
@@ -187,17 +55,13 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
 
   const typeColor = TYPE_COLORS[card.type]
 
-  // Update local state when card prop changes
   useEffect(() => {
     setStatus(card.status)
     setFields((card.fields ?? []) as CardField[])
   }, [card.id, card.status, card.fields])
 
-  // Escape key closes panel
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
+    function handleKeyDown(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
@@ -213,7 +77,7 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
         const updated = await updateCardStatus(card.id, newStatus, user?.id ?? 'unknown')
         onCardUpdate(updated)
       } catch {
-        setStatus(card.status) // rollback
+        setStatus(card.status)
       }
     })
   }
@@ -235,78 +99,102 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
   }
 
   function handleFieldChange(key: string, value: string) {
-    setFields((prev) =>
-      prev.map((f) => (f.key === key ? { ...f, value } : f))
-    )
+    setFields((prev) => prev.map((f) => (f.key === key ? { ...f, value } : f)))
   }
 
   return (
     <aside
-      style={s.panel}
       role="complementary"
       aria-label={`Detail: ${card.title}`}
+      style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        width: 340,
+        height: '100vh',
+        background: 'var(--bg-surface-solid)',
+        borderLeft: '1px solid var(--border-medium)',
+        display: 'flex',
+        flexDirection: 'column',
+        zIndex: 100,
+        boxShadow: '-4px 0 24px rgba(0,0,0,0.12)',
+      }}
     >
       {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerInfo}>
-          <span
-            style={{
-              ...s.typeBadge,
-              color: typeColor,
-              borderColor: `${typeColor}44`,
-              background: `${typeColor}1a`,
-            }}
-          >
-            {card.type.toUpperCase()}
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: '16px 16px 14px',
+        borderBottom: '1px solid var(--border)',
+        flexShrink: 0,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 600,
+            color: typeColor,
+            background: `${typeColor}18`,
+            border: `1px solid ${typeColor}30`,
+            padding: '2px 8px',
+            borderRadius: 4,
+            display: 'inline-block',
+            marginBottom: 8,
+          }}>
+            {TYPE_LABELS[card.type]}
           </span>
-          <p style={s.title}>{card.title}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: card.description ? 4 : 0 }}>
+            {card.title}
+          </p>
           {card.description && (
-            <p style={{ fontSize: 11, color: '#444444', fontFamily: MONO, lineHeight: 1.4 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
               {card.description}
             </p>
           )}
         </div>
         <button
           type="button"
-          style={s.closeBtn}
+          className="btn-icon"
           onClick={onClose}
           aria-label="Panel schließen"
+          style={{ flexShrink: 0, marginTop: 2 }}
         >
           ×
         </button>
       </div>
 
-      <div style={s.body}>
+      <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin' as const }}>
         {/* Status */}
-        <div style={s.section}>
-          <p style={s.sectionTitle}>Status</p>
-          <label htmlFor="dp-status" style={s.label}>Aktueller Status</label>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+          <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 8 }}>
+            Status
+          </p>
+          <label htmlFor="dp-status" style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+            Aktueller Bearbeitungsstand
+          </label>
           <select
             id="dp-status"
             value={status}
             onChange={handleStatusChange}
-            style={s.select}
             disabled={isPending}
             aria-busy={isPending}
+            style={{ ...inp, cursor: 'pointer', appearance: 'none' as const }}
           >
             {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
 
         {/* Fields */}
         {fields.length > 0 && (
-          <div style={s.section}>
-            <p style={s.sectionTitle}>Felder</p>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 12 }}>
+              Felder
+            </p>
             {fields.map((field) => (
-              <div key={field.key} style={s.fieldRow}>
-                <label
-                  htmlFor={`dp-field-${field.key}`}
-                  style={s.label}
-                >
+              <div key={field.key} style={{ marginBottom: 12 }}>
+                <label htmlFor={`dp-field-${field.key}`} style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
                   {field.label}
                 </label>
                 <input
@@ -315,10 +203,10 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
                   value={field.value ?? ''}
                   onChange={(e) => handleFieldChange(field.key, e.target.value)}
                   onBlur={(e) => handleFieldBlur(field.key, e.target.value)}
-                  style={s.fieldInput}
+                  style={inp}
                 />
-                <div style={s.savedIndicator}>
-                  {savedField === field.key ? 'Gespeichert' : ''}
+                <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 3, height: 14 }}>
+                  {savedField === field.key ? '✓ Gespeichert' : ''}
                 </div>
               </div>
             ))}
@@ -327,15 +215,18 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
 
         {/* Model info */}
         {card.model && (
-          <div style={{ ...s.section, paddingBottom: 10 }}>
-            <p style={s.sectionTitle}>Modell</p>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 8 }}>
+              KI-Modell
+            </p>
             <span style={{
-              fontSize: 11,
-              color: '#444444',
-              background: '#1e1e1e',
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              background: 'var(--bg-base)',
+              border: '1px solid var(--border)',
               padding: '3px 8px',
-              borderRadius: 3,
-              fontFamily: MONO,
+              borderRadius: 4,
+              display: 'inline-block',
             }}>
               {card.model}
             </span>
@@ -344,9 +235,20 @@ export default function DetailPanel({ card, workspaceId, onClose, onCardUpdate }
       </div>
 
       {/* Chat section */}
-      <div style={s.chatSection}>
-        <p style={s.chatTitle}>KI-Assistent</p>
-        <div style={s.chatWrap}>
+      <div style={{ borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0, flex: '0 0 260px' }}>
+        <p style={{
+          fontSize: 11,
+          color: 'var(--text-tertiary)',
+          fontWeight: 600,
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.07em',
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          KI-Assistent — frag zu dieser Karte
+        </p>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <ChatPanel
             workspaceId={workspaceId}
             cardId={card.id}

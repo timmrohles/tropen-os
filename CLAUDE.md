@@ -35,17 +35,16 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 
 Bei UI-Änderungen zusätzlich:
 ```
-Schritt 9  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
-Schritt 10 CLAUDE.md → Abschnitt "Code-Regeln" lesen
+Schritt UI-1  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
+Schritt UI-2  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt UI-3  CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
 
 Bei AI-Features zusätzlich:
 ```
-Schritt 11 cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
-Schritt 12 cat docs/tuev-ai-matrix-mapping-tropen.docx
+Schritt AI-1  cat docs/AI\ Act\ Risk\ Navigator\ Hochrisiko.pdf
+Schritt AI-2  cat docs/tuev-ai-matrix-mapping-tropen.docx
 ```
-
----
 
 ---
 
@@ -141,6 +140,7 @@ Kein einziger Punkt ist optional.
 [ ] Nur className="btn btn-*" für Buttons — nie eigene button-styles?
 [ ] "Neu erstellen"-Aktionen immer in page-header-actions — nie in Sidebar/Content?
 [ ] Nur Phosphor Icons (@phosphor-icons/react), weight="bold" oder weight="fill"?
+[ ] Keine Emoji als Icons, keine anderen Icon-Libraries (HeroIcons, Lucide etc.)?
 [ ] Ausschließlich CSS-Variablen für Farben — keine Hex-Werte im Code?
 [ ] Kein manuelles paddingTop/paddingBottom — content-Klassen enthalten das automatisch?
 [ ] Kein background auf Page-Wrapper — Body-Gradient muss durchscheinen?
@@ -218,6 +218,8 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | Sentry | @sentry/nextjs ^10 | Server + Client + Edge |
 | Upstash Redis | @upstash/ratelimit | Rate Limiting in `src/proxy.ts` |
 | pnpm | — | Package Manager |
+| pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
+| openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
 
 ### DB-Zugriff — kritische Constraint
 
@@ -235,25 +237,66 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 |------------|--------|
 | Projekt-Chat, Workspace-Chat, Transformations-Engine | `claude-sonnet-4-20250514` |
 | Context-Zusammenfassung, Feed Stage 2 | `claude-haiku-4-5-20251001` |
+| Projekt-Einstieg, Chips, Prompt-Builder (Plan L) | `claude-haiku-4-5-20251001` |
 | Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-20250514` |
 
 Feed Stage 1: kein API-Aufruf — regelbasiert.
-SDK: Anthropic SDK direkt (`ANTHROPIC_API_KEY`) — kein Dify für neue Features.
+SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
+Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
+AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
+
+### API-Key Management
+
+**Aktuell:** Anthropic API-Key gehört Tropen Research UG (nicht mehr persönlicher Account).
+
+**Env-Variablen:**
+- `ANTHROPIC_API_KEY` → Vercel Environment Variables
+- `ANTHROPIC_API_KEY` → Supabase Edge Function Secrets
+
+**Budget-System:**
+- `check_and_reserve_budget(org_id, p_workspace_id, estimated_cost)` RPC (Migration 005 + 012)
+- Kosten-Schätzungen: `src/lib/budget.ts` — `ESTIMATED_COSTS`
+- Enforcement: alle LLM-Call-Routes + Edge Function + Perspectives ✅
+- Fail-open: RPC-Fehler → Aufruf erlaubt (kein Ausfall wegen Budget-Check)
+- Budget erschöpft → HTTP 402, `code: 'BUDGET_EXHAUSTED'`
+
+**Enforcement-Status (Stand 2026-03-25):**
+| Route | Status |
+|-------|--------|
+| `supabase/functions/ai-chat` (Haupt-Chat) | ✅ |
+| `/api/perspectives/query` | ✅ |
+| `/api/chat/stream` (Canvas/Card-Chat) | ✅ |
+| `/api/images/generate` | ✅ |
+| `/api/tts` | ✅ |
+
+**Cloud-Budget-Alerts:**
+- Anthropic Console: Alert bei $100/Monat einrichten (TODO: manuell konfigurieren)
+- `organizations.budget_limit` (NUMERIC) — NULL = kein Limit
+- `departments.budget_limit` — NULL = kein Dept-Limit
+
+**Preiskalkulation (grob):**
+- claude-sonnet: ~$3 / 1M Input-Tokens → ~$0.004 pro Nachricht
+- claude-haiku: ~$0.25 / 1M Input-Tokens → ~$0.0004 pro Nachricht
+- DALL-E 3: ~$0.04 pro Bild
+- OpenAI TTS: ~$0.008 pro Anfrage
+- Typischer User: ~500K Tokens/Monat ≈ €1.50
+- Zielpreis: 29–49€/User/Monat → ~95% Marge
+
+### Chart-Bibliotheken (ADR-005)
+
+| Kontext | Bibliothek | Warum |
+|---------|-----------|-------|
+| App-UI Charts (Dashboard, KPIs, Analytics) | `@tremor/react` v4 | React 19 nativ, Tailwind, kein Design-Aufwand |
+| Artifact-Charts (Toro generiert on-demand) | `echarts` via CDN im iFrame | JSON-Konfiguration für Toro, 50+ Chart-Typen, kein pnpm-Package in App |
+| Präsentations-Artifacts | Reveal.js via CDN im iFrame | Toro generiert HTML/Slides, kein pnpm-Package in App |
+
+**Regel:** Chart fester UI-Bestandteil → Tremor. Chart von Toro generiert → ECharts (CDN). Präsentation von Toro → Reveal.js (CDN). Recharts direkt → nicht mehr neu verwenden.
+Installiert: `@tremor/react@4.0.0-beta-tremor-v4.4` (React 19 nativ), `echarts@^6` (für mögliche direkte Nutzung).
 
 ### Dify — abgelöst (✅ 2026-03-17)
 
 Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`claude-haiku-4-5-20251001`).
 `DIFY_API_KEY` und `DIFY_API_URL` können aus den Supabase Edge Function Secrets entfernt werden.
-
-<!-- TODO(timm): Dify komplett ablösen oder parallel weiterführen?
-  Stand 2026-03-16: ai-chat Edge Function wurde auf direktes Anthropic/OpenAI-Routing umgestellt.
-  Dify läuft noch, wird aber nicht mehr aktiv für Chat genutzt.
-  Optionen:
-  A) Dify vollständig abschalten (Instanz runterfahren, Env-Vars entfernen)
-  B) Dify als Fallback behalten für Jungle Order / komplexe Workflows
-  C) Dify komplett ersetzen (Workflows selbst bauen)
-  Entscheid ausstehend — bis dahin: Dify nicht aktiv einbinden, bestehende Instanz läuft weiter.
--->
 
 ---
 
@@ -352,12 +395,56 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 - `weight="bold"` oder `weight="fill"` — nie andere weights
 - Größen: NavBar 18px · H1 22px · Cards/Listen 16px · Inline 14px
 - **Grün (`var(--accent)`) nur für Status, CTAs, aktive Zustände — nie in H1**
+- ❌ **Emoji als Icons verboten** — kein `📁`, `✅`, `🔔` o.ä. als funktionale UI-Icons
+- ❌ **Andere Icon-Libraries verboten** — kein Tailwind HeroIcons, Lucide, React Icons, Radix Icons
+- ❌ **Unicode-Zeichen als Icons verboten** — kein `→`, `×`, `✓` als interaktive Elemente
 
-#### Drawer-System
-- Backdrop: `rgba(0,0,0,0.4)`, Klick schließt
+#### Drawer-System / Modal-Backdrop
+- Backdrop-Standard: `className="modal-backdrop"` (reines Backdrop-Div) oder `className="modal-overlay"` (Backdrop + flex-center)
+- Farbe: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` — **niemals `rgba(0,0,0,...)`**
+- zIndex als inline `style={{ zIndex: N }}` ergänzen wenn CSS-Default nicht passt
 - Escape schließt immer
 - Animation: `200ms ease-out`
 - Kein Inline-Style in Drawer-Komponenten — CSS-Klassen aus `globals.css`
+
+#### Aktions-Icons — verbindliche Zuordnung
+
+**Nie eigene Icons erfinden — immer aus dieser Tabelle:**
+
+| Aktion | Icon (Phosphor) | Position | Sichtbar |
+|--------|----------------|----------|----------|
+| Öffnen / Detail | `ArrowSquareOut` | Karte hover | hover |
+| Bearbeiten | `PencilSimple` | [···] Menü | immer |
+| Archivieren | `Archive` | [···] Menü | immer |
+| Duplizieren | `Copy` | [···] Menü | immer |
+| Löschen | `Trash` | [···] Menü — immer ROT | immer |
+| Download | `DownloadSimple` | Karte hover | hover |
+| In Chat öffnen | `ChatCircle` | Karte hover | hover |
+| Neu erstellen | `Plus` | page-header-actions | immer |
+| Suchen | `MagnifyingGlass` | Filter-Bar links | immer |
+| Schließen (Modal) | `X` | oben rechts | immer |
+| Speichern | `FloppyDisk` | Button mit Label | immer |
+| Teilen | `ShareNetwork` | [···] Menü | immer |
+| Umbenennen | `PencilSimple` | [···] Menü | immer |
+
+**Karten-Aktionen — Standard-Pattern:**
+```
+Ruhezustand:  [Titel + Meta]
+Bei Hover:    [Titel + Meta] [↓] [···]
+Klick [···]:  Umbenennen / Bearbeiten
+              Archivieren
+              Duplizieren
+              ──────────────
+              Löschen        ← immer rot, immer unten
+```
+
+**Regeln:**
+- `Trash` / Löschen IMMER im [···] Menü — **nie direkt auf der Karte**
+- Archivieren ist KEINE destruktive Aktion — trotzdem im Menü
+- [···] = `DotsThree` Icon, `weight="bold"`
+- Hover-Aktionen: `opacity: 0` → `opacity: 1` über CSS `.card:hover .card-actions { opacity: 1 }`
+- Löschen: immer `className="dropdown-item dropdown-item--danger"`
+- Download/Öffnen dürfen direkt auf Karte sichtbar sein (hover, nicht destruktiv)
 
 #### Body-Gradient
 `background-attachment: fixed` auf `body` — Page-Wrapper dürfen **kein `background`** setzen, damit der Radial-Gradient durchscheint.
@@ -370,13 +457,22 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 
 - TypeScript strict mode — kein `any` ohne Kommentar mit Begründung
 - Keine Business-Logik in UI-Komponenten oder `page.tsx`
-- Alle externen APIs hinter Abstraktionslayer (`/services`)
+- Alle externen APIs hinter Abstraktionslayer (`/src/lib` + `/src/actions`)
 - Kein direkter DB-Zugriff aus dem Frontend
 - Keine Secrets im Code oder in der Git-History
 - Structured Logging only — kein `console.log` in Produktion
 - Kein PII in Logs
 - Dateien > 300 Zeilen sind eine Warnung, > 500 Zeilen eine Verletzung
 - Jedes neue Feature braucht Tests
+- Neue Env-Variablen immer in `.env.example` dokumentieren — Secrets nie in `.env.local` committen
+
+### Error-Handling
+
+- Standardisierte Error-Typen aus `src/lib/errors.ts`
+- API-Routes: try/catch + strukturierte JSON-Response `{ error: string, code?: string }`
+- Nie generische Error-Messages an den Client — immer spezifische, hilfreiche Meldungen
+- Zod-Validation via `validateBody()` in jeder API-Route — vor jeder Business-Logik
+- Auth-Check via `getAuthUser()` als erste Zeile in jeder API-Route
 
 ### Namenskonventionen (Next.js Standard)
 
@@ -397,20 +493,26 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 
 ```
 /src
+  /actions              # Server Actions (cards, workspaces, feeds, chat, connections)
   /app                  # Nur Routing — kein Business-Code
   /components
     /ui                 # Primitive Komponenten
-    /layout             # Strukturelle Komponenten
-    /[feature]          # Feature-spezifische Komponenten
-  /features             # Self-contained Feature-Module
-  /hooks                # Shared Custom Hooks
-  /lib                  # Utilities, Helpers
-  /services             # Business-Logik, externe Abstraktionen
+    /layout             # Strukturelle Komponenten (AppShell, Sidebar, TopBar, BottomNav)
+    /workspace          # Workspace-Feature-Komponenten (Canvas, ChatPanel, DetailPanel)
+    /workspaces         # Workspace-Liste-Komponenten (CardTile, WorkspacesList)
+    /ws                 # Canvas-Ansicht-Komponenten
+  /db                   # Drizzle Schema (nur Typen + Migrations-Referenz, keine Queries)
+  /hooks                # Shared Custom Hooks (useWorkspaceState, useRightSidebar, useFocusTrap)
+  /lib                  # Business-Logik, LLM-Layer, Resolver, Validators
+    /llm                # Anthropic, OpenAI, Router, Model-Selector
+    /feeds              # Feed-Ingestion, Distribution, Cost-Estimation
+    /validators         # Zod-Schemas für API-Routes
   /types                # Globale TypeScript-Typen
-  /config               # Konfiguration, Konstanten
+  /utils                # Supabase Client-Utilities
 /docs
   /product              # Produktdokumentation (RAG, Onboarding, etc.)
   /adr                  # Architecture Decision Records
+  /plans                # Feature-Specs (agents-spec.md, etc.)
   /webapp-manifest      # Engineering Standards & Audit System
 ```
 
@@ -469,11 +571,17 @@ cd "/c/Users/timmr/tropen OS" && supabase db push
 
 # Migration bereits manuell angewendet?
 supabase migration repair --status applied <nummer> → dann db push
+
+# Edge Function deployen (nach Änderungen an supabase/functions/ai-chat/index.ts)
+supabase functions deploy ai-chat
 ```
+
+**WICHTIG: Edge Function muss nach jeder Änderung an `supabase/functions/ai-chat/index.ts` manuell deployed werden!**
+Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Migration 071)
 
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
-- Migration-Nummern: einfache Zahlen (001, 002...), kein Timestamp-Format
+- Migration-Nummern: Legacy-Migrationen 001–033 nutzen einfache Nummern (`030_name.sql`). Ab Migration 034+ gilt Timestamp-Format (`YYYYMMDDHHMMSS_name.sql`) — Supabase CLI Standard.
 
 ### Migrations-Übersicht (001–033+)
 → Vollständige Liste: `docs/product/migrations.md`
@@ -496,128 +604,201 @@ Letzte relevante Migrationen:
 | 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
 | 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
 | 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
+| 20260319000050_shared_chats.sql | conversations: share_token, shared_at, share_scope, shared_from_id + Indexes |
+| 20260319000052_library_extend_existing.sql | ALTER capabilities/outcomes/skills: name, scope, icon, source_id etc. |
+| 20260319000053_library_new_tables.sql | CREATE roles/library_versions/org_library_settings/user_library_settings |
+| 20260319000054_library_new_tables_fix.sql | Fix: roles_insert policy, idx_roles_name_active, idx_lib_versions_org |
+| 20260319000055_library_cards.sql | cards: role_id UUID + skill_id UUID |
+| 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
+| 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
+| 20260320000060_project_memory_feeds.sql | project_memory: organization_id, memory_type, source_url, metadata; DROP NOT NULL on type |
+| 20260320000061_chat_prompt_builder.sql | conversations: 'prompt_builder' added to conversation_type CHECK |
+| 20260320000062_intention_system.sql | conversations: intention, current_project_id, drift_detected, focus_since_message; focus_log (APPEND ONLY) |
+| 20260320000063_artifacts_react_type.sql | artifacts: type CHECK erweitert um 'react', 'data', 'image', 'other' |
+| 20260320000064_workspace_cards_extend.sql | workspaces: project_id UUID FK; cards: source ('manual'/'chat_artifact'), source_conversation_id UUID FK |
+| 20260322000065_perspectives.sql | perspective_avatars (scope/org/user/system, is_tabula_rasa, RLS), perspective_user_settings (pin/sort), 5 System-Avatare geseedet |
+| 20260324000066_user_prefs_link_previews.sql | user_preferences: link_previews BOOLEAN DEFAULT true |
+| 20260324000067_user_prefs_web_search.sql | user_preferences: web_search_enabled BOOLEAN DEFAULT false |
+| 20260325000070_user_prefs_emoji_style.sql | user_preferences: emoji_style VARCHAR DEFAULT 'minimal', suggestions_enabled BOOLEAN DEFAULT true |
+| 20260325000071_user_prefs_toro_address.sql | user_preferences: toro_address VARCHAR DEFAULT '', language_style TEXT DEFAULT '' |
+| 20260325000072_intention_guided.sql | conversations.intention: 'open' → NULL (migrated), CHECK updated to ('focused', 'guided') |
+| 20260325000073_projects_extend.sql | projects: emoji+context columns, goal+instructions→context migration; project_memory: deleted_at soft-delete + updated RLS; project_documents table + RLS; project-docs storage bucket; projects_with_stats view |
+| 20260325000074_projects_archive_merge.sql | projects: archived_at column; projects_with_stats view refreshed |
+| 20260325000075_workspaces_items.sql | workspaces: description+emoji+item_count columns, department_id nullable; workspace_items table + RLS + item_count trigger |
+| 20260325000076_workspace_members_share.sql | workspaces: share_token+share_role+share_active columns; workspace_members table + RLS |
+| 20260325000077_workspace_comments.sql | workspaces: comment_count column; workspace_comments table + RLS + comment_count trigger |
+| 20260325000078_workspace_comments_item.sql | workspace_comments: item_id UUID FK nullable (per-item comment threads) |
+| 20260325000079_workspaces_archive.sql | workspaces: archived_at TIMESTAMPTZ nullable + index (reversible soft-archive) |
+| 20260325000080_workspace_items_agent.sql | workspace_items: item_type constraint updated — adds 'agent', keeps 'note' for backwards-compat |
+| 20260325000081_org_assistant_image.sql | organization_settings: ai_assistant_image_url TEXT DEFAULT NULL |
+| 20260325000082_dashboard_widgets.sql | dashboard_widgets (user_id, org_id, widget_type, position, size, config, is_visible) + RLS; user_preferences: dashboard_setup_done BOOLEAN |
+| 20260325000083_rename_to_cockpit.sql | dashboard_widgets → cockpit_widgets; dashboard_setup_done → cockpit_setup_done; RLS policy recreated as cockpit_widgets_own |
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
+**Cockpit Widget System (Stand 2026-03-25):**
+Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
+Widgets: 8 Typen, alle mit echten Daten. API-Routes unter `/api/cockpit/*`.
+- `feed-highlights` → top 5 Feed-Artikel (letzte 24h, Score DESC)
+- `recommendation` → regelbasiert (kein LLM): Feeds → Inaktivität → Budget
+- `recent-activity` → letzte Chats + Artefakte des Users (max 6)
+- `projects` → aktive Projekte mit Chat-Count (max 4)
+- `artifact-stats` → Anzahl diese Woche + gesamt + letzte 3
+- `team-activity` → Admin-only: Chats + Artefakte der Org (letzte 2 Tage)
+- `budget` → Admin-only: Budget-% + Fortschrittsbalken + Euro-Werte
+- `quick_actions` → statisch: 6 Links (kein API-Call)
+Komponenten: `src/components/cockpit/widgets/` (8 Widget-Komponenten + shared.tsx)
+CSS-Klassen: `widget-content`, `widget-feed-*`, `widget-toro-*`, `widget-list-*`, `widget-budget-*`, `widget-quick-*`, `widget-skeleton-*`
 
-### Guided Workflows (Stand 2026-03-17)
+**Cockpit Widget-Roadmap (docs/plans/widget-katalog.md):**
+| Stufe | Wann | Widgets |
+|-------|------|---------|
+| 1 — intern | ✅ jetzt | W-01…W-08 (alle gebaut) |
+| 2 — MCP | Q3 2026 | W-09 E-Mail, W-11 Kalender, W-14 Slack, W-15 HubSpot, W-16 Analytics, W-17 Drive |
+| 3 — Agent | Q4 2026 | W-10 E-Mail-Prio ⭐, W-12 Meeting-Prep ⭐, W-13 Meeting-Scribe ⭐, W-18/W-19 Custom |
+Prioritäts-Agenten: E-Mail-Agent (Haiku, tägl. 07:00) → Kalender-Agent (Haiku, tägl. + 30min vor Meeting) → Meeting-Scribe (Whisper + Sonnet, on-demand)
+Pakete: Kommunikation / Vertrieb / Marketing / Custom
+widgetCatalog.ts braucht bei Stufe 2+: Felder `tier` (1/2/3) + `package` + `requiresMcp`
 
-Guided Workflows bieten strukturierte Entscheidungswege: Toro schlägt Optionen vor, User steuert. Maximal 3 Verschachtelungsebenen. Kein LLM-Call bei der Erkennung.
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
 
-| Datei | Inhalt |
-|-------|--------|
-| `src/lib/guided-workflow-engine.ts` | `detectWorkflow()`, `resolveOption()`, `buildWorkflowPrompt()` |
-| `src/lib/validators/guided.ts` | Zod-Schemas für alle Guided-API-Routes |
-| `src/app/api/guided/detect/route.ts` | POST — Workflow-Erkennung via Keywords + Context |
-| `src/app/api/guided/workflows/route.ts` | GET + POST — Workflows für User (system + org + user scope) |
-| `src/app/api/guided/workflows/[id]/route.ts` | PATCH — Workflow bearbeiten (ownership-guard) |
-| `src/app/api/guided/workflows/[id]/copy/route.ts` | POST — Workflow kopieren → user-scope |
-| `src/app/api/guided/settings/route.ts` | PATCH — User schaltet Guided Workflows ein/aus |
-| `src/app/api/guided/resolve/route.ts` | POST — Option auflösen → next_workflow / capability_plan / custom_input / save_artifact |
-
-**Regeln:**
-- `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
-- Maximal 3 Verschachtelungsebenen (next_workflow_id Chain)
-- Jeder Workflow hat immer eine `is_custom: true` Option als Escape
-- `guided_enabled = false` überschreibt alles — keine Ausnahmen
-
-### UI — Projekte + Workspaces (Plan F — Stand 2026-03-18)
-
-| Datei | Inhalt |
-|-------|--------|
-| `src/app/projects/page.tsx` | Memory-Count-Badge auf Projektkarten + Gedächtnis-Tab (zeigt project_memory Einträge) |
-| `src/app/workspaces/page.tsx` | Server Component — lädt Workspaces via workspace_participants, rendert WorkspacesList |
-| `src/components/workspaces/WorkspacesList.tsx` | Client Component — Workspace-Grid mit Status, Karten-Zähler, Create-Dialog |
-| `src/app/workspaces/[id]/page.tsx` | Server Component — Auth + Workspace/Cards laden, rendert CanvasClient |
-| `src/app/workspaces/[id]/layout.tsx` | Full-screen fixed container (position:fixed, inset:0) für Canvas-Ansicht |
-| `src/app/workspaces/[id]/CanvasClient.tsx` | Client: Header, Tabs (Canvas/Silo-Chat/Einstellungen), Karten-Grid, CreateCardModal |
-| `src/components/workspaces/CardTile.tsx` | Karten-Kachel: Role-Badge, Status, Stale-Warning, Sources-Zähler |
-
-**Canvas-Regeln:**
-- Workspaces-Liste nutzt `workspace_participants` für User-Scoping (kein direkter department_filter)
-- project_memory count kommt vom List-Endpoint (kein Extra-Request per Karte)
-- Memory-Tab lädt lazy beim ersten Klick, nicht beim Seitenaufruf
-- Canvas `/workspaces/[id]` = Grid-Canvas (sort_order); Freeform-Canvas bei `/ws/[id]/canvas` bleibt unberührt
-- Karten-API: `POST /api/workspaces/[id]/cards` (createCardSchema: title + role required)
-- Workspace-API: `PATCH /api/workspaces/[id]` (updateWorkspacePlanCSchema)
-- Migration `20260318000049_conversations_workspace.sql`: conversations um workspace_id, card_id, conversation_type erweitert
-
-### Transformations-Engine (Plan E — Stand 2026-03-17)
-
-| Datei | Inhalt |
-|-------|--------|
-| `src/lib/validators/transformations.ts` | Zod-Schemas: `analyzeSchema`, `createTransformationSchema`, `executeTransformationSchema` |
-| `src/app/api/transformations/analyze/route.ts` | POST — AI-Analyse (claude-haiku), kein DB-Write, gibt max. 2 Suggestions zurück |
-| `src/app/api/transformations/route.ts` | GET (list by source) + POST (create pending) |
-| `src/app/api/transformations/[id]/route.ts` | GET (detail) + PATCH `{ action: 'execute' }` → baut workspace oder feed + transformation_link |
-
-**Regeln:**
-- Immer drei Schritte: `analyze` (kein DB-Write) → `create` (pending) → `execute` (baut target)
-- `execute` ist **nicht destruktiv** — der Source bleibt erhalten
-- `target_type`: nur `'workspace'` und `'feed'` implementiert (kein `'agent'` vorerst)
-- DB-Tabellen: `transformations`, `transformation_links` — aus Migration 032
-
-### Chat & Context Integration (Plan D — Stand 2026-03-17)
+### Feeds — Distributions + Run-History (Plan J1 — Stand 2026-03-20)
 
 | Datei | Inhalt |
 |-------|--------|
-| `supabase/functions/ai-chat/index.ts` | `workflow_plan` param, project_memory injection, memory_warning event |
-| `src/lib/project-context.ts` | `loadProjectContext()` — parallele Queries: `projects.instructions` + `project_memory` |
-| `src/app/api/chat/stream/route.ts` | Auth via `getAuthUser()`, Capability-Routing via `resolveWorkflow()`, `capabilityId`/`outcomeId` params |
+| `src/app/api/feeds/[id]/distributions/route.ts` | GET list + POST create |
+| `src/app/api/feeds/[id]/distributions/[distId]/route.ts` | DELETE |
+| `src/lib/feeds/distributor.ts` | project target_type implementiert → project_memory |
+| `src/app/feeds/_components/RunHistoryPanel.tsx` | Run-Details mit Kosten + Fehler |
+| `src/app/feeds/_components/DistributionsPanel.tsx` | Outputs konfigurieren (project/workspace/notification) |
+| `src/app/feeds/_components/NotificationBadge.tsx` | Ungelesene Notifications mit Badge + Dropdown |
 
-**Regeln:**
-- `chat/stream` holt `userId` immer via `getAuthUser()` — nie aus dem Request-Body
-- `workflow_plan` wird client-seitig via `/api/guided/resolve` aufgelöst (Deno-Edge kennt keinen Node.js-Resolver)
-- Memory-Warnung bei >85% context_window — `memory_warning: true` im `done`-Event
-- `loadProjectContext()` immer mit `supabaseAdmin` — nie im Client
+**Distributions-Regeln:**
+- Nur owner/admin darf Distributions anlegen/löschen
+- target_type 'notification': target_id ist Dummy-UUID (alle Org-Member werden notifiziert)
+- target_type 'project': Items landen in project_memory (memory_type='feed_item')
+- target_type 'workspace': Items landen in knowledge_entries (entry_type='feed')
+- min_score (1–10) filtert: Items unter dem Score werden nicht weitergeleitet
 
-### Skills-System (Plan J2a — Stand 2026-03-18)
+### Feature-Dokumentation
 
-**Eigenständig von Capabilities** (Option C: Skills = Kontext für Agenten, Capabilities = Modell-Routing für Chat)
+Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
+→ **`docs/product/feature-registry.md`**
 
-| Datei | Inhalt |
-|-------|--------|
-| `supabase/migrations/20260318000047_skills.sql` | skills + agent_skills Tabellen + RLS + 6 System-Skill Seeds |
-| `src/types/agents.ts` | Skill, AgentSkill Interfaces + mapSkill(), mapAgentSkill() |
-| `src/lib/skill-resolver.ts` | getSkillsForUser(), getSkillsForAgent(), resolveSkill(), canAccessSkill(), canModifySkill(), getSystemSkills() |
-| `src/app/api/skills/route.ts` | GET (list with visibility filter) + POST (create) |
-| `src/app/api/skills/[id]/route.ts` | GET (single) + PATCH (update) + DELETE (soft delete) |
+Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
 
-**Skill-Sichtbarkeit:**
-- `scope='system'` → immer sichtbar
-- `scope='package'` → sichtbar, API-Layer filtert nach `requires_package`
-- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
-- `scope='user'` → nur eigener User
-
-### Agenten-System (Plan J2b+J2c — Stand 2026-03-18)
-
-**Spec:** `docs/plans/agents-spec.md`
+### Perspectives — Parallele KI-Perspektiven (Stand 2026-03-23)
 
 | Datei | Inhalt |
 |-------|--------|
-| `supabase/migrations/20260318000048_agents_v2.sql` | agents ALTER: scope, trigger_type, trigger_config, capability_steps, input_sources, output_targets, requires_approval, max_cost_eur, emoji, is_active, deleted_at + agent_runs (APPEND ONLY) + 5 Marketing-Paket-Agenten |
-| `src/types/agents.ts` | Agent, AgentRun, AgentStep, AgentTriggerConfig, AgentInput, AgentOutput Interfaces + mapAgent(), mapAgentRun() |
-| `src/lib/agent-engine.ts` | runAgent(), executeStep(), checkBudget(), calculateNextRun(), checkScheduledTriggers() |
-| `src/app/api/agents/route.ts` | GET (list, scope-filter) + POST (create) |
-| `src/app/api/agents/[id]/route.ts` | GET (detail + letzten 5 Runs) + PATCH + DELETE (soft) |
-| `src/app/api/agents/[id]/copy/route.ts` | POST — als user-scope kopieren |
-| `src/app/api/agents/[id]/run/route.ts` | POST — manueller Run (gibt run_id zurück) |
-| `src/app/api/agents/[id]/runs/route.ts` | GET — Run-History mit Pagination |
-| `src/app/api/agents/runs/[run_id]/route.ts` | GET — einzelner Run |
-| `src/app/api/agents/webhook/[agent_id]/route.ts` | POST — eingehender Webhook (HMAC-SHA256) |
-| `src/app/api/cron/agents/route.ts` | GET — Vercel Cron (täglich 7 Uhr) → checkScheduledTriggers |
-| `vercel.json` | Cron: `/api/cron/agents` `"0 7 * * *"` |
+| `supabase/migrations/20260322000065_perspectives.sql` | perspective_avatars + perspective_user_settings, RLS, 5 System-Seeds |
+| `src/app/api/perspectives/avatars/route.ts` | GET (mit pin-settings) + POST (user/org-scope) |
+| `src/app/api/perspectives/avatars/[id]/route.ts` | PATCH + DELETE (soft) — nur eigene user-scoped Avatare |
+| `src/app/api/perspectives/avatars/[id]/copy/route.ts` | POST — kopiert als scope='user' |
+| `src/app/api/perspectives/settings/route.ts` | GET + PATCH — pin/sort pro User |
+| `src/app/api/perspectives/query/route.ts` | POST — paralleles SSE-Streaming (Promise.all), Tabula-Rasa-Guard |
+| `src/app/api/perspectives/post-to-chat/route.ts` | POST — Perspectives-Antwort als assistant-Nachricht einfügen |
+| `src/components/workspace/PerspectivesStrip.tsx` | Strip über ChatInput: Avatar-Pills, Info-Popover, Befragen-Button |
+| `src/components/workspace/PerspectivesBottomSheet.tsx` | Bottom-Sheet: SSE-Stream, Kopieren, In-Chat-Posten, 60vh/92vh |
+| `src/app/perspectives/page.tsx` | Verwaltungsseite: Tabs System/Org/Meine, Avatar-Grid, CRUD |
+| `src/app/perspectives/_components/AvatarFormDrawer.tsx` | Drawer für eigene Avatare erstellen/bearbeiten |
 
-**Scope-Sichtbarkeit:**
-- `scope='system'` → alle Users
-- `scope='package'` → alle Users (API-Layer prüft requires_package)
-- `scope='org'` → nur eigene Org, nur owner/admin darf anlegen
-- `scope='user'` → nur eigener User
+**Perspectives-Regeln:**
+- `is_tabula_rasa=true` → Avatar bekommt **nur den letzten User-Turn** (kein Projektkontext) — server-seitig erzwungen
+- SSE-Events: `{ avatarId, delta }` pro Chunk · `{ avatarId, done, tokensUsed }` pro Avatar · `{ done: true }` am Ende
+- Budget-Check via `check_and_reserve_budget` RPC vor jedem Query
+- Scope-Hierarchie: system → org → user; system-Avatare sind read-only + nicht löschbar
 
-**Agenten-Engine Regeln:**
-- Max 1 gleichzeitiger Run pro Agent (rate-limit via agent_runs.status='running')
-- Budget-Check vor jedem Run (30-Tage-Fenster)
-- Webhook-Runs erfordern webhook_secret (HMAC-SHA256)
-- agent_runs ist APPEND ONLY — kein UPDATE/DELETE
+**Kurzreferenz für häufig benötigte Regeln:**
+- Guided Workflows: `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
+- Vor jedem LLM-Call: `POST /api/library/resolve { capabilityId, outcomeId, roleId?, skillId? }`
+- Agenten: Max 1 gleichzeitiger Run pro Agent, agent_runs ist APPEND ONLY
+- Scope-Hierarchie (alle Entitäten): system → package → org → user → public
+
+### CI-Pipeline (Stand 2026-03-18)
+
+Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step und blockiert bei Errors.
+
+**Häufige Fehlerquellen (alle behoben):**
+- Hex-Farben im Code → nur `var(--)` erlaubt; `var(--error, #hex)` als Fallback ebenfalls verboten
+- `console.log/warn/error` in Produktion → `createLogger('scope')` aus `src/lib/logger.ts`
+- Icon `weight="thin"` oder `weight="regular"` → nur `weight="bold"` oder `weight="fill"`
+- Dateien > 500 Zeilen → CI-Error; > 300 Zeilen → Warning; große Dateien aufteilen
+
+**write-test-results.mjs** läuft mit `|| true` — fehlende Secrets blockieren CI nicht.
+
+**OpenAI-Client:** Lazy-Init via `getOpenAI()` + Proxy in `src/lib/llm/openai.ts` — kein `new OpenAI()` auf Modul-Ebene (wirft bei fehlendem `OPENAI_API_KEY` zur Build-Zeit).
+
+---
+
+## Systemische Lektionen aus dem Markt
+
+> Abgeleitet aus Langdock-Analyse + Marktbeobachtung, März 2026.
+> Diese Prinzipien gelten für jedes neue Feature und jede Architektur-Entscheidung.
+
+**1. Model-Agnostik ist kein Feature — es ist das Fundament**
+Kein Lock-in auf ein Modell. Jeder externe Modellanbieter sitzt hinter einer Abstraktionsschicht. Der Smart Router entscheidet — nicht der Code.
+Konsequenz: Jeder neue API-Call zu einem Modell geht durch `src/lib/llm/router.ts` — niemals direkt in einer Route oder Komponente.
+
+**2. Org-Governance ist das eigentliche Produkt für KMU**
+User kaufen nicht weil die KI gut ist — Org-Admins kaufen weil sie Kontrolle haben. Welche Modelle sind erlaubt? Welche Capabilities? Welches Budget?
+Konsequenz: Jedes neue Feature braucht eine Admin-Konfigurationsebene. Nicht als Nachgedanke — als erster Schritt beim Design.
+
+**3. Keine eigene Infrastruktur — saubere Integrationsschicht**
+Tropen OS trainiert kein eigenes Modell. Betreibt keine GPU-Cluster. Ist eine Abstraktionsschicht über bestehenden Diensten. Das hält das Team klein und die Marge hoch.
+Konsequenz: Wenn ein Feature eigene Infrastruktur braucht, ist das ein Signal für einen externen Dienst (n8n, Supabase, Vercel) — nicht für Eigenbau.
+
+**4. Community-Effekt ist der Wachstumsmotor**
+Langdock wächst ohne Sales über Weiterempfehlungen. Tropen OS baut denselben Effekt über Community ein: geteilte Agenten, Templates, Workflows.
+Konsequenz: Community ist kein "Nice to have" in Phase 3 — es ist die Wachstumsstrategie. Jedes Feature das Teilen ermöglicht, hat strategische Priorität.
+
+**5. Tenant-Isolation ist nicht verhandelbar — bei jedem neuen Feature**
+Die kritischste systemische Lektion: Org-Isolation muss von Tag 1 stimmen. Nachrüsten ist ein Albtraum.
+
+Checkliste für jedes neue Feature:
+```
+□ Haben alle DB-Queries ein organization_id WHERE-Filter?
+□ Haben alle neuen Tabellen RLS-Policies?
+□ Können Daten einer Org jemals zu einer anderen Org gelangen?
+□ Sind externe Dienste (n8n, Feeds) per Org getrennt?
+□ Sind Community-Inhalte explizit als "public" markiert — alles andere ist privat?
+```
+
+Konkrete Risikostellen:
+
+| Feature | Risiko | Maßnahme |
+|---------|--------|----------|
+| n8n Workflows | Shared Instanz — Workspace-Scope muss stimmen | `n8n_workspace_id` per Org, nie teilen |
+| Community-Templates | Öffentliche Inhalte müssen explizit opt-in sein | scope-Feld: user/org/public — Default: user |
+| Live-Systeme | Öffentliche URLs dürfen keine Org-Daten leaken | Auth-Check auf jedem Live-Endpoint |
+| Feed-Distributions | Feed-Items dürfen nicht Org-übergreifend fließen | `organization_id` auf feed_items Pflichtfeld |
+
+**6. Basis perfektionieren vor Ausführung**
+Langdock hat zwei Jahre Chat und Wissen gebaut — dann erst Workflows. Tropen OS baut beides parallel. Das ist riskanter aber möglich — wenn die Basis (Chat, Projekte, Wissensbasis) stabil ist.
+Konsequenz: Plan F (Workspaces) und Plan J (Feeds/Agenten) erst deployen wenn die bestehenden Features stabil und bug-frei sind. Kein Feature-Race auf wackeliger Basis.
+
+---
+
+## Pending UI/Chat Tasks (nicht in phase2-plans.md)
+
+Kleine Verbesserungen, die beim Testen aufgefallen sind — noch kein eigener Plan.
+Details: `memory/project_pending_ui_tasks.md`
+
+| Task | Status | Notiz |
+|------|--------|-------|
+| Artifacts-Seite Redesign | ✅ gebaut | ArtifactMenu (DotsThree+Umbenennen+Löschen), alle 8 Typen, hover-actions, inline rename, empty-state mit ChatCircle-CTA (2026-03-25) |
+| Artefakte Vorschau Modal | ✅ gebaut | Klick auf Karte → ArtifactPreviewModal (ArtifactRenderer, Escape+Backdrop schließen, "Im Chat öffnen"), Mobile Fullscreen (2026-03-25). TODO: /artefakte/[id] eigene Seite wenn Sharing-Feature kommt |
+| Markdown-Rendering im Chat | ✅ bereits vorhanden | `react-markdown` + `remarkGfm` in `ChatMessage.tsx` — war fälschlich als offen notiert |
+| Artifact iframe-Höhe | ✅ gebaut | ResizeObserver + postMessage `iframe-resize` in `ArtifactRenderer.tsx`, max 800px (2026-03-23) |
+| Session-Panel Warnungen | ✅ gebaut | 5px-Dot + 11px-Text statt Warn-Boxen — `.sp-warning-badge` in `globals.css` (2026-03-23) |
+| Rechtes Panel Redesign | ✅ gebaut | `right-panel-*` CSS-Klassen, custom `PanelSelect` Komponente (`.dropdown`-System), Section-Icons (MapPin/Bird/Layout), Sidebar-Collapse-Button im Header, "Einklappen"-Text entfernt (2026-03-25) |
+| Voice-to-Text | ✅ gebaut | Web Speech API, Mic-Button im ChatInput (2026-03-20) — Hydration-Fix: `hasSpeech` via `useEffect` (2026-03-23) |
+| Dokument-Upload im Chat | ✅ gebaut | PDF/Bild Base64 via `attachmentRef` → Anthropic `document`/`image` content block (2026-03-23) |
+| PowerPoint-Export | ✅ gebaut | `pptxgenjs`, `/api/artifacts/export-pptx`, Button in `ArtifactRenderer.tsx` für Präsentations-Artifacts (2026-03-23) |
+| Text-to-Speech | ✅ gebaut | `useTTS` Hook, `/api/tts` (OpenAI tts-1, voice=nova), [🔊] Button in `MessageActions.tsx` (2026-03-25) |
+| Action Layer Hotfix | ✅ gebaut | ToroBadge außen rechts, DotsThree entfernt, neue Actions (Kürzen/E-Mail/Übersetzen/Bild/Perspektive), Mobile Bottom Sheet, `useMediaQuery` (2026-03-25) |
+| Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
+| Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
+| React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
+| Workspaces Redesign (Prompt A–C) | ✅ gebaut | workspace_items+members+comments (Mig 075–077); neue /workspaces page (client, grid+search+create); /workspaces/[id] Detail-Page (Tabs: Inhalte/Mitglieder/Kommentare/Einstellungen); /shared/[token] öffentliche Freigabe-Seite; workspace_items/members/comments/share API-Routes (2026-03-25) |
 
 ---
 
@@ -638,6 +819,7 @@ eslint src/           # keine Fehler
 | `docs/webapp-manifest/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
 | `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/product/architecture.md` | Phase-2-Architektur, DB-Hierarchie, Kontroll-Spektrum |
+| `docs/product/architecture-navigation.md` | Produkt-Nordstern: Navigation, Workspace-Konzept, Live/Agenten/Community |
 | `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne |
 | `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
 | `docs/product/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
@@ -645,6 +827,10 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
+| `docs/adr/*.md` | Architecture Decision Records (aktuell ADR-001 bis ADR-005) |
+| `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
+| `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
+| `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
 
 ---
 

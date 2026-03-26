@@ -34,6 +34,8 @@
 - Startseiten-Chat (anonym, 5 Nachrichten)
 - Artefakte & Merkliste
 - Pakete Phase 1 (Marketing-Paket, 5 Agenten)
+- Prompt-Bibliothek Phase 3 (eigene + Team-Vorlagen, DB-backed)
+- Kosten-Forecast im SessionPanel (forecastCost, Warnungen ab 5/10 EUR)
 
 ---
 
@@ -65,18 +67,33 @@
 
 ## ⬜ Geplant (später)
 
-| Feature | Status |
-|---------|--------|
-| Agenten-System Phase 2 (Zuweisung zu Projekten/Chats) | Offen |
-| Prompt-Bibliothek Phase 3 (DB-backed, org-weit) | Offen |
-| Wissenschafts-Paket | Offen |
-| Marketing-Paket: 10 Agenten + Integrationen | Offen |
-| Toro Guard (4-Schichten-System) | Offen |
-| n8n/Make Integration | Offen |
-| Real-Time Websuche | Offen |
-| Voice Output (UI für Dify-Feature) | Offen |
-| Multimodalität und Dateiupload | Offen |
-| Kosten-Forecast im SessionPanel | Offen |
+> **Single Source of Truth:** `src/app/admin/todos/todoDataConcepts.ts`
+> Neue Einträge dort pflegen — sie erscheinen automatisch im [Admin Todo-Tracker](/admin/todos).
+
+| ID | Feature | Konzept |
+|----|---------|---------|
+| `phase2-e` | Plan E — Transformations-Engine | — |
+| `phase2-f` | Plan F — UI (Projekte + Workspaces + Feeds-Settings) | — |
+| `chart-tremor` | Tremor Migration: App-UI Charts (Dashboard, SessionPanel) | `docs/plans/tremor-migration.md` |
+| `chart-echarts` | ECharts Artifact-Renderer: Toro generiert Chart-JSON | `docs/plans/echarts-artifacts.md` |
+| `chart-presentations` | Präsentations-System: Reveal.js Slides + PowerPoint-Export | `docs/plans/presentation-artifacts.md` |
+| `concept-persp-infra` | Perspectives: Migration + API + 5 System-Avatare | `docs/plans/perspectives-build.md` |
+| `concept-persp-strip` | Perspectives: PerspectivesStrip + Bottom-Sheet | `docs/plans/perspectives-build.md` |
+| `concept-persp-page` | Perspectives: /perspectives Seite + AvatarFormDrawer | `docs/plans/perspectives-build.md` |
+| `concept-toro-scan` | Toro Potenzial-Entdecker Phase 1: KI-Scan im Onboarding | `docs/product/toro-potential-scan.md` |
+| `concept-toro-library` | Toro Potenzial-Entdecker Phase 2: Automatisierungs-Bibliothek | `docs/product/toro-potential-scan.md` |
+| `concept-toro-observer` | Toro Potenzial-Entdecker Phase 3: Toro beobachtet + schlägt vor | `docs/product/toro-potential-scan.md` |
+| `concept-meta-health` | Meta-Agenten Phase 1: Health-Monitor | `docs/product/meta-agenten.md` |
+| `concept-meta-optimizer` | Meta-Agenten Phase 2: Quality-Optimizer | `docs/product/meta-agenten.md` |
+| `concept-meta-scout` | Meta-Agenten Phase 3: Opportunity-Scout | `docs/product/meta-agenten.md` |
+| `concept-agents-phase2` | Agenten-System Phase 2: Zuweisung zu Projekten/Chats | `docs/plans/agents-spec.md` |
+| `paket-02` | Marketing-Paket: 10 Agenten + Integrationen | — |
+| `paket-03` | Wissenschafts-Paket | — |
+| `chat-16` | Toro Guard (4-Schichten-System) | — |
+| `proj-04` | n8n/Make Integration | — |
+| `chat-17` | Real-Time Websuche | — |
+| `chat-18` | Voice Output | — |
+| `chat-19` | Multimodalität und Dateiupload | — |
 
 ---
 

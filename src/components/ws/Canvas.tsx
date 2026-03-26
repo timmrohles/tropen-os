@@ -2,17 +2,16 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { updateCardPosition } from '@/actions/cards'
-import { getWorkspace } from '@/actions/workspaces'
 import type { Card, Connection } from '@/db/schema'
 import type { WorkspaceWithDetails } from '@/types/workspace'
+
 import ConnectionLines from '@/components/ws/ConnectionLines'
 import WorkspaceCard from '@/components/ws/WorkspaceCard'
 import DetailPanel from '@/components/ws/DetailPanel'
 import CardForm from '@/components/ws/CardForm'
 import TopBar from '@/components/ws/TopBar'
 import SiloPanel from '@/components/ws/SiloPanel'
-
-const MONO = "'DM Mono', 'Courier New', monospace"
+import WorkspaceBriefing from '@/components/workspace/WorkspaceBriefing'
 
 interface DragState {
   cardId: string
@@ -26,32 +25,28 @@ interface Props {
   initialCards: Card[]
   initialConnections: Connection[]
   workspaceId: string
+  initialWorkspace: WorkspaceWithDetails
 }
 
-export default function Canvas({ initialCards, initialConnections, workspaceId }: Props) {
+export default function Canvas({ initialCards, initialConnections, workspaceId, initialWorkspace }: Props) {
   const [cards, setCards] = useState<Card[]>(initialCards)
   const [connections] = useState<Connection[]>(initialConnections)
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [showCardForm, setShowCardForm] = useState(false)
   const [siloOpen, setSiloOpen] = useState(false)
-  const [workspace, setWorkspace] = useState<WorkspaceWithDetails | null>(null)
+  const [workspace, setWorkspace] = useState<WorkspaceWithDetails>(initialWorkspace)
 
   const dragRef = useRef<DragState | null>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const pendingPositionRef = useRef<{ id: string; x: number; y: number } | null>(null)
 
-  // Load workspace details for TopBar and SiloPanel
-  useEffect(() => {
-    getWorkspace(workspaceId)
-      .then((ws) => setWorkspace(ws))
-      .catch(() => {/* silent */})
-  }, [workspaceId])
+  const briefingSkipped = Boolean((workspace.meta as Record<string, unknown> | null)?.briefing_skipped)
+  const briefingDone = Boolean((workspace.meta as Record<string, unknown> | null)?.briefing_done)
+  const showBriefing = cards.length === 0 && !briefingSkipped && !briefingDone
 
   // Keep workspace.cards in sync with local card state
   useEffect(() => {
-    if (workspace) {
-      setWorkspace((prev) => prev ? { ...prev, cards } : prev)
-    }
+    setWorkspace((prev) => ({ ...prev, cards }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards])
 
@@ -116,6 +111,23 @@ export default function Canvas({ initialCards, initialConnections, workspaceId }
     setSelectedCardId(newCard.id)
   }, [])
 
+  // ── Briefing complete (multiple cards created) ─────────────────────────────
+
+  const handleBriefingComplete = useCallback((newCards: Card[]) => {
+    setCards(newCards)
+    setWorkspace(prev => ({
+      ...prev,
+      meta: { ...((prev.meta ?? {}) as object), briefing_done: true } as WorkspaceWithDetails['meta'],
+    }))
+  }, [])
+
+  const handleBriefingSkip = useCallback(() => {
+    setWorkspace(prev => ({
+      ...prev,
+      meta: { ...((prev.meta ?? {}) as object), briefing_skipped: true } as WorkspaceWithDetails['meta'],
+    }))
+  }, [])
+
   // ── Canvas click (deselect) ────────────────────────────────────────────────
 
   const handleCanvasClick = useCallback(() => {
@@ -140,20 +152,16 @@ export default function Canvas({ initialCards, initialConnections, workspaceId }
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: '#080808',
-        fontFamily: MONO,
+        background: 'var(--bg-base)',
         overflow: 'hidden',
       }}
     >
-      {/* TopBar — only when workspace is loaded */}
-      {workspace && (
-        <TopBar
-          workspace={workspace}
-          onAddCard={() => setShowCardForm(true)}
-          siloOpen={siloOpen}
-          onToggleSilo={() => setSiloOpen((p) => !p)}
-        />
-      )}
+      <TopBar
+        workspace={workspace}
+        onAddCard={() => setShowCardForm(true)}
+        siloOpen={siloOpen}
+        onToggleSilo={() => setSiloOpen((p) => !p)}
+      />
 
       {/* Main area */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -179,13 +187,21 @@ export default function Canvas({ initialCards, initialConnections, workspaceId }
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundImage:
-                'radial-gradient(circle, #1e1e1e 1px, transparent 1px)',
-              backgroundSize: '32px 32px',
+              backgroundImage: 'radial-gradient(circle, rgba(26,23,20,0.15) 1px, transparent 1px)',
+              backgroundSize: '28px 28px',
               pointerEvents: 'none',
               zIndex: 0,
             }}
           />
+
+          {/* Briefing flow for empty workspaces */}
+          {showBriefing && (
+            <WorkspaceBriefing
+              workspace={workspace}
+              onComplete={handleBriefingComplete}
+              onSkip={handleBriefingSkip}
+            />
+          )}
 
           {/* Minimum canvas size */}
           <div style={{ width: 4000, height: 4000, position: 'relative' }}>
@@ -207,31 +223,36 @@ export default function Canvas({ initialCards, initialConnections, workspaceId }
               />
             ))}
 
-            {/* Empty state */}
-            {cards.length === 0 && (
+            {/* Empty state — only when briefing was skipped/done */}
+            {cards.length === 0 && !showBriefing && (
               <div
                 style={{
                   position: 'absolute',
-                  top: '50%',
+                  top: '40%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                   textAlign: 'center',
-                  color: '#1e1e1e',
-                  fontFamily: MONO,
                   pointerEvents: 'none',
                   userSelect: 'none',
                 }}
                 aria-live="polite"
               >
-                <p style={{ fontSize: 14, marginBottom: 8 }}>Keine Karten</p>
-                <p style={{ fontSize: 11 }}>Klicke auf &bdquo;+ Karte&ldquo; um zu beginnen</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                  Noch keine Karten
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  Klicke oben auf „+ Karte hinzufügen" um zu starten.
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6 }}>
+                  Beispiele: Zielgruppenanalyse · Kampagnenbrief · Social-Media-Post
+                </p>
               </div>
             )}
           </div>
         </div>
 
         {/* Silo Panel */}
-        {siloOpen && workspace && (
+        {siloOpen && (
           <SiloPanel workspace={workspace} />
         )}
 

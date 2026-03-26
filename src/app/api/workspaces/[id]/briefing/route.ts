@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { z } from 'zod'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
@@ -17,7 +18,6 @@ const briefingProposalSchema = z.object({
 })
 
 const log = createLogger('api:workspaces:briefing')
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 type Params = { params: Promise<{ id: string }> }
 
 const BRIEFING_SYSTEM = `Du bist Toro, ein KI-Assistent von Tropen OS. Der User möchte einen neuen Workspace für eine komplexe Aufgabe anlegen.
@@ -47,9 +47,9 @@ export async function POST(request: Request, { params }: Params) {
   if (valErr) return valErr
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+    const { text: content, usage } = await generateText({
+      model: anthropicProvider('claude-sonnet-4-6'),
+      maxOutputTokens: 1024,
       system: BRIEFING_SYSTEM,
       messages: [
         ...body.history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
@@ -57,8 +57,7 @@ export async function POST(request: Request, { params }: Params) {
       ],
     })
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : ''
-    const tokenUsage = { input: response.usage.input_tokens, output: response.usage.output_tokens }
+    const tokenUsage = { input: usage.inputTokens, output: usage.outputTokens }
 
     // Detect JSON card proposal — validate shape before trusting the content
     let proposal = null

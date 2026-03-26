@@ -75,6 +75,14 @@ const FORBIDDEN_ICON_IMPORTS = [
   { pattern: /from ['"]feather-icons/,        note: 'Verwende @phosphor-icons/react' },
 ]
 
+// Verbotene Inline-SVGs — nur @phosphor-icons/react erlaubt
+// Ausnahme: ParrotIcon.tsx (Brand-SVG) ist in IGNORE-Liste
+const FORBIDDEN_INLINE_SVG = {
+  pattern: /<svg[\s>]/,
+  note: 'Inline-SVG in Komponente — verwende @phosphor-icons/react statt Inline-SVGs',
+  severity: 'error',
+}
+
 // Phosphor Icons: weight muss "bold" oder "fill" sein
 // weight="duotone", weight="regular", weight="thin", weight="light" sind nicht erlaubt
 const FORBIDDEN_ICON_WEIGHTS = [
@@ -83,6 +91,32 @@ const FORBIDDEN_ICON_WEIGHTS = [
   { pattern: /weight=["']thin["']/,    note: 'Verwende weight="bold" oder weight="fill"' },
   { pattern: /weight=["']light["']/,   note: 'Verwende weight="bold" oder weight="fill"' },
 ]
+
+// Löschen/Delete-Button muss dropdown-item--danger haben
+// Prüft: wenn ein Button "Löschen" als Text hat, muss er dropdown-item--danger in der className haben
+const DELETE_DANGER_PATTERN = {
+  pattern: />\s*Löschen\s*</,
+  note: 'Löschen-Button ohne dropdown-item--danger — Löschen immer in [···] Menü mit danger-Klasse',
+  severity: 'warn',
+  onlyIn: ['components', 'app'],
+  // Ausnahme: Confirm-Texte (z.B. "Sicher löschen?"), oder danger ist auf der Zeile selbst
+  exceptPatterns: [
+    /dropdown-item--danger/,
+    /btn-danger/,
+    /Sicher löschen/,
+    /wirklich löschen/i,
+  ],
+}
+
+// Emoji als funktionale Icon-Platzhalter — kein 📁, ✅, 🔔 etc. als UI-Icons
+// Hinweis: Emojis in Datenwerten (z.B. avatar.emoji) sind OK — dieses Muster prüft nur JSX-Expressions
+const EMOJI_ICON_PATTERN = {
+  // Gängige Funktions-Emojis als JSX-Literal
+  pattern: /['"`>]\s*[📁✅❌🔔⚠️💡🎯📊📋🔍🗑️✏️💾📤📥🔗🎨🚀💬🧠]\s*['"`<]/u,
+  note: 'Emoji als funktionales Icon im JSX — verwende @phosphor-icons/react statt Emoji',
+  severity: 'warn',
+  onlyIn: ['components', 'app'],
+}
 
 // Patterns die auf fehlende Design-System-Klassen hinweisen
 // Nur in Komponenten- und Seiten-Dateien prüfen (nicht in lib/, services/)
@@ -121,6 +155,8 @@ const DESIGN_SYSTEM_PATTERNS = [
     severity: 'warn',
     onlyIn: ['app'],
   },
+  DELETE_DANGER_PATTERN,
+  EMOJI_ICON_PATTERN,
 ]
 
 // console.log in Produktionsdateien
@@ -176,6 +212,50 @@ function getAllFiles(dir, files = []) {
   return files
 }
 
+// supabaseAdmin ohne organization_id in API-Routes
+// Heuristik: Routes in src/app/api/ die supabaseAdmin.from() verwenden müssen
+// Tenant-Isolation haben — via organization_id-Filter, user_id-Scope oder Access-Guard-Helper.
+// Warnt einmal pro Datei wenn gar keine dieser Isolation-Signale vorhanden sind.
+// Ausnahmen (scope-unabhängig by design): Cron, Admin, Superadmin, Public, Library, Health
+const SUPABASE_ADMIN_ORG_EXCEPTIONS = [
+  '/api/cron/',       'api\\cron\\',
+  '/api/admin/',      'api\\admin\\',
+  '/api/superadmin/', 'api\\superadmin\\',
+  '/api/public/',     'api\\public\\',
+  '/api/library/',    'api\\library\\',
+  '/api/health',      'api\\health',
+]
+
+function checkSupabaseAdminOrgIsolation(filePath, content, lines, rel) {
+  // Nur API-Routes prüfen
+  if (!rel.includes('/api/') && !rel.includes('\\api\\')) return
+
+  // Bekannte Ausnahmen überspringen
+  if (SUPABASE_ADMIN_ORG_EXCEPTIONS.some(e => rel.includes(e))) return
+
+  // Datei verwendet kein supabaseAdmin.from() → kein Check nötig
+  if (!content.includes('supabaseAdmin.from(')) return
+
+  // Isolation-Signale im gesamten File prüfen
+  const hasOrgFilter   = content.includes('organization_id')
+  const hasUserScope   = content.includes(".eq('user_id'") ||
+                         content.includes('.eq("user_id"') ||
+                         content.includes('user_id:')
+  const hasAccessGuard = content.includes('requireWorkspaceAccess') ||
+                         content.includes('verifyProjectAccess') ||
+                         content.includes('canWriteWorkspace') ||
+                         content.includes('requireOrgAdmin') ||
+                         content.includes('requireSuperadmin')
+
+  if (!hasOrgFilter && !hasUserScope && !hasAccessGuard) {
+    // Zeile der ersten supabaseAdmin.from()-Verwendung melden
+    const firstLine = lines.findIndex(l => l.includes('supabaseAdmin.from(')) + 1
+    report(filePath, firstLine, 'warn', 'supabase-admin-no-org',
+      'supabaseAdmin.from() ohne Tenant-Isolation (kein organization_id, user_id-Scope oder Access-Guard im File)',
+      'organization_id-Filter, .eq("user_id", ...) oder Access-Guard (requireWorkspaceAccess, verifyProjectAccess) hinzufügen. Ausnahmen: Cron/Admin/Superadmin/Public sind bewusst global.')
+  }
+}
+
 // ─── Checks ──────────────────────────────────────────────────────────────────
 
 function checkFile(filePath) {
@@ -197,23 +277,34 @@ function checkFile(filePath) {
   lines.forEach((line, idx) => {
     const lineNum = idx + 1
     const trimmed = line.trim()
+    const prevLine = idx > 0 ? lines[idx - 1].trim() : ''
+    const hasLintDisable = prevLine.includes('eslint-disable') || line.includes('// eslint-disable')
 
     // Kommentarzeilen überspringen
     if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return
 
     // ── Verbotene Hex-Farben ──────────────────────────────────────────────────
-    for (const { hex, note } of FORBIDDEN_HEX) {
-      // In Tailwind bg-[#...] oder als String oder als CSS-Property
-      const escaped = hex.replace('#', '[#\\[]?')
-      // Einfacher: direkter String-Match (case-sensitive bereits in der Liste)
-      if (line.includes(hex) || line.includes(hex.toLowerCase())) {
-        // Ausnahme: in Kommentaren
-        if (!trimmed.startsWith('//') && !trimmed.startsWith('*')) {
-          report(filePath, lineNum, 'error', 'forbidden-color',
-            `Verbotene Farbe ${hex} gefunden`,
-            note)
+    if (!hasLintDisable) {
+      for (const { hex, note } of FORBIDDEN_HEX) {
+        // In Tailwind bg-[#...] oder als String oder als CSS-Property
+        const escaped = hex.replace('#', '[#\\[]?')
+        // Einfacher: direkter String-Match (case-sensitive bereits in der Liste)
+        if (line.includes(hex) || line.includes(hex.toLowerCase())) {
+          // Ausnahme: in Kommentaren
+          if (!trimmed.startsWith('//') && !trimmed.startsWith('*')) {
+            report(filePath, lineNum, 'error', 'forbidden-color',
+              `Verbotene Farbe ${hex} gefunden`,
+              note)
+          }
         }
       }
+    }
+
+    // ── Verbotene Inline-SVGs ─────────────────────────────────────────────────
+    if (!hasLintDisable && FORBIDDEN_INLINE_SVG.pattern.test(line)) {
+      report(filePath, lineNum, FORBIDDEN_INLINE_SVG.severity, 'inline-svg',
+        `Inline-SVG gefunden: ${trimmed.substring(0, 80)}`,
+        FORBIDDEN_INLINE_SVG.note)
     }
 
     // ── Verbotene Icon-Imports ────────────────────────────────────────────────
@@ -261,6 +352,9 @@ function checkFile(filePath) {
       }
     }
   })
+
+  // ── supabaseAdmin Org-Isolation (API-Routes) ─────────────────────────────
+  checkSupabaseAdminOrgIsolation(filePath, content, lines, rel)
 
   // ── Design-System-Patterns (Mehrzeilen-Context) ───────────────────────────
   const isComponent = rel.includes('/components/') || rel.includes('/app/')

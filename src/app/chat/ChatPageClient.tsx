@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { MagnifyingGlass, Plus, FolderSimple, Trash, X, ChatCircle } from '@phosphor-icons/react'
+import { MagnifyingGlass, Plus, FolderSimple, Trash, X, ChatCircle, ShareNetwork } from '@phosphor-icons/react'
+import WorkspacePicker from '@/components/workspaces/WorkspacePicker'
 
 interface ConvItem {
   id: string
@@ -41,9 +42,9 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
   const [search, setSearch] = useState('')
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
   const [openFolderMenuId, setOpenFolderMenuId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [workspacePicker, setWorkspacePicker] = useState<{ id: string; title: string } | null>(null)
   const folderMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
           .from('conversations')
           .select('id, title, created_at, project_id')
           .eq('workspace_id', workspaceId)
+          .eq('conversation_type', 'chat')
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .limit(200),
@@ -89,17 +91,8 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
     return matchesSearch && matchesProject
   })
 
-  async function handleNewChat() {
-    setCreating(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setCreating(false); return }
-    const { data } = await supabase
-      .from('conversations')
-      .insert({ workspace_id: workspaceId, user_id: user.id, title: 'Neuer Chat' })
-      .select('id')
-      .single()
-    setCreating(false)
-    if (data) router.push(`/chat/${(data as { id: string }).id}`)
+  function handleNewChat() {
+    router.push('/chat/new')
   }
 
   async function handleDelete(id: string) {
@@ -146,44 +139,33 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
             <p className="page-header-sub">Deine Konversationen mit Toro</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={handleNewChat} disabled={creating}>
+            <button className="btn btn-primary" onClick={handleNewChat}>
               <Plus size={14} weight="bold" aria-hidden="true" />
-              {creating ? 'Erstelle…' : 'Neuer Chat'}
+              Neuer Chat
             </button>
           </div>
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', marginBottom: 12 }}>
+        <div className="search-bar-container">
           <MagnifyingGlass
-            size={15}
+            size={14}
+            weight="bold"
             aria-hidden="true"
-            style={{
-              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text-tertiary)', pointerEvents: 'none',
-            }}
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}
           />
           <input
             type="search"
-            placeholder="Chats durchsuchen ..."
+            className="input"
+            placeholder="Chats durchsuchen …"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px 10px 36px',
-              fontSize: 14,
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            style={{ paddingLeft: 34 }}
           />
         </div>
 
         {/* Project chips — always show "Alle", then one per project */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div className="page-filter-row" style={{ marginBottom: 16 }}>
           <button
             className={`chip${activeProjectId === null ? ' chip--active' : ''}`}
             onClick={() => setActiveProjectId(null)}
@@ -209,8 +191,21 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
             Lade Chats…
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 14 }}>
-            {search || activeProjectId ? 'Keine Chats gefunden.' : 'Noch keine Chats. Starte einen neuen Chat!'}
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <ChatCircle size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+              {search || activeProjectId ? 'Keine Chats gefunden' : 'Noch keine Chats'}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+              {search || activeProjectId
+                ? 'Versuche einen anderen Suchbegriff oder Filter.'
+                : 'Starte ein neues Gespräch mit Toro.'}
+            </p>
+            {!search && !activeProjectId && (
+              <button className="btn btn-primary" onClick={handleNewChat}>
+                <Plus size={14} weight="bold" aria-hidden="true" /> Neuer Chat
+              </button>
+            )}
           </div>
         ) : (
         <div style={{
@@ -305,7 +300,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
                             top: '100%',
                             right: 0,
                             zIndex: 100,
-                            background: '#fff',
+                            background: 'var(--bg-surface)',
                             border: '1px solid var(--border)',
                             borderRadius: 'var(--radius-md)',
                             boxShadow: 'var(--shadow-lg)',
@@ -353,6 +348,23 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
                       )}
                     </div>
 
+                    {/* Save to workspace */}
+                    <button
+                      aria-label="In Workspace ablegen"
+                      title="In Workspace ablegen"
+                      onClick={() => setWorkspacePicker({ id: conv.id, title: conv.title ?? 'Chat' })}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-tertiary)', transition: 'all var(--t-fast)',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
+                    >
+                      <ShareNetwork size={14} weight="bold" />
+                    </button>
+
                     {/* Delete */}
                     {isConfirmDelete ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -361,7 +373,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
                           onClick={() => handleDelete(conv.id)}
                           style={{
                             padding: '2px 8px', fontSize: 12, fontWeight: 600,
-                            background: 'var(--error)', color: '#fff',
+                            background: 'var(--error)', color: 'var(--text-inverse)',
                             border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                           }}
                         >
@@ -404,6 +416,15 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
         </div>
         )}
       </div>
+
+      {workspacePicker && (
+        <WorkspacePicker
+          itemType="conversation"
+          itemId={workspacePicker.id}
+          itemTitle={workspacePicker.title}
+          onClose={() => setWorkspacePicker(null)}
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 // context-builder.ts — backwards compatibility shim
 // Real implementation is in workspace-context.ts (Plan C)
-export { buildWorkspaceContext, buildCardContext } from '@/lib/workspace-context'
+export { buildWorkspaceContext, buildCardContext, buildPresentationContext } from '@/lib/workspace-context'
 
 // ---------------------------------------------------------------------------
 // buildContextSnapshot — backwards-compat async wrapper

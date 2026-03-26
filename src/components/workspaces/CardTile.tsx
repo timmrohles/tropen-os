@@ -1,20 +1,20 @@
 'use client'
 
-import { Warning, Tray, ArrowsClockwise, Export as ExportIcon } from '@phosphor-icons/react'
-import type { CanvasCard } from '@/app/workspaces/[id]/page'
+import { Warning, Tray, ArrowsClockwise, Export as ExportIcon, ChatCircle } from '@phosphor-icons/react'
+import type { CanvasCard } from '@/app/workspaces/[id]/CanvasClient'
 
 const ROLE_CONFIG = {
-  input:   { label: 'Eingabe',   color: 'var(--accent)',  bg: 'var(--accent-light)', Icon: Tray },
-  process: { label: 'Analyse',   color: '#8B5CF6',        bg: '#EDE9FE',             Icon: ArrowsClockwise },
-  output:  { label: 'Ergebnis',  color: '#F59E0B',        bg: '#FEF3C7',             Icon: ExportIcon },
+  input:   { label: 'Eingabe',   color: 'var(--accent)',          bg: 'var(--accent-light)',    Icon: Tray },
+  process: { label: 'Analyse',   color: 'var(--tropen-process)',  bg: 'var(--tropen-process-bg)', Icon: ArrowsClockwise },
+  output:  { label: 'Ergebnis',  color: 'var(--tropen-output)',   bg: 'var(--tropen-output-bg)',  Icon: ExportIcon },
 } as const
 
 const STATUS_CONFIG = {
   draft:      { label: 'Entwurf',       color: 'var(--text-tertiary)' },
   ready:      { label: 'Bereit',        color: 'var(--accent)'        },
-  stale:      { label: 'Veraltet',      color: '#F59E0B'              },
+  stale:      { label: 'Veraltet',      color: 'var(--warning)'       },
   processing: { label: 'Verarbeitung',  color: 'var(--accent)'        },
-  error:      { label: 'Fehler',        color: '#EF4444'              },
+  error:      { label: 'Fehler',        color: 'var(--error)'         },
 } as const
 
 interface Props {
@@ -87,7 +87,7 @@ export default function CardTile({ card, onClick }: Props) {
 
       {/* Stale warning */}
       {card.status === 'stale' && card.stale_reason && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, fontSize: 11, color: '#F59E0B', marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, fontSize: 11, color: 'var(--warning)', marginTop: 2 }}>
           <Warning size={13} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
           <span style={{ lineHeight: 1.4 }}>{card.stale_reason}</span>
         </div>
@@ -97,6 +97,14 @@ export default function CardTile({ card, onClick }: Props) {
       {Array.isArray(card.sources) && card.sources.length > 0 && (
         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
           {card.sources.length} {card.sources.length === 1 ? 'Quelle' : 'Quellen'}
+        </div>
+      )}
+
+      {/* Chat artifact badge */}
+      {card.source === 'chat_artifact' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+          <ChatCircle size={11} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Aus Chat</span>
         </div>
       )}
     </button>

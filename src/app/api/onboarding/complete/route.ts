@@ -137,7 +137,7 @@ export async function POST(request: Request) {
           redirectTo: `${siteUrl}/auth/callback`,
         })
       } catch (e) {
-        log.error('Invite error for', email, e)
+        log.error('Invite error', e)
       }
     }
   }

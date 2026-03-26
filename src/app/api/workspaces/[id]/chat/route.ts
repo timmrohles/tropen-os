@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
@@ -8,7 +9,6 @@ import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api:workspaces:chat')
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 type Params = { params: Promise<{ id: string }> }
 
 // GET /api/workspaces/[id]/chat?card_id=...&limit=50
@@ -83,17 +83,17 @@ export async function POST(request: Request, { params }: Params) {
   let tokenUsage: Record<string, unknown> = {}
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+    const { text, usage } = await generateText({
+      model: anthropicProvider('claude-sonnet-4-6'),
+      maxOutputTokens: 2048,
       system: systemPrompt,
       messages: [
         ...history,
         { role: 'user', content: body.content },
       ],
     })
-    assistantContent = response.content[0].type === 'text' ? response.content[0].text : ''
-    tokenUsage = { input: response.usage.input_tokens, output: response.usage.output_tokens }
+    assistantContent = text
+    tokenUsage = { input: usage.inputTokens, output: usage.outputTokens }
   } catch (err) {
     log.error('[chat] Anthropic call failed', { error: String(err) })
     return NextResponse.json({ error: 'KI-Antwort fehlgeschlagen' }, { status: 500 })

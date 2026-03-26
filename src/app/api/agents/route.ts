@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/api/pagination'
 
 export const runtime = 'nodejs'
 
@@ -16,13 +17,14 @@ export async function GET(request: NextRequest) {
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
+  const { limit, offset } = parsePaginationParams(searchParams)
   const scopeFilter   = searchParams.get('scope')
   const packageFilter = searchParams.get('package')
   const activeOnly    = searchParams.get('active') !== 'false'
 
   let query = supabaseAdmin
     .from('agents')
-    .select('*')
+    .select('*', { count: 'exact' })
     .is('deleted_at', null)
     .order('display_order', { ascending: true })
 
@@ -30,7 +32,9 @@ export async function GET(request: NextRequest) {
   if (scopeFilter) query = query.eq('scope', scopeFilter)
   if (packageFilter) query = query.eq('requires_package', packageFilter)
 
-  const { data, error } = await query
+  query = query.range(offset, offset + limit - 1)
+
+  const { data, error, count } = await query
 
   if (error) {
     log.error('GET /api/agents failed', { error: error.message })
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
         return false
       })
 
-  return NextResponse.json({ agents: filtered.map(mapAgent) })
+  return NextResponse.json({ data: filtered.map(mapAgent), total: count ?? 0, limit, offset })
 }
 
 // ─── POST /api/agents ─────────────────────────────────────────────────────────

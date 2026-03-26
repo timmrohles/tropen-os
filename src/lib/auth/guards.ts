@@ -39,7 +39,7 @@ export async function requireOrgAdmin() {
     .eq('id', user.id)
     .single()
 
-  if (!['superadmin', 'org_admin'].includes(profile?.role ?? '')) {
+  if (!['superadmin', 'admin'].includes(profile?.role ?? '')) {
     redirect('/workspaces')
   }
 

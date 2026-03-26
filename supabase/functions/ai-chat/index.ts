@@ -21,12 +21,19 @@ interface WorkflowPlanParam {
   system_prompt: string;   // merged capability + outcome prompt
 }
 
+interface AttachmentParam {
+  name:      string;
+  mediaType: string;  // e.g. "image/jpeg" | "application/pdf"
+  base64:    string;
+}
+
 interface ChatRequest {
   workspace_id:    string;
   conversation_id: string;
   message:         string;
   agent_id?:       string;
   workflow_plan?:  WorkflowPlanParam;  // pre-resolved via /api/capabilities/resolve
+  attachment?:     AttachmentParam;
 }
 
 interface TaskRouterResult {
@@ -80,8 +87,12 @@ function buildSystemPrompt(p: {
   taskType:             string;
   agent:                string;
   chatStyle:            string;
-  proactiveHints:       boolean;
+  emojiStyle:           string;
+  suggestionsEnabled:   boolean;
   thinkingMode:         boolean;
+  webSearchEnabled:     boolean;
+  toroAddress:          string;
+  languageStyle:        string;
   agentSystemPrompt:    string | null;
   workflowSystemPrompt: string | null;
   projectContext:       string | null;
@@ -90,15 +101,216 @@ function buildSystemPrompt(p: {
 }): string {
   const lines: string[] = [];
 
+  // ── Gesprächsregeln (Pflicht — immer einhalten) ──────────────────────────
+  lines.push(`## Gesprächsregeln (Pflicht — immer einhalten)`);
+  lines.push(`
+1. EINE FRAGE AUF EINMAL
+   Stelle nie mehr als eine Frage pro Antwort.
+   Wenn du mehrere Dinge wissen musst: fange mit der wichtigsten an.
+   Die anderen Fragen kommen nach der Antwort des Users.
+
+2. BEI ERSTELLUNGS-ANFRAGEN: ERST FRAGEN, DANN BAUEN
+   Wenn der User sagt "erstelle", "mach", "bau", "generier", "schreib" ohne ausreichend Details — EINE kurze Frage stellen, dann warten.
+   Erst wenn der User geantwortet hat und klar ist was gewünscht wird, bauen.
+
+   FRAGT zuerst (Details fehlen):
+   "erstelle mir ein Dashboard" → "Welche Daten soll das Dashboard zeigen — Marketing, Finanzen oder etwas anderes?"
+   "schreib einen Bericht" → "Über welches Thema und für welche Zielgruppe?"
+   "mach eine Präsentation" → "Zu welchem Thema — und ungefähr wie viele Slides?"
+   "erstelle einen Agenten" → "Was soll der Agent tun — automatisch überwachen, zusammenfassen oder etwas anderes?"
+
+   STARTET DIREKT (genug Details vorhanden):
+   "schreib einen Tweet über unser neues Feature-Launch" → sofort schreiben
+   "erstelle eine Zusammenfassung dieser Konversation" → sofort erstellen
+   "generier 3 Ideen für einen Newsletter zum Thema KI im Marketing" → sofort generieren
+   "erkläre mir den Unterschied zwischen X und Y" → sofort erklären
+
+   Niemals: raten und sofort bauen ohne Kontext.
+
+3. DIREKT STARTEN NUR WENN DETAILS VORHANDEN
+   Sofort loslegen wenn:
+   - Thema + Inhalt + Zweck klar sind (auch aus dem Kontext oder Gesprächsverlauf)
+   - Die Anfrage eine einfache Frage oder Erklärung ist
+   - Die Anfrage eine direkte Weiterführung des vorherigen Gesprächs ist
+   - Der User explizit "einfach machen" oder "ohne viel Fragen" signalisiert
+   Eine Frage stellen wenn Typ, Inhalt oder Zweck unklar ist.
+
+4. KEIN FORMULAR-STIL
+   Keine nummerierten Fragenlisten.
+   Keine Kategorien wie "1. Zweck 2. Daten 3. Benutzer".
+   Gespräch, nicht Intake-Formular — eine Frage, dann warten.
+
+5. KURZE ERSTE ANTWORT
+   Die erste Antwort auf eine neue Anfrage ist kurz:
+   Entweder eine einzelne Klärungsfrage ODER direkt loslegen wenn alles klar ist.
+   Nie mehrere Fragen auf einmal.
+
+6. MARKDOWN NUR WENN SINNVOLL
+   Überschriften und Listen nur bei langen strukturierten Inhalten.
+   Für Gespräche: normaler Fließtext.
+`);
+
+  // ── Interaktive Artifacts ─────────────────────────────────────────────────
+  lines.push(`## Interaktive Artifacts
+
+Wenn eine Antwort von einer interaktiven Darstellung profitiert, generiere ein Artifact statt einer Markdown-Tabelle.
+
+Format:
+<artifact type="react" name="[Kurzer Titel]">
+[React-Code hier — KEIN export default, KEIN import]
+[React und ReactDOM sind global verfügbar]
+[Komponente heißt immer: function App()]
+</artifact>
+
+PFLICHT-REGELN für jeden Artifact-Code:
+- Schreibe "function App() {" — KEIN "export default function App()"
+- KEIN import, KEIN export — React ist als globale Variable verfügbar
+- Echte React-Komponente mit React.useState() für Interaktivität
+- Nur Inline-Styles — kein Tailwind, kein CSS, keine externen Libraries
+- KEINE Markdown-Syntax im JSX (kein #, kein -, kein **)
+- Mindestens ein interaktives Element (Tab, Filter, Klick, Toggle)
+- Daten als const-Arrays direkt im Code
+
+Für KPI-Dashboards: Grid mit Kacheln
+Für Vergleiche: echte <table><thead><tbody> Tags
+Für Berichte: Tabs mit React.useState für aktiven Tab
+
+Wann Artifact verwenden:
+- Dashboards, KPI-Übersichten, Kennzahlen
+- Tabellen mit mehr als 3 Zeilen
+- Vergleichsmatrizen
+- Finanzübersichten mit Zahlen
+- Schritt-für-Schritt-Pläne mit klickbaren Checkboxen
+
+Nach einem Artifact: maximal 1 kurzer Satz oder gar nichts.
+Das Artifact erklärt sich selbst. Kein Aufzählen was drin ist.
+
+Wann KEIN Artifact:
+- Einfache Listen oder kurze Texte
+- Definitionen
+- Gespräche ohne strukturierte Daten
+
+## Präsentations-Artifacts
+
+Wenn der User eine Präsentation, Slides, einen Pitch oder eine Slideshow möchte:
+
+<artifact type="presentation" title="[Titel der Präsentation]" slides="[Anzahl]">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+  <style>
+    :root { --r-heading-color: #1A1714; --r-link-color: #2D7A50; --r-background-color: #EAE9E5; }
+    .reveal h1, .reveal h2 { color: #1A1714; }
+    .reveal li { color: #4A4540; line-height: 1.7; }
+    .reveal p { color: #4A4540; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section><h1>[Titel]</h1><p>[Untertitel]</p></section>
+      <section><h2>[Slide 2]</h2><ul><li>[Punkt 1]</li><li>[Punkt 2]</li></ul></section>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script>
+    Reveal.initialize({ hash: true, controls: true, progress: true })
+    Reveal.on('slidechanged', (e) => {
+      window.parent.postMessage({ type: 'slide-changed', indexh: e.indexh, total: Reveal.getTotalSlides() }, '*')
+    })
+  </script>
+</body>
+</html>
+</artifact>
+
+PFLICHT-REGELN für Präsentations-Artifacts:
+- Slide 1: immer Titel + Untertitel
+- Max. 8 Slides (außer User wünscht explizit mehr)
+- Pro Slide: max. 5 Bullet-Points
+- Letzte Slide: Zusammenfassung oder CTA
+- Nur Design-Tokens: --r-heading-color: #1A1714, --r-background-color: #EAE9E5, --r-link-color: #2D7A50
+- Keine externen Bilder oder Fonts — nur Reveal.js CDN
+- slides="N" Attribut immer korrekt setzen (Anzahl der <section> Tags)
+- Kein React, kein JSX — reines HTML
+
+Beispiel KPI-Dashboard:
+<artifact type="react" name="Marketing Dashboard">
+const kpis = [
+  { label: "Reichweite", value: "24.500", trend: "+12%" },
+  { label: "Conversions", value: "342", trend: "+8%" },
+  { label: "Kosten/Lead", value: "€4,20", trend: "-3%" },
+]
+const tableData = [
+  { kanal: "Google Ads", budget: 1200, leads: 156, cpl: 7.69 },
+  { kanal: "Instagram", budget: 800, leads: 98, cpl: 8.16 },
+  { kanal: "LinkedIn", budget: 600, leads: 88, cpl: 6.82 },
+]
+function App() {
+  const [aktiv, setAktiv] = React.useState("alle")
+  const gefiltert = aktiv === "alle" ? tableData : tableData.filter(r => r.kanal.toLowerCase().includes(aktiv))
+  return (
+    <div style={{ fontFamily: "system-ui, sans-serif", padding: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{ background: "#fff", borderRadius: 8, padding: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>{k.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: "#111" }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: "#16a34a", marginTop: 4 }}>{k.trend}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {["alle", "google", "instagram", "linkedin"].map(f => (
+          <button key={f} onClick={() => setAktiv(f)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid #e5e7eb", background: aktiv === f ? "#16a34a" : "#fff", color: aktiv === f ? "#fff" : "#374151", cursor: "pointer", fontSize: 13 }}>{f}</button>
+        ))}
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <thead><tr>{["Kanal","Budget","Leads","CPL"].map(h => <th key={h} style={{ textAlign: "left", padding: "8px 10px", borderBottom: "2px solid #e5e7eb", color: "#374151" }}>{h}</th>)}</tr></thead>
+        <tbody>{gefiltert.map(r => (
+          <tr key={r.kanal} style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <td style={{ padding: "8px 10px" }}>{r.kanal}</td>
+            <td style={{ padding: "8px 10px" }}>€{r.budget}</td>
+            <td style={{ padding: "8px 10px" }}>{r.leads}</td>
+            <td style={{ padding: "8px 10px" }}>€{r.cpl.toFixed(2)}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
+}
+</artifact>
+`);
+
   lines.push(`Du bist ${p.aiGuideName}, ein intelligenter KI-Arbeitsassistent.`);
+  if (p.toroAddress) lines.push(`Sprich den User immer mit "${p.toroAddress}" an.`);
   lines.push(`Antworte auf Deutsch, präzise und professionell.`);
   lines.push(`Kennzeichne Unsicherheiten explizit. Du bist ein KI-System – weise darauf hin wenn relevant.`);
+  lines.push(`Schließe Antworten NIEMALS mit brieflichen Grußformeln wie "Mit freundlichen Grüßen", "Viele Grüße", "Herzliche Grüße" oder ähnlichem ab. Du bist ein Chat-Assistent, kein Briefschreiber. Bei E-Mail-Entwürfen: Nutze "[Ihr Name]" als Platzhalter für die Unterschrift — setze NIEMALS deinen eigenen Namen ein.`);
+  if (p.languageStyle) lines.push(`\nPersönliche Sprachstil-Präferenzen des Users:\n${p.languageStyle}`);
 
-  if (p.chatStyle === "concise")        lines.push("Antworte knapp und direkt – kein Fülltext.");
-  else if (p.chatStyle === "detailed")  lines.push("Antworte ausführlich mit klaren Abschnitten und Erklärungen.");
-  else                                   lines.push("Antworte strukturiert mit Markdown wenn sinnvoll.");
+  if (p.chatStyle === "knapp" || p.chatStyle === "clear" || p.chatStyle === "concise" || p.chatStyle === "kompakt")
+    lines.push("Antworte knapp und direkt – kein Fülltext, maximal 3–4 Sätze wenn möglich.");
+  else if (p.chatStyle === "ausführlich" || p.chatStyle === "detailed")
+    lines.push("Antworte ausführlich mit klaren Abschnitten, Beispielen und Erklärungen.");
+  else if (p.chatStyle === "geführt")
+    lines.push("Führe den User schrittweise durch das Thema: erkläre jeden Schritt einzeln und frage nach Bestätigung bevor du weitergehst.");
+  else
+    lines.push("Antworte strukturiert mit Markdown wenn sinnvoll.");
 
-  if (p.proactiveHints) lines.push("Gib proaktiv relevante Hinweise, Folgefragen oder Empfehlungen.");
+  if (p.emojiStyle === "none")
+    lines.push("Verwende KEINE Emojis in deinen Antworten.");
+  else if (p.emojiStyle === "minimal")
+    lines.push("Verwende Emojis sehr sparsam — maximal 1–2 pro Antwort, nur wenn sie echten Mehrwert bringen.");
+
+  if (p.webSearchEnabled) {
+    lines.push("Du hast Zugriff auf das Internet über das web_search Tool. Nutze es aktiv wenn der User nach aktuellen Informationen, News, Preisen, Videos oder sonstigen Web-Inhalten fragt. Suche zuerst, dann antworte.");
+  } else {
+    lines.push("Du hast KEINEN Internetzugang. Wenn der User nach aktuellen Informationen fragt (News, Preise, Videos, aktuelle Events, Wetter etc.), weise kurz darauf hin: \"Live-Suche ist gerade deaktiviert — ich kann nur auf mein Trainingswissen zurückgreifen. Du kannst sie im rechten Panel aktivieren (kostet etwas mehr Token).\" Dann antworte trotzdem so gut du kannst mit deinem Wissen.");
+  }
+  if (p.suggestionsEnabled) lines.push('Am Ende jeder inhaltlich relevanten Antwort (nicht bei einfachen Faktenfragen oder Ja/Nein-Antworten) füge exakt diesen Block ein:\n<suggestions>["Vorschlag 1", "Vorschlag 2", "Vorschlag 3"]</suggestions>\nDie Vorschläge sind kurze, konkrete Fortsetzungsfragen oder Aktionen (max. 8 Wörter). Nur wenn Folge-Aktionen wirklich sinnvoll sind.');
   if (p.thinkingMode)   lines.push("Erkläre deinen Denkprozess Schritt für Schritt bevor du antwortest.");
 
   if (p.workflowSystemPrompt) {
@@ -166,16 +378,54 @@ async function hashUserId(userId: string): Promise<string> {
 // Provider API Calls
 // ─────────────────────────────────────────
 
-function callAnthropic(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string) {
-  const messages = [...history, { role: "user", content: userMessage }];
+function callAnthropic(apiModelId: string, systemPrompt: string, history: HistoryMsg[], userMessage: string, attachment?: AttachmentParam, webSearchEnabled = false, thinkingEnabled = false) {
+  // Build user content: multi-part when attachment present, plain string otherwise
+  type ContentBlock =
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+    | { type: "document"; source: { type: "base64"; media_type: string; data: string } };
+
+  let userContent: string | ContentBlock[];
+  if (attachment) {
+    const sourceBlock: ContentBlock = attachment.mediaType === "application/pdf"
+      ? { type: "document", source: { type: "base64", media_type: attachment.mediaType, data: attachment.base64 } }
+      : { type: "image",    source: { type: "base64", media_type: attachment.mediaType, data: attachment.base64 } };
+    userContent = [sourceBlock, { type: "text", text: userMessage }];
+  } else {
+    userContent = userMessage;
+  }
+
+  const messages = [...history, { role: "user", content: userContent }];
+  const headers: Record<string, string> = {
+    "x-api-key": ANTHROPIC_API_KEY,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json",
+  };
+  const betaHeaders: string[] = [];
+  if (webSearchEnabled) betaHeaders.push("web-search-2025-03-05");
+  if (thinkingEnabled) betaHeaders.push("interleaved-thinking-2025-01-31");
+  if (betaHeaders.length > 0) headers["anthropic-beta"] = betaHeaders.join(",");
+
+  const tools = webSearchEnabled
+    ? [{ type: "web_search_20260209", name: "web_search" }]
+    : undefined;
+  const thinkingParam = thinkingEnabled
+    ? { type: "enabled", budget_tokens: 10000 }
+    : undefined;
+  const maxTokens = thinkingEnabled ? 16000 : 4096;
+
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ model: apiModelId, max_tokens: 4096, system: systemPrompt, messages, stream: true }),
+    headers,
+    body: JSON.stringify({
+      model: apiModelId,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages,
+      stream: true,
+      ...(tools ? { tools } : {}),
+      ...(thinkingParam ? { thinking: thinkingParam } : {}),
+    }),
   });
 }
 
@@ -196,15 +446,21 @@ function callOpenAI(apiModelId: string, systemPrompt: string, history: HistoryMs
 // Stream-Parser pro Provider
 // ─────────────────────────────────────────
 
+interface WebSearchResult { url: string; title: string; page_age?: string }
+
 async function streamAnthropic(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   send: (obj: Record<string, unknown>) => void
-): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string }> {
+): Promise<{ tokensIn: number; tokensOut: number; fullAnswer: string; sources: WebSearchResult[]; thinking: string }> {
   const decoder = new TextDecoder();
   let buffer = "";
   let fullAnswer = "";
+  let thinking = "";
   let tokensIn = 0;
   let tokensOut = 0;
+  const sources: WebSearchResult[] = [];
+  let searchStarted = false;
+  let currentBlockType: string | undefined;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -222,9 +478,40 @@ async function streamAnthropic(
 
       const type = parsed.type as string;
 
-      if (type === "content_block_delta") {
-        const delta = parsed.delta as { type?: string; text?: string } | undefined;
-        if (delta?.type === "text_delta" && delta.text) {
+      if (type === "content_block_start") {
+        const block = parsed.content_block as Record<string, unknown> | undefined;
+        const blockType = block?.type as string | undefined;
+        currentBlockType = blockType;
+
+        // Web search tool invocation
+        if ((blockType === "server_tool_use" || blockType === "tool_use") &&
+            (block?.name as string) === "web_search" && !searchStarted) {
+          searchStarted = true;
+          send({ type: "searching" });
+        }
+
+        // Web search results — collect sources
+        if (blockType === "tool_result" || blockType === "web_search_tool_result") {
+          const content = block?.content as Array<Record<string, unknown>> | undefined;
+          if (Array.isArray(content)) {
+            for (const item of content) {
+              if (item.type === "web_search_result" && item.url) {
+                sources.push({
+                  url:      item.url as string,
+                  title:    (item.title as string) || (item.url as string),
+                  page_age: item.page_age as string | undefined,
+                });
+              }
+            }
+          }
+        }
+      } else if (type === "content_block_stop") {
+        currentBlockType = undefined;
+      } else if (type === "content_block_delta") {
+        const delta = parsed.delta as { type?: string; text?: string; thinking?: string } | undefined;
+        if (delta?.type === "thinking_delta" && delta.thinking) {
+          thinking += delta.thinking;
+        } else if ((delta?.type === "text_delta" || currentBlockType === "text") && delta?.text) {
           fullAnswer += delta.text;
           send({ type: "chunk", content: delta.text });
         }
@@ -237,7 +524,7 @@ async function streamAnthropic(
       }
     }
   }
-  return { tokensIn, tokensOut, fullAnswer };
+  return { tokensIn, tokensOut, fullAnswer, sources, thinking };
 }
 
 async function streamOpenAI(
@@ -328,7 +615,7 @@ serve(async (req) => {
 
     // 2. Body
     const body: ChatRequest = await req.json();
-    const { workspace_id, conversation_id, message, agent_id } = body;
+    const { workspace_id, conversation_id, message, agent_id, attachment } = body;
     if (!workspace_id || !conversation_id || !message) return errorResponse("Fehlende Parameter");
 
     // 3. Task-Router
@@ -342,15 +629,23 @@ serve(async (req) => {
     const organization = userProfile.organizations as { budget_limit: number | null };
 
     // 5. Präferenzen + Org-Settings
+    // client_prefs = live values from SessionPanel (no race condition vs. DB debounce)
+    const cp = (body as { client_prefs?: Record<string, unknown> }).client_prefs ?? {};
     const [{ data: userPrefs }, { data: orgSettings }] = await Promise.all([
-      supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_preferences").select("chat_style, memory_window, proactive_hints, thinking_mode, web_search_enabled, link_previews, emoji_style, suggestions_enabled, toro_address, language_style").eq("user_id", user.id).maybeSingle(),
       supabase.from("organization_settings").select("ai_guide_name").eq("organization_id", userProfile.organization_id).maybeSingle(),
     ]);
-    const chatStyle      = userPrefs?.chat_style      ?? "structured";
-    const memorySize     = userPrefs?.memory_window   ?? 20;
-    const proactiveHints = userPrefs?.proactive_hints ?? true;
-    const thinkingMode   = userPrefs?.thinking_mode   ?? false;
-    const aiGuideName    = orgSettings?.ai_guide_name ?? "Toro";
+    const chatStyle        = (cp.chat_style        as string  | undefined) ?? userPrefs?.chat_style        ?? "structured";
+    const memorySize       = (cp.memory_window     as number  | undefined) ?? userPrefs?.memory_window     ?? 20;
+    const proactiveHints   = (cp.proactive_hints   as boolean | undefined) ?? userPrefs?.proactive_hints   ?? true;
+    const thinkingMode     = (cp.thinking_mode     as boolean | undefined) ?? userPrefs?.thinking_mode     ?? false;
+    const webSearchEnabled = (cp.web_search_enabled as boolean | undefined) ?? (userPrefs as { web_search_enabled?: boolean } | null)?.web_search_enabled ?? false;
+    const linkPreviews       = (cp.link_previews       as boolean | undefined) ?? (userPrefs as { link_previews?: boolean } | null)?.link_previews ?? true;
+    const emojiStyle         = (cp.emoji_style         as string  | undefined) ?? (userPrefs as { emoji_style?: string } | null)?.emoji_style ?? "minimal";
+    const suggestionsEnabled = (cp.suggestions_enabled as boolean | undefined) ?? (userPrefs as { suggestions_enabled?: boolean } | null)?.suggestions_enabled ?? true;
+    const toroAddress        = (userPrefs as { toro_address?: string } | null)?.toro_address ?? "";
+    const languageStyle      = (userPrefs as { language_style?: string } | null)?.language_style ?? "";
+    const aiGuideName        = orgSettings?.ai_guide_name ?? "Toro";
 
     // 5b. Agent-System-Prompt
     let agentSystemPrompt: string | null = null;
@@ -385,6 +680,13 @@ serve(async (req) => {
     if (wp) {
       provider   = wp.provider as Provider;
       apiModelId = wp.api_model_id;
+    }
+
+    // 7c. Force Anthropic Claude when web search or thinking mode is active
+    const needsAnthropic = webSearchEnabled || thinkingMode;
+    if (needsAnthropic && provider !== "anthropic") {
+      provider   = "anthropic";
+      apiModelId = "claude-sonnet-4-6";
     }
 
     console.log(`Modell: ${apiModelId} (${provider})${wp ? " [workflow_plan]" : ` | Klasse: ${effectiveClass}`}`);
@@ -500,7 +802,8 @@ serve(async (req) => {
     // 13. System-Prompt bauen
     const systemPrompt = buildSystemPrompt({
       aiGuideName, taskType: task_type, agent, chatStyle,
-      proactiveHints, thinkingMode, agentSystemPrompt,
+      emojiStyle, suggestionsEnabled, thinkingMode, webSearchEnabled,
+      toroAddress, languageStyle, agentSystemPrompt,
       workflowSystemPrompt: wp?.system_prompt ?? null,
       projectContext, projectMemory, knowledgeContext,
     });
@@ -519,7 +822,7 @@ serve(async (req) => {
     console.log(`LLM Call: ${provider}/${apiModelId}`);
     let llmResponse: Response;
     if (provider === "anthropic") {
-      llmResponse = await callAnthropic(apiModelId, systemPrompt, history, message);
+      llmResponse = await callAnthropic(apiModelId, systemPrompt, history, message, attachment, webSearchEnabled, thinkingMode);
     } else if (provider === "openai") {
       llmResponse = await callOpenAI(apiModelId, systemPrompt, history, message);
     } else {
@@ -544,10 +847,11 @@ serve(async (req) => {
         const hashedUserId = await hashUserId(user.id);
 
         try {
-          let tokensIn = 0, tokensOut = 0, fullAnswer = "";
+          let tokensIn = 0, tokensOut = 0, fullAnswer = "", thinking = "";
+          let sources: WebSearchResult[] = [];
 
           if (provider === "anthropic") {
-            ({ tokensIn, tokensOut, fullAnswer } = await streamAnthropic(reader, send));
+            ({ tokensIn, tokensOut, fullAnswer, sources, thinking } = await streamAnthropic(reader, send));
           } else {
             ({ tokensIn, tokensOut, fullAnswer } = await streamOpenAI(reader, send));
           }
@@ -576,6 +880,9 @@ serve(async (req) => {
             },
             memory_warning:      memoryWarning,
             memory_usage_ratio:  Math.round(memoryUsageRatio * 100) / 100,
+            link_previews:       linkPreviews,
+            ...(sources.length > 0 ? { sources } : {}),
+            ...(thinking ? { thinking } : {}),
           });
 
           logRouting(supabase, {

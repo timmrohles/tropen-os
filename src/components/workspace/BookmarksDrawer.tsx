@@ -77,7 +77,8 @@ export default function BookmarksDrawer({ open, onClose, onUseAsPrompt, conversa
     <>
       <div
         onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, animation: 'fadeIn 200ms ease-out' }}
+        className="modal-backdrop"
+        style={{ zIndex: 200 }}
       />
       <div ref={trapRef} role="dialog" aria-modal="true" aria-label="Lesezeichen" style={{
         position: 'fixed', top: 52, left: 0, right: 0, zIndex: 201,

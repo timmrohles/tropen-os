@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy Gründung — Business Plan</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+  <style>
+    :root {
+      --tropen-green: #2D7A50;
+      --tropen-dark: #1A1714;
+      --tropen-bg: #EAE9E5;
+      --tropen-text: #4A4540;
+      --tropen-light: #D4EDDE;
+    }
+    .reveal {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--tropen-bg);
+    }
+    .reveal .slides section {
+      text-align: left;
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      color: var(--tropen-dark);
+      font-weight: 700;
+      text-align: left;
+    }
+    .reveal h1 { font-size: 2em; }
+    .reveal h2 { font-size: 1.5em; border-left: 4px solid var(--tropen-green); padding-left: 16px; }
+    .reveal h3 { font-size: 1.1em; color: var(--tropen-green); margin-bottom: 8px; }
+    .reveal p, .reveal li { color: var(--tropen-text); font-size: 0.9em; line-height: 1.6; }
+    .reveal ul { margin-left: 0; list-style: none; }
+    .reveal ul li::before { content: "→ "; color: var(--tropen-green); font-weight: bold; }
+    .reveal ul li { margin-bottom: 8px; }
+    .badge {
+      display: inline-block;
+      background: var(--tropen-light);
+      color: var(--tropen-green);
+      font-weight: 700;
+      font-size: 0.7em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .kpi {
+      background: white;
+      border: 1px solid var(--tropen-light);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .kpi .value {
+      font-size: 1.8em;
+      font-weight: 800;
+      color: var(--tropen-green);
+      display: block;
+    }
+    .kpi .label {
+      font-size: 0.7em;
+      color: var(--tropen-text);
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 12px;
+    }
+    .col-block {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      border-top: 3px solid var(--tropen-green);
+    }
+    .reveal .title-slide { text-align: center; }
+    .reveal .title-slide h1 { text-align: center; font-size: 2.4em; }
+    .reveal .title-slide .sub { color: var(--tropen-green); font-size: 1.1em; text-align: center; }
+    .reveal .title-slide .meta { color: #888; font-size: 0.7em; text-align: center; margin-top: 24px; }
+    .accent { color: var(--tropen-green); font-weight: 700; }
+    .cta-box {
+      background: var(--tropen-green);
+      color: white;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-top: 20px;
+    }
+    .cta-box h3 { color: white; font-size: 1.2em; margin: 0 0 8px; }
+    .cta-box p { color: rgba(255,255,255,0.85); font-size: 0.85em; margin: 0; }
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .timeline-dot {
+      min-width: 32px;
+      height: 32px;
+      background: var(--tropen-green);
+      border-radius: 50%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75em;
+      font-weight: 700;
+    }
+    .timeline-content h3 { margin: 0 0 4px; font-size: 0.95em; }
+    .timeline-content p { margin: 0; font-size: 0.78em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- Slide 1: Titel -->
+    <section class="title-slide">
+      <div class="badge">Business Plan 2026</div>
+      <h1>Academy Gründung</h1>
+      <p class="sub">Wissenstransfer als skalierbares Geschäftsmodell</p>
+      <p class="meta">Erstellt mit Tropen OS · 2026</p>
+    </section>
+
+    <!-- Slide 2: Das Problem -->
+    <section>
+      <h2>Das Problem</h2>
+      <p>Unternehmen und Einzelpersonen scheitern nicht am Wissen — sondern daran, es strukturiert zu vermitteln und anzuwenden.</p>
+      <div class="two-col" style="margin-top:20px;">
+        <div class="col-block">
+          <h3>Marktlücke</h3>
+          <ul>
+            <li>Zu generische Online-Kurse</li>
+            <li>Kein Praxistransfer</li>
+            <li>Keine Begleitung nach dem Kurs</li>
+          </ul>
+        </div>
+        <div class="col-block">
+          <h3>Konsequenz</h3>
+          <ul>
+            <li>Hohe Abbruchquoten (70–90%)</li>
+            <li>Kein messbarer ROI</li>
+            <li>Fachkräftemangel bleibt</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3: Die Lösung -->
+    <section>
+      <h2>Die Lösung</h2>
+      <p>Eine spezialisierte Academy mit <span class="accent">kuratierten Lernpfaden</span>, Live-Coaching und KI-gestützter Lernbegleitung.</p>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="value">90 Tage</span>
+          <span class="label">Intensivprogramme mit Outcome-Garantie</span>
+        </div>
+        <div class="kpi">
+          <span class="value">1:1</span>
+          <span class="label">Coaching-Sessions pro Teilnehmer</span>
+        </div>
+        <div class="kpi">
+          <span class="value">24/7</span>
+          <span class="label">KI-Tutor für Übungen & Fragen</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: Zielgruppe -->
+    <section>
+      <h2>Zielgruppe</h2>
+      <div class="two-col">
+        <div class="col-block">
+          <h3>B2C — Individuen</h3>
+          <ul>
+            <li>Karrierewechsler 28–42 J.</li>
+            <li>Unternehmer in der Wachstumsphase</li>
+            <li>Fachkräfte die sich weiterqualifizieren</li>
+          </ul>
+        </div>
+        <div class="col-block">
+          <h3>B2B — Unternehmen</h3>
+          <ul>
+            <li>KMU mit 10–200 Mitarbeitern</li>
+            <li>HR-Teams mit Weiterbildungsbudget</li>
+            <li>Verbände & Kammern</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: Geschäftsmodell -->
+    <section>
+      <h2>Geschäftsmodell</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">1</div>
+          <div class="timeline-content">
+            <h3>Einzelkurse — ab 490 €</h3>
+            <p>Themenspezifische Module, sofort buchbar, Selbstlernpfad + Community-Zugang</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">2</div>
+          <div class="timeline-content">
+            <h3>Intensivprogramme — 1.900–3.900 €</h3>
+            <p>90-Tage-Transformationsprogramm mit Coaching, Live-Sessions & Zertifikat</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">3</div>
+          <div class="timeline-content">
+            <h3>B2B-Lizenzen — ab 590 €/Monat</h3>
+            <p>Team-Zugänge, Custom-Lernpfade, Reporting-Dashboard für HR</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">4</div>
+          <div class="timeline-content">
+            <h3>Trainer-Zertifizierung — 2.500 €</h3>
+            <p>Lizenz zur Nutzung der Methodik + White-Label für eigene Angebote</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: Finanzen -->
+    <section>
+      <h2>Finanzprojektionen</h2>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="value">Jahr 1</span>
+          <span class="label">Ziel: 120 K€ Umsatz · Break-even Q3</span>
+        </div>
+        <div class="kpi">
+          <span class="value">Jahr 2</span>
+          <span class="label">Ziel: 380 K€ · 35% Marge</span>
+        </div>
+        <div class="kpi">
+          <span class="value">Jahr 3</span>
+          <span class="label">Ziel: 800 K€ · Franchising Start</span>
+        </div>
+      </div>
+      <div class="two-col" style="margin-top:16px;">
+        <div class="col-block">
+          <h3>Investitionsbedarf</h3>
+          <ul>
+            <li>Tech & Plattform: 18.000 €</li>
+            <li>Marketing & Launch: 12.000 €</li>
+            <li>Betrieb (6 Mo.): 20.000 €</li>
+          </ul>
+        </div>
+        <div class="col-block">
+          <h3>Finanzierung</h3>
+          <ul>
+            <li>Eigenkapital: 25.000 €</li>
+            <li>EXIST / KfW: 25.000 €</li>
+            <li>Vorverkauf (Presale): 8.000 €</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7: Go-to-Market -->
+    <section>
+      <h2>Go-to-Market Strategie</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">Q1</div>
+          <div class="timeline-content">
+            <h3>Validierung & Aufbau</h3>
+            <p>10 Pilot-Teilnehmer (kostenlos), Curriculum verfeinern, erste Testimonials sammeln</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">Q2</div>
+          <div class="timeline-content">
+            <h3>Soft Launch</h3>
+            <p>Erste Cohort mit 20 zahlenden Teilnehmern, LinkedIn + Content-Marketing, Partner-Akquise</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">Q3</div>
+          <div class="timeline-content">
+            <h3>Skalierung</h3>
+            <p>B2B-Pilotprojekte, zweiter Trainer ongeboardet, Affiliate-Programm gestartet</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">Q4</div>
+          <div class="timeline-content">
+            <h3>Expansion</h3>
+            <p>Zweite Nische erschlossen, Trainer-Zertifizierungsprogramm live, Break-even erreicht</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: CTA -->
+    <section>
+      <h2>Nächste Schritte</h2>
+      <ul>
+        <li>Nische & Themenbereich final definieren</li>
+        <li>Pilot-Curriculum (3 Module) ausarbeiten</li>
+        <li>10 Pilot-Teilnehmer gewinnen (Netzwerk)</li>
+        <li>Rechtsform wählen (UG / GmbH) + Fördermittel prüfen</li>
+        <li>Tech-Stack aufsetzen (Lernplattform + CRM)</li>
+      </ul>
+      <div class="cta-box">
+        <h3>Bereit zum Start?</h3>
+        <p>Die Academy ist kein Projekt — sie ist ein System. Wer Wissen skaliert, baut ein Unternehmen das wächst, während es schläft.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    controls: true,
+    progress: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+  })
+</script>
+</body>
+</html>

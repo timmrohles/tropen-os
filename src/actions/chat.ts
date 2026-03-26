@@ -1,22 +1,12 @@
 'use server'
 
-/**
- * NOTE: This file requires @anthropic-ai/sdk.
- * Install with: pnpm add @anthropic-ai/sdk
- * The package is not yet in package.json — add it before using this module.
- */
-
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { anthropic } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { WorkspaceMessage } from '@/db/schema'
 import { AppError } from '@/lib/errors'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/context-builder'
 import type { SendMessageInput } from '@/types/chat'
-
-// ---------------------------------------------------------------------------
-// Anthropic client
-// ---------------------------------------------------------------------------
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // ---------------------------------------------------------------------------
 // Mapper
@@ -124,20 +114,15 @@ export async function sendMessage(input: SendMessageInput): Promise<WorkspaceMes
     ]
 
     // Call Anthropic API
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+    const { text: assistantText, usage } = await generateText({
+      model: anthropic('claude-sonnet-4-6'),
       system: systemPrompt,
       messages: apiMessages,
-      max_tokens: 2048,
+      maxOutputTokens: 2048,
     })
 
-    const assistantText = response.content
-      .filter((block) => block.type === 'text')
-      .map((block) => (block as { type: 'text'; text: string }).text)
-      .join('')
-
-    const tokensInput = response.usage?.input_tokens ?? null
-    const tokensOutput = response.usage?.output_tokens ?? null
+    const tokensInput = usage.inputTokens ?? null
+    const tokensOutput = usage.outputTokens ?? null
 
     const { data: assistantRow, error: assistantError } = await supabaseAdmin
       .from('workspace_messages')

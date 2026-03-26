@@ -63,7 +63,7 @@ export default function TodoPage() {
       {/* Filter: Status */}
       <div style={s.controls}>
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Status</span>
-        {(['alle', 'offen', 'in_arbeit', 'erledigt', 'blockiert', 'geplant'] as const).map(s_ => (
+        {(['alle', 'offen', 'geplant', 'in_arbeit', 'blockiert', 'erledigt'] as const).map(s_ => (
           <button key={s_} className={filterStatus === s_ ? 'chip chip--active' : 'chip'} onClick={() => { setFilterStatus(s_); if (s_ === 'erledigt') setHideErledigt(false) }}>
             {s_ === 'alle' ? 'Alle' : STATUS_CONFIG[s_ as Status]?.label ?? s_}
           </button>
@@ -75,7 +75,8 @@ export default function TodoPage() {
         >
           {hideErledigt ? 'Erledigte ausgeblendet' : 'Erledigte sichtbar'}
         </button>
-        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginLeft: 8 }}>Kategorie</span>
+        <div style={{ flexBasis: '100%', height: 0 }} />
+        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Kategorie</span>
         <button className={filterKat === 'alle' ? 'chip chip--active' : 'chip'} onClick={() => setFilterKat('alle')}>Alle</button>
         {KATEGORIEN.map(k => (
           <button key={k} className={filterKat === k ? 'chip chip--active' : 'chip'} onClick={() => setFilterKat(k)}>{k}</button>

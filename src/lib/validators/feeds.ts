@@ -37,11 +37,10 @@ export const injectItemSchema = z.object({
 })
 
 export const createDistributionSchema = z.object({
-  sourceId: z.string().uuid(),
-  targetType: z.enum(['project', 'workspace']),
-  targetId: z.string().uuid(),
-  autoInject: z.boolean().optional().default(true),
-  minScore: z.number().int().min(1).max(10).optional().default(7),
+  target_type: z.enum(['project', 'workspace', 'notification']),
+  target_id:   z.string().uuid(),
+  auto_inject: z.boolean().default(true),
+  min_score:   z.number().int().min(1).max(10).default(7),
 })
 export type CreateDistributionInput = z.infer<typeof createDistributionSchema>
 

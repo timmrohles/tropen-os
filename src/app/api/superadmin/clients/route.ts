@@ -2,6 +2,7 @@ import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { parsePaginationParams } from '@/lib/api/pagination'
 const log = createLogger('superadmin/clients')
 
 async function requireSuperadmin() {
@@ -27,24 +28,30 @@ function generateSlug(name: string): string {
   return `${base}-${suffix}`
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await requireSuperadmin()
   if (!user) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data, error } = await supabaseAdmin
+  const { searchParams } = new URL(request.url)
+  const { limit, offset } = parsePaginationParams(searchParams)
+
+  const { data, error, count } = await supabaseAdmin
     .from('organizations')
     .select(
-      'id, name, slug, plan, budget_limit, created_at, workspaces(id, name, budget_limit), organization_settings(onboarding_completed), users(id, email, role)'
+      'id, name, slug, plan, budget_limit, created_at, workspaces(id, name, budget_limit), organization_settings(onboarding_completed), users(id, email, role)',
+      { count: 'exact' }
     )
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) {
+    log.error('GET /api/superadmin/clients failed', { error: error.message })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
 export async function POST(req: NextRequest) {

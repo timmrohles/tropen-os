@@ -2,6 +2,7 @@
 import * as cheerio from 'cheerio'
 import type { RawFeedItem } from '@/types/feeds'
 import { createLogger } from '@/lib/logger'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 
 const log = createLogger('feeds:fetchers:url')
 
@@ -38,6 +39,13 @@ export async function fetchUrl(
   url: string,
   selector?: string,
 ): Promise<{ items: RawFeedItem[]; robotsBlocked: boolean }> {
+  // SSRF-Check vor jedem externen Request
+  const { safe, reason } = await isSafeUrl(url)
+  if (!safe) {
+    log.warn('[url fetcher] SSRF-Check fehlgeschlagen', { url, reason })
+    return { items: [], robotsBlocked: false }
+  }
+
   const allowed = await isScrapingAllowed(url)
   if (!allowed) {
     log.warn('[url fetcher] robots.txt disallows scraping', { url })

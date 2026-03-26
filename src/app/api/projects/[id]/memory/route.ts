@@ -2,6 +2,28 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 
+// DELETE /api/projects/[id]/memory — soft-delete ALL entries
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const me = await getAuthUser()
+  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+  const { id } = await params
+
+  const allowed = await verifyProjectAccess(id, me)
+  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+
+  const { error } = await supabaseAdmin
+    .from('project_memory')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('project_id', id)
+    .is('deleted_at', null)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
 // GET /api/projects/[id]/memory
 export async function GET(
   _req: Request,
@@ -18,6 +40,7 @@ export async function GET(
     .from('project_memory')
     .select('id, type, content, source_conversation_id, importance, tags, frozen, created_at')
     .eq('project_id', id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -62,6 +85,7 @@ export async function POST(
     .from('project_memory')
     .insert({
       project_id: id,
+      organization_id: me.organization_id,
       type,
       content: (content as string).trim(),
       importance: importance ?? 'medium',

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (workspaceId) {
     convQuery = convQuery.eq('workspace_id', workspaceId)
   } else {
-    convQuery = convQuery.eq('user_id', user.id)
+    convQuery = convQuery.eq('user_id', user.id).eq('conversation_type', 'chat')
   }
 
   const { data: convs } = await convQuery

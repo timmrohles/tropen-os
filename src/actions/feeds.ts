@@ -7,6 +7,7 @@ import {
   createFeedSchemaSchema,
   createDistributionSchema,
 } from '@/lib/validators/feeds'
+import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 import { recordNotRelevant } from '@/lib/feeds/feedback'
 import { processItem } from '@/lib/feeds/pipeline'
 import { fetchRss } from '@/lib/feeds/fetchers/rss'
@@ -111,6 +112,11 @@ export async function createFeedSource(formData: FormData | Record<string, unkno
   if (!parsed.success) return { error: parsed.error.message }
   const b = parsed.data
 
+  if (b.url) {
+    const { safe, reason } = await isSafeUrl(b.url)
+    if (!safe) return { error: `URL nicht erlaubt: ${reason}` }
+  }
+
   const config: Record<string, unknown> = b.config ?? {}
   if (b.type === 'email' && !config.inbound_address) {
     const { randomUUID } = await import('crypto')
@@ -145,6 +151,12 @@ export async function updateFeedSource(id: string, input: Record<string, unknown
   const parsed = updateFeedSourceSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.message }
   const b = parsed.data
+
+  if (b.url !== undefined) {
+    const { safe, reason } = await isSafeUrl(b.url)
+    if (!safe) return { error: `URL nicht erlaubt: ${reason}` }
+  }
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (b.name !== undefined) updates.name = b.name
   if (b.url !== undefined) updates.url = b.url
@@ -311,15 +323,18 @@ export async function listDistributions(sourceId: string): Promise<FeedDistribut
   return (data ?? []).map((r: Record<string, unknown>) => mapDistribution(r))
 }
 
-export async function createDistribution(input: Record<string, unknown>) {
+export async function createDistribution(sourceId: string, input: Record<string, unknown>) {
   const parsed = createDistributionSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.message }
+  const targetId = parsed.data.target_type === 'notification'
+    ? '00000000-0000-0000-0000-000000000000'
+    : parsed.data.target_id
   const { data, error } = await supabaseAdmin.from('feed_distributions').insert({
-    source_id: parsed.data.sourceId,
-    target_type: parsed.data.targetType,
-    target_id: parsed.data.targetId,
-    auto_inject: parsed.data.autoInject,
-    min_score: parsed.data.minScore,
+    source_id:   sourceId,
+    target_type: parsed.data.target_type,
+    target_id:   targetId,
+    auto_inject: parsed.data.auto_inject,
+    min_score:   parsed.data.min_score,
   }).select().single()
   if (error) return { error: error.message }
   return { distribution: mapDistribution(data as Record<string, unknown>) }
