@@ -66,9 +66,9 @@ export default function SuperadminAnnouncementsPage() {
   useEffect(() => {
     loadAnnouncements()
     fetch('/api/superadmin/clients')
-      .then((r) => r.ok ? r.json() : [])
-      .then((data: OrgRow[]) =>
-        setOrgs(Array.isArray(data) ? data.map((o) => ({ id: o.id, name: o.name })) : [])
+      .then((r) => r.ok ? r.json() : { data: [] })
+      .then((json: { data: OrgRow[] }) =>
+        setOrgs((json.data ?? []).map((o) => ({ id: o.id, name: o.name })))
       )
       .catch(() => setOrgs([]))
   }, [])

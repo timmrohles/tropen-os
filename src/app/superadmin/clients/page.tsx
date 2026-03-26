@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Buildings } from '@phosphor-icons/react'
 import type { ImpModal, ImpForm, OrgRow, EditState } from './clients.types'
 import { owner, onboardingDone, planStyle, s } from './clients.types'
 
@@ -63,7 +64,7 @@ export default function ClientsPage() {
     setLoading(true)
     fetch('/api/superadmin/clients')
       .then((r) => r.json())
-      .then((data) => setOrgs(Array.isArray(data) ? data : []))
+      .then((json: { data: OrgRow[] }) => setOrgs(json.data ?? []))
       .catch(() => setOrgs([]))
       .finally(() => setLoading(false))
   }
@@ -169,7 +170,10 @@ export default function ClientsPage() {
     <div>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-header-text">
-          <h1 className="page-header-title">Clients</h1>
+          <h1 className="page-header-title">
+            <Buildings size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            Clients
+          </h1>
           <p className="page-header-sub">Organisationen, Workspaces und Pakete verwalten</p>
         </div>
         <div className="page-header-actions">
@@ -382,7 +386,7 @@ export default function ClientsPage() {
             </select>
 
             {activateMsg && (
-              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? 'var(--accent)' : '#ef4444', marginTop: 8 }}>
+              <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? 'var(--accent)' : 'var(--error)', marginTop: 8 }}>
                 {activateMsg}
               </p>
             )}
