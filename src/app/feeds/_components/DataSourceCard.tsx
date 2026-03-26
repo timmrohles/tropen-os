@@ -40,7 +40,7 @@ export function DataSourceCard({
       {/* Card header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: 'var(--accent)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: 'var(--bg-base)', background: 'var(--accent)' }}>
             API
           </span>
           <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 500 }}>
