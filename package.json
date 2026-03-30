@@ -21,10 +21,12 @@
     "typecheck": "tsc --noEmit",
     "lint:design": "node scripts/ci/lint-design-system.mjs",
     "lint:deps": "depcruise src --config .dependency-cruiser.cjs",
-    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps"
+    "lint:features": "node scripts/ci/check-feature-guards.mjs",
+    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.64",
+    "@ai-sdk/mistral": "^3.0.27",
     "@anthropic-ai/sdk": "^0.80.0",
     "@neondatabase/serverless": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",
@@ -41,6 +43,7 @@
     "drizzle-orm": "^0.45.1",
     "langsmith": "^0.5.14",
     "next": "^16.1.6",
+    "nodemailer": "^8.0.4",
     "openai": "^6.29.0",
     "pg": "^8.20.0",
     "postgres": "^3.4.8",
@@ -50,6 +53,7 @@
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",
+    "resend": "^6.9.4",
     "rss-parser": "^3.13.0",
     "zod": "^4.3.6"
   },
@@ -61,6 +65,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.19.37",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
