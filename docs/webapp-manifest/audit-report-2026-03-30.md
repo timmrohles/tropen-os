@@ -59,7 +59,7 @@
 | 11 | CI/CD | 4 | 3 | 12 | GitHub Actions vollständig: Security Audit, Design System Lint, Dependency Check, TypeScript Typecheck, Unit Tests, Playwright E2E (inkl. Build + wait-on), Test-Results nach Supabase, Artifacts hochladen, Deploy auf main. Bias-Evaluation-Workflow (AI Act Art. 10). Dependabot weekly. Node 20 gepinnt. **Lücken**: Kein Staging-Environment. Kein dokumentierter Rollback-Plan. IaC nur vercel.json (kein Pulumi/Terraform). |
 | 12 | Observability | 2 | 3 | 6 | Sentry vollständig (client + server + edge) via Adapter. createLogger() durchgesetzt — 0 console.log in API-Routes. LangSmith für LLM-Tracing. 2 console.error direkt in ChatArea.tsx (noch nicht über Logger). Kein Uptime-Monitoring. Keine APM/Custom Metrics. Design-System-Lint blockiert bei CI (2 Errors). |
 | 13 | Backup & DR | 2 | 3 | 6 | Backup-Dokumentation existiert. RTO/RPO definiert. PITR laut Supabase-Feature vorhanden — noch nicht manuell verifiziert (offen seit 26.03). Kein Restore-Test-Protokoll. Kein DR-Runbook in docs/runbooks/. APPEND ONLY Tabellen korrekt markiert. |
-| 14 | Dependency Management | 4 | 2 | 8 | pnpm-lock.yaml committed. Dependabot weekly (npm + GitHub Actions). Node 20 gepinnt (.nvmrc vorhanden). `pnpm audit --audit-level=critical` in CI. **Kritisch**: 1 critical Vulnerability in `handlebars` (via eslint-plugin-boundaries@5.4.0 → @boundaries/elements@1.2.0). Kein Renovate. |
+| 14 | Dependency Management | 5 | 2 | 10 | pnpm-lock.yaml committed. Dependabot weekly (npm + GitHub Actions). Node 20 gepinnt (.nvmrc vorhanden). `pnpm audit --audit-level=critical` in CI. eslint-plugin-boundaries auf 6.0.2 aktualisiert (handlebars CVE behoben, 0 critical). Kein Renovate. |
 | 15 | Design System | 4 | 1 | 4 | CSS-Variablen durchgängig. 0 Hex-Farben in Code. 0 falsche Icon-Libraries. Phosphor Icons konsequent. Design-Lint-Check in CI. 37 Warnings (hauptsächlich Dateigröße). Neue Komponenten (ModelComparePopover, lesezeichen, detect-parallel-intent) folgen Standards. Kein Storybook. |
 | 16 | Accessibility | 3 | 2 | 6 | 141 Dateien mit aria-label/aria-hidden/role-Attributen. Semantisches HTML durchgängig. /accessibility Seite vorhanden. Keine automatisierten axe-core/Lighthouse CI-Tests. BFSG-Statement formal vorhanden aber ohne Audit-Nachweis. |
 | 17 | Internationalisierung | 0 | 1 | 0 | Kein i18n-Framework. Alle UI-Strings Deutsch hardcodiert. ADR-017 dokumentiert explizit Defer-Entscheidung. |
@@ -69,9 +69,9 @@
 | 21 | PWA & Resilience | 2 | 1 | 2 | manifest.json valide (name, icons, theme_color, start_url). sw.js vorhanden (cachet Static + Fonts + CSS). offline.tsx existiert. Kein vollständiger Offline-Fallback für Chat. Service Worker Scope eingeschränkt. |
 | 22 | AI Integration | 3 | 2 | 6 | Token-Limits aktiv. Budget-Check vor allen LLM-Calls. Fallback-Strategie: getProviderModel() fällt auf Haiku zurück bei fehlendem Mistral-Key und unbekanntem Provider. LLM-Governance (model-resolver.ts) mit 6-stufiger Hierarchie. Perspectives mit Tabula-Rasa-Guard server-seitig. Modell-Vergleich (ModelComparePopover). **Lücken**: Keine Prompt-Injection-Defense (kein Input-Sanitizer vor LLM-Aufruf nachweisbar). Kein LLM-Output-Validator. Kein Retry/Timeout für Anthropic-Calls. |
 | 23 | Infrastructure | 2 | 2 | 4 | Vercel (automatisches Multi-Region, Autoscaling) + Supabase EU. /api/health Endpoint vorhanden. CRON_SECRET auf allen 6 Cron-Routes. Kein IaC (nur vercel.json). Netzwerk-Segmentierung via RLS. Kein explizites Multi-AZ-Dokumentation. |
-| 24 | Supply Chain Security | 2 | 2 | 4 | Dependabot aktiv. Deterministic Lockfile. pnpm audit in CI. 1 critical Vulnerability (handlebars via eslint-plugin-boundaries). Kein SBOM (syft). Keine Signed Builds. Kein SLSA. |
-| 25 | Namenskonventionen & Dateihygiene | 3 | 1 | 3 | Konventionen eingehalten (PascalCase Komponenten, camelCase Hooks, kebab-case Routes). 2 CI-Errors durch Dateigröße (ChatArea.tsx 682 Zeilen, workspace-chat.ts 526 Zeilen). 42 Dateien > 300 Zeilen (35 Warnings). 0 console.log in API (aber 2 console.error in ChatArea). Struktur klar (actions/, lib/, components/, hooks/). Doppelte ADR-Nummer (006 zweimal). |
-| | **GESAMT** | | **Summe 47** | **136 / 235** | |
+| 24 | Supply Chain Security | 3 | 2 | 6 | Dependabot aktiv. Deterministic Lockfile. pnpm audit in CI. Critical Vulnerability (handlebars) behoben via eslint-plugin-boundaries 6.0.2. Noch: kein SBOM (syft), keine Signed Builds, kein SLSA. |
+| 25 | Namenskonventionen & Dateihygiene | 4 | 1 | 4 | Konventionen eingehalten (PascalCase Komponenten, camelCase Hooks, kebab-case Routes). CI-Errors behoben: ChatArea.tsx aufgeteilt (681→490Z), workspace-chat.ts aufgeteilt (525→444Z). 39 Warnings (Dateigröße). 0 console.log in API (2 console.error in ChatArea noch offen). Struktur klar. Doppelte ADR-Nummer (006 zweimal). |
+| | **GESAMT** | | **Summe 47** | **139 / 235** | |
 
 ---
 
@@ -83,8 +83,8 @@ Gesamtscore = Σ(Score × Gewicht) / Σ(5 × Gewicht) × 100
 Σ max. Gewicht = 47
 Σ max. gewichteter Score = 235
 
-Erreichter Score: 136 / 235
-Prozent: 57.9%
+Erreichter Score: 139 / 235
+Prozent: 59.1%
 ```
 
 | Score | Status |
@@ -94,9 +94,9 @@ Prozent: 57.9%
 | **50–69 %** | **🟠 Risky** |
 | < 50 % | 🔴 Prototype |
 
-**Ergebnis: 57.9% — 🟠 Risky**
+**Ergebnis: 59.1% — 🟠 Risky** *(nachkorrigiert nach Hotfixes am 2026-03-30)*
 
-> Moderate Verbesserung gegenüber dem Audit vom 26.03. (+2.6 Punkte). Der Hauptfortschritt kommt aus der vollständigen CI/CD-Pipeline (E2E in CI, +1 Punkt → Score 4), der massiv gewachsenen ADR-Dokumentation (18 ADRs, Doku +1 → Score 5) und der durchgesetzten Logging-Abstraktion. Die größten Baustellen bleiben Testing (4.6% Coverage), fehlende Pagination, die zwei CI-blockierenden Dateigröße-Errors und kritische rechtliche Lücken (Impressum-Platzhalter).
+> Moderate Verbesserung gegenüber dem Audit vom 26.03. (+3.8 Punkte). Der Hauptfortschritt kommt aus der vollständigen CI/CD-Pipeline (E2E in CI, +1 Punkt → Score 4), der massiv gewachsenen ADR-Dokumentation (18 ADRs, Doku +1 → Score 5) und der durchgesetzten Logging-Abstraktion. Nach dem Audit direkt behoben: handlebars Critical CVE + 2 CI-blocking File-Size-Errors. Größte Baustellen: Testing (4.6% Coverage), fehlende Pagination, kritische rechtliche Lücken (Impressum-Platzhalter).
 
 ---
 
@@ -110,9 +110,10 @@ Prozent: 57.9%
 | Sicherheit | 3 | 3 | = | Tenant-Isolation-Fix (Mig 090). Aber: kein middleware.ts, Zod-Lücken persistent. |
 | Datenschutz | 3 | 2 | -1 | Impressum-Platzhalter und Datenschutz-Platzhalter nach wie vor nicht gefüllt — rechtlich kritisch vor Kunden-Launch. Angesichts fehlendem Fortschritt Downgrade. |
 | Testing | 1 | 1 | = | 27 Testdateien, E2E in CI, aber kaum neue Unit-Tests für neue Features. |
-| Namenskonventionen | 4 | 3 | -1 | 2 neue CI-blocking Errors (ChatArea.tsx 682Z, workspace-chat.ts 526Z) durch neue Features ohne Refactoring. |
+| Namenskonventionen | 4 | 4 | = | CI-Errors direkt behoben (File-Splits). |
 | AI Integration | 3 | 3 | = | Model-Resolver, Fallback, Governance. Aber keine Prompt-Injection-Defense, kein Retry. |
-| Supply Chain | 2 | 2 | = | Critical Vulnerability in handlebars (eslint-plugin-boundaries). |
+| Supply Chain | 2 | 3 | +1 | Critical CVE (handlebars) direkt nach Audit behoben via eslint-plugin-boundaries 6.0.2. |
+| Dependency Management | 4 | 5 | +1 | 0 critical CVEs nach Update. |
 
 ---
 
