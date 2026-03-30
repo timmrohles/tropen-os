@@ -44,20 +44,20 @@ export const TODOS_CONCEPTS: Todo[] = [
   {
     id: 'phase2-e',
     titel: 'Plan E — Transformations-Engine',
-    beschreibung: 'POST /api/transformations: analyze + suggest + build + link. Projekt → Workspace / Agent / Feed. Immer Vorschau → Bestätigung → Ausführung — nie destruktiv.',
-    status: 'geplant',
+    beschreibung: 'POST /api/transformations: analyze + suggest + build + link. Projekt → Workspace / Agent / Feed. Immer Vorschau → Bestätigung → Ausführung — nie destruktiv. Transformation-Links (Mig. 090 Tenant-Isolation-Fix).',
+    status: 'erledigt',
     kategorie: 'Phase 2',
     prioritaet: 'mittel',
-    referenz: 'docs/product/roadmap.md',
+    referenz: 'docs/product/roadmap.md / 2026-03-25',
   },
   {
     id: 'phase2-f',
     titel: 'Plan F — UI (Projekte + Workspaces + Feeds-Settings)',
-    beschreibung: 'Projekte-Seite neu: Liste mit Gedächtnis-Zähler, Wissensbasis-Tab. Workspaces-Seite: Karten-Graph-View, Outcome-Board. Transformations-Trigger als kontextueller Hinweis.',
-    status: 'geplant',
+    beschreibung: 'Projekte-Seite neu: Karten-Grid, Gedächtnis-Zähler, Emoji-Picker, Context-Feld, Archivieren. Workspaces-Seite komplett neu (Grid + Detail-Tabs). Feeds: Run-History, Distributions, Notifications.',
+    status: 'erledigt',
     kategorie: 'Phase 2',
     prioritaet: 'mittel',
-    referenz: 'docs/product/roadmap.md',
+    referenz: 'Migration 073–079 / 2026-03-25',
   },
 
   // ══════════════════════════════════════════════════════════════════════════
