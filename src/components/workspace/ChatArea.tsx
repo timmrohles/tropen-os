@@ -3,20 +3,27 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
 import type { ChipItem, AttachmentData, GuidedAction } from '@/lib/workspace-types'
+import { detectParallelIntent } from '@/lib/chat/detect-parallel-intent'
+import ParallelConfirmBubble from './ParallelConfirmBubble'
 import IntentionGate from './IntentionGate'
 import FocusedFlow from './FocusedFlow'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
-import ArtifactRenderer from './ArtifactRenderer'
-import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
+import ArtifactsView from './ArtifactsView'
 import ContextBar from './ContextBar'
 import ChatContextStrip from './ChatContextStrip'
 import BookmarksDrawer from './BookmarksDrawer'
 import SearchDrawer from './SearchDrawer'
 import MemorySaveModal from './MemorySaveModal'
 import ShareModal from './ShareModal'
-import PerspectivesBar from './PerspectivesBar'
+import PerspectiveMessage from './PerspectiveMessage'
+import { usePerspectives } from '@/hooks/usePerspectives'
+import { useArtifactsView } from '@/hooks/useArtifactsView'
+import { useAssistantName } from '@/hooks/useAssistantName'
+import { useParallelTabs } from '@/hooks/useParallelTabs'
+import type { CompareModel } from './ModelComparePopover'
+import type { PromptBuilderPanelProps } from './ChatInput'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -63,10 +70,15 @@ interface ChatAreaProps {
   onContextReset?: () => void
   suggestionsEnabled?: boolean
   isMobile?: boolean
-  // Search drawer controlled from WorkspaceLayout (header search button)
   searchDrawerOpen?: boolean
   onSearchDrawerClose?: () => void
   onOpenSearch?: () => void
+  onOpenInNewTab?: () => void
+  canOpenNewTab?: boolean
+  onOpenParallelTabs?: (items: Array<{ convId: string; title: string }>) => void
+  onSendDirectToConv?: (text: string, convId: string) => void
+  onSendDirectToNewConv?: (text: string, convId: string, overrideClientPrefs?: Record<string, unknown>, displayText?: string) => void
+  showHeaderTitle?: boolean
 }
 
 export default function ChatArea({
@@ -117,30 +129,31 @@ export default function ChatArea({
   searchDrawerOpen = false,
   onSearchDrawerClose,
   onOpenSearch,
+  onOpenInNewTab,
+  canOpenNewTab = false,
+  onOpenParallelTabs,
+  onSendDirectToConv,
+  onSendDirectToNewConv,
+  showHeaderTitle = true,
 }: ChatAreaProps) {
+  const assistantName = useAssistantName()
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
-  const [perspectivesMessageId, setPerspectivesMessageId] = useState<string | null>(null)
   const headerRef = useRef<ChatHeaderStripHandle>(null)
 
+  // Prompt-Builder context — last user message + recent history
+  const lastUserMsg = messages.filter(m => m.role === 'user').at(-1)
+  const pbRecentMessages = React.useMemo(
+    () => messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [messages.length]
+  )
+
+  // ── Perspectives ──────────────────────────────────────
+  const { avatarCache, perspectiveMsg, loadAvatars, startPerspective } = usePerspectives(activeConvId, onRefreshMessages)
+
   // Artefakte-Übersicht
-  const [artifactsView, setArtifactsView] = useState(false)
-  const [artifactsViewItems, setArtifactsViewItems] = useState<Array<{ id: string; name: string; type: string; language: string | null; content: string }>>([])
-  const [artifactsViewLoading, setArtifactsViewLoading] = useState(false)
-
-  useEffect(() => { if (!activeConvId) setArtifactsView(false) }, [activeConvId])
-
-  async function openArtifactsView() {
-    if (!activeConvId) return
-    setArtifactsView(true)
-    setArtifactsViewLoading(true)
-    try {
-      const res = await fetch(`/api/artifacts?conversationId=${activeConvId}`)
-      if (res.ok) setArtifactsViewItems(await res.json())
-    } finally {
-      setArtifactsViewLoading(false)
-    }
-  }
+  const { artifactsView, setArtifactsView, artifactsViewItems, artifactsViewLoading, openArtifactsView } = useArtifactsView(activeConvId)
 
   // Derive focused-mode context from the active conversation
   const activeConv = conversations.find(c => c.id === activeConvId) ?? null
@@ -155,10 +168,58 @@ export default function ChatArea({
     if (!activeConvId) setIntentionChoice(null)
   }, [activeConvId])
 
-  // Perspectives-Strip schließen wenn gesendet wird
-  useEffect(() => {
-    if (sending) setPerspectivesMessageId(null)
-  }, [sending])
+  // ── Parallel tabs + model compare ────────────────────
+  const {
+    parallelConfirm,
+    setParallelConfirm,
+    parallelLoading,
+    handleParallelConfirm,
+    handleModelCompare,
+  } = useParallelTabs({
+    workspaceId,
+    input,
+    onOpenParallelTabs,
+    onSendDirectToNewConv,
+  })
+
+  // Intercept submit: handle @-mention and parallel-tab intent
+  async function handleChatSubmit(e: React.FormEvent) {
+    const trimmed = input.trim()
+
+    // @-mention → perspective
+    const mentionMatch = trimmed.match(/^@([^\s]+)\s*([\s\S]*)$/)
+    if (mentionMatch) {
+      const mentionName = mentionMatch[1]
+      const afterMention = mentionMatch[2]?.trim() || undefined
+      const avs = avatarCache ?? await loadAvatars()
+      const avatar = avs.find(a => a.name.toLowerCase() === mentionName.toLowerCase())
+      if (avatar) {
+        e.preventDefault()
+        onSetInput('')
+        await startPerspective(avatar, afterMention)
+        return
+      }
+    }
+
+    // Parallel-tabs detection (only when tab feature is available and active conversation exists)
+    if (onOpenParallelTabs && canOpenNewTab && activeConvId) {
+      const intent = detectParallelIntent(trimmed)
+      if (intent) {
+        e.preventDefault()
+        setParallelConfirm({ intent, originalInput: trimmed })
+        return
+      }
+    }
+
+    onSendMessage(e)
+  }
+
+  function handleParallelDeny() {
+    if (!parallelConfirm) return
+    const { originalInput } = parallelConfirm
+    setParallelConfirm(null)
+    onSendDirect(originalInput)
+  }
 
   const fetchBookmarks = useCallback(async (convId: string) => {
     try {
@@ -186,6 +247,30 @@ export default function ChatArea({
     })
   }
 
+  // Shared input section — plain function, NOT a component (avoids remount-on-render)
+  function renderInput(onSubmit: (e: React.FormEvent) => void) {
+    return (
+      <div className="carea-input-wrap">
+        <div className="carea-input-inner">
+          <ChatInput input={input} setInput={onSetInput} sending={sending} onSubmit={onSubmit}
+            attachmentRef={attachmentRef} onOpenNewTab={canOpenNewTab ? onOpenInNewTab : undefined}
+            canOpenNewTab={canOpenNewTab} avatarMentions={avatarCache ?? undefined} onMentionLoad={loadAvatars}
+            promptBuilderProps={activeConvId && lastUserMsg ? {
+              conversationId: activeConvId,
+              userMessage: lastUserMsg.content,
+              recentMessages: pbRecentMessages,
+              onSend: (prompt: string) => onSendDirect(prompt),
+            } satisfies PromptBuilderPanelProps : undefined}
+            onModelCompare={canOpenNewTab && !isMobile ? (models: CompareModel[]) => { void handleModelCompare(models) } : undefined}
+          />
+          <p className="chat-ai-disclaimer">
+            {assistantName}s Antworten sind KI-generiert und können Fehler enthalten. Prüfe wichtige Informationen immer selbst.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="carea">
       {activeConvId ? (
@@ -207,6 +292,7 @@ export default function ChatArea({
                 'Bitte fasse unser gesamtes Gespräch als Dokument-Artefakt zusammen — mit den wichtigsten Themen, Erkenntnissen und Ergebnissen. Das Artefakt soll so aufbereitet sein, dass es eigenständig geteilt werden kann.'
               )}
               onShowArtifactsView={openArtifactsView}
+              showTitle={showHeaderTitle}
             />
           )}
 
@@ -219,77 +305,29 @@ export default function ChatArea({
           )}
 
           {activeConvId && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ContextBar percent={contextPercent} />
-              {activeConvProjectId && (
-                <button
-                  onClick={() => onSetShowMemoryModal(true)}
-                  title="Ins Gedächtnis speichern"
-                  aria-label="Ins Gedächtnis speichern"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-tertiary)',
-                    fontSize: 16,
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                    lineHeight: 1,
-                    flexShrink: 0,
-                  }}
-                >
-                  🧠
-                </button>
-              )}
-            </div>
+            <ContextBar percent={contextPercent} />
           )}
 
           {/* Artefakte-Übersicht */}
           {artifactsView && (
-            <div className="carea-messages" style={{ gap: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Artefakte dieses Chats
-                </span>
-                <button
-                  onClick={() => setArtifactsView(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '2px 6px', borderRadius: 4 }}
-                >
-                  ← Zurück zum Chat
-                </button>
-              </div>
-              {artifactsViewLoading ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Laden…</div>
-              ) : artifactsViewItems.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Keine Artefakte in diesem Chat.</div>
-              ) : (
-                artifactsViewItems.map(art => (
-                  <div key={art.id}>
-                    <ArtifactRenderer
-                      artifact={{
-                        segType: 'artifact',
-                        artifactType: art.type as ArtifactSegment['artifactType'],
-                        name: art.name,
-                        language: art.language ?? undefined,
-                        content: art.content,
-                      }}
-                      conversationId={activeConvId ?? undefined}
-                      organizationId={organizationId}
-                      onSendDirect={onSendDirect}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
+            <ArtifactsView
+              items={artifactsViewItems}
+              loading={artifactsViewLoading}
+              conversationId={activeConvId}
+              organizationId={organizationId}
+              onSendDirect={onSendDirect}
+              onBack={() => setArtifactsView(false)}
+            />
           )}
 
           <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log" style={artifactsView ? { display: 'none' } : undefined}>
-            {messages.map((msg, i) => {
+            {(() => {
+              return messages.map((msg, i) => {
               const isLast = i === messages.length - 1
               const isLastAssistant = isLast && msg.role === 'assistant'
               const showResetDivider = contextStartIndex > 0 && i === contextStartIndex
               return (
-                <React.Fragment key={msg.id ?? i}>
+                <React.Fragment key={msg.id ?? `pending-${i}`}>
                   {showResetDivider && (
                     <div className="context-reset-divider" role="separator">
                       <span>Neuer Kontext-Start</span>
@@ -309,15 +347,32 @@ export default function ChatArea({
                     isStreaming={sending}
                     chips={isLast ? chips : []}
                     onRegenerate={onRegenerate}
-                    onPerspectives={(id) => setPerspectivesMessageId(id)}
                     onGuidedAction={onGuidedAction}
                     onGenerateImage={onGenerateImage}
                     isInSplitView={isInSplitView}
                     suggestionsEnabled={suggestionsEnabled}
+                    onMemorize={activeConvProjectId ? () => onSetShowMemoryModal(true) : undefined}
+                    onOpenInNewTab={canOpenNewTab ? onOpenInNewTab : undefined}
+                    perspectives={avatarCache}
+                    onLoadAvatars={loadAvatars}
+                    onPerspective={msg.role === 'assistant' && !msg.pending && msg.id && !perspectiveMsg
+                      ? (avatar) => startPerspective(avatar)
+                      : undefined}
                   />
                 </React.Fragment>
               )
-            })}
+            })})()}
+
+            {/* Parallel-tabs confirmation bubble */}
+            {parallelConfirm && (
+              <ParallelConfirmBubble
+                intent={parallelConfirm.intent}
+                loading={parallelLoading}
+                onConfirm={() => { void handleParallelConfirm() }}
+                onDeny={handleParallelDeny}
+              />
+            )}
+
             {contextPercent >= 80 && onContextReset && (
               <div className="context-warning" role="status">
                 <span>Ich kann die ersten Teile unseres Gesprächs nicht mehr vollständig berücksichtigen.</span>
@@ -355,29 +410,17 @@ export default function ChatArea({
               )}
             </div>
           )}
-          {perspectivesMessageId && activeConvId && (
-            <PerspectivesBar
-              conversationId={activeConvId}
-              onRefreshMessages={onRefreshMessages}
-              onClose={() => setPerspectivesMessageId(null)}
+          {/* Inline perspective response */}
+          {perspectiveMsg && (
+            <PerspectiveMessage
+              avatarEmoji={perspectiveMsg.avatarEmoji}
+              avatarName={perspectiveMsg.avatarName}
+              text={perspectiveMsg.text}
+              pending={!perspectiveMsg.done}
             />
           )}
 
-          <div className="carea-input-wrap">
-            <div className="carea-input-inner">
-              <ChatInput
-                input={input}
-                setInput={onSetInput}
-                sending={sending}
-                onSubmit={onSendMessage}
-                attachmentRef={attachmentRef}
-              />
-              <p className="chat-ai-disclaimer">
-                Toros Antworten sind KI-generiert und können Fehler enthalten.
-                Prüfe wichtige Informationen immer selbst.
-              </p>
-            </div>
-          </div>
+          {renderInput(handleChatSubmit)}
 
           <BookmarksDrawer
             open={bookmarksDrawerOpen}
@@ -417,29 +460,16 @@ export default function ChatArea({
           onSubmit={onSendMessage}
           onSetPendingIntention={onSetPendingIntention}
           onSetPendingCurrentProjectId={onSetPendingCurrentProjectId}
+          assistantName={assistantName}
         />
       ) : intentionChoice === 'guided' ? (
         <>
           <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log">
             <div className="intention-guided-start">
-              <p>Geführter Modus — Toro stellt dir gezielte Fragen. Schreib einfach los.</p>
+              <p>Geführter Modus — {assistantName} stellt dir gezielte Fragen. Schreib einfach los.</p>
             </div>
           </div>
-          <div className="carea-input-wrap">
-            <div className="carea-input-inner">
-              <ChatInput
-                input={input}
-                setInput={onSetInput}
-                sending={sending}
-                onSubmit={onSendMessage}
-                attachmentRef={attachmentRef}
-              />
-              <p className="chat-ai-disclaimer">
-                Toros Antworten sind KI-generiert und können Fehler enthalten.
-                Prüfe wichtige Informationen immer selbst.
-              </p>
-            </div>
-          </div>
+          {renderInput(handleChatSubmit)}
         </>
       ) : (
         <>
@@ -450,22 +480,9 @@ export default function ChatArea({
               setIntentionChoice('guided')
             }}
             userName={userName}
+            assistantName={assistantName}
           />
-          <div className="carea-input-wrap">
-            <div className="carea-input-inner">
-              <ChatInput
-                input={input}
-                setInput={onSetInput}
-                sending={sending}
-                onSubmit={onSendMessage}
-                attachmentRef={attachmentRef}
-              />
-              <p className="chat-ai-disclaimer">
-                Toros Antworten sind KI-generiert und können Fehler enthalten.
-                Prüfe wichtige Informationen immer selbst.
-              </p>
-            </div>
-          </div>
+          {renderInput(onSendMessage)}
         </>
       )}
     </div>
