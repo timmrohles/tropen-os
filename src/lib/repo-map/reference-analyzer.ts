@@ -1,7 +1,6 @@
 import ts from 'typescript'
 import path from 'path'
-import { existsSync } from 'fs'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { parseSource } from './parser'
 import type { RepoFile, FileDependency } from './types'
 

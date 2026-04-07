@@ -1,5 +1,7 @@
+// POST /api/repo-map/generate — generates a repo map for the Tropen OS codebase
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import path from 'path'
 import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { generateRepoMap } from '@/lib/repo-map'
@@ -9,8 +11,10 @@ export const runtime = 'nodejs'
 
 const log = createLogger('api/repo-map/generate')
 
+// Server-side constant — callers cannot supply arbitrary paths
+const REPO_ROOT = path.resolve(process.cwd())
+
 const requestSchema = z.object({
-  rootPath: z.string().min(1).max(500),
   tokenBudget: z.number().int().min(256).max(32768).optional(),
   ignorePatterns: z.array(z.string()).max(50).optional(),
   languages: z.array(z.enum(['typescript', 'javascript'])).optional(),
@@ -25,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const repoMap = await generateRepoMap({
-      rootPath: data.rootPath,
+      rootPath: REPO_ROOT,
       tokenBudget: data.tokenBudget,
       ignorePatterns: data.ignorePatterns,
       languages: data.languages,
@@ -45,7 +49,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
-    log.error('generateRepoMap failed', { error: msg, rootPath: data.rootPath })
+    log.error('generateRepoMap failed', { error: msg })
     return NextResponse.json({ error: 'Repo-Map-Generierung fehlgeschlagen', details: msg }, { status: 500 })
   }
 }
