@@ -23,6 +23,7 @@ export default defineConfig({
         'src/lib/qa/routing-logger.ts',
         'src/lib/qa/task-classifier.ts',
         'src/app/api/admin/qa/compliance/route.ts',
+        'src/lib/repo-map/**/*.ts',
       ],
       exclude: [
         'src/test/**',
