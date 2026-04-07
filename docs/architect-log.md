@@ -22,6 +22,129 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-03-30 — Plan M: Modell-Vergleich-Tabs
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+- `ModelComparePopover.tsx` — Popover über Scales-Icon, lädt Modelle von `/api/models/available`, Checkboxen 2–4, "Vergleichen →" disabled bei < 2 oder leerem Input
+- `ChatInput.tsx` — Scales-Icon (18px bold) nach PromptBuilder-Icon, `compareOpen` State, Popover-Wrapper mit `position: relative`, `onModelCompare` Prop
+- `ChatArea.tsx` — `handleModelCompare()` analog zu `handleParallelConfirm`: erstellt N Konversationen, öffnet N Tabs, Tab 1 streamt via `onSendDirectToNewConv` mit `overrideClientPrefs: {selected_model_id}`, Tabs 2+ fire-and-forget mit `client_prefs: {selected_model_id}` im Body
+- `workspace-chat.ts` — `sendDirectToNewConv` + `doSendWithConvId` mit optionalem `overrideClientPrefs` Param (merged über chatPrefsRef)
+- `workspace-types.ts` — Typ für `sendDirectToNewConv` aktualisiert
+- `/api/conversations/create/route.ts` — `selected_model_id` als optionales Feld im Zod-Schema (akzeptiert, nicht gespeichert)
+- `globals.css` — `.model-compare-popover`, `.mcp-*` Klassen
+- `WorkspaceLayout.tsx` — Pre-existing Bug gefixt: `conv.title ?? 'Neuer Chat'` (war `string | null`)
+
+**Neue Lernmuster:**
+- `overrideClientPrefs` Muster: Wenn mehrere Tabs mit unterschiedlichen client_prefs geöffnet werden, `chatPrefsRef.current` nicht mutieren — stattdessen override als Parameter durchreichen und in `doSendWithConvId` mergen
+- `ModelComparePopover` Positionierung: `position: absolute; bottom: calc(100% + 8px); right: 0` innerhalb `position: relative` Wrapper am Trigger-Button
+
+---
+
+## 2026-03-29 — Session-Abschluss: Scroll-Fix, SessionPanel-Fixes, Chips, TopBar Race Condition
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+
+### Fix 1 — Horizontaler Scroll (global behoben)
+- `html { overflow-x: hidden }` + `body { overflow-x: hidden }` in `globals.css`
+- `.pbi-wrapper { min-width: 0; overflow: hidden }` + `.pbi-expansion { min-width: 0; overflow: hidden }` in `globals.css`
+- `overflow: 'hidden'` auf fixed-wrapper in `src/app/chat/layout.tsx` und `src/app/chat/[id]/layout.tsx`
+
+### Fix 2 — SessionPanel Toggle-Umbenennung
+- "Geteilter Bildschirm" → "Artefakt rechts anzeigen"
+- Hint "Chat links · Artefakt rechts" → "Artefakte öffnen im Seitenpanel"
+- `src/components/workspace/SessionPanel.tsx`
+
+### Fix 3 — Links-Toggle abhängig von Live-Suche
+- `updatePref` auto-disabled `link_previews` wenn `web_search_enabled` auf `false` gesetzt wird (in gleichem `savePrefs`-Call)
+- Toggle visuell deaktiviert: `opacity: 0.4, pointerEvents: 'none'`, `aria-disabled`, `disabled` auf `<input>`
+- `src/components/workspace/SessionPanel.tsx`
+
+### Fix 4 — TopBar Race Condition (Tabs/Chat-Name fehlten)
+- Root Cause: `WorkspaceLayout`'s `useEffect(() => getElementById('topbar-tabs-slot'), [])` feuerte im selben Effects-Batch wie TopBar's `setMounted(true)`, BEVOR TopBar re-renderte
+- Fix: Slot-Divs `#topbar-tabs-slot` + `#topbar-chat-slot` in `!mounted`-Branch von TopBar ergänzt → existieren ab erstem Render
+- `src/components/layout/TopBar.tsx`
+
+**Neue Lernmuster:**
+- React Effects laufen top-down im Baum. `setState` in einem Effect scheduled ein Re-Render das noch nicht committed ist wenn sibling-Effects in der gleichen Batch feuern. → DOM-Elemente die über `getElementById` gefunden werden müssen, MÜSSEN in BEIDEN Render-Branches vorhanden sein (mounted + !mounted)
+- `overflow-x: hidden` muss auf `html` UND `body` gesetzt werden — nur eines reicht nicht
+
+---
+
+## 2026-03-29 — Chips in Toro-Bubble integriert
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+
+### Teil 1 — Externer Chips-Block entfernt
+- `ChatMessage.tsx`: Render-Block `isLastMessage && chips.length > 0` (`.suggestion-pills` außerhalb Bubble) entfernt
+- `.suggestion-pills` bleibt für XML-`<suggestions>` weiterhin erhalten
+
+### Teil 2 — Chips-Section innerhalb `.cmsg-bubble--assistant`
+- Neue CSS-Klassen: `.cmsg-chips`, `.cmsg-chips-label`, `.cmsg-chip-link`
+- Position: nach `pending`-Cursor, vor `MessageActions`, nur wenn `!msg.pending && isLastMessage && chips.length > 0`
+- Dezenter Link-Style: kein Border, kein Background, Pfeil als `→` Textzeichen
+- Trenner: `border-top: 1px solid var(--border)` mit `margin-top: 12px; padding-top: 10px`
+
+**Geänderte Dateien:** `src/components/workspace/ChatMessage.tsx`, `src/app/globals.css`
+
+**Neue Lernmuster:**
+- Chips (`ChipItem[]` Props) ≠ XML-Suggestions (`<suggestions>` Tag im Content) — beide leben in ChatMessage.tsx aber separater Render-Pfad und separate CSS-Klassen
+
+---
+
+## 2026-03-28 — ChatMessage Layout-Reparatur + Defensive Fixes
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+
+### Fix 1 — User-Bubble Layout (Hauptproblem behoben)
+- `.cmsg-user-col` + `.cmsg-user-row` + `.cmsg-user-row > .cmsg-bubble-wrap` CSS entfernt
+- JSX zurück auf originale flache Struktur: `.cmsg.cmsg--user > [.cmsg-bubble-wrap + .cmsg-avatar-user]`
+- `.cmsg-user-group` als plain-block hover-wrapper eingeführt (kein Layout-Override)
+- `.pbi-wrapper` als direktes Kind von `.cmsg-user-group` (nach `.cmsg.cmsg--user`)
+- Hover-Trigger: `.cmsg-user-group:hover .pbi-pencil-btn` (war: `.cmsg--user:hover`)
+- `padding-right: 44px` auf `.pbi-wrapper` richtet PB-Content unter dem Bubble aus (nicht unter Avatar)
+
+### Fix 2 — Dedup-Guard in workspace-chat.ts
+- `ctx.setMessages` beim Append prüft via Set ob `userMsg.id` oder `pendingMsg.id` bereits existiert
+- Defensiv gegen Race-Conditions (Race praktisch unmöglich wegen sendingRef, aber guard korrekt)
+
+### Fix 3 — Pending-ID durch DB-ID ersetzen
+- Nach "done" in `doSend()` und `doSendWithConvId()`: nicht-blockierender Supabase-SELECT
+- `messages WHERE conversation_id=X AND role=assistant ORDER BY created_at DESC LIMIT 1`
+- Edge Function insertet message VOR done-Event → kein Race
+- Wichtig für Message Actions (Bookmarks, Flagging) die `msg.id` als DB-Key brauchen
+
+### Fix 4 — Stable React Keys in ChatArea.tsx
+- `key={msg.id ?? i}` → `key={msg.id ?? \`pending-${i}\`}` — verhindert Key-Clashes zwischen numerischen und UUID-String-Keys
+
+**Geänderte Dateien:** `src/app/globals.css`, `src/components/workspace/ChatMessage.tsx`, `src/lib/workspace-chat.ts`, `src/components/workspace/ChatArea.tsx`
+
+**Neue Lernmuster:**
+- `max-width: N%` auf flex-column gibt Kindern keine "definite width" für Prozent-Auflösung → immer mit `width: fit-content` oder struktureller Neuausrichtung lösen
+- Sibling-Elemente in einem Fragment brauchen einen gemeinsamen DOM-Wrapper für CSS `:hover` — `display: contents` unreliabel; plain block-div zuverlässig
+- Supabase PromiseLike hat kein `.catch()` — `void promise.then(...)` statt `.then(...).catch(...)`
+
+---
+
+## 2026-03-27 — MessageActions Design-System-Cleanup
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+
+### msg-actions-cleanup: Kontextmenü auf Design-System-Klassen umgestellt
+- `src/components/workspace/MessageActions.tsx`: Alle `.msg-actions-item` → `.dropdown-item`, `.msg-actions-section-label` → `.card-section-label`, `.msg-actions-divider` → `.dropdown-divider`, `.msg-actions-item--active/--danger` → `.dropdown-item--active/--danger`
+- `src/app/globals.css`: Entfernt: `.msg-actions-section-label`, `.msg-actions-divider`, `.msg-actions-item` + alle Varianten; behalten: `.msg-actions-arrow`, `.msg-actions-avatar`, alles andere
+- Avatar-Modifier `.msg-actions-avatar` übersteuert `.dropdown-item`'s `align-items: center` korrekt via `!important`
+
+**Entscheidung:** Bubble-grows-down Pattern bleibt, aber Items nutzen nun native Design-System-Klassen statt Custom-CSS. Kein `<div className="dropdown">` Wrapper notwendig da die Bubble selbst den Container bildet.
+
+**Offene Punkte:** keine
+
+---
+
 ## 2026-03-23 — Superadmin Perspectives, Charts, Bugfixes
 
 **Ampel:** 🟢
@@ -470,6 +593,81 @@ Fix: ~90 Zeilen CSS in `globals.css`, scoped auf `.cmsg-bubble--assistant .cmsg-
 
 ---
 
+### 2026-03-27 — Chat-Bubble Toolbar + Menü-Restrukturierung
+
+**Ampel:** 🟢
+**Prompt:** Teil 1–3 — Icon-Toolbar erweitern, Dropdown kürzen, Avatar-Submenü bereinigen
+
+**Entscheidung:**
+Feedback-Icons (👍👎🔖) und Aktions-Icons (Copy/Kürzen/E-Mail/Übersetzen/Vorlesen/Regenerate) jetzt direkt in der Bar — nicht mehr im Dropdown. Separator via `.msg-actions-bar-sep`. Dropdown auf Perspektiven + In-Tab-öffnen + In-Workspaces-posten + Fehlerhaft-melden reduziert. Avatar-Submenü zeigt Phosphor-Icon (Emoji→Phosphor-Lookup, Fallback UserCircle) + Name — kein context_default mehr.
+
+**Anpassungen:**
+- Emoji-Icon-Lookup: `type AvatarIconType = PhosphorIconType` (nicht `React.ComponentType`) — Phosphor nutzt `IconWeight` union, nicht `string`
+- `context_default`-Werte ('none', 'last_10') wurden als Beschreibungstext gerendert (truthy-Bug) — komplett entfernt
+- `ITEM_ICON` auf 16px korrigiert
+
+**Offene Punkte:** keine
+
+**Neue Lernmuster:**
+- Phosphor `Icon`-Typ hat `weight: IconWeight` (union), nicht `string` → Record-Typ muss `PhosphorIconType` sein
+- Felder mit truthy-Werten wie 'none' oder 'last_10' nie als Bedingung für optionale Renders verwenden
+
+---
+
+### 2026-03-27 — Prompt-Builder Bottom Sheet + Chip-Integration
+
+**Ampel:** 🟢
+**Prompt:** Prompt-Builder — Bottom Sheet + Chip-Integration
+
+**Entscheidung:**
+Quick-Chip "Prompt verfeinern" (PencilSimple, accent-light) unter der letzten Assistenten-Antwort — nur wenn `isLastAssistantMessage && !isStreaming`. Öffnet `PromptBuilderSheet` (Bottom Sheet, 60vh/92vh Mobile).
+Sheet: load-Phase (generate-questions API) → question-Phase (text/chips_single/chips_multi) → build-Phase → preview-Phase (editierbare Textarea + Absenden/Zurück).
+Absenden: PATCH `/api/conversations/[id]` `{ conversation_type: 'prompt_builder' }` (fire-and-forget), dann `onSendDirect(builtPrompt)`.
+Beide API-Routes nutzen `modelFor('prompt_builder')` → `claude-haiku-4-5-20251001`.
+
+**Anpassungen:**
+- Quick-Chip nur unter isLastAssistantMessage (nicht unter allen Antworten) — kein visueller Noise
+- Keine PerspectivesBottomSheet vorhanden — eigene Implementierung nach BookmarksDrawer/SearchDrawer-Muster
+
+**Offene Punkte:** keine
+
+**Neue Lernmuster:**
+- `modelFor('prompt_builder')` war bereits in model-selector.ts vorbereitet (gute Vorarbeit in Migration 061)
+- IIFE in JSX (`{promptBuilderOpen && (() => { ... })()}`) für bedingte Mounts mit Variablenlogik
+
+---
+
+### 2026-03-30 — Parallel Tabs Feature
+
+**Ampel:** 🟢
+**Prompt:** Parallel Tabs — detect N intent, confirm bubble, create N conversations, open N tabs
+
+**Entscheidung:**
+4 Teile gebaut:
+
+1. `src/lib/chat/detect-parallel-intent.ts` — Pure keyword detection (kein LLM). Erkennt "3 Varianten", "4 Ansätze", etc. in Nachrichten. Extrahiert count (2–5), Labels (aus Kolon-Listen oder Quotes, sonst generisch) und Topic. Folgt complexity-detector.ts-Muster exakt.
+
+2. `src/app/api/conversations/create/route.ts` — Neuer Endpoint POST /api/conversations/create: Erstellt Konversation mit Titel + optionaler user-Nachricht (seed_message). Wird für alle N Tabs via Promise.all aufgerufen.
+
+3. `src/hooks/useChatTabs.ts` — Neue Funktion `openNewTabWithConversation(convId, title)` — erstellt Tab der bereits eine convId hat (statt null). Verhindert den null→update-Zyklus der normalen openNewTab.
+
+4. `ChatArea.tsx` — Intercept in handleChatSubmit: @-mention check → parallel intent check → normal send. Bei Erkennung: `parallelConfirm`-State gesetzt, confirmation bubble gerendert (Lightbulb-Icon, accent-light Background). "Ja"-Handler erstellt N Conversations via Promise.all + ruft onOpenParallelTabs auf. "Nein"-Handler sendet original via onSendDirect.
+
+WorkspaceLayout.tsx bekommt `handleOpenParallelTabs(items)` → öffnet N Tabs via openNewTabWithConversation + switchTab zum ersten.
+
+**Anpassungen:**
+- Parallel check nur wenn `onOpenParallelTabs && canOpenNewTab && activeConvId` — kein Trigger ohne offene Konversation oder wenn Tab-Limit erreicht
+- Conversation create API: workspace_id optional, fällt auf org's ersten Workspace zurück (gleiche Logik wie new-from-message)
+
+**Offene Punkte:**
+- Labels-Extraktion ist heuristisch — funktioniert gut für "Varianten: A, B, C" und Quotes, aber nicht für implizite Listen wie "erstmal das erste dann das zweite dann das dritte"
+
+**Neue Lernmuster:**
+- `openNewTabWithConversation` löst Race Condition: Bei sequentiellem openNewTab+setActiveConvId würde React die State-Updates batchen und nur den letzten sehen. Mit convId direkt im Tab-Objekt entfällt das Problem.
+- Parallel-Tabs Confirmation UI: als ephemeral local state in ChatArea (nicht in useWorkspaceState) — sauber isoliert, kein Prop-Drilling zu allen Eltern
+
+---
+
 ### 2026-03-24 — Hotfix System-Prompt: Toro fragt zuerst (SPARK-Regeln)
 
 **Ampel:** 🟢
@@ -486,3 +684,30 @@ Zwei System-Prompt-Ebenen angepasst:
 
 **Neue Lernmuster:**
 - Tropen OS hat zwei voneinander unabhängige Chat-Systeme mit separaten System-Prompts: Edge Function (Workspace-Chat) + workspace-context.ts (Canvas/Card-Chat) — beide müssen bei Verhaltensänderungen synchron gepflegt werden
+
+---
+
+## 2026-04-07 — ADR-019: TypeScript Compiler API statt web-tree-sitter
+
+**Feature:** Repo Map Generator (Sprint 1 — Pivot "Quality OS für Vibe-Coded Apps")
+
+**Entscheidung:** TypeScript Compiler API (`typescript@^5`, bereits installiert) statt `web-tree-sitter` (WASM-basiert, neue Dependency).
+
+**Kontext:** Build-Prompt delegierte die WASM-Handling-Entscheidung an Claude Code: "pragmatischste Lösung wählen die in Vercel deployed".
+- web-tree-sitter benötigt `.wasm` Dateien die kompiliert oder aus externen Quellen bezogen werden müssen
+- TypeScript Compiler API: bereits installiert (`typescript@^5.9`), kanonischer TS-Parser, keine Zusatz-Dependencies
+- Beide Ansätze liefern identische Ergebnisse für TypeScript + JavaScript
+
+**Konsequenz:** Sprint 1 nutzt TS Compiler API für TS/JS. Für künftige Sprachen (Python, Go, Rust in Sprint 2+) wird web-tree-sitter eingeführt wenn es tatsächlich gebraucht wird. Kein YAGNI-Verstoß.
+
+**Neue Dateien:**
+- `src/lib/repo-map/` — 8 Module + formatters/ + fixtures/
+- `src/scripts/generate-repo-map.ts` — CLI Dogfooding Script
+- `src/app/api/repo-map/generate/route.ts` — API Route
+- `docs/repo-map/` — generierte Map-Outputs
+
+**Dogfooding:** Generator läuft erfolgreich auf Tropen OS selbst.
+- 586 Dateien gescannt, 2301 Symbole gefunden
+- Wichtigste Symbole: supabaseAdmin (188 refs), createLogger (146 refs), getAuthUser (72 refs)
+- 4017 / 4096 Tokens genutzt
+- Ergebnis in `docs/repo-map/`

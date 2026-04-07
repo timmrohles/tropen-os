@@ -215,11 +215,14 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | TypeScript | ^5 | strict mode, kein `any` ohne Begründung |
 | Tailwind CSS | ^3.4 | nur global styles — Seiten nutzen `const s: Record<string, React.CSSProperties>` |
 | Supabase | @supabase/ssr + supabase-js | Auth + DB + Storage |
-| Sentry | @sentry/nextjs ^10 | Server + Client + Edge |
-| Upstash Redis | @upstash/ratelimit | Rate Limiting in `src/proxy.ts` |
+| Sentry | @sentry/nextjs ^10 | Server + Client + Edge — via `src/lib/monitoring/` Adapter |
+| Upstash Redis | @upstash/ratelimit | Rate Limiting via `src/lib/ratelimit/` Adapter |
+| resend | ^6 | E-Mail via `src/lib/email/` Adapter — austauschbar gegen SMTP |
+| nodemailer | ^8 | SMTP-Adapter für Self-Hosting |
 | pnpm | — | Package Manager |
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
 | openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
+| ignore | ^7 | .gitignore parsing für File Discovery in src/lib/repo-map/ |
 
 ### DB-Zugriff — kritische Constraint
 
@@ -244,6 +247,12 @@ Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
 Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
+
+### CLI Scripts
+
+| Script | Befehl | Beschreibung |
+|--------|--------|-------------|
+| Repo Map Generator | `npx tsx src/scripts/generate-repo-map.ts [--budget 4096]` | Scannt Tropen OS Repo selbst, schreibt Ergebnis in `docs/repo-map/` |
 
 ### API-Key Management
 
@@ -377,6 +386,38 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 - H1-Icons: `color="var(--text-primary)"` — **nie `var(--accent)` (grün) in Überschriften**
 - `.page-header` hat automatisch `margin-bottom: 32px` — kein manuelles `marginBottom`
 
+#### User-Bubble Struktur — NICHT ANFASSEN
+
+**Kein DOM-Wrapper** um User-Messages. `.cmsg.cmsg--user` ist direktes Flex-Kind von `.carea-messages`.
+`.pbi-wrapper` und `.pbi-expansion` folgen als Fragment-Siblings — kein gemeinsamer Wrapper-Div.
+
+```tsx
+{isUser ? (
+  <>
+    <div className="cmsg cmsg--user">       {/* direktes Flex-Kind von .carea-messages */}
+      <div className="cmsg-bubble-wrap">...</div>
+      <div className="cmsg-avatar-user">...</div>
+    </div>
+    {showPbTrigger && (
+      <>
+        <div className="pbi-wrapper">...</div>
+        <div className="pbi-expansion">...</div>
+      </>
+    )}
+  </>
+) : ...}
+```
+
+**Warum:** Jeder zusätzliche Wrapper-Div zwischen `.carea-messages` (flex-column) und `.cmsg.cmsg--user`
+bricht das Flex-Breitenverhalten. `.carea-messages` hat nur `overflow-y: auto` — kein `overflow-x`.
+Ein Wrapper ohne `min-width: 0` kann horizontal aus dem Viewport wachsen. `min-width: 0; overflow: hidden`
+auf dem Wrapper clippt nur den Inhalt, löst aber nicht das Layout-Problem.
+
+**Regeln:**
+- Niemals einen `<div>`-Wrapper um `.cmsg.cmsg--user` einführen
+- Prompt-Builder und ähnliche Elemente immer als Fragment-Siblings nach `.cmsg.cmsg--user`
+- Nicht anfassen: Assistant-Bubble, Split-View-Logik, PromptBuilderInline, Streaming
+
 #### List-Rows
 ```tsx
 <button className="list-row list-row--active">Aktiv <span className="badge">3</span></button>
@@ -507,13 +548,24 @@ Klick [···]:  Umbenennen / Bearbeiten
     /llm                # Anthropic, OpenAI, Router, Model-Selector
     /feeds              # Feed-Ingestion, Distribution, Cost-Estimation
     /validators         # Zod-Schemas für API-Routes
+    /repo-map           # Repo Map Generator: file-discovery, parser, symbol-extractor, reference-analyzer, graph-ranker, map-compressor, formatters/
   /types                # Globale TypeScript-Typen
   /utils                # Supabase Client-Utilities
+  /modules              # Modul-spezifische Logik (Ziel-Struktur, Migration läuft schrittweise)
+    /feeds              # components/ hooks/ lib/ — Feed-UI, Hooks, Business-Logik
+    /workspaces         # components/ hooks/ lib/
+    /agents             # components/ hooks/ lib/
+    /perspectives       # components/ hooks/ lib/
+    /chat               # components/ hooks/ lib/
+  /core                 # Framework-unabhängiger Kern (kein Import aus modules/)
+    /auth /billing /org /user
+/src/scripts            # CLI-Scripts: generate-repo-map.ts (Dogfooding — scannt Tropen OS selbst)
 /docs
   /product              # Produktdokumentation (RAG, Onboarding, etc.)
   /adr                  # Architecture Decision Records
   /plans                # Feature-Specs (agents-spec.md, etc.)
   /webapp-manifest      # Engineering Standards & Audit System
+  /repo-map             # Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts)
 ```
 
 ### Dateihygiene
@@ -633,6 +685,17 @@ Letzte relevante Migrationen:
 | 20260325000081_org_assistant_image.sql | organization_settings: ai_assistant_image_url TEXT DEFAULT NULL |
 | 20260325000082_dashboard_widgets.sql | dashboard_widgets (user_id, org_id, widget_type, position, size, config, is_visible) + RLS; user_preferences: dashboard_setup_done BOOLEAN |
 | 20260325000083_rename_to_cockpit.sql | dashboard_widgets → cockpit_widgets; dashboard_setup_done → cockpit_setup_done; RLS policy recreated as cockpit_widgets_own |
+| 20260327000084_feature_flags.sql | organization_settings: features JSONB DEFAULT (feeds/workspaces/agents/perspectives=true, rest=false) |
+| 20260327000085_llm_governance.sql | model_catalog: governance fields (display_name, flag, is_eu_hosted, is_open_source, suitable_levels, cost_input_per_m, etc.); org_model_config + user_model_preferences + RLS; Mistral model seeds |
+| 20260327000086_extract.sql | knowledge_sources: extraction columns (applied via repair — rolled back) |
+| 20260327000087_extract_index.sql | placeholder (repair-applied, superseded by 088) |
+| 20260327000088_extract_full.sql | knowledge_sources: document_type, extracted_metadata, extraction_status/confidence/model/error, user_confirmed, extracted_at; idx_knowledge_contracts |
+| 20260327000089_workflow_adapter.sql | organization_settings: workflow_provider (windmill/n8n/none), workflow_base_url, workflow_api_key_enc |
+| 20260327000090_tenant_isolation_fixes.sql | transformation_links RLS: USING(TRUE) → org-scoped via source workspace/project |
+| 20260327000091_deactivate_mistral.sql | model_catalog: Mistral-Modelle is_active=false (Provider nicht in Edge Function unterstützt) |
+| 20260330000092_bookmarks_full_content.sql | bookmarks: full_content TEXT Spalte für vollständigen Nachrichtentext |
+| 20260330000093_conversations_intention_default.sql | conversations.intention: DEFAULT NULL gesetzt |
+| 20260330000094_model_catalog_capabilities.sql | model_catalog: capabilities JSONB DEFAULT '["general"]'; GIN-Index; Seeds für Anthropic/GPT/Mistral |
 
 **Cockpit Widget System (Stand 2026-03-25):**
 Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
@@ -659,6 +722,118 @@ Pakete: Kommunikation / Vertrieb / Marketing / Custom
 widgetCatalog.ts braucht bei Stufe 2+: Felder `tier` (1/2/3) + `package` + `requiresMcp`
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
+
+### Feature-Flags (Stand 2026-03-27)
+
+Feature-Flags steuern per Org welche Module aktiv sind. Superadmin togglet via "Features"-Button in `/superadmin/clients`.
+
+| Flag | Default | Steuert |
+|------|---------|---------|
+| `feeds` | true | Feeds-Seite + Sidebar-Eintrag |
+| `workspaces` | true | Workspaces-Seite + Sidebar-Eintrag |
+| `agents` | true | Agenten-Seite + Sidebar-Eintrag |
+| `perspectives` | true | Perspectives-Seite |
+| `mcp` | false | MCP-Verbindungen |
+| `briefing` | false | Toro Morning Briefing |
+| `document_ai` | false | Dokument-KI |
+| `image_gen` | false | Bildgenerierung |
+
+**Dateien:**
+- `src/lib/features.ts` — Server: `isFeatureEnabled(orgId, flag)`, `requireFeature()`, `updateFeatureFlags()`
+- `src/hooks/useFeatureFlags.ts` — Client: `useFeatureFlags()`, `useFeature(flag)`
+- `src/components/FeatureGate.tsx` — Client-Guard-Komponente (redirect auf /cockpit wenn disabled)
+- `supabase/migrations/20260327000084_feature_flags.sql` — `features JSONB` in `organization_settings`
+
+**Regeln:**
+- Feature-gated Seiten (feeds, workspaces, agenten, perspectives) haben `<FeatureGate flag="...">` als äußersten Wrapper
+- Sidebar filtert Nav-Items basierend auf `features` aus `organization_settings`
+- Fail-open: Bei DB-Fehler → Feature als aktiviert behandeln
+- `pnpm lint:features` prüft ob alle Guards vorhanden sind
+
+### Service Adapter System (Stand 2026-03-27)
+
+Alle externen Dienste sind hinter Adaptern gekapselt. Self-Hoster können eigene Dienste nutzen — kein Code-Change, nur `.env`.
+
+| Adapter | Env-Var | Optionen | Dateien |
+|---------|---------|----------|---------|
+| E-Mail | `EMAIL_PROVIDER` | `resend` (default) \| `smtp` \| `none` | `src/lib/email/` |
+| Monitoring | `MONITORING_PROVIDER` | `sentry` (default) \| `none` | `src/lib/monitoring/index.ts` |
+| Rate Limiting | `RATELIMIT_PROVIDER` | `upstash` (default) \| `memory` \| `none` | `src/lib/ratelimit/index.ts` |
+| Workflow Engine | `WORKFLOW_PROVIDER` | `windmill` \| `n8n` (Stub) \| `none` (default) | `src/lib/workflow/` |
+
+**Regeln:**
+- Alle E-Mails über `sendEmail()` aus `@/lib/email` — nie direkt Resend/nodemailer importieren
+- Monitoring in lib/API Code über `captureException()` aus `@/lib/monitoring` — error.tsx Komponenten behalten direkten Sentry-Import (Next.js Error Boundaries)
+- Rate Limiting über `checkRateLimit(profile, identifier)` aus `@/lib/ratelimit` — proxy.ts nutzt diesen Adapter
+- Workflow-Trigger über `getWorkflowAdapter(orgId)` aus `@/lib/workflow` — nie direkt Windmill/n8n aufrufen
+- Fail-open bei fehlender Konfiguration (kein Crash)
+
+**Workflow Adapter (Stand 2026-03-27):**
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/workflow/types.ts` | `WorkflowAdapter` Interface + Typen |
+| `src/lib/workflow/windmill.ts` | `WindmillAdapter` (vollständig) — workflowId: `{workspace}/{script_path}` |
+| `src/lib/workflow/n8n.ts` | `N8nAdapter` (Stub — implementieren wenn Kunde kommt) |
+| `src/lib/workflow/index.ts` | `getWorkflowAdapter(orgId)` Factory + `encodeApiKey/decodeApiKey` |
+| `src/app/api/admin/workflow-config/route.ts` | GET (has_api_key, provider, base_url) + PATCH |
+| `src/components/settings/WorkflowSettingsSection.tsx` | Admin-UI: Radio + URL + Key-Felder |
+| `src/app/admin/integrations/page.tsx` | Admin-Seite (Sidebar: Integrationen, Plugs-Icon) |
+
+**Org-Konfiguration:** `organization_settings.workflow_provider/base_url/api_key_enc` (Migration 089).
+**API-Key-Encoding:** Base64 für MVP — für Produktion auf pgcrypto oder dedicated secrets umstellen.
+**Priorität:** Org-DB-Einstellung > ENV-Fallback > NullAdapter (none).
+
+### LLM Governance (Stand 2026-03-27)
+
+Org-Admins steuern welche Modelle genutzt werden. User können (wenn erlaubt) situativ übersteuern.
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/llm/model-resolver.ts` | `resolveModel(orgId, taskType, options?)` — Hierarchie: session → user-perm → org-override → org-level+filter → fallback |
+| `src/lib/llm/provider.ts` | `getProviderModel(modelId)` — Anthropic / Mistral / Fallback |
+| `src/app/api/models/org-config/route.ts` | GET + PATCH (admin-only) — level, filter_eu_only, filter_open_source, user rights |
+| `src/app/api/models/available/route.ts` | GET — Modelle nach Org-Config gefiltert |
+| `src/app/api/models/user-prefs/route.ts` | GET + PATCH — user-eigene Präferenzen (nur wenn Org erlaubt) |
+| `src/components/settings/ModelGovernanceSection.tsx` | UI-Section auf Admin-Models-Seite: Level-Karten, Filter-Checkboxen, Modell-Liste, User-Rechte |
+
+**Governance-Hierarchie (höchste Priorität zuerst):**
+1. `session_model` / `session_level` (User, situativ — nur wenn `allow_situational_select`)
+2. `model_overrides[taskType]` (User, permanent — nur wenn `allow_user_model_select`)
+3. `level` (User, permanent — nur wenn `allow_user_level_select`)
+4. `org_model_config.level + filter_eu_only + filter_open_source`
+5. Absoluter Fallback: `claude-haiku-4-5-20251001`
+
+**Eco-Modus** (level = eco oder cheap):
+- `ECO_SYSTEM_SUFFIX` ans System-Prompt anhängen
+- `ECO_CONTEXT_MESSAGES = 8` (statt 20)
+- `ECO_MEMORY_CHUNKS = 3` (statt 10)
+
+**Mistral-Provider:** `MISTRAL_API_KEY` in `.env` — bei fehlendem Key automatischer Anthropic-Fallback (kein Crash).
+
+### Toro Extract — Dokumenten-Extraktion (Stand 2026-03-27)
+
+Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extrahiert strukturierte Daten.
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/knowledge/extract/classifier.ts` | `classifyDocument(content, filename)` — Haiku erkennt Typ + Konfidenz |
+| `src/lib/knowledge/extract/schemas.ts` | `EXTRACTION_SCHEMAS` für invoice / contract / offer |
+| `src/lib/knowledge/extract/extractor.ts` | `extractMetadata(content, docType)` — Haiku extrahiert Felder als JSON |
+| `src/lib/knowledge/extract/index.ts` | `processDocument(sourceId, orgId)` — Orchestrierung, schreibt in knowledge_sources |
+| `src/app/api/knowledge/[id]/extract/route.ts` | POST (trigger async) + GET (status + metadata) |
+| `src/app/api/cockpit/expiring-contracts/route.ts` | GET contracts expiring within N days |
+| `src/components/knowledge/ExtractionPreview.tsx` | Inline-Preview nach Upload (nur wenn status='done') |
+| `src/components/cockpit/widgets/ExpiringContractsWidget.tsx` | Cockpit-Widget: ablaufende Verträge (90-Tage-Fenster) |
+
+**Extraktions-Lifecycle:**
+1. Upload abgeschlossen + Ingest done → POST `/api/knowledge/[sourceId]/extract` (fire-and-forget)
+2. `processDocument`: classify → skip wenn Konfidenz < 0.6 oder type='other' → extract → DB update
+3. `ExtractionPreview` zeigt Ergebnis sobald `extraction_status = 'done'` (nur für docs mit status='ready')
+4. Cockpit-Widget liest direkt aus `knowledge_sources` über API
+
+**Widget-Katalog:** `expiring_contracts` in `src/lib/cockpit/widgetCatalog.ts` hinzugefügt (size: medium, adminOnly: false)
+
+**Folge-Prompts:** Stufe 2 (Admin-Extraktionsregeln), komplexe Typen, Mistral OCR, Toro Erinnerungen
 
 ### Feeds — Distributions + Run-History (Plan J1 — Stand 2026-03-20)
 
@@ -795,6 +970,8 @@ Details: `memory/project_pending_ui_tasks.md`
 | PowerPoint-Export | ✅ gebaut | `pptxgenjs`, `/api/artifacts/export-pptx`, Button in `ArtifactRenderer.tsx` für Präsentations-Artifacts (2026-03-23) |
 | Text-to-Speech | ✅ gebaut | `useTTS` Hook, `/api/tts` (OpenAI tts-1, voice=nova), [🔊] Button in `MessageActions.tsx` (2026-03-25) |
 | Action Layer Hotfix | ✅ gebaut | ToroBadge außen rechts, DotsThree entfernt, neue Actions (Kürzen/E-Mail/Übersetzen/Bild/Perspektive), Mobile Bottom Sheet, `useMediaQuery` (2026-03-25) |
+| Parallel Tabs | ✅ gebaut | `detect-parallel-intent.ts` (Keyword-Erkennung); Confirmation-Bubble in ChatArea (Lightbulb + accent-light); `openNewTabWithConversation` in useChatTabs; POST /api/conversations/create; WorkspaceLayout `handleOpenParallelTabs` (2026-03-30) |
+| Modell-Vergleich-Tabs (Plan M) | ✅ gebaut | `ModelComparePopover.tsx` + `Modal.tsx`; Scales-Icon; 2–4 Checkboxen; `handleModelCompare` in ChatArea; `overrideClientPrefs` in sendDirectToNewConv; capabilities JSONB in model_catalog (Mig 094); `detectTaskCategory()` in detect-parallel-intent.ts; capability-basierte Vorauswahl + "Empfohlen"-Badge im Modal (2026-03-30) |
 | Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
 | Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
 | Hydration-Fehler TopBar + ChatHeaderStrip | ✅ behoben | TopBar `mounted` guard (kein SSR); Bell+Account als CSS-Klassen; ChatHeaderStrip portalt in `#topbar-chat-slot` statt fixed overlay (2026-03-26) |
@@ -804,6 +981,12 @@ Details: `memory/project_pending_ui_tasks.md`
 | Chat-Menü: Übersicht Artefakte | ✅ gebaut | `artifactsView` State in ChatArea; ersetzt Chat-Nachrichten durch alle Artefakte via ArtifactRenderer; "← Zurück"-Button (2026-03-26) |
 | React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
 | Workspaces Redesign (Prompt A–C) | ✅ gebaut | workspace_items+members+comments (Mig 075–077); neue /workspaces page (client, grid+search+create); /workspaces/[id] Detail-Page (Tabs: Inhalte/Mitglieder/Kommentare/Einstellungen); /shared/[token] öffentliche Freigabe-Seite; workspace_items/members/comments/share API-Routes (2026-03-25) |
+| Horizontaler Scroll | ✅ behoben | `html`/`body { overflow-x: hidden }`, `.pbi-wrapper/.pbi-expansion { min-width: 0; overflow: hidden }`, layout-wrapper `overflow: hidden` in chat/layout.tsx + chat/[id]/layout.tsx (2026-03-29) |
+| SessionPanel Toggle umbenennen | ✅ gebaut | "Geteilter Bildschirm" → "Artefakt rechts anzeigen"; Hint → "Artefakte öffnen im Seitenpanel" (2026-03-29) |
+| Links-Toggle abhängig von Live-Suche | ✅ gebaut | `updatePref` auto-disables `link_previews` bei `web_search_enabled=false`; Toggle visuell deaktiviert (opacity 0.4, pointer-events none) (2026-03-29) |
+| Quick-Chips in Toro-Bubble | ✅ gebaut | Externes `.suggestion-pills`-Block entfernt; `.cmsg-chips` innerhalb `.cmsg-bubble--assistant` nach `pending`-Cursor, vor `showActions`; CSS: border-top-divider + "Vorschläge:"-Label + link-style buttons (2026-03-29) |
+| TopBar Race Condition (Tabs/ChatName fehlen) | ✅ behoben | Slot-Divs `#topbar-tabs-slot` + `#topbar-chat-slot` in `!mounted`-Branch ergänzt → DOM-Elemente ab erstem Render vorhanden, WorkspaceLayout-useEffect findet sie sofort (2026-03-29) |
+| Lesezeichen-Feature | ✅ gebaut | `/lesezeichen` Seite mit Multi-Select, Neuer-Chat, Kombinieren, Löschen; `BookmarkSimple` in Member-Sidebar; "Gespeichert"-Chip auf /artifacts; `full_content TEXT` in bookmarks (Migration 092); Prefill via sessionStorage in SingleChatClient (2026-03-30) |
 
 ---
 
@@ -836,6 +1019,7 @@ eslint src/           # keine Fehler
 | `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
+| `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
 
 ---
 
