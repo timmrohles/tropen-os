@@ -253,6 +253,7 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 | Script | Befehl | Beschreibung |
 |--------|--------|-------------|
 | Repo Map Generator | `npx tsx src/scripts/generate-repo-map.ts [--budget 4096]` | Scannt Tropen OS Repo selbst, schreibt Ergebnis in `docs/repo-map/` |
+| Audit Runner | `npx tsx src/scripts/run-audit.ts [--skip-cli] [--budget N]` | Runs automated audit over 25 categories, writes report to `docs/audit-reports/` |
 
 ### API-Key Management
 

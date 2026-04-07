@@ -24,6 +24,7 @@ export default defineConfig({
         'src/lib/qa/task-classifier.ts',
         'src/app/api/admin/qa/compliance/route.ts',
         'src/lib/repo-map/**/*.ts',
+        'src/lib/audit/**/*.ts',
       ],
       exclude: [
         'src/test/**',
