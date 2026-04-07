@@ -23,6 +23,10 @@ async function main() {
   // Parse --budget flag
   const budgetArg = process.argv.indexOf('--budget')
   const tokenBudget = budgetArg !== -1 ? parseInt(process.argv[budgetArg + 1], 10) : 4096
+  if (isNaN(tokenBudget) || tokenBudget < 256) {
+    console.error('Error: --budget requires a numeric value ≥ 256')
+    process.exit(1)
+  }
 
   console.log(`\n🗺  Generating Repo Map for Tropen OS`)
   console.log(`   Root:         ${REPO_ROOT}`)
@@ -39,7 +43,7 @@ async function main() {
       '**/*.unit.test.ts',
       '**/*.test.tsx',
       'src/lib/repo-map/fixtures/**',
-      'scripts/**',
+      'src/scripts/**',
       'e2e/**',
       'coverage/**',
     ],
