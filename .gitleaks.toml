@@ -1,0 +1,27 @@
+[extend]
+# Use gitleaks default ruleset as base
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for Tropen OS"
+
+# Files that legitimately contain placeholder/example secrets
+paths = [
+  '''.env\.example''',
+  '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+  '''\.next/''',
+  '''node_modules/''',
+  '''docs/''',
+  '''tsc-trace/''',
+]
+
+# Known safe placeholder values used in CI and docs
+regexes = [
+  '''placeholder''',
+  '''https://placeholder\.supabase\.co''',
+  '''NEXT_PUBLIC_SUPABASE_URL: https://placeholder''',
+]
+
+# Commits from CI setup where placeholder values were intentionally added
+commits = []
