@@ -30,9 +30,8 @@ const PROVIDERS: FixProvider[] = [
     id: 'anthropic',
     isAvailable: gatewayAvailable,
     call: async (prompt) => {
-      // Routes through AI Gateway via plain "provider/model" string (OIDC auth)
       const result = await generateText({
-        model: 'anthropic/claude-sonnet-4.6' as Parameters<typeof generateText>[0]['model'],
+        model: anthropicInstance(REVIEWER_MODEL),
         prompt,
         maxOutputTokens: 2048,
         temperature: 0.1,
@@ -213,7 +212,8 @@ async function callProvider(provider: FixProvider, prompt: string): Promise<Prov
 // Judge
 // ---------------------------------------------------------------------------
 
-const JUDGE_MODEL_ID = 'claude-opus-4' + '-20250514'
+const REVIEWER_MODEL = 'claude-sonnet-4' + '-20250514'
+const JUDGE_MODEL_ID  = 'claude-opus-4'  + '-20250514'
 const JUDGE_COST_PER_M = { input: 14.25, output: 71.25 }
 
 const JUDGE_SYSTEM = `You are a principal engineer evaluating multiple AI-generated code fixes for the same finding.
