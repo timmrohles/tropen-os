@@ -383,7 +383,7 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       {/* Severity filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {severityChips.map(({ value, label }) => (
-          <button key={value} className={`chip${severityFilter === value ? ' chip--active' : ''}`}
+          <button suppressHydrationWarning key={value} className={`chip${severityFilter === value ? ' chip--active' : ''}`}
             onClick={() => setSeverityFilter(value)}>{label}</button>
         ))}
       </div>
@@ -391,7 +391,7 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       {/* Status filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {statusChips.map(({ value, label }) => (
-          <button key={value} className={`chip${statusFilter === value ? ' chip--active' : ''}`}
+          <button suppressHydrationWarning key={value} className={`chip${statusFilter === value ? ' chip--active' : ''}`}
             onClick={() => setStatusFilter(value)}>{label}</button>
         ))}
       </div>
@@ -399,7 +399,7 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       {/* Agent filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
         {agentChips.map(({ value, label }) => (
-          <button key={value} className={`chip${agentFilter === value ? ' chip--active' : ''}`}
+          <button suppressHydrationWarning key={value} className={`chip${agentFilter === value ? ' chip--active' : ''}`}
             onClick={() => setAgentFilter(value)}>{label}</button>
         ))}
       </div>
