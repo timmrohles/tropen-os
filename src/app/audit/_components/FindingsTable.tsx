@@ -703,48 +703,25 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
                           ))}
                         </select>
                         {runId && (
-                          <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
-                            {/* Quick fix button */}
-                            <button
-                                title="Quick Fix (1 Modell)"
-                                disabled={fixingId === f.id || consensusFixingId === f.id}
-                                onClick={() => handleGenerateFix(f.id, runId)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                                  fontSize: 11, padding: '2px 7px',
-                                  border: 'none', borderRight: '1px solid var(--border)',
-                                  background: 'var(--bg-surface)', color: 'var(--accent)',
-                                  cursor: 'pointer', fontWeight: 600,
-                                  opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                                }}
-                              >
-                                {fixingId === f.id
-                                  ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                  : <Wrench size={11} weight="bold" aria-hidden="true" />
-                                }
-                                {fixingId !== f.id && 'Quick'}
-                              </button>
-                              {/* Consensus fix button */}
-                              <button
-                                title="Konsens-Fix (4 Modelle + Opus-Judge)"
-                                disabled={fixingId === f.id || consensusFixingId === f.id}
-                                onClick={() => handleGenerateConsensusFix(f.id, runId)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                                  fontSize: 11, padding: '2px 7px',
-                                  border: 'none',
-                                  background: 'var(--bg-surface)', color: 'var(--accent)',
-                                  cursor: 'pointer', fontWeight: 600,
-                                  opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                                }}
-                              >
-                                {consensusFixingId === f.id
-                                  ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                  : <Scales size={11} weight="bold" aria-hidden="true" />
-                                }
-                                {consensusFixingId !== f.id && '4M'}
-                              </button>
-                            </div>
+                          <button
+                            title="Fix generieren"
+                            disabled={fixingId === f.id}
+                            onClick={() => handleGenerateFix(f.id, runId)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: 11, padding: '2px 8px',
+                              border: '1px solid var(--border)', borderRadius: 4,
+                              background: 'var(--bg-surface)', color: 'var(--accent)',
+                              cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
+                              opacity: fixingId === f.id ? 0.6 : 1,
+                            }}
+                          >
+                            {fixingId === f.id
+                              ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                              : <Wrench size={11} weight="bold" aria-hidden="true" />
+                            }
+                            {fixingId !== f.id && 'Fix'}
+                          </button>
                         )}
                         {fixErrors[f.id] && (
                           <span style={{ fontSize: 10, color: 'var(--error)', maxWidth: 120, wordBreak: 'break-word' }}>
@@ -945,46 +922,25 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
                           </td>
                           <td style={{ padding: '4px 8px', verticalAlign: 'middle' }}>
                             {runId && f.file_path && (
-                              <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
-                                <button
-                                  title="Quick Fix"
-                                  disabled={fixingId === f.id || consensusFixingId === f.id}
-                                  onClick={() => handleGenerateFix(f.id, runId)}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                                    fontSize: 11, padding: '2px 7px',
-                                    border: 'none', borderRight: '1px solid var(--border)',
-                                    background: 'var(--bg-surface)', color: 'var(--accent)',
-                                    cursor: 'pointer', fontWeight: 600,
-                                    opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                                  }}
-                                >
-                                  {fixingId === f.id
-                                    ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                    : <Wrench size={11} weight="bold" aria-hidden="true" />
-                                  }
-                                  {fixingId !== f.id && 'Quick'}
-                                </button>
-                                <button
-                                  title="Konsens-Fix (4 Modelle + Opus-Judge)"
-                                  disabled={fixingId === f.id || consensusFixingId === f.id}
-                                  onClick={() => handleGenerateConsensusFix(f.id, runId)}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                                    fontSize: 11, padding: '2px 7px',
-                                    border: 'none',
-                                    background: 'var(--bg-surface)', color: 'var(--accent)',
-                                    cursor: 'pointer', fontWeight: 600,
-                                    opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                                  }}
-                                >
-                                  {consensusFixingId === f.id
-                                    ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                    : <Scales size={11} weight="bold" aria-hidden="true" />
-                                  }
-                                  {consensusFixingId !== f.id && '4M'}
-                                </button>
-                              </div>
+                              <button
+                                title="Fix generieren"
+                                disabled={fixingId === f.id}
+                                onClick={() => handleGenerateFix(f.id, runId)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: 11, padding: '2px 8px',
+                                  border: '1px solid var(--border)', borderRadius: 4,
+                                  background: 'var(--bg-surface)', color: 'var(--accent)',
+                                  cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
+                                  opacity: fixingId === f.id ? 0.6 : 1,
+                                }}
+                              >
+                                {fixingId === f.id
+                                  ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                                  : <Wrench size={11} weight="bold" aria-hidden="true" />
+                                }
+                                {fixingId !== f.id && 'Fix'}
+                              </button>
                             )}
                           </td>
                         </tr>
@@ -1032,49 +988,28 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
                     </select>
                   </td>
 
-                  {/* Quick/4M Fix-Buttons */}
+                  {/* Fix-Button */}
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                     {runId && f.file_path && (
-                      <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
-                        <button
-                          title="Quick Fix"
-                          disabled={fixingId === f.id || consensusFixingId === f.id}
-                          onClick={() => handleGenerateFix(f.id, runId)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            fontSize: 11, padding: '2px 7px',
-                            border: 'none', borderRight: '1px solid var(--border)',
-                            background: 'var(--bg-surface)', color: 'var(--accent)',
-                            cursor: 'pointer', fontWeight: 600,
-                            opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                          }}
-                        >
-                          {fixingId === f.id
-                            ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                            : <Wrench size={11} weight="bold" aria-hidden="true" />
-                          }
-                          {fixingId !== f.id && 'Quick'}
-                        </button>
-                        <button
-                          title="Konsens-Fix (4 Modelle + Opus-Judge)"
-                          disabled={fixingId === f.id || consensusFixingId === f.id}
-                          onClick={() => handleGenerateConsensusFix(f.id, runId)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            fontSize: 11, padding: '2px 7px',
-                            border: 'none',
-                            background: 'var(--bg-surface)', color: 'var(--accent)',
-                            cursor: 'pointer', fontWeight: 600,
-                            opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                          }}
-                        >
-                          {consensusFixingId === f.id
-                            ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                            : <Scales size={11} weight="bold" aria-hidden="true" />
-                          }
-                          {consensusFixingId !== f.id && '4M'}
-                        </button>
-                      </div>
+                      <button
+                        title="Fix generieren"
+                        disabled={fixingId === f.id}
+                        onClick={() => handleGenerateFix(f.id, runId)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: 11, padding: '2px 8px',
+                          border: '1px solid var(--border)', borderRadius: 4,
+                          background: 'var(--bg-surface)', color: 'var(--accent)',
+                          cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
+                          opacity: fixingId === f.id ? 0.6 : 1,
+                        }}
+                      >
+                        {fixingId === f.id
+                          ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                          : <Wrench size={11} weight="bold" aria-hidden="true" />
+                        }
+                        {fixingId !== f.id && 'Fix'}
+                      </button>
                     )}
                     {/* Fix-Preview wenn vorhanden */}
                     {fixes[f.id] && (
