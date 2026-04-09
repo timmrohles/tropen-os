@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
 } from '@phosphor-icons/react/dist/ssr'
@@ -93,6 +93,15 @@ function groupFindings(findings: DbFinding[]): Array<DbFinding | FindingGroup> {
   })
 }
 
+function isFileSizeGroup(group: FindingGroup): boolean {
+  return group.findings.some(f => /\d+\s*lines?/i.test(f.message))
+}
+
+function extractLineCount(message: string): number {
+  const match = message.match(/\((\d+)\s*lines?\)/) ?? message.match(/(\d+)\s*lines?/)
+  return match ? parseInt(match[1]) : 0
+}
+
 interface FindingsTableProps {
   findings: DbFinding[]
   runId?: string
@@ -178,6 +187,22 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
   const [fixErrors, setFixErrors] = useState<Record<string, string>>({})
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [groupBatchFixing, setGroupBatchFixing] = useState<string | null>(null)
+  const [expandedSubGroups, setExpandedSubGroups] = useState<Record<string, Set<string>>>({})
+
+  function toggleSubGroup(ruleId: string, label: string) {
+    setExpandedSubGroups(prev => ({
+      ...prev,
+      [ruleId]: (() => {
+        const s = new Set(prev[ruleId] ?? ['high', 'medium'])
+        s.has(label) ? s.delete(label) : s.add(label)
+        return s
+      })(),
+    }))
+  }
+
+  function getOpenSubGroups(ruleId: string): Set<string> {
+    return expandedSubGroups[ruleId] ?? new Set(['high', 'medium'])
+  }
 
   const filtered = findings
     .filter((f) => {
@@ -849,6 +874,127 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
               )
 
               if (!groupExpanded) return [groupMainRow]
+
+              // Sub-grouped rendering for file-size groups with mixed severities
+              if (isFileSizeGroup(item) && new Set(item.findings.map(f => f.severity)).size > 1) {
+                const openSubs = getOpenSubGroups(item.ruleId)
+                const subGroupDefs: Array<{ sev: DbFinding['severity']; label: string }> = [
+                  { sev: 'high',   label: 'Muss aufgeteilt werden' },
+                  { sev: 'medium', label: 'Aufteilen erwägen' },
+                  { sev: 'low',    label: 'Beobachten' },
+                ]
+
+                const subRows: React.ReactNode[] = []
+                subGroupDefs.forEach(({ sev, label }) => {
+                  const subFindings = item.findings.filter(f => f.severity === sev)
+                  if (subFindings.length === 0) return
+                  const isOpen = openSubs.has(sev)
+                  subRows.push(
+                    <tr key={`subgroup-${item.ruleId}-${sev}`}
+                      onClick={() => toggleSubGroup(item.ruleId, sev)}
+                      style={{ cursor: 'pointer', background: 'color-mix(in srgb, var(--bg-base) 60%, transparent)' }}>
+                      <td colSpan={7} style={{ padding: '5px 8px 5px 32px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                          {isOpen
+                            ? <CaretDown size={10} weight="bold" aria-hidden="true" />
+                            : <CaretUp size={10} weight="bold" aria-hidden="true" />
+                          }
+                          <span style={{ color: SEVERITY_COLOR[sev], fontWeight: 600 }}>{label}</span>
+                          <span style={{ color: 'var(--text-tertiary)' }}>({subFindings.length})</span>
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                  if (isOpen) {
+                    subFindings.forEach((f) => {
+                      const lineCount = extractLineCount(f.message)
+                      subRows.push(
+                        <tr key={f.id} style={{
+                          background: 'color-mix(in srgb, var(--accent) 4%, transparent)',
+                          borderBottom: '1px solid color-mix(in srgb, var(--border) 50%, transparent)',
+                        }}>
+                          <td colSpan={4} style={{ padding: '4px 8px' }} />
+                          <td style={{ padding: '4px 8px', paddingLeft: 48 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <code style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                                {f.file_path ?? '—'}
+                              </code>
+                              {lineCount > 0 && (
+                                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                                  ({lineCount} Zeilen)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td style={{ padding: '4px 8px', verticalAlign: 'middle' }}>
+                            <select
+                              value={f.status}
+                              disabled={updatingId === f.id}
+                              onChange={(e) => handleStatusChange(f.id, e.target.value as DbFinding['status'])}
+                              style={{
+                                fontSize: 12, padding: '2px 5px', borderRadius: 4,
+                                border: '1px solid var(--border)', background: 'var(--bg-surface)',
+                                color: 'var(--text-primary)', cursor: 'pointer',
+                                opacity: updatingId === f.id ? 0.5 : 1,
+                              }}
+                            >
+                              {STATUS_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '4px 8px', verticalAlign: 'middle' }}>
+                            {runId && f.file_path && (
+                              <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
+                                <button
+                                  title="Quick Fix"
+                                  disabled={fixingId === f.id || consensusFixingId === f.id}
+                                  onClick={() => handleGenerateFix(f.id, runId)}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    fontSize: 11, padding: '2px 7px',
+                                    border: 'none', borderRight: '1px solid var(--border)',
+                                    background: 'var(--bg-surface)', color: 'var(--accent)',
+                                    cursor: 'pointer', fontWeight: 600,
+                                    opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                                  }}
+                                >
+                                  {fixingId === f.id
+                                    ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                                    : <Wrench size={11} weight="bold" aria-hidden="true" />
+                                  }
+                                  {fixingId !== f.id && 'Quick'}
+                                </button>
+                                <button
+                                  title="Konsens-Fix (4 Modelle + Opus-Judge)"
+                                  disabled={fixingId === f.id || consensusFixingId === f.id}
+                                  onClick={() => handleGenerateConsensusFix(f.id, runId)}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    fontSize: 11, padding: '2px 7px',
+                                    border: 'none',
+                                    background: 'var(--bg-surface)', color: 'var(--accent)',
+                                    cursor: 'pointer', fontWeight: 600,
+                                    opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                                  }}
+                                >
+                                  {consensusFixingId === f.id
+                                    ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                                    : <Scales size={11} weight="bold" aria-hidden="true" />
+                                  }
+                                  {consensusFixingId !== f.id && '4M'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  }
+                })
+
+                return [groupMainRow, ...subRows]
+              }
 
               const childRows = item.findings.map((f, idx) => (
                 <tr key={f.id} style={{
