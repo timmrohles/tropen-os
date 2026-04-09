@@ -1,0 +1,81 @@
+{
+  "agentId": "error-handling",
+  "agentName": "Error Handling",
+  "filename": "ERROR_HANDLING_AGENT.md",
+  "reviewedAt": "2026-04-09T11:16:34.923Z",
+  "overallScore": 85,
+  "passed": true,
+  "ruleScores": [
+    {
+      "ruleId": "R1",
+      "ruleName": "Required Sections Present",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R2",
+      "ruleName": "Every Rule Has Severity and Enforcement",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R3",
+      "ruleName": "Rule Count Within Bounds",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R4",
+      "ruleName": "Every Rule Has a Bad → Good Example",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R5",
+      "ruleName": "No Boundary Conflicts Between Agents",
+      "pass": false,
+      "score": 3,
+      "issue": "Related section has inconsistent relationship types - Security appears as 'consult', 'overlaps', and 'delegates' which creates unclear boundaries"
+    },
+    {
+      "ruleId": "R6",
+      "ruleName": "Enforcement Tools Must Be Named",
+      "pass": true,
+      "score": 4,
+      "issue": "Most tools are specifically named (ESLint, TypeScript, Zod) but 'Custom ESLint Rule' and 'Custom Linter' are somewhat generic"
+    },
+    {
+      "ruleId": "R7",
+      "ruleName": "Agent Document Has Version and Last-Updated",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R8",
+      "ruleName": "Agent Checklist Matches Rule Count",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    }
+  ],
+  "strengths": [
+    "All 7 required sections present with proper structure",
+    "All 8 rules have proper severity and enforcement labels in correct format",
+    "Rule count of 8 is within the 5-9 bounds",
+    "Every rule includes concrete Bad → Good code examples",
+    "Version 1.0 and last_updated 2026-04-09 properly specified in YAML",
+    "Checklist has exactly 8 items matching the 8 rules",
+    "Tool Integration table is complete with specific coverage levels"
+  ],
+  "gaps": [
+    "Related section shows Security agent with three different relationship types (consult, overlaps, delegates) which creates boundary confusion",
+    "Some enforcement tools like 'Custom ESLint Rule' and 'Custom Linter' could be more specific",
+    "Boundary statements could be clearer about exact handoff points between agents"
+  ],
+  "recommendation": "approve"
+}

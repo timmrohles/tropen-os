@@ -1,0 +1,81 @@
+{
+  "agentId": "performance",
+  "agentName": "Performance",
+  "filename": "PERFORMANCE_AGENT.md",
+  "reviewedAt": "2026-04-09T11:20:10.953Z",
+  "overallScore": 85,
+  "passed": true,
+  "ruleScores": [
+    {
+      "ruleId": "R1",
+      "ruleName": "Required Sections Present",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R2",
+      "ruleName": "Every Rule Has Severity and Enforcement",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R3",
+      "ruleName": "Rule Count Within Bounds",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R4",
+      "ruleName": "Every Rule Has a Bad → Good Example",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R5",
+      "ruleName": "No Boundary Conflicts Between Agents",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R6",
+      "ruleName": "Enforcement Tools Must Be Named",
+      "pass": false,
+      "score": 2,
+      "issue": "Some enforcement tools are vaguely named: 'API Middleware', 'Bundle Analyzer', 'Query Analyzer', 'ESLint Plugin' without specific tool names or configuration details"
+    },
+    {
+      "ruleId": "R7",
+      "ruleName": "Agent Document Has Version and Last-Updated",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R8",
+      "ruleName": "Agent Checklist Matches Rule Count",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    }
+  ],
+  "strengths": [
+    "All required sections present with proper structure",
+    "All 8 rules have proper severity and enforcement labels",
+    "Rule count of 8 is within the 5-9 bounds",
+    "Every rule includes concrete Bad → Good examples",
+    "Comprehensive boundary definitions with Architecture, Security, and Observability agents",
+    "Proper YAML metadata with version 1.0 and current date",
+    "Checklist has exactly 8 items matching the 8 rules",
+    "Clear categorization into Hard Boundaries, Structural Heuristics, and Governance"
+  ],
+  "gaps": [
+    "Enforcement tools need more specificity: 'Bundle Analyzer' should specify webpack-bundle-analyzer or similar, 'ESLint Plugin' should name the specific plugin",
+    "Some tools like 'API Middleware' and 'Query Analyzer' are generic - should specify actual implementation tools"
+  ],
+  "recommendation": "approve"
+}
