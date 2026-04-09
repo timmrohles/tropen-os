@@ -1,15 +1,26 @@
 {
-  "generatedAt": "2026-04-07T13:43:33.223Z",
+  "generatedAt": "2026-04-09T14:36:20.477Z",
   "version": "1.0.0",
   "stats": {
-    "totalFiles": 586,
-    "totalSymbols": 2301,
-    "totalLines": 66779,
-    "includedSymbols": 268,
+    "totalFiles": 624,
+    "totalSymbols": 2677,
+    "totalLines": 75257,
+    "includedSymbols": 283,
     "tokenBudget": 4096,
-    "estimatedTokens": 4017
+    "estimatedTokens": 4047
   },
   "topSymbols": [
+    {
+      "id": "src/utils/supabase/server.ts::createClient",
+      "name": "createClient",
+      "kind": "function",
+      "filePath": "src/utils/supabase/server.ts",
+      "line": 4,
+      "signature": "function createClient()",
+      "exported": true,
+      "referenceCount": 95,
+      "rankScore": 0.19
+    },
     {
       "id": "src/lib/supabase-admin.ts::supabaseAdmin",
       "name": "supabaseAdmin",
@@ -18,8 +29,8 @@
       "line": 17,
       "signature": "supabaseAdmin",
       "exported": true,
-      "referenceCount": 188,
-      "rankScore": 0.088
+      "referenceCount": 185,
+      "rankScore": 0.133
     },
     {
       "id": "src/lib/logger.ts::createLogger",
@@ -29,19 +40,8 @@
       "line": 29,
       "signature": "function createLogger(service: string)",
       "exported": true,
-      "referenceCount": 146,
-      "rankScore": 0.083
-    },
-    {
-      "id": "src/utils/supabase/server.ts::createClient",
-      "name": "createClient",
-      "kind": "function",
-      "filePath": "src/utils/supabase/server.ts",
-      "line": 4,
-      "signature": "function createClient()",
-      "exported": true,
-      "referenceCount": 86,
-      "rankScore": 0.066
+      "referenceCount": 150,
+      "rankScore": 0.12
     },
     {
       "id": "src/lib/api/projects.ts::getAuthUser",
@@ -51,8 +51,8 @@
       "line": 4,
       "signature": "function getAuthUser()",
       "exported": true,
-      "referenceCount": 72,
-      "rankScore": 0.033
+      "referenceCount": 68,
+      "rankScore": 0.076
     },
     {
       "id": "src/lib/api/projects.ts::verifyProjectAccess",
@@ -63,6 +63,28 @@
       "signature": "function verifyProjectAccess(projectId: string, me: { id: string; organization_id: string; role: string }): Promise<boolean>",
       "exported": true,
       "referenceCount": 8,
+      "rankScore": 0.036
+    },
+    {
+      "id": "src/utils/supabase/client.ts::createClient",
+      "name": "createClient",
+      "kind": "function",
+      "filePath": "src/utils/supabase/client.ts",
+      "line": 3,
+      "signature": "function createClient()",
+      "exported": true,
+      "referenceCount": 22,
+      "rankScore": 0.036
+    },
+    {
+      "id": "src/lib/api/workspaces.ts::getAuthUser",
+      "name": "getAuthUser",
+      "kind": "function",
+      "filePath": "src/lib/api/workspaces.ts",
+      "line": 12,
+      "signature": "function getAuthUser(): Promise<AuthUser | null>",
+      "exported": true,
+      "referenceCount": 25,
       "rankScore": 0.02
     },
     {
@@ -74,29 +96,73 @@
       "signature": "export type Card = typeof cards.$inferSelect",
       "exported": true,
       "referenceCount": 15,
-      "rankScore": 0.019
+      "rankScore": 0.018
     },
     {
-      "id": "src/utils/supabase/client.ts::createClient",
-      "name": "createClient",
-      "kind": "function",
-      "filePath": "src/utils/supabase/client.ts",
-      "line": 3,
-      "signature": "function createClient()",
+      "id": "src/lib/audit/types.ts::AuditContext",
+      "name": "AuditContext",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 82,
+      "signature": "interface AuditContext",
       "exported": true,
-      "referenceCount": 23,
-      "rankScore": 0.019
+      "referenceCount": 11,
+      "rankScore": 0.018
     },
     {
-      "id": "src/lib/supabase-admin.ts::getClient",
-      "name": "getClient",
+      "id": "src/lib/audit/types.ts::Finding",
+      "name": "Finding",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 18,
+      "signature": "interface Finding",
+      "exported": true,
+      "referenceCount": 10,
+      "rankScore": 0.017
+    },
+    {
+      "id": "src/lib/audit/types.ts::RuleResult",
+      "name": "RuleResult",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 33,
+      "signature": "interface RuleResult",
+      "exported": true,
+      "referenceCount": 10,
+      "rankScore": 0.017
+    },
+    {
+      "id": "src/lib/logger.ts::redact",
+      "name": "redact",
       "kind": "function",
-      "filePath": "src/lib/supabase-admin.ts",
-      "line": 7,
-      "signature": "function getClient(): SupabaseClient",
-      "exported": false,
+      "filePath": "src/lib/logger.ts",
+      "line": 39,
+      "signature": "function redact(_value: unknown): string",
+      "exported": true,
       "referenceCount": 0,
-      "rankScore": 0.015
+      "rankScore": 0.017
+    },
+    {
+      "id": "src/lib/api/workspaces.ts::canWriteWorkspace",
+      "name": "canWriteWorkspace",
+      "kind": "function",
+      "filePath": "src/lib/api/workspaces.ts",
+      "line": 56,
+      "signature": "function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>",
+      "exported": true,
+      "referenceCount": 14,
+      "rankScore": 0.016
+    },
+    {
+      "id": "src/lib/api/workspaces.ts::requireWorkspaceAccess",
+      "name": "requireWorkspaceAccess",
+      "kind": "function",
+      "filePath": "src/lib/api/workspaces.ts",
+      "line": 83,
+      "signature": "function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>",
+      "exported": true,
+      "referenceCount": 14,
+      "rankScore": 0.016
     },
     {
       "id": "src/lib/workspace-types.ts::ChipItem",
@@ -110,17 +176,6 @@
       "rankScore": 0.015
     },
     {
-      "id": "src/db/schema.ts::Connection",
-      "name": "Connection",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 437,
-      "signature": "export type Connection = typeof connections.$inferSelect",
-      "exported": true,
-      "referenceCount": 6,
-      "rankScore": 0.015
-    },
-    {
       "id": "src/lib/workspace-types.ts::ChatMessage",
       "name": "ChatMessage",
       "kind": "interface",
@@ -129,28 +184,28 @@
       "signature": "interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'>",
       "exported": true,
       "referenceCount": 5,
-      "rankScore": 0.014
+      "rankScore": 0.015
     },
     {
-      "id": "src/lib/logger.ts::redact",
-      "name": "redact",
-      "kind": "function",
-      "filePath": "src/lib/logger.ts",
-      "line": 39,
-      "signature": "function redact(_value: unknown): string",
-      "exported": true,
-      "referenceCount": 0,
-      "rankScore": 0.014
-    },
-    {
-      "id": "src/db/schema.ts::CardType",
-      "name": "CardType",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 460,
-      "signature": "export type CardType = typeof cardTypeEnum.enumValues[number]",
+      "id": "src/lib/audit/types.ts::AuditReport",
+      "name": "AuditReport",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 115,
+      "signature": "interface AuditReport",
       "exported": true,
       "referenceCount": 5,
+      "rankScore": 0.014
+    },
+    {
+      "id": "src/db/schema.ts::Connection",
+      "name": "Connection",
+      "kind": "type",
+      "filePath": "src/db/schema.ts",
+      "line": 437,
+      "signature": "export type Connection = typeof connections.$inferSelect",
+      "exported": true,
+      "referenceCount": 6,
       "rankScore": 0.014
     },
     {
@@ -162,7 +217,7 @@
       "signature": "interface Conversation",
       "exported": true,
       "referenceCount": 4,
-      "rankScore": 0.013
+      "rankScore": 0.014
     },
     {
       "id": "src/lib/workspace-types.ts::Project",
@@ -173,7 +228,7 @@
       "signature": "interface Project",
       "exported": true,
       "referenceCount": 4,
-      "rankScore": 0.013
+      "rankScore": 0.014
     },
     {
       "id": "src/lib/workspace-types.ts::AttachmentData",
@@ -184,18 +239,95 @@
       "signature": "interface AttachmentData",
       "exported": true,
       "referenceCount": 4,
+      "rankScore": 0.014
+    },
+    {
+      "id": "src/lib/supabase-admin.ts::getClient",
+      "name": "getClient",
+      "kind": "function",
+      "filePath": "src/lib/supabase-admin.ts",
+      "line": 7,
+      "signature": "function getClient(): SupabaseClient",
+      "exported": false,
+      "referenceCount": 0,
+      "rankScore": 0.014
+    },
+    {
+      "id": "src/lib/audit/types.ts::CategoryScore",
+      "name": "CategoryScore",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 100,
+      "signature": "interface CategoryScore",
+      "exported": true,
+      "referenceCount": 4,
+      "rankScore": 0.014
+    },
+    {
+      "id": "src/lib/repo-map/types.ts::RepoSymbol",
+      "name": "RepoSymbol",
+      "kind": "interface",
+      "filePath": "src/lib/repo-map/types.ts",
+      "line": 2,
+      "signature": "interface RepoSymbol",
+      "exported": true,
+      "referenceCount": 5,
       "rankScore": 0.013
     },
     {
-      "id": "src/lib/supabase-admin.ts::_client",
-      "name": "_client",
-      "kind": "const",
-      "filePath": "src/lib/supabase-admin.ts",
-      "line": 5,
-      "signature": "_client: SupabaseClient | null",
-      "exported": false,
-      "referenceCount": 0,
+      "id": "src/db/schema.ts::CardType",
+      "name": "CardType",
+      "kind": "type",
+      "filePath": "src/db/schema.ts",
+      "line": 460,
+      "signature": "export type CardType = typeof cardTypeEnum.enumValues[number]",
+      "exported": true,
+      "referenceCount": 5,
       "rankScore": 0.013
+    },
+    {
+      "id": "src/lib/types.ts::User",
+      "name": "User",
+      "kind": "interface",
+      "filePath": "src/lib/types.ts",
+      "line": 23,
+      "signature": "interface User",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/types.ts::Message",
+      "name": "Message",
+      "kind": "interface",
+      "filePath": "src/lib/types.ts",
+      "line": 63,
+      "signature": "interface Message",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/types.ts::ModelCatalog",
+      "name": "ModelCatalog",
+      "kind": "interface",
+      "filePath": "src/lib/types.ts",
+      "line": 78,
+      "signature": "interface ModelCatalog",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/types.ts::Database",
+      "name": "Database",
+      "kind": "interface",
+      "filePath": "src/lib/types.ts",
+      "line": 114,
+      "signature": "interface Database",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.012
     },
     {
       "id": "src/db/schema.ts::Workspace",
@@ -206,7 +338,7 @@
       "signature": "export type Workspace = typeof workspaces.$inferSelect",
       "exported": true,
       "referenceCount": 4,
-      "rankScore": 0.013
+      "rankScore": 0.012
     },
     {
       "id": "src/db/schema.ts::WorkspaceDomain",
@@ -217,7 +349,7 @@
       "signature": "export type WorkspaceDomain = typeof workspaceDomainEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 4,
-      "rankScore": 0.013
+      "rankScore": 0.012
     },
     {
       "id": "src/db/schema.ts::CardStatus",
@@ -228,7 +360,7 @@
       "signature": "export type CardStatus = typeof cardStatusEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 4,
-      "rankScore": 0.013
+      "rankScore": 0.012
     },
     {
       "id": "src/lib/workspace-types.ts::GuidedAction",
@@ -239,6 +371,72 @@
       "signature": "export type GuidedAction =",
       "exported": true,
       "referenceCount": 4,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/audit/types.ts::AgentSource",
+      "name": "AgentSource",
+      "kind": "type",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 7,
+      "signature": "export type AgentSource =",
+      "exported": true,
+      "referenceCount": 4,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/supabase-admin.ts::_client",
+      "name": "_client",
+      "kind": "const",
+      "filePath": "src/lib/supabase-admin.ts",
+      "line": 5,
+      "signature": "_client: SupabaseClient | null",
+      "exported": false,
+      "referenceCount": 0,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/workspace-types.ts::GuidedStep",
+      "name": "GuidedStep",
+      "kind": "interface",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 64,
+      "signature": "interface GuidedStep",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/workspace-types.ts::SearchSource",
+      "name": "SearchSource",
+      "kind": "interface",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 95,
+      "signature": "interface SearchSource",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/workspace-types.ts::JungleProject",
+      "name": "JungleProject",
+      "kind": "interface",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 124,
+      "signature": "interface JungleProject",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.012
+    },
+    {
+      "id": "src/lib/repo-map/types.ts::RepoFile",
+      "name": "RepoFile",
+      "kind": "interface",
+      "filePath": "src/lib/repo-map/types.ts",
+      "line": 38,
+      "signature": "interface RepoFile",
+      "exported": true,
+      "referenceCount": 3,
       "rankScore": 0.012
     },
     {
@@ -264,70 +462,59 @@
       "rankScore": 0.012
     },
     {
-      "id": "src/types/feeds.ts::FeedSource",
-      "name": "FeedSource",
+      "id": "src/lib/audit/types.ts::AuditRule",
+      "name": "AuditRule",
       "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 8,
-      "signature": "interface FeedSource",
-      "exported": true,
-      "referenceCount": 5,
-      "rankScore": 0.011
-    },
-    {
-      "id": "src/types/feeds.ts::RawFeedItem",
-      "name": "RawFeedItem",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 138,
-      "signature": "interface RawFeedItem",
-      "exported": true,
-      "referenceCount": 5,
-      "rankScore": 0.011
-    },
-    {
-      "id": "src/lib/workspace-types.ts::GuidedStep",
-      "name": "GuidedStep",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 64,
-      "signature": "interface GuidedStep",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 42,
+      "signature": "interface AuditRule",
       "exported": true,
       "referenceCount": 2,
-      "rankScore": 0.011
+      "rankScore": 0.012
     },
     {
-      "id": "src/lib/workspace-types.ts::SearchSource",
-      "name": "SearchSource",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 95,
-      "signature": "interface SearchSource",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.011
-    },
-    {
-      "id": "src/lib/workspace-types.ts::JungleProject",
-      "name": "JungleProject",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 124,
-      "signature": "interface JungleProject",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.011
-    },
-    {
-      "id": "src/lib/logger.ts::LogLevel",
-      "name": "LogLevel",
+      "id": "src/lib/types.ts::OrgRole",
+      "name": "OrgRole",
       "kind": "type",
-      "filePath": "src/lib/logger.ts",
-      "line": 6,
-      "signature": "type LogLevel = 'debug' | 'info' | 'warn' | 'error'",
-      "exported": false,
-      "referenceCount": 0,
-      "rankScore": 0.01
+      "filePath": "src/lib/types.ts",
+      "line": 4,
+      "signature": "export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.011
+    },
+    {
+      "id": "src/lib/repo-map/types.ts::FileDependency",
+      "name": "FileDependency",
+      "kind": "interface",
+      "filePath": "src/lib/repo-map/types.ts",
+      "line": 28,
+      "signature": "interface FileDependency",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.011
+    },
+    {
+      "id": "src/lib/repo-map/types.ts::RepoMap",
+      "name": "RepoMap",
+      "kind": "interface",
+      "filePath": "src/lib/repo-map/types.ts",
+      "line": 54,
+      "signature": "interface RepoMap",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.011
+    },
+    {
+      "id": "src/lib/repo-map/types.ts::RepoMapOptions",
+      "name": "RepoMapOptions",
+      "kind": "interface",
+      "filePath": "src/lib/repo-map/types.ts",
+      "line": 81,
+      "signature": "interface RepoMapOptions",
+      "exported": true,
+      "referenceCount": 2,
+      "rankScore": 0.011
     },
     {
       "id": "src/db/schema.ts::ConnectionType",
@@ -338,7 +525,7 @@
       "signature": "export type ConnectionType = typeof connectionTypeEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 2,
-      "rankScore": 0.01
+      "rankScore": 0.011
     },
     {
       "id": "src/db/schema.ts::ConnectionStrength",
@@ -349,48 +536,136 @@
       "signature": "export type ConnectionStrength = typeof connectionStrengthEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 2,
+      "rankScore": 0.011
+    },
+    {
+      "id": "src/lib/audit/types.ts::CheckMode",
+      "name": "CheckMode",
+      "kind": "type",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 4,
+      "signature": "export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'",
+      "exported": true,
+      "referenceCount": 2,
       "rankScore": 0.01
     },
     {
-      "id": "src/lib/types.ts::User",
-      "name": "User",
+      "id": "src/lib/workspace-types.ts::GuidedOption",
+      "name": "GuidedOption",
       "kind": "interface",
-      "filePath": "src/lib/types.ts",
-      "line": 23,
-      "signature": "interface User",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 58,
+      "signature": "interface GuidedOption",
       "exported": true,
       "referenceCount": 1,
       "rankScore": 0.01
     },
     {
-      "id": "src/lib/types.ts::Message",
-      "name": "Message",
+      "id": "src/lib/workspace-types.ts::GuidedAnswer",
+      "name": "GuidedAnswer",
       "kind": "interface",
-      "filePath": "src/lib/types.ts",
-      "line": 63,
-      "signature": "interface Message",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 71,
+      "signature": "interface GuidedAnswer",
       "exported": true,
       "referenceCount": 1,
       "rankScore": 0.01
     },
     {
-      "id": "src/lib/types.ts::ModelCatalog",
-      "name": "ModelCatalog",
+      "id": "src/lib/workspace-types.ts::GuidedData",
+      "name": "GuidedData",
       "kind": "interface",
-      "filePath": "src/lib/types.ts",
-      "line": 78,
-      "signature": "interface ModelCatalog",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 77,
+      "signature": "interface GuidedData",
       "exported": true,
       "referenceCount": 1,
       "rankScore": 0.01
     },
     {
-      "id": "src/lib/types.ts::Database",
-      "name": "Database",
+      "id": "src/lib/workspace-types.ts::WorkspaceState",
+      "name": "WorkspaceState",
       "kind": "interface",
-      "filePath": "src/lib/types.ts",
-      "line": 136,
-      "signature": "interface Database",
+      "filePath": "src/lib/workspace-types.ts",
+      "line": 166,
+      "signature": "interface WorkspaceState",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/types/feeds.ts::FeedSource",
+      "name": "FeedSource",
+      "kind": "interface",
+      "filePath": "src/types/feeds.ts",
+      "line": 8,
+      "signature": "interface FeedSource",
+      "exported": true,
+      "referenceCount": 5,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/types/feeds.ts::RawFeedItem",
+      "name": "RawFeedItem",
+      "kind": "interface",
+      "filePath": "src/types/feeds.ts",
+      "line": 138,
+      "signature": "interface RawFeedItem",
+      "exported": true,
+      "referenceCount": 5,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/lib/validators/index.ts::validateBody",
+      "name": "validateBody",
+      "kind": "function",
+      "filePath": "src/lib/validators/index.ts",
+      "line": 8,
+      "signature": "function validateBody(req: Request, schema: ZodSchema<T>): Promise<{ data: T; error: null } | { data: null; error: NextResponse }>",
+      "exported": true,
+      "referenceCount": 33,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/lib/audit/types.ts::PackageJson",
+      "name": "PackageJson",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 58,
+      "signature": "interface PackageJson",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/lib/audit/types.ts::TsConfig",
+      "name": "TsConfig",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 67,
+      "signature": "interface TsConfig",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/lib/audit/types.ts::GitInfo",
+      "name": "GitInfo",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 77,
+      "signature": "interface GitInfo",
+      "exported": true,
+      "referenceCount": 1,
+      "rankScore": 0.01
+    },
+    {
+      "id": "src/lib/audit/types.ts::AuditOptions",
+      "name": "AuditOptions",
+      "kind": "interface",
+      "filePath": "src/lib/audit/types.ts",
+      "line": 140,
+      "signature": "interface AuditOptions",
       "exported": true,
       "referenceCount": 1,
       "rankScore": 0.01
@@ -407,147 +682,15 @@
       "rankScore": 0.01
     },
     {
-      "id": "src/lib/api/workspaces.ts::getAuthUser",
-      "name": "getAuthUser",
-      "kind": "function",
-      "filePath": "src/lib/api/workspaces.ts",
-      "line": 12,
-      "signature": "function getAuthUser(): Promise<AuthUser | null>",
-      "exported": true,
-      "referenceCount": 25,
-      "rankScore": 0.01
-    },
-    {
-      "id": "src/lib/validators/index.ts::validateBody",
-      "name": "validateBody",
-      "kind": "function",
-      "filePath": "src/lib/validators/index.ts",
-      "line": 8,
-      "signature": "function validateBody(req: Request, schema: ZodSchema<T>): Promise<{ data: T; error: null } | { data: null; error: NextResponse }>",
-      "exported": true,
-      "referenceCount": 33,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/types.ts::OrgRole",
-      "name": "OrgRole",
+      "id": "src/lib/logger.ts::LogLevel",
+      "name": "LogLevel",
       "kind": "type",
-      "filePath": "src/lib/types.ts",
-      "line": 4,
-      "signature": "export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/logger.ts::write",
-      "name": "write",
-      "kind": "function",
       "filePath": "src/lib/logger.ts",
-      "line": 10,
-      "signature": "function write(level: LogLevel, service: string, message: string, ...args: unknown[])",
+      "line": 6,
+      "signature": "type LogLevel = 'debug' | 'info' | 'warn' | 'error'",
       "exported": false,
       "referenceCount": 0,
       "rankScore": 0.009
-    },
-    {
-      "id": "src/types/feeds.ts::FeedTopic",
-      "name": "FeedTopic",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 115,
-      "signature": "interface FeedTopic",
-      "exported": true,
-      "referenceCount": 3,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/types/feeds.ts::FeedDataRecord",
-      "name": "FeedDataRecord",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 172,
-      "signature": "interface FeedDataRecord",
-      "exported": true,
-      "referenceCount": 3,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/app/admin/todos/todo.types.ts::Todo",
-      "name": "Todo",
-      "kind": "interface",
-      "filePath": "src/app/admin/todos/todo.types.ts",
-      "line": 5,
-      "signature": "interface Todo",
-      "exported": true,
-      "referenceCount": 7,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/workspace-types.ts::GuidedOption",
-      "name": "GuidedOption",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 58,
-      "signature": "interface GuidedOption",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/workspace-types.ts::GuidedAnswer",
-      "name": "GuidedAnswer",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 71,
-      "signature": "interface GuidedAnswer",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/workspace-types.ts::GuidedData",
-      "name": "GuidedData",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 77,
-      "signature": "interface GuidedData",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/workspace-types.ts::WorkspaceState",
-      "name": "WorkspaceState",
-      "kind": "interface",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 166,
-      "signature": "interface WorkspaceState",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.009
-    },
-    {
-      "id": "src/lib/api/workspaces.ts::canWriteWorkspace",
-      "name": "canWriteWorkspace",
-      "kind": "function",
-      "filePath": "src/lib/api/workspaces.ts",
-      "line": 56,
-      "signature": "function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>",
-      "exported": true,
-      "referenceCount": 14,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/lib/api/workspaces.ts::requireWorkspaceAccess",
-      "name": "requireWorkspaceAccess",
-      "kind": "function",
-      "filePath": "src/lib/api/workspaces.ts",
-      "line": 83,
-      "signature": "function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>",
-      "exported": true,
-      "referenceCount": 14,
-      "rankScore": 0.008
     },
     {
       "id": "src/db/schema.ts::Department",
@@ -558,7 +701,7 @@
       "signature": "export type Department = typeof departments.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::DepartmentInsert",
@@ -569,7 +712,7 @@
       "signature": "export type DepartmentInsert = typeof departments.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceTemplate",
@@ -580,7 +723,7 @@
       "signature": "export type WorkspaceTemplate = typeof workspaceTemplates.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceTemplateInsert",
@@ -591,7 +734,7 @@
       "signature": "export type WorkspaceTemplateInsert = typeof workspaceTemplates.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceInsert",
@@ -602,7 +745,7 @@
       "signature": "export type WorkspaceInsert = typeof workspaces.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceParticipantInsert",
@@ -613,7 +756,7 @@
       "signature": "export type WorkspaceParticipantInsert = typeof workspaceParticipants.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::CardInsert",
@@ -624,7 +767,7 @@
       "signature": "export type CardInsert = typeof cards.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::CardHistory",
@@ -635,7 +778,7 @@
       "signature": "export type CardHistory = typeof cardHistory.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::CardHistoryInsert",
@@ -646,7 +789,7 @@
       "signature": "export type CardHistoryInsert = typeof cardHistory.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::ConnectionInsert",
@@ -657,7 +800,7 @@
       "signature": "export type ConnectionInsert = typeof connections.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::KnowledgeEntry",
@@ -668,7 +811,7 @@
       "signature": "export type KnowledgeEntry = typeof knowledgeEntries.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::KnowledgeEntryInsert",
@@ -679,7 +822,7 @@
       "signature": "export type KnowledgeEntryInsert = typeof knowledgeEntries.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceMessageInsert",
@@ -690,7 +833,7 @@
       "signature": "export type WorkspaceMessageInsert = typeof workspaceMessages.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::Operator",
@@ -701,7 +844,7 @@
       "signature": "export type Operator = typeof operators.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OperatorInsert",
@@ -712,7 +855,7 @@
       "signature": "export type OperatorInsert = typeof operators.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OperatorResult",
@@ -723,7 +866,7 @@
       "signature": "export type OperatorResult = typeof operatorResults.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OperatorResultInsert",
@@ -734,7 +877,7 @@
       "signature": "export type OperatorResultInsert = typeof operatorResults.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceOutcome",
@@ -745,7 +888,7 @@
       "signature": "export type WorkspaceOutcome = typeof workspaceOutcomes.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::WorkspaceOutcomeInsert",
@@ -756,7 +899,7 @@
       "signature": "export type WorkspaceOutcomeInsert = typeof workspaceOutcomes.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::SystemOutcome",
@@ -767,7 +910,7 @@
       "signature": "export type SystemOutcome = typeof outcomes.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::SystemOutcomeInsert",
@@ -778,7 +921,7 @@
       "signature": "export type SystemOutcomeInsert = typeof outcomes.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::MessageRole",
@@ -789,7 +932,7 @@
       "signature": "export type MessageRole = typeof messageRoleEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::MessageScope",
@@ -800,7 +943,7 @@
       "signature": "export type MessageScope = typeof messageScopeEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OperatorType",
@@ -811,7 +954,7 @@
       "signature": "export type OperatorType = typeof operatorTypeEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OperatorStatus",
@@ -822,7 +965,7 @@
       "signature": "export type OperatorStatus = typeof operatorStatusEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::OutcomeType",
@@ -833,7 +976,7 @@
       "signature": "export type OutcomeType = typeof outcomeTypeEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::KnowledgeEntryType",
@@ -844,7 +987,7 @@
       "signature": "export type KnowledgeEntryType = typeof knowledgeEntryTypeEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::ParticipantRole",
@@ -855,7 +998,7 @@
       "signature": "export type ParticipantRole = typeof participantRoleEnum.enumValues[number]",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedSource",
@@ -866,7 +1009,7 @@
       "signature": "export type FeedSource = typeof feedSources.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedSourceInsert",
@@ -877,7 +1020,7 @@
       "signature": "export type FeedSourceInsert = typeof feedSources.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedSchema",
@@ -888,7 +1031,7 @@
       "signature": "export type FeedSchema = typeof feedSchemas.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedSchemaInsert",
@@ -899,7 +1042,7 @@
       "signature": "export type FeedSchemaInsert = typeof feedSchemas.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedSourceSchema",
@@ -910,7 +1053,7 @@
       "signature": "export type FeedSourceSchema = typeof feedSourceSchemas.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedItem",
@@ -921,7 +1064,7 @@
       "signature": "export type FeedItem = typeof feedItems.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedItemInsert",
@@ -932,7 +1075,7 @@
       "signature": "export type FeedItemInsert = typeof feedItems.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedProcessingLog",
@@ -943,7 +1086,7 @@
       "signature": "export type FeedProcessingLog = typeof feedProcessingLogs.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedDistribution",
@@ -954,7 +1097,7 @@
       "signature": "export type FeedDistribution = typeof feedDistributions.$inferSelect",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     },
     {
       "id": "src/db/schema.ts::FeedDistributionInsert",
@@ -965,150 +1108,7 @@
       "signature": "export type FeedDistributionInsert = typeof feedDistributions.$inferInsert",
       "exported": true,
       "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/db/schema.ts::FeedSourceType",
-      "name": "FeedSourceType",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 640,
-      "signature": "export type FeedSourceType = typeof feedSourceTypeEnum.enumValues[number]",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/db/schema.ts::FeedImportance",
-      "name": "FeedImportance",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 641,
-      "signature": "export type FeedImportance = typeof feedImportanceEnum.enumValues[number]",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/db/schema.ts::FeedDistributionType",
-      "name": "FeedDistributionType",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 642,
-      "signature": "export type FeedDistributionType = typeof feedDistributionTypeEnum.enumValues[number]",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/db/schema.ts::FeedDigestMode",
-      "name": "FeedDigestMode",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 643,
-      "signature": "export type FeedDigestMode = typeof feedDigestModeEnum.enumValues[number]",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/db/schema.ts::FeedDigestFormat",
-      "name": "FeedDigestFormat",
-      "kind": "type",
-      "filePath": "src/db/schema.ts",
-      "line": 644,
-      "signature": "export type FeedDigestFormat = typeof feedDigestFormatEnum.enumValues[number]",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/components/cockpit/widgets/shared.tsx::WidgetSkeleton",
-      "name": "WidgetSkeleton",
-      "kind": "function",
-      "filePath": "src/components/cockpit/widgets/shared.tsx",
-      "line": 5,
-      "signature": "function WidgetSkeleton({ rows = 3 }: SkeletonProps)",
-      "exported": true,
-      "referenceCount": 8,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/types/feeds.ts::FeedRun",
-      "name": "FeedRun",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 33,
-      "signature": "interface FeedRun",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/types/feeds.ts::FeedRunResult",
-      "name": "FeedRunResult",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 56,
-      "signature": "interface FeedRunResult",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/types/feeds.ts::FeedItem",
-      "name": "FeedItem",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 90,
-      "signature": "interface FeedItem",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/types/feeds.ts::FeedDistribution",
-      "name": "FeedDistribution",
-      "kind": "interface",
-      "filePath": "src/types/feeds.ts",
-      "line": 127,
-      "signature": "interface FeedDistribution",
-      "exported": true,
-      "referenceCount": 2,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/lib/workspace-types.ts::PeriodValue",
-      "name": "PeriodValue",
-      "kind": "type",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 23,
-      "signature": "export type PeriodValue = (typeof PERIODS)[number]['value']",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/lib/workspace-types.ts::TaskValue",
-      "name": "TaskValue",
-      "kind": "type",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 24,
-      "signature": "export type TaskValue = (typeof TASK_TYPES)[number]['value']",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
-    },
-    {
-      "id": "src/lib/workspace-types.ts::AttachmentMediaType",
-      "name": "AttachmentMediaType",
-      "kind": "type",
-      "filePath": "src/lib/workspace-types.ts",
-      "line": 115,
-      "signature": "export type AttachmentMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf'",
-      "exported": true,
-      "referenceCount": 1,
-      "rankScore": 0.008
+      "rankScore": 0.009
     }
   ],
   "dependencies": [
@@ -1450,13 +1450,6 @@
       ]
     },
     {
-      "source": "src/app/admin/integrations/page.tsx",
-      "target": "src/components/settings/WorkflowSettingsSection.tsx",
-      "symbols": [
-        "WorkflowSettingsSection"
-      ]
-    },
-    {
       "source": "src/app/admin/layout.tsx",
       "target": "src/lib/auth/guards.ts",
       "symbols": [
@@ -1465,9 +1458,9 @@
     },
     {
       "source": "src/app/admin/logs/page.tsx",
-      "target": "src/lib/supabase-admin.ts",
+      "target": "src/utils/supabase/server.ts",
       "symbols": [
-        "supabaseAdmin"
+        "createClient"
       ]
     },
     {
@@ -1475,13 +1468,6 @@
       "target": "src/lib/types.ts",
       "symbols": [
         "ModelCatalog"
-      ]
-    },
-    {
-      "source": "src/app/admin/models/page.tsx",
-      "target": "src/components/settings/ModelGovernanceSection.tsx",
-      "symbols": [
-        "ModelGovernanceSection"
       ]
     },
     {
@@ -1661,13 +1647,6 @@
       "target": "src/lib/types.ts",
       "symbols": [
         "User"
-      ]
-    },
-    {
-      "source": "src/app/agenten/page.tsx",
-      "target": "src/components/FeatureGate.tsx",
-      "symbols": [
-        "FeatureGate"
       ]
     },
     {
@@ -2022,34 +2001,6 @@
       ]
     },
     {
-      "source": "src/app/api/admin/workflow-config/route.ts",
-      "target": "src/utils/supabase/server.ts",
-      "symbols": [
-        "createClient"
-      ]
-    },
-    {
-      "source": "src/app/api/admin/workflow-config/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/admin/workflow-config/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/admin/workflow-config/route.ts",
-      "target": "src/lib/workflow/index.ts",
-      "symbols": [
-        "encodeApiKey"
-      ]
-    },
-    {
       "source": "src/app/api/agents/[id]/copy/route.ts",
       "target": "src/lib/api/projects.ts",
       "symbols": [
@@ -2345,6 +2296,330 @@
       ]
     },
     {
+      "source": "src/app/api/audit/findings/[id]/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/findings/[id]/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/findings/[id]/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/apply/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/apply/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/apply/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/apply/route.ts",
+      "target": "src/lib/fix-engine/index.ts",
+      "symbols": [
+        "applyDiffs"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/apply/route.ts",
+      "target": "src/lib/fix-engine/index.ts",
+      "symbols": [
+        "FileDiff"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/batch-generate/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/batch-generate/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/batch-generate/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/batch-generate/route.ts",
+      "target": "src/lib/fix-engine/index.ts",
+      "symbols": [
+        "buildFixContext",
+        "generateFix"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/consensus/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/consensus/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/consensus/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/consensus/route.ts",
+      "target": "src/lib/fix-engine/index.ts",
+      "symbols": [
+        "buildFixContext",
+        "generateConsensusFix",
+        "assessRisk"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/generate/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/generate/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/generate/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/generate/route.ts",
+      "target": "src/lib/fix-engine/index.ts",
+      "symbols": [
+        "buildFixContext",
+        "generateFix",
+        "assessRisk"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/reject/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/reject/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/fix/reject/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/review/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/review/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/review/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/review/route.ts",
+      "target": "src/lib/review/orchestrator.ts",
+      "symbols": [
+        "runMultiModelReview"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/run/route.ts",
+      "target": "src/lib/auth/guards.ts",
+      "symbols": [
+        "requireSuperadmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/run/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/run/route.ts",
+      "target": "src/lib/audit/index.ts",
+      "symbols": [
+        "buildAuditContext",
+        "runAudit",
+        "formatReportMarkdown"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/run/route.ts",
+      "target": "src/lib/audit/types.ts",
+      "symbols": [
+        "CheckMode"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/[id]/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/[id]/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/[id]/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/runs/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/utils/supabase/server.ts",
+      "symbols": [
+        "createClient"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/supabase-admin.ts",
+      "symbols": [
+        "supabaseAdmin"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/logger.ts",
+      "symbols": [
+        "createLogger"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/audit/index.ts",
+      "symbols": [
+        "buildAuditContext",
+        "runAudit"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/audit/rule-registry.ts",
+      "symbols": [
+        "AUDIT_RULES"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/audit/deduplicator.ts",
+      "symbols": [
+        "deduplicateFindings"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/audit/types.ts",
+      "symbols": [
+        "AuditReport",
+        "CategoryScore"
+      ]
+    },
+    {
+      "source": "src/app/api/audit/trigger/route.ts",
+      "target": "src/lib/audit/deduplicator.ts",
+      "symbols": [
+        "EnrichedFinding"
+      ]
+    },
+    {
       "source": "src/app/api/bookmarks/route.ts",
       "target": "src/utils/supabase/server.ts",
       "symbols": [
@@ -2426,13 +2701,6 @@
       "target": "src/lib/capability-resolver.ts",
       "symbols": [
         "resolveWorkflow"
-      ]
-    },
-    {
-      "source": "src/app/api/capabilities/resolve/route.ts",
-      "target": "src/lib/budget.ts",
-      "symbols": [
-        "budgetExhaustedResponse"
       ]
     },
     {
@@ -2605,69 +2873,6 @@
       ]
     },
     {
-      "source": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "target": "src/lib/llm/anthropic.ts",
-      "symbols": [
-        "anthropic"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "target": "src/lib/model-selector.ts",
-      "symbols": [
-        "modelFor"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "target": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "symbols": [
-        "PromptQuestion"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "target": "src/lib/llm/anthropic.ts",
-      "symbols": [
-        "anthropic"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "target": "src/lib/model-selector.ts",
-      "symbols": [
-        "modelFor"
-      ]
-    },
-    {
-      "source": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
       "source": "src/app/api/chat/stream/route.ts",
       "target": "src/lib/llm/anthropic.ts",
       "symbols": [
@@ -2770,21 +2975,21 @@
       ]
     },
     {
-      "source": "src/app/api/cockpit/expiring-contracts/route.ts",
+      "source": "src/app/api/cockpit/code-health/route.ts",
       "target": "src/utils/supabase/server.ts",
       "symbols": [
         "createClient"
       ]
     },
     {
-      "source": "src/app/api/cockpit/expiring-contracts/route.ts",
+      "source": "src/app/api/cockpit/code-health/route.ts",
       "target": "src/lib/supabase-admin.ts",
       "symbols": [
         "supabaseAdmin"
       ]
     },
     {
-      "source": "src/app/api/cockpit/expiring-contracts/route.ts",
+      "source": "src/app/api/cockpit/code-health/route.ts",
       "target": "src/lib/logger.ts",
       "symbols": [
         "createLogger"
@@ -3004,20 +3209,6 @@
       ]
     },
     {
-      "source": "src/app/api/conversations/[id]/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/conversations/[id]/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser"
-      ]
-    },
-    {
       "source": "src/app/api/conversations/[id]/set-intention/route.ts",
       "target": "src/lib/supabase-admin.ts",
       "symbols": [
@@ -3046,34 +3237,6 @@
       ]
     },
     {
-      "source": "src/app/api/conversations/create/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/conversations/create/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser"
-      ]
-    },
-    {
-      "source": "src/app/api/conversations/create/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/conversations/create/route.ts",
-      "target": "src/lib/monitoring/index.ts",
-      "symbols": [
-        "captureException"
-      ]
-    },
-    {
       "source": "src/app/api/conversations/new-from-message/route.ts",
       "target": "src/lib/supabase-admin.ts",
       "symbols": [
@@ -3092,13 +3255,6 @@
       "target": "src/lib/logger.ts",
       "symbols": [
         "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/conversations/new-from-message/route.ts",
-      "target": "src/lib/monitoring/index.ts",
-      "symbols": [
-        "captureException"
       ]
     },
     {
@@ -3755,34 +3911,6 @@
       ]
     },
     {
-      "source": "src/app/api/knowledge/[id]/extract/route.ts",
-      "target": "src/utils/supabase/server.ts",
-      "symbols": [
-        "createClient"
-      ]
-    },
-    {
-      "source": "src/app/api/knowledge/[id]/extract/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/knowledge/[id]/extract/route.ts",
-      "target": "src/lib/knowledge/extract/index.ts",
-      "symbols": [
-        "processDocument"
-      ]
-    },
-    {
-      "source": "src/app/api/knowledge/[id]/extract/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
       "source": "src/app/api/knowledge/route.ts",
       "target": "src/utils/supabase/server.ts",
       "symbols": [
@@ -4315,62 +4443,6 @@
       ]
     },
     {
-      "source": "src/app/api/models/available/route.ts",
-      "target": "src/utils/supabase/server.ts",
-      "symbols": [
-        "createClient"
-      ]
-    },
-    {
-      "source": "src/app/api/models/available/route.ts",
-      "target": "src/lib/llm/model-resolver.ts",
-      "symbols": [
-        "getAvailableModels"
-      ]
-    },
-    {
-      "source": "src/app/api/models/org-config/route.ts",
-      "target": "src/utils/supabase/server.ts",
-      "symbols": [
-        "createClient"
-      ]
-    },
-    {
-      "source": "src/app/api/models/org-config/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/models/org-config/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/models/user-prefs/route.ts",
-      "target": "src/utils/supabase/server.ts",
-      "symbols": [
-        "createClient"
-      ]
-    },
-    {
-      "source": "src/app/api/models/user-prefs/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/models/user-prefs/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
       "source": "src/app/api/onboarding/complete/route.ts",
       "target": "src/lib/logger.ts",
       "symbols": [
@@ -4604,72 +4676,6 @@
       "symbols": [
         "getAuthUser",
         "verifyProjectAccess"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/memory/summary/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/memory/summary/route.ts",
-      "target": "src/lib/llm/anthropic.ts",
-      "symbols": [
-        "anthropic"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/memory/summary/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser",
-        "verifyProjectAccess"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/merge/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/merge/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser",
-        "verifyProjectAccess"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/[id]/route.ts",
-      "target": "src/lib/api/projects.ts",
-      "symbols": [
-        "getAuthUser",
-        "verifyProjectAccess"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/route.ts",
-      "target": "src/lib/logger.ts",
-      "symbols": [
-        "createLogger"
-      ]
-    },
-    {
-      "source": "src/app/api/projects/route.ts",
-      "target": "src/lib/supabase-admin.ts",
-      "symbols": [
-        "supabaseAdmin"
       ]
     }
   ],
@@ -4682,6 +4688,13 @@
       "symbolCount": 0
     },
     {
+      "path": "middleware.ts",
+      "language": "typescript",
+      "lineCount": 16,
+      "exportCount": 2,
+      "symbolCount": 2
+    },
+    {
       "path": "next-env.d.ts",
       "language": "typescript",
       "lineCount": 7,
@@ -4691,9 +4704,9 @@
     {
       "path": "next.config.ts",
       "language": "typescript",
-      "lineCount": 65,
+      "lineCount": 68,
       "exportCount": 0,
-      "symbolCount": 2
+      "symbolCount": 3
     },
     {
       "path": "playwright.config.ts",
@@ -4715,6 +4728,27 @@
       "lineCount": 100,
       "exportCount": 0,
       "symbolCount": 7
+    },
+    {
+      "path": "scripts/check-db.ts",
+      "language": "typescript",
+      "lineCount": 33,
+      "exportCount": 0,
+      "symbolCount": 1
+    },
+    {
+      "path": "scripts/generate-openapi.ts",
+      "language": "typescript",
+      "lineCount": 37,
+      "exportCount": 0,
+      "symbolCount": 4
+    },
+    {
+      "path": "scripts/migrate-projects.ts",
+      "language": "typescript",
+      "lineCount": 471,
+      "exportCount": 0,
+      "symbolCount": 16
     },
     {
       "path": "sentry.client.config.ts",
@@ -4829,13 +4863,6 @@
       "symbolCount": 1
     },
     {
-      "path": "src/app/admin/integrations/page.tsx",
-      "language": "typescript",
-      "lineCount": 41,
-      "exportCount": 1,
-      "symbolCount": 1
-    },
-    {
       "path": "src/app/admin/layout.tsx",
       "language": "typescript",
       "lineCount": 12,
@@ -4852,14 +4879,14 @@
     {
       "path": "src/app/admin/logs/page.tsx",
       "language": "typescript",
-      "lineCount": 125,
+      "lineCount": 126,
       "exportCount": 1,
       "symbolCount": 2
     },
     {
       "path": "src/app/admin/models/page.tsx",
       "language": "typescript",
-      "lineCount": 418,
+      "lineCount": 415,
       "exportCount": 1,
       "symbolCount": 4
     },
@@ -4950,7 +4977,7 @@
     {
       "path": "src/app/agenten/page.tsx",
       "language": "typescript",
-      "lineCount": 276,
+      "lineCount": 273,
       "exportCount": 1,
       "symbolCount": 7
     },
@@ -5042,13 +5069,6 @@
       "path": "src/app/api/admin/users/route.ts",
       "language": "typescript",
       "lineCount": 96,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/app/api/admin/workflow-config/route.ts",
-      "language": "typescript",
-      "lineCount": 86,
       "exportCount": 2,
       "symbolCount": 4
     },
@@ -5151,9 +5171,86 @@
       "symbolCount": 1
     },
     {
+      "path": "src/app/api/audit/findings/[id]/route.ts",
+      "language": "typescript",
+      "lineCount": 94,
+      "exportCount": 2,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/app/api/audit/fix/apply/route.ts",
+      "language": "typescript",
+      "lineCount": 99,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/fix/batch-generate/route.ts",
+      "language": "typescript",
+      "lineCount": 143,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/fix/consensus/route.ts",
+      "language": "typescript",
+      "lineCount": 124,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/fix/generate/route.ts",
+      "language": "typescript",
+      "lineCount": 106,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/fix/reject/route.ts",
+      "language": "typescript",
+      "lineCount": 44,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/api/audit/review/route.ts",
+      "language": "typescript",
+      "lineCount": 156,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/run/route.ts",
+      "language": "typescript",
+      "lineCount": 67,
+      "exportCount": 2,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/api/audit/runs/[id]/route.ts",
+      "language": "typescript",
+      "lineCount": 80,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/api/audit/runs/route.ts",
+      "language": "typescript",
+      "lineCount": 47,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/api/audit/trigger/route.ts",
+      "language": "typescript",
+      "lineCount": 213,
+      "exportCount": 3,
+      "symbolCount": 8
+    },
+    {
       "path": "src/app/api/bookmarks/route.ts",
       "language": "typescript",
-      "lineCount": 125,
+      "lineCount": 91,
       "exportCount": 3,
       "symbolCount": 4
     },
@@ -5174,7 +5271,7 @@
     {
       "path": "src/app/api/capabilities/resolve/route.ts",
       "language": "typescript",
-      "lineCount": 47,
+      "lineCount": 42,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -5221,23 +5318,9 @@
       "symbolCount": 2
     },
     {
-      "path": "src/app/api/chat/prompt-builder/build-prompt/route.ts",
-      "language": "typescript",
-      "lineCount": 75,
-      "exportCount": 1,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/app/api/chat/prompt-builder/generate-questions/route.ts",
-      "language": "typescript",
-      "lineCount": 88,
-      "exportCount": 3,
-      "symbolCount": 6
-    },
-    {
       "path": "src/app/api/chat/stream/route.ts",
       "language": "typescript",
-      "lineCount": 217,
+      "lineCount": 213,
       "exportCount": 1,
       "symbolCount": 1
     },
@@ -5256,9 +5339,9 @@
       "symbolCount": 2
     },
     {
-      "path": "src/app/api/cockpit/expiring-contracts/route.ts",
+      "path": "src/app/api/cockpit/code-health/route.ts",
       "language": "typescript",
-      "lineCount": 73,
+      "lineCount": 76,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -5321,16 +5404,9 @@
     {
       "path": "src/app/api/conversations/[id]/extract-memory/route.ts",
       "language": "typescript",
-      "lineCount": 143,
+      "lineCount": 149,
       "exportCount": 2,
       "symbolCount": 3
-    },
-    {
-      "path": "src/app/api/conversations/[id]/route.ts",
-      "language": "typescript",
-      "lineCount": 49,
-      "exportCount": 2,
-      "symbolCount": 2
     },
     {
       "path": "src/app/api/conversations/[id]/set-intention/route.ts",
@@ -5347,16 +5423,9 @@
       "symbolCount": 3
     },
     {
-      "path": "src/app/api/conversations/create/route.ts",
-      "language": "typescript",
-      "lineCount": 79,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
       "path": "src/app/api/conversations/new-from-message/route.ts",
       "language": "typescript",
-      "lineCount": 82,
+      "lineCount": 80,
       "exportCount": 2,
       "symbolCount": 4
     },
@@ -5571,13 +5640,6 @@
       "symbolCount": 2
     },
     {
-      "path": "src/app/api/knowledge/[id]/extract/route.ts",
-      "language": "typescript",
-      "lineCount": 81,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
       "path": "src/app/api/knowledge/route.ts",
       "language": "typescript",
       "lineCount": 93,
@@ -5725,27 +5787,6 @@
       "symbolCount": 1
     },
     {
-      "path": "src/app/api/models/available/route.ts",
-      "language": "typescript",
-      "lineCount": 24,
-      "exportCount": 1,
-      "symbolCount": 1
-    },
-    {
-      "path": "src/app/api/models/org-config/route.ts",
-      "language": "typescript",
-      "lineCount": 107,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/app/api/models/user-prefs/route.ts",
-      "language": "typescript",
-      "lineCount": 81,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
       "path": "src/app/api/onboarding/complete/route.ts",
       "language": "typescript",
       "lineCount": 147,
@@ -5790,9 +5831,9 @@
     {
       "path": "src/app/api/perspectives/query/route.ts",
       "language": "typescript",
-      "lineCount": 211,
+      "lineCount": 231,
       "exportCount": 1,
-      "symbolCount": 7
+      "symbolCount": 8
     },
     {
       "path": "src/app/api/perspectives/settings/route.ts",
@@ -5865,6 +5906,13 @@
       "symbolCount": 4
     },
     {
+      "path": "src/app/api/projects/scan/route.ts",
+      "language": "typescript",
+      "lineCount": 272,
+      "exportCount": 3,
+      "symbolCount": 12
+    },
+    {
       "path": "src/app/api/prompt-templates/[id]/route.ts",
       "language": "typescript",
       "lineCount": 40,
@@ -5888,9 +5936,9 @@
     {
       "path": "src/app/api/repo-map/generate/route.ts",
       "language": "typescript",
-      "lineCount": 52,
+      "lineCount": 56,
       "exportCount": 2,
-      "symbolCount": 4
+      "symbolCount": 5
     },
     {
       "path": "src/app/api/s/[token]/route.ts",
@@ -5956,6 +6004,13 @@
       "symbolCount": 4
     },
     {
+      "path": "src/app/api/superadmin/agents/route.ts",
+      "language": "typescript",
+      "lineCount": 81,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
       "path": "src/app/api/superadmin/clients/[id]/activate-user/route.ts",
       "language": "typescript",
       "lineCount": 73,
@@ -5965,9 +6020,9 @@
     {
       "path": "src/app/api/superadmin/clients/[id]/route.ts",
       "language": "typescript",
-      "lineCount": 131,
-      "exportCount": 3,
-      "symbolCount": 4
+      "lineCount": 107,
+      "exportCount": 2,
+      "symbolCount": 3
     },
     {
       "path": "src/app/api/superadmin/clients/route.ts",
@@ -6231,9 +6286,100 @@
     {
       "path": "src/app/artifacts/page.tsx",
       "language": "typescript",
-      "lineCount": 455,
+      "lineCount": 430,
       "exportCount": 1,
       "symbolCount": 10
+    },
+    {
+      "path": "src/app/audit/_components/AuditActions.tsx",
+      "language": "typescript",
+      "lineCount": 194,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/audit/_components/CategoryBreakdown.tsx",
+      "language": "typescript",
+      "lineCount": 266,
+      "exportCount": 1,
+      "symbolCount": 11
+    },
+    {
+      "path": "src/app/audit/_components/DeepReviewFindings.tsx",
+      "language": "typescript",
+      "lineCount": 364,
+      "exportCount": 1,
+      "symbolCount": 12
+    },
+    {
+      "path": "src/app/audit/_components/FindingsTable.tsx",
+      "language": "typescript",
+      "lineCount": 1111,
+      "exportCount": 1,
+      "symbolCount": 24
+    },
+    {
+      "path": "src/app/audit/_components/FixPreview.tsx",
+      "language": "typescript",
+      "lineCount": 593,
+      "exportCount": 1,
+      "symbolCount": 10
+    },
+    {
+      "path": "src/app/audit/_components/RunHistory.tsx",
+      "language": "typescript",
+      "lineCount": 174,
+      "exportCount": 1,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/app/audit/_components/ScoreHero.tsx",
+      "language": "typescript",
+      "lineCount": 157,
+      "exportCount": 1,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/app/audit/_components/ScoreTrend.tsx",
+      "language": "typescript",
+      "lineCount": 79,
+      "exportCount": 1,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/app/audit/page.tsx",
+      "language": "typescript",
+      "lineCount": 195,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/audit/scan/_components/ConnectProjectCard.tsx",
+      "language": "typescript",
+      "lineCount": 125,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/audit/scan/_components/ProjectList.tsx",
+      "language": "typescript",
+      "lineCount": 90,
+      "exportCount": 1,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/audit/scan/_components/ScanProgress.tsx",
+      "language": "typescript",
+      "lineCount": 56,
+      "exportCount": 1,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/app/audit/scan/page.tsx",
+      "language": "typescript",
+      "lineCount": 45,
+      "exportCount": 2,
+      "symbolCount": 2
     },
     {
       "path": "src/app/auth/callback/route.ts",
@@ -6252,21 +6398,21 @@
     {
       "path": "src/app/chat/[id]/SingleChatClient.tsx",
       "language": "typescript",
-      "lineCount": 36,
+      "lineCount": 26,
       "exportCount": 1,
       "symbolCount": 1
     },
     {
       "path": "src/app/chat/[id]/layout.tsx",
       "language": "typescript",
-      "lineCount": 19,
+      "lineCount": 18,
       "exportCount": 1,
       "symbolCount": 1
     },
     {
       "path": "src/app/chat/[id]/page.tsx",
       "language": "typescript",
-      "lineCount": 27,
+      "lineCount": 26,
       "exportCount": 1,
       "symbolCount": 1
     },
@@ -6287,21 +6433,21 @@
     {
       "path": "src/app/chat/new/page.tsx",
       "language": "typescript",
-      "lineCount": 22,
+      "lineCount": 21,
       "exportCount": 1,
       "symbolCount": 1
     },
     {
       "path": "src/app/chat/page.tsx",
       "language": "typescript",
-      "lineCount": 22,
+      "lineCount": 21,
       "exportCount": 1,
       "symbolCount": 1
     },
     {
       "path": "src/app/cockpit/page.tsx",
       "language": "typescript",
-      "lineCount": 141,
+      "lineCount": 144,
       "exportCount": 1,
       "symbolCount": 4
     },
@@ -6462,7 +6608,7 @@
     {
       "path": "src/app/feeds/page.tsx",
       "language": "typescript",
-      "lineCount": 527,
+      "lineCount": 521,
       "exportCount": 1,
       "symbolCount": 4
     },
@@ -6483,7 +6629,7 @@
     {
       "path": "src/app/home/page.tsx",
       "language": "typescript",
-      "lineCount": 139,
+      "lineCount": 138,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -6504,7 +6650,7 @@
     {
       "path": "src/app/knowledge/page.tsx",
       "language": "typescript",
-      "lineCount": 412,
+      "lineCount": 400,
       "exportCount": 1,
       "symbolCount": 10
     },
@@ -6514,13 +6660,6 @@
       "lineCount": 70,
       "exportCount": 3,
       "symbolCount": 6
-    },
-    {
-      "path": "src/app/lesezeichen/page.tsx",
-      "language": "typescript",
-      "lineCount": 301,
-      "exportCount": 1,
-      "symbolCount": 3
     },
     {
       "path": "src/app/login/page.tsx",
@@ -6616,7 +6755,7 @@
     {
       "path": "src/app/perspectives/page.tsx",
       "language": "typescript",
-      "lineCount": 244,
+      "lineCount": 241,
       "exportCount": 1,
       "symbolCount": 5
     },
@@ -6637,7 +6776,7 @@
     {
       "path": "src/app/projects/_components/IconPicker.tsx",
       "language": "typescript",
-      "lineCount": 53,
+      "lineCount": 51,
       "exportCount": 1,
       "symbolCount": 1
     },
@@ -6658,7 +6797,7 @@
     {
       "path": "src/app/projects/_components/ProjectCard.tsx",
       "language": "typescript",
-      "lineCount": 75,
+      "lineCount": 72,
       "exportCount": 1,
       "symbolCount": 1
     },
@@ -6833,9 +6972,44 @@
     {
       "path": "src/app/superadmin/SuperadminNav.tsx",
       "language": "typescript",
-      "lineCount": 42,
+      "lineCount": 43,
       "exportCount": 1,
       "symbolCount": 2
+    },
+    {
+      "path": "src/app/superadmin/agents/_components/AgentDetailDrawer.tsx",
+      "language": "typescript",
+      "lineCount": 210,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/app/superadmin/agents/_components/AgentHealthBadge.tsx",
+      "language": "typescript",
+      "lineCount": 51,
+      "exportCount": 2,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/app/superadmin/agents/_components/AgentTable.tsx",
+      "language": "typescript",
+      "lineCount": 152,
+      "exportCount": 1,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/app/superadmin/agents/agents.types.ts",
+      "language": "typescript",
+      "lineCount": 19,
+      "exportCount": 1,
+      "symbolCount": 1
+    },
+    {
+      "path": "src/app/superadmin/agents/page.tsx",
+      "language": "typescript",
+      "lineCount": 162,
+      "exportCount": 1,
+      "symbolCount": 3
     },
     {
       "path": "src/app/superadmin/announcements/announcements.styles.ts",
@@ -6868,9 +7042,9 @@
     {
       "path": "src/app/superadmin/clients/page.tsx",
       "language": "typescript",
-      "lineCount": 565,
+      "lineCount": 477,
       "exportCount": 1,
-      "symbolCount": 2
+      "symbolCount": 1
     },
     {
       "path": "src/app/superadmin/error.tsx",
@@ -6966,21 +7140,21 @@
     {
       "path": "src/app/workspaces/page.tsx",
       "language": "typescript",
-      "lineCount": 329,
+      "lineCount": 326,
       "exportCount": 1,
       "symbolCount": 2
     },
     {
       "path": "src/app/ws/[workspaceId]/canvas/page.tsx",
       "language": "typescript",
-      "lineCount": 77,
+      "lineCount": 76,
       "exportCount": 1,
       "symbolCount": 1
     },
     {
       "path": "src/app/ws/[workspaceId]/layout.tsx",
       "language": "typescript",
-      "lineCount": 118,
+      "lineCount": 117,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7016,13 +7190,6 @@
       "path": "src/components/AppFooter.tsx",
       "language": "typescript",
       "lineCount": 58,
-      "exportCount": 1,
-      "symbolCount": 2
-    },
-    {
-      "path": "src/components/FeatureGate.tsx",
-      "language": "typescript",
-      "lineCount": 35,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7127,7 +7294,7 @@
     {
       "path": "src/components/cockpit/CockpitGrid.tsx",
       "language": "typescript",
-      "lineCount": 93,
+      "lineCount": 95,
       "exportCount": 1,
       "symbolCount": 5
     },
@@ -7141,7 +7308,7 @@
     {
       "path": "src/components/cockpit/WidgetPickerModal.tsx",
       "language": "typescript",
-      "lineCount": 95,
+      "lineCount": 96,
       "exportCount": 1,
       "symbolCount": 3
     },
@@ -7160,11 +7327,11 @@
       "symbolCount": 2
     },
     {
-      "path": "src/components/cockpit/widgets/ExpiringContractsWidget.tsx",
+      "path": "src/components/cockpit/widgets/CodeHealthWidget.tsx",
       "language": "typescript",
-      "lineCount": 82,
+      "lineCount": 126,
       "exportCount": 1,
-      "symbolCount": 3
+      "symbolCount": 5
     },
     {
       "path": "src/components/cockpit/widgets/FeedHighlightsWidget.tsx",
@@ -7258,18 +7425,11 @@
       "symbolCount": 5
     },
     {
-      "path": "src/components/knowledge/ExtractionPreview.tsx",
-      "language": "typescript",
-      "lineCount": 155,
-      "exportCount": 1,
-      "symbolCount": 5
-    },
-    {
       "path": "src/components/layout/AppShell.tsx",
       "language": "typescript",
-      "lineCount": 79,
+      "lineCount": 76,
       "exportCount": 1,
-      "symbolCount": 3
+      "symbolCount": 2
     },
     {
       "path": "src/components/layout/BottomNav.tsx",
@@ -7295,37 +7455,16 @@
     {
       "path": "src/components/layout/Sidebar.tsx",
       "language": "typescript",
-      "lineCount": 394,
+      "lineCount": 388,
       "exportCount": 1,
       "symbolCount": 5
     },
     {
       "path": "src/components/layout/TopBar.tsx",
       "language": "typescript",
-      "lineCount": 334,
+      "lineCount": 327,
       "exportCount": 1,
       "symbolCount": 3
-    },
-    {
-      "path": "src/components/settings/ModelGovernanceSection.tsx",
-      "language": "typescript",
-      "lineCount": 405,
-      "exportCount": 1,
-      "symbolCount": 8
-    },
-    {
-      "path": "src/components/settings/WorkflowSettingsSection.tsx",
-      "language": "typescript",
-      "lineCount": 242,
-      "exportCount": 1,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/components/ui/Modal.tsx",
-      "language": "typescript",
-      "lineCount": 69,
-      "exportCount": 1,
-      "symbolCount": 2
     },
     {
       "path": "src/components/ui/ToroBird.tsx",
@@ -7351,7 +7490,7 @@
     {
       "path": "src/components/workspace/ArtifactsDrawer.tsx",
       "language": "typescript",
-      "lineCount": 251,
+      "lineCount": 249,
       "exportCount": 1,
       "symbolCount": 6
     },
@@ -7365,7 +7504,7 @@
     {
       "path": "src/components/workspace/BookmarksDrawer.tsx",
       "language": "typescript",
-      "lineCount": 166,
+      "lineCount": 162,
       "exportCount": 1,
       "symbolCount": 4
     },
@@ -7379,7 +7518,7 @@
     {
       "path": "src/components/workspace/ChatArea.tsx",
       "language": "typescript",
-      "lineCount": 491,
+      "lineCount": 472,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7393,30 +7532,23 @@
     {
       "path": "src/components/workspace/ChatHeaderStrip.tsx",
       "language": "typescript",
-      "lineCount": 359,
+      "lineCount": 346,
       "exportCount": 1,
       "symbolCount": 4
     },
     {
       "path": "src/components/workspace/ChatInput.tsx",
       "language": "typescript",
-      "lineCount": 445,
-      "exportCount": 2,
-      "symbolCount": 9
+      "lineCount": 239,
+      "exportCount": 1,
+      "symbolCount": 7
     },
     {
       "path": "src/components/workspace/ChatMessage.tsx",
       "language": "typescript",
-      "lineCount": 287,
+      "lineCount": 402,
       "exportCount": 1,
       "symbolCount": 2
-    },
-    {
-      "path": "src/components/workspace/ChatTabBar.tsx",
-      "language": "typescript",
-      "lineCount": 251,
-      "exportCount": 1,
-      "symbolCount": 3
     },
     {
       "path": "src/components/workspace/ContextBar.tsx",
@@ -7442,14 +7574,14 @@
     {
       "path": "src/components/workspace/EmptyState.tsx",
       "language": "typescript",
-      "lineCount": 73,
+      "lineCount": 71,
       "exportCount": 1,
       "symbolCount": 2
     },
     {
       "path": "src/components/workspace/FocusedFlow.tsx",
       "language": "typescript",
-      "lineCount": 173,
+      "lineCount": 171,
       "exportCount": 1,
       "symbolCount": 5
     },
@@ -7477,7 +7609,7 @@
     {
       "path": "src/components/workspace/IntentionGate.tsx",
       "language": "typescript",
-      "lineCount": 64,
+      "lineCount": 63,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7498,16 +7630,16 @@
     {
       "path": "src/components/workspace/MessageActions.tsx",
       "language": "typescript",
-      "lineCount": 363,
+      "lineCount": 96,
       "exportCount": 1,
-      "symbolCount": 8
+      "symbolCount": 2
     },
     {
       "path": "src/components/workspace/ModelComparePopover.tsx",
       "language": "typescript",
-      "lineCount": 152,
-      "exportCount": 2,
-      "symbolCount": 4
+      "lineCount": 7,
+      "exportCount": 1,
+      "symbolCount": 1
     },
     {
       "path": "src/components/workspace/PanelSelect.tsx",
@@ -7533,9 +7665,30 @@
     {
       "path": "src/components/workspace/PerspectiveMessage.tsx",
       "language": "typescript",
-      "lineCount": 35,
+      "lineCount": 14,
       "exportCount": 1,
       "symbolCount": 2
+    },
+    {
+      "path": "src/components/workspace/PerspectivesBar.tsx",
+      "language": "typescript",
+      "lineCount": 143,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/components/workspace/PerspectivesBottomSheet.tsx",
+      "language": "typescript",
+      "lineCount": 301,
+      "exportCount": 1,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/components/workspace/PerspectivesStrip.tsx",
+      "language": "typescript",
+      "lineCount": 176,
+      "exportCount": 1,
+      "symbolCount": 3
     },
     {
       "path": "src/components/workspace/PostToWorkspaceModal.tsx",
@@ -7552,16 +7705,9 @@
       "symbolCount": 2
     },
     {
-      "path": "src/components/workspace/PromptBuilderInline.tsx",
-      "language": "typescript",
-      "lineCount": 227,
-      "exportCount": 1,
-      "symbolCount": 3
-    },
-    {
       "path": "src/components/workspace/QuickChips.tsx",
       "language": "typescript",
-      "lineCount": 31,
+      "lineCount": 30,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7575,16 +7721,16 @@
     {
       "path": "src/components/workspace/SearchDrawer.tsx",
       "language": "typescript",
-      "lineCount": 164,
+      "lineCount": 157,
       "exportCount": 1,
       "symbolCount": 4
     },
     {
       "path": "src/components/workspace/SessionPanel.tsx",
       "language": "typescript",
-      "lineCount": 406,
+      "lineCount": 335,
       "exportCount": 2,
-      "symbolCount": 7
+      "symbolCount": 5
     },
     {
       "path": "src/components/workspace/ShareModal.tsx",
@@ -7603,7 +7749,7 @@
     {
       "path": "src/components/workspace/SplitArtifactPanel.tsx",
       "language": "typescript",
-      "lineCount": 58,
+      "lineCount": 48,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7638,14 +7784,14 @@
     {
       "path": "src/components/workspace/WorkspaceLayout.tsx",
       "language": "typescript",
-      "lineCount": 417,
+      "lineCount": 305,
       "exportCount": 1,
       "symbolCount": 2
     },
     {
       "path": "src/components/workspace/chat-renderers.tsx",
       "language": "typescript",
-      "lineCount": 188,
+      "lineCount": 183,
       "exportCount": 6,
       "symbolCount": 6
     },
@@ -7827,7 +7973,7 @@
     {
       "path": "src/hooks/useArtifactsView.ts",
       "language": "typescript",
-      "lineCount": 34,
+      "lineCount": 21,
       "exportCount": 1,
       "symbolCount": 2
     },
@@ -7837,20 +7983,6 @@
       "lineCount": 34,
       "exportCount": 1,
       "symbolCount": 1
-    },
-    {
-      "path": "src/hooks/useChatTabs.ts",
-      "language": "typescript",
-      "lineCount": 146,
-      "exportCount": 2,
-      "symbolCount": 5
-    },
-    {
-      "path": "src/hooks/useFeatureFlags.ts",
-      "language": "typescript",
-      "lineCount": 50,
-      "exportCount": 2,
-      "symbolCount": 2
     },
     {
       "path": "src/hooks/useMediaQuery.ts",
@@ -7869,7 +8001,7 @@
     {
       "path": "src/hooks/usePerspectives.ts",
       "language": "typescript",
-      "lineCount": 109,
+      "lineCount": 25,
       "exportCount": 3,
       "symbolCount": 3
     },
@@ -7902,6 +8034,13 @@
       "symbolCount": 10
     },
     {
+      "path": "src/lib/agents/agent-catalog.ts",
+      "language": "typescript",
+      "lineCount": 323,
+      "exportCount": 4,
+      "symbolCount": 6
+    },
+    {
       "path": "src/lib/api/pagination.ts",
       "language": "typescript",
       "lineCount": 14,
@@ -7923,6 +8062,118 @@
       "symbolCount": 5
     },
     {
+      "path": "src/lib/audit/checkers/agent-architecture-checker.ts",
+      "language": "typescript",
+      "lineCount": 110,
+      "exportCount": 3,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/lib/audit/checkers/agent-committee-checker.ts",
+      "language": "typescript",
+      "lineCount": 936,
+      "exportCount": 27,
+      "symbolCount": 33
+    },
+    {
+      "path": "src/lib/audit/checkers/agent-observability-checker.ts",
+      "language": "typescript",
+      "lineCount": 150,
+      "exportCount": 4,
+      "symbolCount": 6
+    },
+    {
+      "path": "src/lib/audit/checkers/agent-security-checker.ts",
+      "language": "typescript",
+      "lineCount": 221,
+      "exportCount": 6,
+      "symbolCount": 10
+    },
+    {
+      "path": "src/lib/audit/checkers/cli-checker.ts",
+      "language": "typescript",
+      "lineCount": 206,
+      "exportCount": 3,
+      "symbolCount": 6
+    },
+    {
+      "path": "src/lib/audit/checkers/documentation-checker.ts",
+      "language": "typescript",
+      "lineCount": 153,
+      "exportCount": 7,
+      "symbolCount": 10
+    },
+    {
+      "path": "src/lib/audit/checkers/external-tools-checker.ts",
+      "language": "typescript",
+      "lineCount": 255,
+      "exportCount": 5,
+      "symbolCount": 21
+    },
+    {
+      "path": "src/lib/audit/checkers/file-system-checker.ts",
+      "language": "typescript",
+      "lineCount": 461,
+      "exportCount": 28,
+      "symbolCount": 35
+    },
+    {
+      "path": "src/lib/audit/checkers/repo-map-checker.ts",
+      "language": "typescript",
+      "lineCount": 366,
+      "exportCount": 11,
+      "symbolCount": 18
+    },
+    {
+      "path": "src/lib/audit/deduplicator.ts",
+      "language": "typescript",
+      "lineCount": 237,
+      "exportCount": 3,
+      "symbolCount": 12
+    },
+    {
+      "path": "src/lib/audit/index.ts",
+      "language": "typescript",
+      "lineCount": 141,
+      "exportCount": 3,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/lib/audit/page-data.ts",
+      "language": "typescript",
+      "lineCount": 78,
+      "exportCount": 7,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/lib/audit/rule-registry.ts",
+      "language": "typescript",
+      "lineCount": 323,
+      "exportCount": 3,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/audit/scoring/score-calculator.ts",
+      "language": "typescript",
+      "lineCount": 77,
+      "exportCount": 4,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/audit/scoring/score-formatter.ts",
+      "language": "typescript",
+      "lineCount": 95,
+      "exportCount": 2,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/lib/audit/types.ts",
+      "language": "typescript",
+      "lineCount": 182,
+      "exportCount": 16,
+      "symbolCount": 16
+    },
+    {
       "path": "src/lib/auth/guards.ts",
       "language": "typescript",
       "lineCount": 48,
@@ -7939,9 +8190,9 @@
     {
       "path": "src/lib/capability-resolver.ts",
       "language": "typescript",
-      "lineCount": 208,
+      "lineCount": 193,
       "exportCount": 5,
-      "symbolCount": 8
+      "symbolCount": 7
     },
     {
       "path": "src/lib/card-history.ts",
@@ -7967,14 +8218,7 @@
     {
       "path": "src/lib/chat/detect-parallel-intent.ts",
       "language": "typescript",
-      "lineCount": 148,
-      "exportCount": 4,
-      "symbolCount": 10
-    },
-    {
-      "path": "src/lib/chat/open-in-tab.ts",
-      "language": "typescript",
-      "lineCount": 20,
+      "lineCount": 10,
       "exportCount": 2,
       "symbolCount": 2
     },
@@ -8000,53 +8244,11 @@
       "symbolCount": 1
     },
     {
-      "path": "src/lib/email/adapters/null.ts",
-      "language": "typescript",
-      "lineCount": 18,
-      "exportCount": 2,
-      "symbolCount": 3
-    },
-    {
-      "path": "src/lib/email/adapters/resend.ts",
-      "language": "typescript",
-      "lineCount": 42,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/lib/email/adapters/smtp.ts",
-      "language": "typescript",
-      "lineCount": 51,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/lib/email/index.ts",
-      "language": "typescript",
-      "lineCount": 45,
-      "exportCount": 2,
-      "symbolCount": 3
-    },
-    {
-      "path": "src/lib/email/types.ts",
-      "language": "typescript",
-      "lineCount": 15,
-      "exportCount": 2,
-      "symbolCount": 2
-    },
-    {
       "path": "src/lib/errors.ts",
       "language": "typescript",
       "lineCount": 17,
       "exportCount": 1,
       "symbolCount": 1
-    },
-    {
-      "path": "src/lib/features.ts",
-      "language": "typescript",
-      "lineCount": 119,
-      "exportCount": 6,
-      "symbolCount": 7
     },
     {
       "path": "src/lib/feed-cost-estimator.ts",
@@ -8140,6 +8342,90 @@
       "symbolCount": 2
     },
     {
+      "path": "src/lib/file-access/browser-check.ts",
+      "language": "typescript",
+      "lineCount": 32,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/file-access/directory-reader.ts",
+      "language": "typescript",
+      "lineCount": 91,
+      "exportCount": 1,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/file-access/file-filter.ts",
+      "language": "typescript",
+      "lineCount": 77,
+      "exportCount": 4,
+      "symbolCount": 8
+    },
+    {
+      "path": "src/lib/file-access/types.ts",
+      "language": "typescript",
+      "lineCount": 34,
+      "exportCount": 3,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/fix-engine/applier.ts",
+      "language": "typescript",
+      "lineCount": 475,
+      "exportCount": 2,
+      "symbolCount": 14
+    },
+    {
+      "path": "src/lib/fix-engine/consensus-generator.ts",
+      "language": "typescript",
+      "lineCount": 371,
+      "exportCount": 2,
+      "symbolCount": 15
+    },
+    {
+      "path": "src/lib/fix-engine/context-builder.ts",
+      "language": "typescript",
+      "lineCount": 152,
+      "exportCount": 1,
+      "symbolCount": 5
+    },
+    {
+      "path": "src/lib/fix-engine/generator.ts",
+      "language": "typescript",
+      "lineCount": 163,
+      "exportCount": 2,
+      "symbolCount": 8
+    },
+    {
+      "path": "src/lib/fix-engine/index.ts",
+      "language": "typescript",
+      "lineCount": 11,
+      "exportCount": 0,
+      "symbolCount": 0
+    },
+    {
+      "path": "src/lib/fix-engine/risk-assessor.ts",
+      "language": "typescript",
+      "lineCount": 132,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/fix-engine/schemas.ts",
+      "language": "typescript",
+      "lineCount": 30,
+      "exportCount": 4,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/fix-engine/types.ts",
+      "language": "typescript",
+      "lineCount": 154,
+      "exportCount": 16,
+      "symbolCount": 16
+    },
+    {
       "path": "src/lib/graph.ts",
       "language": "typescript",
       "lineCount": 164,
@@ -8159,34 +8445,6 @@
       "lineCount": 53,
       "exportCount": 5,
       "symbolCount": 6
-    },
-    {
-      "path": "src/lib/knowledge/extract/classifier.ts",
-      "language": "typescript",
-      "lineCount": 51,
-      "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/lib/knowledge/extract/extractor.ts",
-      "language": "typescript",
-      "lineCount": 56,
-      "exportCount": 1,
-      "symbolCount": 3
-    },
-    {
-      "path": "src/lib/knowledge/extract/index.ts",
-      "language": "typescript",
-      "lineCount": 83,
-      "exportCount": 1,
-      "symbolCount": 3
-    },
-    {
-      "path": "src/lib/knowledge/extract/schemas.ts",
-      "language": "typescript",
-      "lineCount": 59,
-      "exportCount": 2,
-      "symbolCount": 2
     },
     {
       "path": "src/lib/langsmith/tracer.ts",
@@ -8210,13 +8468,6 @@
       "symbolCount": 1
     },
     {
-      "path": "src/lib/llm/model-resolver.ts",
-      "language": "typescript",
-      "lineCount": 206,
-      "exportCount": 8,
-      "symbolCount": 12
-    },
-    {
       "path": "src/lib/llm/models.ts",
       "language": "typescript",
       "lineCount": 6,
@@ -8231,11 +8482,39 @@
       "symbolCount": 5
     },
     {
-      "path": "src/lib/llm/provider.ts",
+      "path": "src/lib/llm/providers/anthropic.ts",
       "language": "typescript",
-      "lineCount": 41,
-      "exportCount": 1,
-      "symbolCount": 1
+      "lineCount": 54,
+      "exportCount": 2,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/lib/llm/providers/google.ts",
+      "language": "typescript",
+      "lineCount": 110,
+      "exportCount": 2,
+      "symbolCount": 10
+    },
+    {
+      "path": "src/lib/llm/providers/openai.ts",
+      "language": "typescript",
+      "lineCount": 59,
+      "exportCount": 2,
+      "symbolCount": 8
+    },
+    {
+      "path": "src/lib/llm/providers/types.ts",
+      "language": "typescript",
+      "lineCount": 30,
+      "exportCount": 4,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/llm/providers/xai.ts",
+      "language": "typescript",
+      "lineCount": 63,
+      "exportCount": 2,
+      "symbolCount": 8
     },
     {
       "path": "src/lib/llm/router.ts",
@@ -8273,13 +8552,6 @@
       "symbolCount": 7
     },
     {
-      "path": "src/lib/monitoring/index.ts",
-      "language": "typescript",
-      "lineCount": 37,
-      "exportCount": 2,
-      "symbolCount": 2
-    },
-    {
       "path": "src/lib/project-context.ts",
       "language": "typescript",
       "lineCount": 48,
@@ -8308,16 +8580,9 @@
       "symbolCount": 6
     },
     {
-      "path": "src/lib/ratelimit/index.ts",
-      "language": "typescript",
-      "lineCount": 123,
-      "exportCount": 3,
-      "symbolCount": 9
-    },
-    {
       "path": "src/lib/repo-map/file-discovery.ts",
       "language": "typescript",
-      "lineCount": 89,
+      "lineCount": 90,
       "exportCount": 1,
       "symbolCount": 7
     },
@@ -8338,23 +8603,23 @@
     {
       "path": "src/lib/repo-map/graph-ranker.ts",
       "language": "typescript",
-      "lineCount": 94,
+      "lineCount": 111,
       "exportCount": 1,
-      "symbolCount": 5
+      "symbolCount": 7
     },
     {
       "path": "src/lib/repo-map/index.ts",
       "language": "typescript",
-      "lineCount": 92,
+      "lineCount": 158,
       "exportCount": 0,
       "symbolCount": 4
     },
     {
       "path": "src/lib/repo-map/map-compressor.ts",
       "language": "typescript",
-      "lineCount": 70,
-      "exportCount": 2,
-      "symbolCount": 4
+      "lineCount": 94,
+      "exportCount": 3,
+      "symbolCount": 5
     },
     {
       "path": "src/lib/repo-map/parser.ts",
@@ -8366,7 +8631,7 @@
     {
       "path": "src/lib/repo-map/reference-analyzer.ts",
       "language": "typescript",
-      "lineCount": 211,
+      "lineCount": 210,
       "exportCount": 2,
       "symbolCount": 7
     },
@@ -8380,9 +8645,51 @@
     {
       "path": "src/lib/repo-map/types.ts",
       "language": "typescript",
-      "lineCount": 93,
+      "lineCount": 98,
       "exportCount": 5,
       "symbolCount": 5
+    },
+    {
+      "path": "src/lib/review/consensus-calculator.ts",
+      "language": "typescript",
+      "lineCount": 82,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/review/judge.ts",
+      "language": "typescript",
+      "lineCount": 112,
+      "exportCount": 1,
+      "symbolCount": 4
+    },
+    {
+      "path": "src/lib/review/orchestrator.ts",
+      "language": "typescript",
+      "lineCount": 103,
+      "exportCount": 1,
+      "symbolCount": 7
+    },
+    {
+      "path": "src/lib/review/prompt-builder.ts",
+      "language": "typescript",
+      "lineCount": 43,
+      "exportCount": 2,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/review/response-parser.ts",
+      "language": "typescript",
+      "lineCount": 35,
+      "exportCount": 1,
+      "symbolCount": 3
+    },
+    {
+      "path": "src/lib/review/types.ts",
+      "language": "typescript",
+      "lineCount": 38,
+      "exportCount": 4,
+      "symbolCount": 4
     },
     {
       "path": "src/lib/skill-resolver.ts",
@@ -8429,7 +8736,7 @@
     {
       "path": "src/lib/types.ts",
       "language": "typescript",
-      "lineCount": 178,
+      "lineCount": 156,
       "exportCount": 21,
       "symbolCount": 21
     },
@@ -8525,34 +8832,6 @@
       "symbolCount": 10
     },
     {
-      "path": "src/lib/workflow/index.ts",
-      "language": "typescript",
-      "lineCount": 86,
-      "exportCount": 6,
-      "symbolCount": 10
-    },
-    {
-      "path": "src/lib/workflow/n8n.ts",
-      "language": "typescript",
-      "lineCount": 38,
-      "exportCount": 4,
-      "symbolCount": 7
-    },
-    {
-      "path": "src/lib/workflow/types.ts",
-      "language": "typescript",
-      "lineCount": 40,
-      "exportCount": 5,
-      "symbolCount": 5
-    },
-    {
-      "path": "src/lib/workflow/windmill.ts",
-      "language": "typescript",
-      "lineCount": 108,
-      "exportCount": 4,
-      "symbolCount": 8
-    },
-    {
       "path": "src/lib/workspace-actions.ts",
       "language": "typescript",
       "lineCount": 201,
@@ -8597,7 +8876,7 @@
     {
       "path": "src/lib/workspace-types.ts",
       "language": "typescript",
-      "lineCount": 327,
+      "lineCount": 325,
       "exportCount": 21,
       "symbolCount": 21
     },
@@ -8618,44 +8897,9 @@
     {
       "path": "src/proxy.ts",
       "language": "typescript",
-      "lineCount": 184,
+      "lineCount": 226,
       "exportCount": 2,
-      "symbolCount": 4
-    },
-    {
-      "path": "src/scripts/generate-repo-map.ts",
-      "language": "typescript",
-      "lineCount": 125,
-      "exportCount": 0,
-      "symbolCount": 5
-    },
-    {
-      "path": "src/test/mocks/server.ts",
-      "language": "typescript",
-      "lineCount": 28,
-      "exportCount": 2,
-      "symbolCount": 2
-    },
-    {
-      "path": "src/test/mocks/supabase.ts",
-      "language": "typescript",
-      "lineCount": 29,
-      "exportCount": 1,
-      "symbolCount": 1
-    },
-    {
-      "path": "src/test/setup.integration.ts",
-      "language": "typescript",
-      "lineCount": 12,
-      "exportCount": 0,
-      "symbolCount": 1
-    },
-    {
-      "path": "src/test/setup.ts",
-      "language": "typescript",
-      "lineCount": 62,
-      "exportCount": 0,
-      "symbolCount": 0
+      "symbolCount": 6
     },
     {
       "path": "src/types/agents.ts",
@@ -8730,9 +8974,9 @@
     {
       "path": "supabase/functions/ai-chat/index.ts",
       "language": "typescript",
-      "lineCount": 951,
+      "lineCount": 924,
       "exportCount": 0,
-      "symbolCount": 82
+      "symbolCount": 81
     },
     {
       "path": "supabase/functions/jungle-order/index.ts",
@@ -8763,9 +9007,37 @@
       "symbolCount": 0
     },
     {
+      "path": "test/mocks/server.ts",
+      "language": "typescript",
+      "lineCount": 28,
+      "exportCount": 2,
+      "symbolCount": 2
+    },
+    {
+      "path": "test/mocks/supabase.ts",
+      "language": "typescript",
+      "lineCount": 29,
+      "exportCount": 1,
+      "symbolCount": 1
+    },
+    {
+      "path": "test/setup.integration.ts",
+      "language": "typescript",
+      "lineCount": 12,
+      "exportCount": 0,
+      "symbolCount": 1
+    },
+    {
+      "path": "test/setup.ts",
+      "language": "typescript",
+      "lineCount": 62,
+      "exportCount": 0,
+      "symbolCount": 0
+    },
+    {
       "path": "vitest.config.ts",
       "language": "typescript",
-      "lineCount": 41,
+      "lineCount": 45,
       "exportCount": 0,
       "symbolCount": 0
     },

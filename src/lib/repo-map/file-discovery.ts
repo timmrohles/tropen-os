@@ -1,4 +1,5 @@
 import { readdir, readFile } from 'fs/promises'
+import type { Dirent } from 'fs'
 import { existsSync } from 'fs'
 import path from 'path'
 import ignore from 'ignore'
@@ -58,10 +59,10 @@ async function walkDir(
   allowedExtensions: Set<string>
 ): Promise<string[]> {
   const results: string[] = []
-  let entries: Awaited<ReturnType<typeof readdir>>
+  let entries: Dirent<string>[]
 
   try {
-    entries = await readdir(dir, { withFileTypes: true })
+    entries = await readdir(dir, { withFileTypes: true, encoding: 'utf8' })
   } catch {
     return results
   }

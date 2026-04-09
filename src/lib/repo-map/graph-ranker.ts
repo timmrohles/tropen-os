@@ -2,6 +2,21 @@ import type { RepoFile, FileDependency, RepoSymbol } from './types'
 
 const PAGERANK_ITERATIONS = 15
 const DAMPING = 0.85
+
+// Known entry-point function names that should rank higher regardless of import count
+const ENTRY_POINT_NAMES = new Set([
+  'generateText', 'streamText', 'runAudit',
+  'generateRepoMap', 'createClient', 'buildAuditContext',
+  'buildAuditContextFromFiles', 'generateRepoMapFromFiles',
+])
+
+function detectEntryPoint(sym: RepoSymbol, filePath: string): boolean {
+  // API route handlers
+  if (filePath.includes('/api/') && sym.kind === 'function' && sym.exported) return true
+  // Known entry-point names
+  return ENTRY_POINT_NAMES.has(sym.name) && sym.exported
+}
+
 const KIND_WEIGHT: Record<RepoSymbol['kind'], number> = {
   class:     1.0,
   interface: 1.0,
@@ -28,10 +43,12 @@ export function rankSymbols(files: RepoFile[], dependencies: FileDependency[]): 
     const fileRank = fileRanks.get(file.path) ?? (1 / Math.max(files.length, 1))
 
     for (const sym of file.symbols) {
-      const exportBonus = sym.exported ? 1.5 : 1.0
+      const exportBonus = sym.exported ? 2.0 : 1.0
       const kindWeight = KIND_WEIGHT[sym.kind] ?? 0.5
-      const refBonus = 1 + Math.log1p(sym.referenceCount)
-      sym.rankScore = fileRank * exportBonus * kindWeight * refBonus
+      const entryPointBonus = detectEntryPoint(sym, file.path) ? 2.0 : 1.0
+      // sqrt dampens extreme reference counts — prevents a single hub from dominating
+      const refBonus = 1 + (Math.sqrt(sym.referenceCount) * 0.5)
+      sym.rankScore = fileRank * exportBonus * kindWeight * refBonus * entryPointBonus
       allSymbols.push(sym)
     }
   }

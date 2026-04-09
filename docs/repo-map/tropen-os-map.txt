@@ -1,3 +1,8 @@
+src/utils/supabase/server.ts:
+⋮...
+│export function createClient()
+⋮...
+
 src/lib/supabase-admin.ts:
 ⋮...
 │export supabaseAdmin
@@ -14,15 +19,24 @@ src/lib/logger.ts:
 │isProd
 ⋮...
 
-src/utils/supabase/server.ts:
-⋮...
-│export function createClient()
-⋮...
-
 src/lib/api/projects.ts:
 ⋮...
 │export function getAuthUser()
 │export function verifyProjectAccess(projectId: string, me: { id: string; organization_id: string; role: string }): Promise<boolean>
+⋮...
+
+src/utils/supabase/client.ts:
+⋮...
+│export function createClient()
+⋮...
+
+src/lib/api/workspaces.ts:
+⋮...
+│export function getAuthUser(): Promise<AuthUser | null>
+│export function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
+│export function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>
+│export function canReadWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
+│export export type AuthUser = { id: string; organization_id: string; role: OrgRole | 'superadmin' }
 ⋮...
 
 src/db/schema.ts:
@@ -130,9 +144,24 @@ src/db/schema.ts:
 │tsvector
 ⋮...
 
-src/utils/supabase/client.ts:
+src/lib/audit/types.ts:
 ⋮...
-│export function createClient()
+│export interface AuditContext
+│export interface Finding
+│export interface RuleResult
+│export interface AuditReport
+│export interface CategoryScore
+│export export type AgentSource =
+│export interface AuditRule
+│export export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'
+│export interface PackageJson
+│export interface TsConfig
+│export interface GitInfo
+│export interface AuditOptions
+│export export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
+│export CATEGORIES: CategoryDefinition[]
+│export interface CategoryDefinition
+│export interface ExternalToolsOptions
 ⋮...
 
 src/lib/workspace-types.ts:
@@ -160,25 +189,13 @@ src/lib/workspace-types.ts:
 │export TASK_TYPES
 ⋮...
 
-src/types/feeds.ts:
+src/lib/repo-map/types.ts:
 ⋮...
-│export interface FeedSource
-│export interface RawFeedItem
-│export interface FeedDataSource
-│export interface FeedTopic
-│export interface FeedDataRecord
-│export interface FeedRun
-│export interface FeedRunResult
-│export interface FeedItem
-│export interface FeedDistribution
-│export export type FeedSourceType = 'rss' | 'email' | 'api' | 'url'
-│export interface FeedRunError
-│export interface Stage2Result
-│export interface FeedNotification
-│export interface FeedSchema
-│export export type FeedItemStatus = 'unread' | 'read' | 'saved' | 'archived' | 'deleted' | 'not_relevant'
-│export export type FeedSourceStatus = 'active' | 'paused' | 'error' | 'archived'
-│export export type FeedRunStatus = 'running' | 'success' | 'partial' | 'error'
+│export interface RepoSymbol
+│export interface RepoFile
+│export interface FileDependency
+│export interface RepoMap
+│export interface RepoMapOptions
 ⋮...
 
 src/lib/types.ts:
@@ -206,13 +223,25 @@ src/lib/types.ts:
 │export export type WorkspaceMember = DepartmentMember
 ⋮...
 
-src/lib/api/workspaces.ts:
+src/types/feeds.ts:
 ⋮...
-│export function getAuthUser(): Promise<AuthUser | null>
-│export function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
-│export function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>
-│export export type AuthUser = { id: string; organization_id: string; role: OrgRole | 'superadmin' }
-│export function canReadWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
+│export interface FeedSource
+│export interface RawFeedItem
+│export interface FeedDataSource
+│export interface FeedTopic
+│export interface FeedDataRecord
+│export interface FeedRun
+│export interface FeedRunResult
+│export interface FeedItem
+│export interface FeedDistribution
+│export export type FeedSourceType = 'rss' | 'email' | 'api' | 'url'
+│export interface FeedRunError
+│export interface Stage2Result
+│export interface FeedNotification
+│export interface FeedSchema
+│export export type FeedItemStatus = 'unread' | 'read' | 'saved' | 'archived' | 'deleted' | 'not_relevant'
+│export export type FeedSourceStatus = 'active' | 'paused' | 'error' | 'archived'
+│export export type FeedRunStatus = 'running' | 'success' | 'partial' | 'error'
 ⋮...
 
 src/lib/validators/index.ts:
@@ -231,17 +260,14 @@ src/components/cockpit/widgets/shared.tsx:
 │export function WidgetSkeleton({ rows = 3 }: SkeletonProps)
 │export function WidgetEmpty({ text, actionLabel, actionHref }: EmptyProps)
 │export function formatRelativeDate(dateStr: string | null | undefined): string
-│interface SkeletonProps
-│interface EmptyProps
 ⋮...
 
-src/lib/repo-map/types.ts:
+src/lib/llm/providers/types.ts:
 ⋮...
-│export interface RepoSymbol
-│export interface RepoFile
-│export interface FileDependency
-│export interface RepoMapOptions
-│export interface RepoMap
+│export interface ReviewResponse
+│export interface ReviewProvider
+│export interface ProviderFinding
+│export export type ProviderId = 'anthropic' | 'openai' | 'google' | 'xai'
 ⋮...
 
 src/types/qa.ts:
@@ -269,6 +295,8 @@ src/lib/chat/parse-artifacts.ts:
 │export interface ArtifactSegment
 │export function parseArtifacts(content: string): ContentSegment[]
 │export interface TextSegment
+│export export type ArtifactType = 'react' | 'chart' | 'code' | 'document' | 'table' | 'list' | 'data' | 'image' | 'other' | 'presentation'
+│export export type ContentSegment = ArtifactSegment | TextSegment
 ⋮...
 
 src/app/projects/_components/types.ts:
@@ -289,9 +317,25 @@ src/hooks/use-focus-trap.ts:
 │export function useFocusTrap(active: boolean)
 ⋮...
 
-src/components/ParrotIcon.tsx:
+src/lib/fix-engine/types.ts:
 ⋮...
-│export function ParrotIcon({ size = 24, className, style }: ParrotIconProps)
+│export interface FixContext
+│export interface FileDiff
+│export interface GeneratedFix
+│export interface FixLlmResponse
+│export interface DiffHunk
+│export interface RiskAssessment
+│export interface ProviderFixDraft
+│export interface ConsensusFix
+│export export type FixStatus = 'pending' | 'applied' | 'rejected'
+⋮...
+
+src/lib/repo-map/index.ts:
+⋮...
+│function generateRepoMap(options: RepoMapOptions): Promise<RepoMap>
+│function generateRepoMapFromFiles(files: Array<{ path: string; content: string }>, options: { tokenBudget?: number | 'auto' | 'small' | 'medium' | 'large' } = {}): Promise<RepoMap>
+│function getCompressedRepoMap(rootPath: string, tokenBudget: RepoMapOptions['tokenBudget'] = 'auto'): Promise<string>
+│VERSION
 ⋮...
 
 src/lib/llm/anthropic.ts:
@@ -299,9 +343,9 @@ src/lib/llm/anthropic.ts:
 │export anthropic
 ⋮...
 
-src/lib/supabase/server.ts:
+src/components/ParrotIcon.tsx:
 ⋮...
-│export function createServiceClient()
+│export function ParrotIcon({ size = 24, className, style }: ParrotIconProps)
 ⋮...
 
 src/types/workspace-plan-c.types.ts:
@@ -318,10 +362,17 @@ src/types/workspace.ts:
 │export interface ParticipantWithUser extends WorkspaceParticipant
 ⋮...
 
-src/lib/email/types.ts:
+src/lib/api/pagination.ts:
 ⋮...
-│export interface EmailPayload
-│export interface EmailAdapter
+│export function parsePaginationParams(searchParams: URLSearchParams, defaultLimit = 100, maxLimit = 500): { limit: number; offset: number }
+⋮...
+
+src/lib/repo-map/parser.ts:
+⋮...
+│export function parseSource(filePath: string, content: string): ParsedFile
+│export export type ParsedFile = {
+│export function getLineNumber(sourceFile: ts.SourceFile, pos: number): number
+│export function getFirstLine(text: string): string
 ⋮...
 
 src/components/workspaces/CommentThread.tsx:
@@ -337,6 +388,11 @@ src/components/workspaces/CommentThread.tsx:
 src/components/Parrot.tsx:
 ⋮...
 │export function Parrot({ size = 24, style, className }: ParrotProps)
+⋮...
+
+src/lib/supabase/server.ts:
+⋮...
+│export function createServiceClient()
 ⋮...
 
 src/components/admin/qa/QaShared.tsx:
@@ -365,19 +421,11 @@ src/components/admin/qa/QaShared.tsx:
   loading?: boolean
 
 │export s: Record<string, React.CSSProperties>
-│export function modelColor(model: string): string
 ⋮...
 
-src/lib/features.ts:
+src/lib/cockpit/widgetCatalog.ts:
 ⋮...
-│export export type FeatureFlag =
-│export FEATURE_DEFAULTS: Record<FeatureFlag, boolean>
-⋮...
-
-src/lib/chat/detect-parallel-intent.ts:
-⋮...
-│export interface ParallelIntent
-│export export type TaskCategory = 'code' | 'analysis' | 'writing' | 'research' | 'math' | 'general'
+│export interface WidgetMeta
 ⋮...
 
 src/app/onboarding/onboarding.styles.ts:
@@ -385,96 +433,14 @@ src/app/onboarding/onboarding.styles.ts:
 │export s: Record<string, React.CSSProperties>
 ⋮...
 
-src/lib/cockpit/widgetCatalog.ts:
-⋮...
-│export interface WidgetMeta
-│export WIDGET_CATALOG: WidgetMeta[]
-⋮...
-
-src/lib/workflow/types.ts:
-⋮...
-│export interface WorkflowAdapter
-│export export type WorkflowProvider = 'windmill' | 'n8n' | 'none'
-│export interface WorkflowRunResult
-│export interface WorkflowRunStatus
-│export interface WorkflowTriggerPayload
-⋮...
-
 src/types/agents.ts:
 ⋮...
-│export function mapSkill(row: Record<string, any>): Skill
-│export function mapAgent(row: Record<string, any>): Agent
-│export function mapAgentRun(row: Record<string, any>): AgentRun
 │export interface Skill
 │export interface AgentSkill
 │export interface AgentStep
 │export interface AgentTriggerConfig
 │export interface Agent
 │export interface AgentRun
-⋮...
-
-src/lib/knowledge/extract/schemas.ts:
-⋮...
-│export export type ExtractableDocumentType = keyof typeof EXTRACTION_SCHEMAS
-⋮...
-
-src/lib/feeds/ssrf-guard.ts:
-⋮...
-│export function isSafeUrl(rawUrl: string): Promise<{ safe: boolean; reason?: string }>
-⋮...
-
-src/components/workspace/ArtifactRenderer.tsx:
-⋮...
-│export function ArtifactRenderer({
-  artifact,
-  conversationId,
-  organizationId,
-  messageId,
-  onSaved,
-  onSendDirect,
-  isInSplitView = false,
-}: ArtifactRendererProps)
-⋮...
-
-src/actions/feeds.ts:
-⋮...
-│export function triggerFetch(sourceId: string): Promise<{
-  itemsFound: number; itemsSaved: number; errors: string[]
-}>
-⋮...
-
-src/components/workspaces/WorkspacePicker.tsx:
-⋮...
-│export function WorkspacePicker({
-  itemType,
-  itemId,
-  itemTitle,
-  onClose,
-  onSaved,
-}: {
-  itemType: WorkspaceItemType
-  itemId: string
-  itemTitle: string
-  onClose: () => void
-  onSaved?:
-⋮...
-
-src/app/api/chat/prompt-builder/generate-questions/route.ts:
-⋮...
-│export interface PromptQuestion
-⋮...
-
-src/lib/errors.ts:
-⋮...
-│export class AppError extends Error
-⋮...
-
-src/hooks/useWorkspaceState.ts:
-⋮...
-│export function useWorkspaceState(workspaceId: string, initialConvId?: string | null): WorkspaceState
-⋮...
-
-src/app/feeds/_components/DataSourceHelpers.tsx:
-⋮...
-│export export type FormState = ReturnType<typeof blankForm>
+│export function mapSkill(row: Record<string, any>): Skill
+│export function mapAgent(row: Record<string, any>): Agent
 ⋮...

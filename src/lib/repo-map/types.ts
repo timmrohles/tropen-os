@@ -39,7 +39,7 @@ export interface RepoFile {
   /** Relativer Pfad */
   path: string
   /** Sprache */
-  language: 'typescript' | 'javascript' | 'json'
+  language: 'typescript' | 'javascript' | 'json' | 'other'
   /** Zeilenanzahl */
   lineCount: number
   /** Definierte Symbole */
@@ -81,8 +81,13 @@ export interface RepoMap {
 export interface RepoMapOptions {
   /** Repo-Root-Verzeichnis */
   rootPath: string
-  /** Token-Budget für die komprimierte Map (Default: 2048) */
-  tokenBudget?: number
+  /**
+   * Token-Budget für die komprimierte Map.
+   * - 'auto' (Default): dynamisch nach Projektgröße (~6-7 Tokens/Datei)
+   * - 'small': 2048 | 'medium': 4096 | 'large': 8192
+   * - Zahl: exaktes Budget
+   */
+  tokenBudget?: number | 'auto' | 'small' | 'medium' | 'large'
   /** Dateien/Ordner die ignoriert werden sollen (zusätzlich zu .gitignore) */
   ignorePatterns?: string[]
   /** Nur diese Dateien/Ordner einschließen */
