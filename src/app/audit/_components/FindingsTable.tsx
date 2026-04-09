@@ -197,6 +197,7 @@ export default function FindingsTable({
   const [fixErrors, setFixErrors] = useState<Record<string, string>>({})
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [groupBatchFixing, setGroupBatchFixing] = useState<string | null>(null)
+  const [batchConfirmGroup, setBatchConfirmGroup] = useState<FindingGroup | null>(null)
   const [expandedSubGroups, setExpandedSubGroups] = useState<Record<string, Set<string>>>({})
 
   // Filter values come from URL params (via props) — no client state needed
@@ -858,7 +859,7 @@ export default function FindingsTable({
                           <button
                             className="btn btn-ghost btn-sm"
                             disabled={groupBatchFixing === item.ruleId}
-                            onClick={() => handleGroupFix(item)}
+                            onClick={() => setBatchConfirmGroup(item)}
                             style={{ fontSize: 11, padding: '2px 7px', opacity: groupBatchFixing === item.ruleId ? 0.5 : 1 }}
                           >
                             Alle fixen
@@ -1057,6 +1058,46 @@ export default function FindingsTable({
           </tbody>
         </table>
         </>
+      )}
+
+      {/* Batch-Fix Confirmation Dialog */}
+      {batchConfirmGroup && (
+        <div className="modal-overlay" style={{ zIndex: 200 }} onClick={() => setBatchConfirmGroup(null)}>
+          <div
+            className="card"
+            style={{ width: 420, padding: 24, margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>
+              Alle Findings dieser Regel fixen?
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              <strong>{batchConfirmGroup.count}</strong> Findings für Regel{' '}
+              <code style={{ fontSize: 12, background: 'var(--border)', padding: '1px 5px', borderRadius: 3 }}>
+                {batchConfirmGroup.ruleId}
+              </code>
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 20 }}>
+              Geschätzte Kosten: ca. {(batchConfirmGroup.findings.filter(f => f.file_path).length * 0.02).toFixed(2)} EUR
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => setBatchConfirmGroup(null)}>
+                Abbrechen
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={groupBatchFixing === batchConfirmGroup.ruleId}
+                onClick={() => {
+                  const group = batchConfirmGroup
+                  setBatchConfirmGroup(null)
+                  handleGroupFix(group)
+                }}
+              >
+                {groupBatchFixing === batchConfirmGroup.ruleId ? 'Wird generiert…' : 'Fixen starten'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
