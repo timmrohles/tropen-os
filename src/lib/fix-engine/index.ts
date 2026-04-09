@@ -1,0 +1,10 @@
+// src/lib/fix-engine/index.ts
+export * from './types'
+export { buildFixContext } from './context-builder'
+export { generateFix } from './generator'
+export { applyDiffs } from './applier'
+export { assessRisk } from './risk-assessor'
+export { generateConsensusFix } from './consensus-generator'
+export type { GeneratorResult } from './generator'
+export type { ApplyResult } from './applier'
+export type { ConsensusGeneratorResult } from './consensus-generator'

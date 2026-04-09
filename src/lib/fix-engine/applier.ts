@@ -15,9 +15,10 @@
 //  the wrong position and corrupts files. Instead we search for the exact
 //  text of context+minus lines and replace it with context+plus lines.
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
+import os from 'node:os'
 import { createLogger } from '@/lib/logger'
 import type { FileDiff, DiffHunk } from './types'
 
@@ -78,7 +79,7 @@ export async function applyDiffs(diffs: FileDiff[], rootPath: string): Promise<A
           .join('\n')
 
         mkdirSync(path.dirname(absPath), { recursive: true })
-        writeFileSync(absPath, newContent + '\n', 'utf-8')
+        atomicWrite(absPath, newContent + '\n')
         log.info('New file created', { filePath: diff.filePath })
         results.push({ filePath: diff.filePath, success: true })
         continue
@@ -106,7 +107,7 @@ export async function applyDiffs(diffs: FileDiff[], rootPath: string): Promise<A
         continue
       }
 
-      writeFileSync(absPath, applyResult.newContent, 'utf-8')
+      atomicWrite(absPath, applyResult.newContent)
       log.info('Diff applied (content-based)', { filePath: diff.filePath, hunks: diff.hunks.length })
 
       // 3. TypeScript validation (only for .ts / .tsx files)
@@ -442,6 +443,18 @@ function findOriginalBlockEnd(
     pos = nextNewline === -1 ? fileContent.length : nextNewline + 1
   }
   return pos
+}
+
+/**
+ * Write `content` to `targetPath` atomically: write to a temp file in the
+ * same directory, then rename. This prevents Turbopack's file watcher from
+ * seeing a partially-written file mid-write.
+ */
+function atomicWrite(targetPath: string, content: string): void {
+  const dir = path.dirname(targetPath)
+  const tmpPath = path.join(dir, `.tmp-fix-${process.pid}-${Date.now()}`)
+  writeFileSync(tmpPath, content, 'utf-8')
+  renameSync(tmpPath, targetPath)
 }
 
 /** Run tsc --noEmit on a single file. Returns ok=true if no errors. */
