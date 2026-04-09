@@ -15,7 +15,7 @@
 //  the wrong position and corrupts files. Instead we search for the exact
 //  text of context+minus lines and replace it with context+plus lines.
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { createLogger } from '@/lib/logger'
@@ -47,11 +47,43 @@ export async function applyDiffs(diffs: FileDiff[], rootPath: string): Promise<A
     const timestamp = Date.now()
     const backupPath = `${absPath}.pre-fix-${timestamp}`
 
+    // ── Security guards ──────────────────────────────────────────────────────
+    if (!absPath.startsWith(rootPath)) {
+      results.push({ filePath: diff.filePath, success: false, error: 'Path traversal rejected' })
+      continue
+    }
+    if (diff.filePath.includes('node_modules/')) {
+      results.push({ filePath: diff.filePath, success: false, error: 'Writing to node_modules is forbidden' })
+      continue
+    }
+    const baseName = path.basename(diff.filePath)
+    if (baseName.startsWith('.env') && !diff.filePath.endsWith('.example')) {
+      results.push({ filePath: diff.filePath, success: false, error: 'Writing to .env files is forbidden' })
+      continue
+    }
+    if (baseName === 'package.json') {
+      log.warn('Patching package.json — review carefully before applying', { filePath: diff.filePath })
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     try {
-      if (!existsSync(absPath)) {
-        results.push({ filePath: diff.filePath, success: false, error: 'File not found' })
+      // ── New file creation ────────────────────────────────────────────────
+      const isNewFile = !existsSync(absPath) || diff.hunks.every((h) => h.oldStart === 0)
+
+      if (isNewFile) {
+        const newContent = diff.hunks
+          .flatMap((h) => h.lines)
+          .filter((l) => l.startsWith('+'))
+          .map((l) => l.slice(1))
+          .join('\n')
+
+        mkdirSync(path.dirname(absPath), { recursive: true })
+        writeFileSync(absPath, newContent + '\n', 'utf-8')
+        log.info('New file created', { filePath: diff.filePath })
+        results.push({ filePath: diff.filePath, success: true })
         continue
       }
+      // ─────────────────────────────────────────────────────────────────────
 
       // 1. Read original + write backup
       const original = readFileSync(absPath, 'utf-8')
