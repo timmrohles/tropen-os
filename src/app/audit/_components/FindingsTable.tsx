@@ -4,8 +4,8 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
-} from '@phosphor-icons/react/dist/ssr'
-import { Wrench, Spinner as PhosphorSpinner, Scales } from '@phosphor-icons/react/dist/ssr'
+  Spinner as PhosphorSpinner, Scales, CheckCircle, X,
+} from '@phosphor-icons/react'
 import type { AgentSource } from '@/lib/audit/types'
 import type { GeneratedFix } from '@/lib/fix-engine/types'
 import dynamic from 'next/dynamic'
@@ -28,6 +28,8 @@ interface DbFinding {
   enforcement?: string | null
   consensus_level?: 'unanimous' | 'majority' | 'split' | 'single' | null
   models_flagged?: string[] | null
+  affected_files?: string[] | null
+  fix_hint?: string | null
 }
 
 type SeverityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low' | 'info'
@@ -161,7 +163,8 @@ const AGENT_BADGE: Record<AgentSource, { label: string; bg: string; color: strin
   content:       _neutral('i18n'),
   legal:         _neutral('Legal'),
   'ai-integration': _neutral('AI'),
-  analytics:     _neutral('Track'),
+  analytics:          _neutral('Track'),
+  'security-scan':    { label: 'SecScan', bg: '#fef2f2', color: '#dc2626' },
 }
 
 const STATUS_OPTIONS: Array<{ value: DbFinding['status']; label: string }> = [
@@ -191,12 +194,12 @@ export default function FindingsTable({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkUpdating, setBulkUpdating] = useState(false)
-  const [fixingId, setFixingId] = useState<string | null>(null)
-  const [consensusFixingId, setConsensusFixingId] = useState<string | null>(null)
+  const [fixingIds, setFixingIds] = useState<Set<string>>(new Set())
+  const [consensusFixingIds, setConsensusFixingIds] = useState<Set<string>>(new Set())
   const [fixes, setFixes] = useState<Record<string, GeneratedFix>>({})
   const [fixErrors, setFixErrors] = useState<Record<string, string>>({})
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
-  const [groupBatchFixing, setGroupBatchFixing] = useState<string | null>(null)
+  const [groupBatchFixingIds, setGroupBatchFixingIds] = useState<Set<string>>(new Set())
   const [batchConfirmGroup, setBatchConfirmGroup] = useState<FindingGroup | null>(null)
   const [expandedSubGroups, setExpandedSubGroups] = useState<Record<string, Set<string>>>({})
 
@@ -303,7 +306,7 @@ export default function FindingsTable({
   }, [selected])
 
   const handleGenerateFix = useCallback(async (findingId: string, runId: string) => {
-    setFixingId(findingId)
+    setFixingIds((prev) => new Set(prev).add(findingId))
     setFixErrors((prev) => { const n = { ...prev }; delete n[findingId]; return n })
     try {
       const res = await fetch('/api/audit/fix/generate', {
@@ -379,12 +382,12 @@ export default function FindingsTable({
     } catch {
       setFixErrors((prev) => ({ ...prev, [findingId]: 'Netzwerkfehler' }))
     } finally {
-      setFixingId(null)
+      setFixingIds((prev) => { const s = new Set(prev); s.delete(findingId); return s })
     }
   }, [])
 
   const handleGenerateConsensusFix = useCallback(async (findingId: string, runId: string) => {
-    setConsensusFixingId(findingId)
+    setConsensusFixingIds((prev) => new Set(prev).add(findingId))
     setFixErrors((prev) => { const n = { ...prev }; delete n[findingId]; return n })
     try {
       const res = await fetch('/api/audit/fix/consensus', {
@@ -435,7 +438,7 @@ export default function FindingsTable({
     } catch {
       setFixErrors((prev) => ({ ...prev, [findingId]: 'Netzwerkfehler' }))
     } finally {
-      setConsensusFixingId(null)
+      setConsensusFixingIds((prev) => { const s = new Set(prev); s.delete(findingId); return s })
     }
   }, [])
 
@@ -460,7 +463,7 @@ export default function FindingsTable({
     if (!runId) return
     const fixable = group.findings.filter((f) => f.file_path)
     if (fixable.length === 0) return
-    setGroupBatchFixing(group.ruleId)
+    setGroupBatchFixingIds((prev) => new Set(prev).add(group.ruleId))
     try {
       await fetch('/api/audit/fix/batch-generate', {
         method: 'POST',
@@ -472,7 +475,7 @@ export default function FindingsTable({
         }),
       })
     } finally {
-      setGroupBatchFixing(null)
+      setGroupBatchFixingIds((prev) => { const s = new Set(prev); s.delete(group.ruleId); return s })
     }
   }, [runId])
 
@@ -484,12 +487,13 @@ export default function FindingsTable({
     { value: 'low', label: `Low (${SEVERITY_COUNTS(findings, 'low')})` },
   ]
 
+  const STATUS_COUNT = (st: DbFinding['status']) => findings.filter((f) => f.status === st).length
   const statusChips: Array<{ value: StatusFilter; label: string }> = [
-    { value: 'all', label: 'Alle' },
-    { value: 'open', label: 'Offen' },
-    { value: 'acknowledged', label: 'Bekannt' },
-    { value: 'fixed', label: 'Behoben' },
-    { value: 'dismissed', label: 'Ignoriert' },
+    { value: 'all',          label: `Alle (${findings.length})` },
+    { value: 'open',         label: `Offen (${STATUS_COUNT('open')})` },
+    { value: 'acknowledged', label: `Bekannt (${STATUS_COUNT('acknowledged')})` },
+    { value: 'fixed',        label: `Behoben (${STATUS_COUNT('fixed')})` },
+    { value: 'dismissed',    label: `Ignoriert (${STATUS_COUNT('dismissed')})` },
   ]
 
   const agentChips: Array<{ value: AgentFilter; label: string }> = [
@@ -732,23 +736,15 @@ export default function FindingsTable({
                         </select>
                         {runId && (
                           <button
+                            className="btn btn-ghost btn-sm"
                             title="Fix generieren"
-                            disabled={fixingId === f.id}
+                            disabled={fixingIds.has(f.id)}
                             onClick={() => handleGenerateFix(f.id, runId)}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 4,
-                              fontSize: 11, padding: '2px 8px',
-                              border: '1px solid var(--border)', borderRadius: 4,
-                              background: 'var(--bg-surface)', color: 'var(--accent)',
-                              cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
-                              opacity: fixingId === f.id ? 0.6 : 1,
-                            }}
                           >
-                            {fixingId === f.id
+                            {fixingIds.has(f.id)
                               ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                              : <Wrench size={11} weight="bold" aria-hidden="true" />
+                              : 'Fix'
                             }
-                            {fixingId !== f.id && 'Fix'}
                           </button>
                         )}
                         {fixErrors[f.id] && (
@@ -777,6 +773,7 @@ export default function FindingsTable({
                       {fixes[f.id] && (
                         <FixPreview
                           fix={fixes[f.id]}
+                          affectedFiles={f.affected_files ?? undefined}
                           onApplied={() => setFindings((prev) => prev.map((fd) => fd.id === f.id ? { ...fd, status: 'fixed' } : fd))}
                           onRejected={() => setFixes((prev) => { const n = { ...prev }; delete n[f.id]; return n })}
                         />
@@ -803,8 +800,23 @@ export default function FindingsTable({
                   next.has(item.ruleId) ? next.delete(item.ruleId) : next.add(item.ruleId)
                   return next
                 })}>
-                  {/* Checkbox-Spalte: leer */}
-                  <td style={{ padding: '8px', width: 28 }} />
+                  {/* Checkbox-Spalte: selektiert alle Findings der Gruppe */}
+                  <td style={{ padding: '8px', width: 28 }} onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={item.findings.length > 0 && item.findings.every(f => selected.has(f.id))}
+                      onChange={() => {
+                        const allIn = item.findings.every(f => selected.has(f.id))
+                        setSelected(prev => {
+                          const s = new Set(prev)
+                          item.findings.forEach(f => allIn ? s.delete(f.id) : s.add(f.id))
+                          return s
+                        })
+                      }}
+                      style={{ cursor: 'pointer' }}
+                      aria-label="Alle Findings dieser Gruppe auswählen"
+                    />
+                  </td>
 
                   {/* Severity */}
                   <td style={{ padding: '8px', color: SEVERITY_COLOR[item.severity], verticalAlign: 'middle' }}>
@@ -858,9 +870,9 @@ export default function FindingsTable({
                         <div style={{ display: 'inline-flex', gap: 4 }}>
                           <button
                             className="btn btn-ghost btn-sm"
-                            disabled={groupBatchFixing === item.ruleId}
+                            disabled={groupBatchFixingIds.has(item.ruleId)}
                             onClick={() => setBatchConfirmGroup(item)}
-                            style={{ fontSize: 11, padding: '2px 7px', opacity: groupBatchFixing === item.ruleId ? 0.5 : 1 }}
+                            style={{ fontSize: 11, padding: '2px 7px', opacity: groupBatchFixingIds.has(item.ruleId) ? 0.5 : 1 }}
                           >
                             Alle fixen
                           </button>
@@ -878,7 +890,55 @@ export default function FindingsTable({
                 </tr>
               )
 
-              if (!groupExpanded) return [groupMainRow]
+              const batchConfirmRow = batchConfirmGroup?.ruleId === item.ruleId ? (
+                <tr key={`batch-confirm-${item.ruleId}`} style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                  <td colSpan={7} style={{ padding: '8px 8px 12px 32px' }}>
+                    {/* Matches FixPreview layout exactly */}
+                    <div style={{ marginTop: 4 }}>
+                      <div style={{
+                        display: 'flex', gap: 10, alignItems: 'flex-start',
+                        padding: '10px 12px', borderRadius: 6,
+                        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                        marginBottom: 12,
+                      }}>
+                        <Info size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 2px', lineHeight: 1.5 }}>
+                            {batchConfirmGroup.count} Findings für Regel <code style={{ fontSize: 12, background: 'color-mix(in srgb, var(--accent) 15%, transparent)', padding: '1px 4px', borderRadius: 3 }}>{item.ruleId}</code> fixen?
+                          </p>
+                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', lineHeight: 1.5 }}>
+                            Fixes werden generiert aber nicht automatisch angewendet. Du reviewst jeden einzeln.
+                          </p>
+                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                            Geschätzte Kosten: ca. €{(batchConfirmGroup.findings.filter(f => f.file_path).length * 0.02).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
+                          onClick={() => { const group = batchConfirmGroup; setBatchConfirmGroup(null); handleGroupFix(group) }}
+                        >
+                          <CheckCircle size={13} weight="fill" aria-hidden="true" />
+                          Fixes generieren
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
+                          onClick={() => setBatchConfirmGroup(null)}
+                        >
+                          <X size={13} weight="bold" aria-hidden="true" />
+                          Abbrechen
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : null
+
+              if (!groupExpanded) return batchConfirmRow ? [groupMainRow, batchConfirmRow] : [groupMainRow]
 
               // Sub-grouped rendering for file-size groups with mixed severities
               if (isFileSizeGroup(item) && new Set(item.findings.map(f => f.severity)).size > 1) {
@@ -952,22 +1012,14 @@ export default function FindingsTable({
                             {runId && f.file_path && (
                               <button
                                 title="Fix generieren"
-                                disabled={fixingId === f.id}
+                                className="btn btn-ghost btn-sm"
+                                disabled={fixingIds.has(f.id)}
                                 onClick={() => handleGenerateFix(f.id, runId)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                                  fontSize: 11, padding: '2px 8px',
-                                  border: '1px solid var(--border)', borderRadius: 4,
-                                  background: 'var(--bg-surface)', color: 'var(--accent)',
-                                  cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
-                                  opacity: fixingId === f.id ? 0.6 : 1,
-                                }}
                               >
-                                {fixingId === f.id
+                                {fixingIds.has(f.id)
                                   ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                  : <Wrench size={11} weight="bold" aria-hidden="true" />
+                                  : 'Fix'
                                 }
-                                {fixingId !== f.id && 'Fix'}
                               </button>
                             )}
                           </td>
@@ -977,7 +1029,7 @@ export default function FindingsTable({
                   }
                 })
 
-                return [groupMainRow, ...subRows]
+                return [groupMainRow, ...(batchConfirmRow ? [batchConfirmRow] : []), ...subRows]
               }
 
               const childRows = item.findings.map((f, idx) => (
@@ -1020,23 +1072,15 @@ export default function FindingsTable({
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                     {runId && f.file_path && (
                       <button
+                        className="btn btn-ghost btn-sm"
                         title="Fix generieren"
-                        disabled={fixingId === f.id}
+                        disabled={fixingIds.has(f.id)}
                         onClick={() => handleGenerateFix(f.id, runId)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          fontSize: 11, padding: '2px 8px',
-                          border: '1px solid var(--border)', borderRadius: 4,
-                          background: 'var(--bg-surface)', color: 'var(--accent)',
-                          cursor: fixingId === f.id ? 'default' : 'pointer', fontWeight: 600,
-                          opacity: fixingId === f.id ? 0.6 : 1,
-                        }}
                       >
-                        {fixingId === f.id
+                        {fixingIds.has(f.id)
                           ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                          : <Wrench size={11} weight="bold" aria-hidden="true" />
+                          : 'Fix'
                         }
-                        {fixingId !== f.id && 'Fix'}
                       </button>
                     )}
                     {/* Fix-Preview wenn vorhanden */}
@@ -1044,6 +1088,7 @@ export default function FindingsTable({
                       <div style={{ marginTop: 4 }}>
                         <FixPreview
                           fix={fixes[f.id]}
+                          affectedFiles={f.affected_files ?? undefined}
                           onApplied={() => setFindings((prev) => prev.map((fd) => fd.id === f.id ? { ...fd, status: 'fixed' } : fd))}
                           onRejected={() => setFixes((prev) => { const n = { ...prev }; delete n[f.id]; return n })}
                         />
@@ -1053,52 +1098,14 @@ export default function FindingsTable({
                 </tr>
               ))
 
-              return [groupMainRow, ...childRows]
+              return [groupMainRow, ...(batchConfirmRow ? [batchConfirmRow] : []), ...childRows]
             })}
           </tbody>
         </table>
         </>
       )}
 
-      {/* Batch-Fix Confirmation Dialog */}
-      {batchConfirmGroup && (
-        <div className="modal-overlay" style={{ zIndex: 200 }} onClick={() => setBatchConfirmGroup(null)}>
-          <div
-            className="card"
-            style={{ width: 420, padding: 24, margin: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>
-              Alle Findings dieser Regel fixen?
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
-              <strong>{batchConfirmGroup.count}</strong> Findings für Regel{' '}
-              <code style={{ fontSize: 12, background: 'var(--border)', padding: '1px 5px', borderRadius: 3 }}>
-                {batchConfirmGroup.ruleId}
-              </code>
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 20 }}>
-              Geschätzte Kosten: ca. {(batchConfirmGroup.findings.filter(f => f.file_path).length * 0.02).toFixed(2)} EUR
-            </p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost" onClick={() => setBatchConfirmGroup(null)}>
-                Abbrechen
-              </button>
-              <button
-                className="btn btn-primary"
-                disabled={groupBatchFixing === batchConfirmGroup.ruleId}
-                onClick={() => {
-                  const group = batchConfirmGroup
-                  setBatchConfirmGroup(null)
-                  handleGroupFix(group)
-                }}
-              >
-                {groupBatchFixing === batchConfirmGroup.ruleId ? 'Wird generiert…' : 'Fixen starten'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   )
 }

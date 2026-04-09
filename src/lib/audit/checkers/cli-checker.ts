@@ -1,6 +1,6 @@
 // src/lib/audit/checkers/cli-checker.ts
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AuditContext, RuleResult, Finding } from '../types'
 
@@ -10,15 +10,45 @@ function defaultRunCommand(cmd: string, args: string[], cwd: string): string {
   return execFileSync(cmd, args, { cwd, timeout: 60_000, encoding: 'utf-8' })
 }
 
+/**
+ * Resolve the full path to the pnpm binary so the checker does not depend on
+ * pnpm being in the server process PATH (which is often not the case when
+ * Next.js is launched by an IDE or CI runner).
+ *
+ * Resolution order:
+ *  1. Local node_modules/.bin/pnpm(.cmd) — most reliable, pinned to the
+ *     project's own pnpm version
+ *  2. Common Windows global locations (%APPDATA%\npm, %LOCALAPPDATA%\pnpm)
+ *  3. Plain "pnpm(.cmd)" as last-resort fallback
+ */
+function resolvePnpmBin(rootPath: string): string {
+  const ext = process.platform === 'win32' ? '.cmd' : ''
+  const local = join(rootPath, 'node_modules', '.bin', `pnpm${ext}`)
+  if (existsSync(local)) return local
+
+  if (process.platform === 'win32') {
+    const dirs = [process.env.APPDATA, process.env.LOCALAPPDATA].filter(Boolean) as string[]
+    for (const dir of dirs) {
+      for (const sub of ['npm', 'pnpm']) {
+        const candidate = join(dir, sub, `pnpm${ext}`)
+        if (existsSync(candidate)) return candidate
+      }
+    }
+  }
+
+  return `pnpm${ext}`
+}
+
 function nullResult(ruleId: string, reason: string): RuleResult {
   return { ruleId, score: null, reason, findings: [], automated: false }
 }
 
 export function createCliChecks(runner: RunCommand = defaultRunCommand) {
   async function checkDependencyVulnerabilities(ctx: AuditContext): Promise<RuleResult> {
+    const pnpmBin = resolvePnpmBin(ctx.rootPath)
     let raw: string
     try {
-      raw = runner('pnpm', ['audit', '--json'], ctx.rootPath)
+      raw = runner(pnpmBin, ['audit', '--json'], ctx.rootPath)
     } catch (err: unknown) {
       // pnpm audit exits non-zero when vulnerabilities found — check if stdout was captured
       if (err && typeof err === 'object' && 'stdout' in err && typeof (err as { stdout: unknown }).stdout === 'string') {
@@ -28,25 +58,27 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
       }
     }
 
+    interface Advisory {
+      id?: number; title?: string; severity?: string; module_name?: string
+      cves?: string[]; url?: string; findings?: { paths?: string[] }[]
+    }
     let vulns: { critical: number; high: number; moderate: number; total: number }
+    let advisories: Advisory[] = []
     try {
       const parsed = JSON.parse(raw)
       vulns = parsed?.metadata?.vulnerabilities ?? { critical: 0, high: 0, moderate: 0, total: 0 }
+      advisories = Object.values(parsed?.advisories ?? {}) as Advisory[]
     } catch {
       return nullResult('cat-3-rule-7', 'Could not parse pnpm audit JSON output')
     }
 
-    const findings: Finding[] = []
-    if (vulns.critical > 0) {
-      findings.push({
-        severity: 'critical',
-        message: `${vulns.critical} critical vulnerability(ies) found`,
-        suggestion: 'Run pnpm audit and update affected packages immediately',
-      })
-    }
-    if (vulns.high > 0) {
-      findings.push({ severity: 'high', message: `${vulns.high} high severity vulnerability(ies) found` })
-    }
+    const findings: Finding[] = advisories
+      .filter((a) => a.severity === 'critical' || a.severity === 'high' || a.severity === 'moderate')
+      .map((a) => ({
+        severity: (a.severity === 'critical' ? 'critical' : a.severity === 'high' ? 'high' : 'medium') as Finding['severity'],
+        message: `[${a.module_name ?? 'unknown'}] ${a.title ?? 'Vulnerability'}${a.cves?.length ? ` (${a.cves[0]})` : ''}`,
+        suggestion: a.url ? `See: ${a.url}` : 'Run pnpm audit fix or update the affected package',
+      }))
 
     let score: number
     if (vulns.critical === 0 && vulns.high === 0 && vulns.total === 0) score = 5
@@ -66,45 +98,57 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
 
   async function checkNoSecretsInRepo(ctx: AuditContext): Promise<RuleResult> {
     const reportPath = join(ctx.rootPath, '.gitleaks-report.json')
-    let raw: string
+    const deepScan = ctx.externalTools?.deepSecretsScan ?? false
+    const gitleaksArgs = deepScan
+      ? ['detect', '--source', '.', '--report-format', 'json', '--report-path', reportPath]
+      : ['detect', '--source', '.', '--no-git', '--report-format', 'json', '--report-path', reportPath]
+
     try {
-      runner('gitleaks', ['detect', '--source', '.', '--no-git', '--report-format', 'json', '--report-path', reportPath], ctx.rootPath)
+      runner('gitleaks', gitleaksArgs, ctx.rootPath)
       // gitleaks exits 0 = no secrets found
-      raw = '{"findings":[]}'
+      return { ruleId: 'cat-3-rule-3', score: 5, reason: 'gitleaks found no secrets in repository', findings: [], automated: true }
     } catch (err: unknown) {
       const msg = String((err as { message?: string }).message ?? err)
       if (msg.includes('command not found') || msg.includes('ENOENT') || msg.includes('not found')) {
         return nullResult('cat-3-rule-3', 'gitleaks not installed — install for secret scanning')
       }
-      // gitleaks exits 1 when secrets found — try to read report
+      // gitleaks exits 1 when secrets found — read report file
+      let reportRaw: string
       try {
-        raw = readFileSync(reportPath, 'utf-8')
+        reportRaw = readFileSync(reportPath, 'utf-8')
       } catch {
         return nullResult('cat-3-rule-3', `gitleaks failed: ${msg}`)
       }
-    }
 
-    let parsed: { findings?: unknown[] }
-    try {
-      parsed = JSON.parse(raw)
-    } catch {
-      return nullResult('cat-3-rule-3', 'Could not parse gitleaks output')
-    }
+      // gitleaks v8+ outputs a flat JSON array; older versions wrap in {findings:[]}
+      let leaks: unknown[]
+      try {
+        const parsed = JSON.parse(reportRaw)
+        leaks = Array.isArray(parsed) ? parsed : (parsed?.findings ?? [])
+      } catch {
+        return nullResult('cat-3-rule-3', 'Could not parse gitleaks output')
+      }
 
-    const secretFindings = Array.isArray(parsed?.findings) ? parsed.findings : []
-    if (secretFindings.length === 0) {
-      return { ruleId: 'cat-3-rule-3', score: 5, reason: 'gitleaks found no secrets in repository', findings: [], automated: true }
-    }
-    return {
-      ruleId: 'cat-3-rule-3',
-      score: 0,
-      reason: `gitleaks found ${secretFindings.length} potential secret(s) in repository`,
-      findings: [{
-        severity: 'critical',
-        message: `${secretFindings.length} secret(s) detected by gitleaks`,
-        suggestion: 'Run gitleaks locally to review and rotate exposed secrets',
-      }],
-      automated: true,
+      const findings: Finding[] = leaks.slice(0, 20).map((leak) => {
+        const l = leak as { File?: string; StartLine?: number; Description?: string; RuleID?: string }
+        return {
+          severity: 'critical' as const,
+          message: `Secret detected: ${l.Description ?? l.RuleID ?? 'unknown rule'}`,
+          filePath: l.File,
+          line: l.StartLine,
+          suggestion: 'Rotate this secret immediately and remove from code/history',
+        }
+      })
+
+      const n = leaks.length
+      const score = n === 0 ? 5 : n <= 2 ? 3 : n <= 5 ? 1 : 0
+      return {
+        ruleId: 'cat-3-rule-3',
+        score,
+        reason: `gitleaks found ${n} potential secret(s) in repository`,
+        findings,
+        automated: true,
+      }
     }
   }
 

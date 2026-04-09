@@ -2,16 +2,26 @@
 import path from 'node:path'
 import { writeFileSync, existsSync, readdirSync, readFileSync, mkdirSync } from 'node:fs'
 import { buildAuditContext, runAudit, formatReportText, formatReportMarkdown } from '@/lib/audit'
-import type { AuditReport, CheckMode } from '@/lib/audit/types'
+import type { AuditReport, CheckMode, ExternalToolsOptions } from '@/lib/audit/types'
 
 const REPO_ROOT = path.resolve(process.cwd())
 const REPORTS_DIR = path.join(REPO_ROOT, 'docs', 'audit-reports')
 
-function parseArgs(): { skipModes: CheckMode[]; tokenBudget: number; compareOnly: boolean } {
+interface ParsedArgs {
+  skipModes: CheckMode[]
+  tokenBudget: number
+  compareOnly: boolean
+  externalTools?: ExternalToolsOptions
+}
+
+function parseArgs(): ParsedArgs {
   const args = process.argv.slice(2)
   const skipModes: CheckMode[] = []
   let tokenBudget = 8192
   let compareOnly = false
+  let withTools = false
+  let lighthouseUrl: string | undefined
+  let deepSecretsScan = false
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--skip-cli') skipModes.push('cli')
@@ -25,9 +35,20 @@ function parseArgs(): { skipModes: CheckMode[]; tokenBudget: number; compareOnly
       i++
     }
     if (args[i] === '--compare-only') compareOnly = true
+    if (args[i] === '--with-tools') withTools = true
+    if (args[i] === '--lighthouse-url' && args[i + 1]) { lighthouseUrl = args[i + 1]; i++ }
+    if (args[i] === '--deep-secrets') deepSecretsScan = true
   }
 
-  return { skipModes, tokenBudget, compareOnly }
+  // external-tool mode is skipped by default unless --with-tools is passed
+  if (!withTools) skipModes.push('external-tool')
+
+  return {
+    skipModes,
+    tokenBudget,
+    compareOnly,
+    externalTools: withTools ? { lighthouseUrl, deepSecretsScan } : undefined,
+  }
 }
 
 function findPriorReport(): { date: string; percentage: number } | null {
@@ -48,7 +69,7 @@ function findPriorReport(): { date: string; percentage: number } | null {
 }
 
 async function main(): Promise<void> {
-  const { skipModes, tokenBudget, compareOnly } = parseArgs()
+  const { skipModes, tokenBudget, compareOnly, externalTools } = parseArgs()
 
   if (compareOnly) {
     const prior = findPriorReport()
@@ -67,7 +88,13 @@ async function main(): Promise<void> {
   console.log('Running audit checks...')
   if (skipModes.length > 0) console.log(`   Skipping modes: ${skipModes.join(', ')}`)
 
-  const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes })
+  if (externalTools) {
+    const toolsList = ['depcruise', 'eslint-detailed', 'gitleaks', 'bundle']
+    if (externalTools.lighthouseUrl) toolsList.push(`lighthouse(${externalTools.lighthouseUrl})`)
+    console.log(`   External tools: ${toolsList.join(', ')}`)
+  }
+
+  const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools })
 
   // Add prior audit comparison
   const prior = findPriorReport()

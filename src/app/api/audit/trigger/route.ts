@@ -12,7 +12,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { buildAuditContext, runAudit } from '@/lib/audit'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
+import { deduplicateFindings } from '@/lib/audit/deduplicator'
 import type { AuditReport, CategoryScore } from '@/lib/audit/types'
+import type { EnrichedFinding } from '@/lib/audit/deduplicator'
 
 const log = createLogger('api:audit:trigger')
 const REPO_ROOT = path.resolve(process.cwd())
@@ -66,13 +68,10 @@ export async function POST(request: Request) {
   try {
     const skipModes: import('@/lib/audit/types').CheckMode[] = []
     if (body.skipCli) skipModes.push('cli')
-    if (!body.withTools) skipModes.push('external-tool')
 
-    const externalTools = body.withTools
-      ? { lighthouseUrl: body.lighthouseUrl, deepSecretsScan: body.deepSecrets }
-      : undefined
+    const externalTools = { lighthouseUrl: body.lighthouseUrl, deepSecretsScan: body.deepSecrets }
 
-    log.info('Audit options', { withTools: body.withTools, skipModes })
+    log.info('Audit options', { withTools: true, skipModes })
 
     const ctx = await buildAuditContext(REPO_ROOT, undefined, 8192)
     const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools })
@@ -140,9 +139,32 @@ export async function POST(request: Request) {
       log.error('Failed to insert category scores', { error: catErr.message })
     }
 
-    // 3. Insert findings (with agent attribution)
-    if (allFindings.length > 0) {
-      const findingRows = allFindings.map((f) => {
+    // 3. Deduplicate findings against the previous run
+    const enrichedFindings = allFindings as EnrichedFinding[]
+    let newFindings = enrichedFindings
+    let skippedCount = 0
+    let inheritedCount = 0
+    try {
+      const result = await deduplicateFindings(enrichedFindings, runId, profile.organization_id)
+      newFindings = result.newFindings
+      skippedCount = result.skipped.length
+      inheritedCount = result.inherited.length
+    } catch (dedupErr) {
+      log.warn('Deduplication failed — proceeding with all findings', { error: String(dedupErr) })
+    }
+
+    // Update audit_runs totals to reflect deduplicated counts
+    if (skippedCount > 0) {
+      const actualCritical = newFindings.filter((f) => f.severity === 'critical').length
+      await supabaseAdmin
+        .from('audit_runs')
+        .update({ total_findings: newFindings.length, critical_findings: actualCritical })
+        .eq('id', runId)
+    }
+
+    // 4. Insert deduplicated findings (with agent attribution + inherited status)
+    if (newFindings.length > 0) {
+      const findingRows = newFindings.map((f) => {
         const rule = AUDIT_RULES.find((r) => r.id === f.ruleId)
         return {
           run_id: runId,
@@ -156,6 +178,9 @@ export async function POST(request: Request) {
           agent_source: f.agentSource ?? rule?.agentSource ?? 'core',
           agent_rule_id: rule?.agentRuleId ?? null,
           enforcement: f.enforcement ?? rule?.enforcement ?? null,
+          affected_files: f.affectedFiles ?? null,
+          fix_hint: f.fixHint ?? null,
+          ...(f.inheritedStatus ? { status: f.inheritedStatus } : {}),
         }
       })
 

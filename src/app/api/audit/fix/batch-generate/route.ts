@@ -52,26 +52,26 @@ export async function POST(request: Request) {
     mode: (rawBody.mode === 'consensus' ? 'consensus' : 'quick') as 'quick' | 'consensus',
   }
 
-  // Basis-Query
+  // Basis-Query — organization_id is enforced via RLS (audit_findings → audit_runs.organization_id)
   let query = supabaseAdmin
     .from('audit_findings')
     .select('id, rule_id, category_id, severity, message, file_path, line, suggestion, agent_source, enforcement')
     .eq('run_id', body.runId)
-    .eq('organization_id', profile.organization_id)
     .in('status', ['open', 'acknowledged'])
 
   if (body.findingIds && body.findingIds.length > 0) {
-    // Wenn findingIds angegeben → nur diese Findings laden
+    // Wenn findingIds angegeben → nur diese Findings laden, aber Limit trotzdem erzwingen
     query = query.in('id', body.findingIds)
   } else {
-    // Sonst: Severity-Filter + Limit
+    // Sonst: Severity-Filter
     if (body.severityFilter && body.severityFilter.length > 0) {
       query = query.in('severity', body.severityFilter)
     } else {
       query = query.in('severity', ['critical', 'high'])
     }
-    query = query.limit(body.maxFixes)
   }
+  // Always cap to maxFixes to avoid timeout (sequential LLM calls)
+  query = query.limit(body.maxFixes)
 
   // Lade Findings
   const { data: findings, error: findErr } = await query

@@ -1,7 +1,21 @@
 // src/lib/audit/types.ts
 import type { RepoMap } from '@/lib/repo-map'
 
-export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual'
+export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'
+
+/** Which agent ruleset produced this rule/finding. 'core' = engineering-standard.md baseline. */
+export type AgentSource =
+  | 'architecture' | 'security' | 'observability' | 'core'
+  // Committee-generated agents (Sprint 5)
+  | 'code-style' | 'error-handling' | 'database' | 'dependencies' | 'git-governance'
+  | 'backup-dr' | 'testing' | 'performance' | 'platform' | 'api' | 'cost-awareness'
+  | 'scalability' | 'accessibility' | 'design-system' | 'content' | 'legal'
+  | 'ai-integration' | 'analytics'
+  // Security Scan Agent (Sprint 7)
+  | 'security-scan'
+
+/** Enforcement level from agent documents */
+export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
 
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
@@ -9,6 +23,13 @@ export interface Finding {
   filePath?: string
   line?: number
   suggestion?: string
+  /** Agent that produced this finding (undefined = 'core') */
+  agentSource?: AgentSource
+  enforcement?: EnforcementLevel
+  /** All affected files when finding spans multiple files */
+  affectedFiles?: string[]
+  /** Concise hint for what to fix across affected files */
+  fixHint?: string
 }
 
 export interface RuleResult {
@@ -29,6 +50,11 @@ export interface AuditRule {
   checkMode: CheckMode
   automatable: boolean
   check?: (ctx: AuditContext) => Promise<RuleResult>
+  /** Agent ruleset that owns this rule. Defaults to 'core' if unset. */
+  agentSource?: AgentSource
+  /** Original rule ID in the agent document (e.g. 'R1', 'R3') */
+  agentRuleId?: string
+  enforcement?: EnforcementLevel
 }
 
 export interface PackageJson {
@@ -63,6 +89,8 @@ export interface AuditContext {
   /** All relative file paths from repo map */
   filePaths: string[]
   gitInfo: GitInfo
+  /** Options for external tool checks — attached by runAudit when --with-tools is active */
+  externalTools?: ExternalToolsOptions
 }
 
 export interface CategoryDefinition {
@@ -104,6 +132,13 @@ export interface AuditReport {
   }
 }
 
+export interface ExternalToolsOptions {
+  /** Lighthouse: URL to scan (e.g. http://localhost:3000). Required to run lighthouse checks. */
+  lighthouseUrl?: string
+  /** gitleaks: also scan git history (slower). Default: false (files only). */
+  deepSecretsScan?: boolean
+}
+
 export interface AuditOptions {
   rootPath: string
   /** Pre-computed repo map; generated fresh if absent */
@@ -114,6 +149,8 @@ export interface AuditOptions {
   skipModes?: CheckMode[]
   /** Directory for writing reports (default: docs/audit-reports/) */
   outputDir?: string
+  /** Options for external tool checks (depcruise, lighthouse, bundle, eslint-detailed) */
+  externalTools?: ExternalToolsOptions
 }
 
 /** Category metadata — weights match the manual audit report */

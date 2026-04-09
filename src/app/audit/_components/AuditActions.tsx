@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench } from '@phosphor-icons/react'
 
@@ -19,11 +19,8 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
   const [auditResult, setAuditResult] = useState<{ percentage?: number } | null>(null)
   const [reviewResult, setReviewResult] = useState<{ findings?: number; costEur?: number } | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [withTools, setWithTools] = useState(false)
   const [batchState, setBatchState] = useState<TriggerState>('idle')
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
 
   async function handleTrigger() {
     setAuditState('running')
@@ -33,7 +30,7 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
       const res = await fetch('/api/audit/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skipCli: false, withTools }),
+        body: JSON.stringify({ skipCli: false }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string }
@@ -111,20 +108,6 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-      {/* Tools-Checkbox — mounted guard prevents hydration mismatch */}
-      {mounted && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
-          <input
-            type="checkbox"
-            checked={withTools}
-            onChange={(e) => setWithTools(e.target.checked)}
-            disabled={isAuditRunning || isReviewRunning}
-            style={{ accentColor: 'var(--accent)', width: 13, height: 13 }}
-          />
-          Mit externen Tools (depcruise, ESLint, gitleaks)
-        </label>
-      )}
-
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <button

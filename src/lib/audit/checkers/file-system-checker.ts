@@ -97,15 +97,40 @@ export async function checkMigrationsTool(ctx: AuditContext): Promise<RuleResult
 
 // ─── Cat 6: API-Design ───────────────────────────────────────────────────────
 
+function hasPublicApi(rootPath: string): boolean {
+  // OpenAPI / Swagger spec
+  const openApiFiles = [
+    join('public', 'openapi.json'), join('docs', 'openapi.yaml'),
+    join('docs', 'openapi.json'), 'openapi.yaml', 'openapi.json',
+    'swagger.yaml', 'swagger.json',
+  ]
+  if (openApiFiles.some((f) => hasFile(rootPath, f))) return true
+  // Dedicated API documentation
+  if (hasFile(rootPath, 'docs', 'api') || hasFile(rootPath, 'API.md') || hasFile(rootPath, 'docs', 'api.md')) return true
+  return false
+}
+
 export async function checkApiVersioning(ctx: AuditContext): Promise<RuleResult> {
+  // R1 only applies to projects with a public/external API.
+  // Internal Next.js App Router routes serving only the own frontend are exempt.
+  if (!hasPublicApi(ctx.rootPath)) {
+    return {
+      ruleId: 'cat-6-rule-1',
+      score: null,
+      reason: 'No public API detected — internal Next.js routes are exempt from versioning',
+      findings: [],
+      automated: true,
+    }
+  }
+
   const hasV1 = ctx.filePaths.some((p) => p.includes('/api/v1/'))
   if (hasV1) {
     return pass('cat-6-rule-1', 5, 'API versioning detected: /api/v1/ routes present')
   }
   return fail('cat-6-rule-1', 0, 'No API versioning: no /api/v1/ routes found', [{
     severity: 'low',
-    message: 'All API routes are unversioned (/api/* without /v1/)',
-    suggestion: 'Consider adding /api/v1/ prefix or using header-based versioning',
+    message: 'Public API routes are unversioned (/api/* without /v1/)',
+    suggestion: 'Add /api/v1/ prefix or use header-based versioning for external-facing routes',
   }])
 }
 

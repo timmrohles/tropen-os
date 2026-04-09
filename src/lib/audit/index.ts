@@ -2,7 +2,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
-import { generateRepoMap } from '@/lib/repo-map'
+import { generateRepoMap, generateRepoMapFromFiles } from '@/lib/repo-map'
 import type { AuditContext, AuditReport, AuditOptions, GitInfo, PackageJson, TsConfig } from './types'
 import { getRulesForCategory } from './rule-registry'
 import { CATEGORIES } from './types'
@@ -47,6 +47,11 @@ export async function buildAuditContext(
 }
 
 export async function runAudit(ctx: AuditContext, options: AuditOptions): Promise<AuditReport> {
+  // Attach external tool options to context so check functions can read them
+  const enhancedCtx: AuditContext = options.externalTools
+    ? { ...ctx, externalTools: options.externalTools }
+    : ctx
+
   const skipModes = new Set(options.skipModes ?? [])
   const categoryScores = []
 
@@ -66,7 +71,7 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
           }
         }
         try {
-          return await rule.check(ctx)
+          return await rule.check(enhancedCtx)
         } catch (err) {
           return {
             ruleId: rule.id,
@@ -97,3 +102,39 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
 
 export { formatReportText, formatReportMarkdown } from './scoring/score-formatter'
 export type { AuditReport, AuditOptions, AuditContext, Finding } from './types'
+
+/**
+ * Builds an AuditContext from in-memory file content.
+ * Used for external project scans — no disk access required.
+ */
+export async function buildAuditContextFromFiles(
+  files: Array<{ path: string; content: string }>,
+  tokenBudget = 4096,
+): Promise<AuditContext> {
+  const repoMap = await generateRepoMapFromFiles(files, { tokenBudget })
+
+  const pkgFile = files.find(
+    (f) => f.path === 'package.json' || f.path.endsWith('/package.json'),
+  )
+  let packageJson: PackageJson = {}
+  if (pkgFile) {
+    try { packageJson = JSON.parse(pkgFile.content) as PackageJson } catch {}
+  }
+
+  const tsFile = files.find(
+    (f) => f.path === 'tsconfig.json' || f.path.endsWith('/tsconfig.json'),
+  )
+  let tsConfig: TsConfig = {}
+  if (tsFile) {
+    try { tsConfig = JSON.parse(tsFile.content) as TsConfig } catch {}
+  }
+
+  return {
+    rootPath: '',
+    repoMap,
+    packageJson,
+    tsConfig,
+    filePaths: files.map((f) => f.path),
+    gitInfo: { hasGitDir: false, recentCommits: [] },
+  }
+}

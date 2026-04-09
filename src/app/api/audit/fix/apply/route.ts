@@ -83,7 +83,14 @@ export async function POST(request: Request) {
       }, { status: 422 })
     }
 
-    return NextResponse.json({ success: allSuccess, results })
+    if (!allSuccess) {
+      const firstFailure = results.find((r) => !r.success)
+      const reason = firstFailure?.error ?? 'Diff konnte nicht angewendet werden'
+      log.warn('Fix not applied', { fixId: body.fixId, reason, results })
+      return NextResponse.json({ success: false, error: reason, results }, { status: 422 })
+    }
+
+    return NextResponse.json({ success: true, results })
   } catch (err) {
     log.error('Apply failed', { error: String(err) })
     return NextResponse.json({ error: 'Apply failed', code: 'APPLY_ERROR' }, { status: 500 })
