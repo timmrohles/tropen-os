@@ -8,22 +8,25 @@ import {
   fetchAuditRunDetail,
   fetchAuditCategoryScores,
   fetchAuditFindings,
+  fetchScanProjects,
 } from '@/lib/audit/page-data'
 import ScoreHero from './_components/ScoreHero'
 import CategoryBreakdown from './_components/CategoryBreakdown'
 import ScoreTrend from './_components/ScoreTrend'
 import FindingsTable from './_components/FindingsTable'
+import DeepReviewFindings from './_components/DeepReviewFindings'
 import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
 
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
 interface PageProps {
-  searchParams: Promise<{ runId?: string; status?: string; severity?: string; agent?: string }>
+  searchParams: Promise<{ runId?: string; status?: string; severity?: string; agent?: string; project?: string }>
 }
 
 export default async function AuditPage({ searchParams }: PageProps) {
-  const { runId: requestedRunId, status, severity, agent } = await searchParams
+  const { runId: requestedRunId, status: statusParam, severity, agent, project: projectParam } = await searchParams
+  const status = statusParam ?? 'open'
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -31,9 +34,17 @@ export default async function AuditPage({ searchParams }: PageProps) {
 
   const orgId = await fetchUserOrgId(user.id)
 
+  // ── Project selector ──────────────────────────────────────────────────────
+  const scanProjects = orgId ? await fetchScanProjects(orgId) : []
+  // projectParam: undefined = intern (Tropen OS), UUID = external scan project
+  const activeScanProjectId = projectParam ?? null
+
   // ── Runs list ─────────────────────────────────────────────────────────────
   const [runList, reviewRunList] = orgId
-    ? await Promise.all([fetchAuditRuns(orgId), fetchAuditReviewRuns(orgId)])
+    ? await Promise.all([
+        fetchAuditRuns(orgId, activeScanProjectId === null ? undefined : activeScanProjectId),
+        fetchAuditReviewRuns(orgId),
+      ])
     : [[], []]
 
   const selectedRunId = requestedRunId ?? runList[0]?.id ?? null
@@ -61,6 +72,16 @@ export default async function AuditPage({ searchParams }: PageProps) {
     }
   }
 
+  // Split findings: Deep Review (models_flagged set) vs. Static Audit
+  type RawFinding = Record<string, unknown>
+  function isDeepReviewFinding(f: RawFinding): boolean {
+    const mf = f.models_flagged as string[] | null | undefined
+    return (mf != null && mf.length > 0) || f.consensus_level != null
+  }
+  const allFindings = findings as RawFinding[]
+  const deepFindings = allFindings.filter(isDeepReviewFinding)
+  const staticFindings = allFindings.filter((f) => !isDeepReviewFinding(f))
+
   const hasRuns = runList.length > 0
 
   return (
@@ -75,6 +96,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
           <p className="page-header-sub">Automatisierte Qualitätsprüfung — 25 Kategorien</p>
         </div>
         <div className="page-header-actions">
+          <a href="/audit/scan" className="btn btn-ghost">Projekt scannen</a>
           <AuditActions
             runId={selectedRunId ?? undefined}
             reviewType={runDetail ? (runDetail.review_type as string | null) : null}
@@ -83,15 +105,41 @@ export default async function AuditPage({ searchParams }: PageProps) {
         </div>
       </div>
 
+      {/* ── Project selector ─────────────────────────────────────────────── */}
+      {scanProjects.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
+          <a
+            href="/audit"
+            className={`chip${!activeScanProjectId ? ' chip--active' : ''}`}
+          >
+            Tropen OS (intern)
+          </a>
+          {scanProjects.map((p) => (
+            <a
+              key={p.id}
+              href={`/audit?project=${p.id}`}
+              className={`chip${activeScanProjectId === p.id ? ' chip--active' : ''}`}
+            >
+              {p.name}
+            </a>
+          ))}
+          <a href="/audit/scan" className="chip" style={{ color: 'var(--accent)' }}>
+            + Verbinden
+          </a>
+        </div>
+      )}
+
       {/* ── No runs yet ─────────────────────────────────────────────────── */}
       {!hasRuns && (
         <div className="card" style={{ padding: 40, textAlign: 'center' }}>
           <ShieldCheck size={40} color="var(--text-tertiary)" weight="duotone" aria-hidden="true" />
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 12, marginBottom: 4 }}>
-            Noch kein Audit-Run vorhanden
+            {activeScanProjectId ? 'Noch kein Audit-Run für dieses Projekt' : 'Noch kein Audit-Run vorhanden'}
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-            Klicke auf &ldquo;Audit starten&rdquo; um den ersten Run durchzuführen.
+            {activeScanProjectId
+              ? 'Verbinde das Projekt erneut über die Scan-Seite.'
+              : 'Klicke auf „Audit starten" um den ersten Run durchzuführen.'}
           </p>
         </div>
       )}
@@ -111,19 +159,28 @@ export default async function AuditPage({ searchParams }: PageProps) {
 
           <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 0 }}>
-            <CategoryBreakdown categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']} />
-            <ScoreTrend runs={runList} />
-          </div>
+          <ScoreTrend runs={runList} />
 
-          <FindingsTable
-            key={selectedRunId ?? 'none'}
-            findings={findings as Parameters<typeof FindingsTable>[0]['findings']}
-            runId={selectedRunId ?? undefined}
-            statusFilter={status}
-            severityFilter={severity}
-            agentFilter={agent}
+          <CategoryBreakdown
+            categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
+            findings={staticFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
           />
+
+          <DeepReviewFindings
+            findings={deepFindings as unknown as Parameters<typeof DeepReviewFindings>[0]['findings']}
+            runId={selectedRunId ?? ''}
+          />
+
+          <div id="findings-table">
+            <FindingsTable
+              key={selectedRunId ?? 'none'}
+              findings={staticFindings as unknown as Parameters<typeof FindingsTable>[0]['findings']}
+              runId={selectedRunId ?? undefined}
+              statusFilter={status}
+              severityFilter={severity}
+              agentFilter={agent}
+            />
+          </div>
         </>
       )}
 
