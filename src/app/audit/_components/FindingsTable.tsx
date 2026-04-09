@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useMemo } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
 } from '@phosphor-icons/react/dist/ssr'
@@ -105,6 +106,9 @@ function extractLineCount(message: string): number {
 interface FindingsTableProps {
   findings: DbFinding[]
   runId?: string
+  statusFilter?: string
+  severityFilter?: string
+  agentFilter?: string
 }
 
 const SEVERITY_ICON = {
@@ -170,11 +174,17 @@ const STATUS_OPTIONS: Array<{ value: DbFinding['status']; label: string }> = [
 const SEVERITY_COUNTS = (findings: DbFinding[], sev: string) =>
   findings.filter((f) => f.severity === sev).length
 
-export default function FindingsTable({ findings: initialFindings, runId }: FindingsTableProps) {
-const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
-  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [agentFilter, setAgentFilter] = useState<AgentFilter>('all')
+export default function FindingsTable({
+  findings: initialFindings,
+  runId,
+  statusFilter: statusFilterProp = 'all',
+  severityFilter: severityFilterProp = 'all',
+  agentFilter: agentFilterProp = 'all',
+}: FindingsTableProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('severity')
@@ -188,6 +198,23 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [groupBatchFixing, setGroupBatchFixing] = useState<string | null>(null)
   const [expandedSubGroups, setExpandedSubGroups] = useState<Record<string, Set<string>>>({})
+
+  // Filter values come from URL params (via props) — no client state needed
+  const VALID_SEVERITIES: SeverityFilter[] = ['all', 'critical', 'high', 'medium', 'low', 'info']
+  const VALID_STATUSES: StatusFilter[] = ['all', 'open', 'acknowledged', 'fixed', 'dismissed']
+  const severityFilter: SeverityFilter = VALID_SEVERITIES.includes(severityFilterProp as SeverityFilter) ? severityFilterProp as SeverityFilter : 'all'
+  const statusFilter: StatusFilter     = VALID_STATUSES.includes(statusFilterProp as StatusFilter)     ? statusFilterProp as StatusFilter     : 'all'
+  const agentFilter: AgentFilter       = agentFilterProp as AgentFilter
+
+  function setFilter(key: 'status' | 'severity' | 'agent', value: string) {
+    const params = new URLSearchParams(window.location.search)
+    if (value === 'all') {
+      params.delete(key)
+    } else {
+      params.set(key, value)
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   function toggleSubGroup(ruleId: string, label: string) {
     setExpandedSubGroups(prev => ({
@@ -497,7 +524,7 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
     <div className="card" style={{ padding: '20px 24px', marginBottom: 24 }}>
       <div className="card-header" style={{ marginBottom: 14 }}>
         <span className="card-header-label">Findings</span>
-        <span suppressHydrationWarning style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
           {groupedItems.length} Einträge · {totalFindings} Findings
         </span>
       </div>
@@ -505,24 +532,24 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       {/* Severity filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {severityChips.map(({ value, label }) => (
-          <button suppressHydrationWarning key={value} className={`chip${severityFilter === value ? ' chip--active' : ''}`}
-            onClick={() => setSeverityFilter(value)}>{label}</button>
+          <button key={value} className={`chip${severityFilter === value ? ' chip--active' : ''}`}
+            onClick={() => setFilter('severity', value)}>{label}</button>
         ))}
       </div>
 
       {/* Status filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {statusChips.map(({ value, label }) => (
-          <button suppressHydrationWarning key={value} className={`chip${statusFilter === value ? ' chip--active' : ''}`}
-            onClick={() => setStatusFilter(value)}>{label}</button>
+          <button key={value} className={`chip${statusFilter === value ? ' chip--active' : ''}`}
+            onClick={() => setFilter('status', value)}>{label}</button>
         ))}
       </div>
 
       {/* Agent filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
         {agentChips.map(({ value, label }) => (
-          <button suppressHydrationWarning key={value} className={`chip${agentFilter === value ? ' chip--active' : ''}`}
-            onClick={() => setAgentFilter(value)}>{label}</button>
+          <button key={value} className={`chip${agentFilter === value ? ' chip--active' : ''}`}
+            onClick={() => setFilter('agent', value)}>{label}</button>
         ))}
       </div>
 

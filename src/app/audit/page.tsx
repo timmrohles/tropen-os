@@ -19,11 +19,11 @@ import AuditActions from './_components/AuditActions'
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
 interface PageProps {
-  searchParams: Promise<{ runId?: string }>
+  searchParams: Promise<{ runId?: string; status?: string; severity?: string; agent?: string }>
 }
 
 export default async function AuditPage({ searchParams }: PageProps) {
-  const { runId: requestedRunId } = await searchParams
+  const { runId: requestedRunId, status, severity, agent } = await searchParams
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -120,6 +120,9 @@ export default async function AuditPage({ searchParams }: PageProps) {
             key={selectedRunId ?? 'none'}
             findings={findings as Parameters<typeof FindingsTable>[0]['findings']}
             runId={selectedRunId ?? undefined}
+            statusFilter={status}
+            severityFilter={severity}
+            agentFilter={agent}
           />
         </>
       )}
