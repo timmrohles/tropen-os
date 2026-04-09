@@ -39,7 +39,7 @@ export function useParallelTabs({
 
       // 1. Create N empty conversations
       const results = await Promise.all(
-        intent.labels.map(label =>
+        intent.labels.map((label: string) =>
           fetch('/api/conversations/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -56,8 +56,8 @@ export function useParallelTabs({
       )
 
       const items = results
-        .map((r, i) => r ? { convId: r.conversation_id, title: intent.labels[i] ?? `Tab ${i + 1}` } : null)
-        .filter((x): x is ParallelTabItem => x !== null)
+        .map((r: { conversation_id: string } | null, i: number) => r ? { convId: r.conversation_id, title: intent.labels[i] ?? `Tab ${i + 1}` } : null)
+        .filter((x: ParallelTabItem | null): x is ParallelTabItem => x !== null)
 
       if (!items.length) return
 

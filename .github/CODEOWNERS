@@ -1,0 +1,16 @@
+# Global ownership - all files require review
+* @team-leads
+
+# Critical application files
+/src/ @senior-engineers @team-leads
+/pages/ @senior-engineers @team-leads
+/app/ @senior-engineers @team-leads
+
+# Configuration and infrastructure
+/next.config.* @devops @team-leads
+/package.json @senior-engineers @team-leads
+/tsconfig.json @senior-engineers
+/.github/ @devops @team-leads
+
+# Documentation
+*.md @tech-writers @team-leads

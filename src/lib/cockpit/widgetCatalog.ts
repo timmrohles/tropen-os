@@ -18,6 +18,7 @@ export const WIDGET_CATALOG: WidgetMeta[] = [
   { type: 'team_activity',       label: 'Team-Aktivität',    size: 'medium', adminOnly: true  },
   { type: 'budget_usage',        label: 'Kosten & Budget',   size: 'small',  adminOnly: true  },
   { type: 'quick_actions',       label: 'Schnellzugriff',    size: 'medium', adminOnly: false },
+  { type: 'code_health',         label: 'Code Health',        size: 'small',  adminOnly: true  },
 ]
 
 export const VALID_WIDGET_TYPES = new Set(WIDGET_CATALOG.map(w => w.type))

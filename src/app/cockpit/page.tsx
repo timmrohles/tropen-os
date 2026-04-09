@@ -80,6 +80,9 @@ export default function CockpitPage() {
     if (res.ok) {
       const { widget } = await res.json()
       setWidgets(prev => [...prev, widget])
+    } else if (res.status === 409) {
+      // Widget already in DB — reload to sync state
+      await loadWidgets()
     }
   }
 
@@ -106,7 +109,7 @@ export default function CockpitPage() {
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setShowPicker(true)}
-              disabled={existingTypes.length >= 8}
+              disabled={existingTypes.length >= 20}
             >
               <Plus size={14} weight="bold" aria-hidden="true" />
               Widget hinzufügen

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { GET } from './route'
 import { createServiceClient } from '@/lib/supabase/server'
-import { createMockSupabaseClient } from '@/test/mocks/supabase'
+import { createMockSupabaseClient } from '@test/mocks/supabase'
 
 // createServiceClient und createClient (isSuperadmin) sind in setup.ts gemockt
 

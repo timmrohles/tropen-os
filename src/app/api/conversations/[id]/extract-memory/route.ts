@@ -127,15 +127,21 @@ export async function POST(
   } catch (err) {
     // Log error but don't surface to caller — this is fire-and-forget
     const message = err instanceof Error ? err.message : String(err)
-    await supabaseAdmin.from('memory_extraction_log').insert({
-      conversation_id: conversationId,
-      project_id: null,
-      content_hash: 'error',
-      memories_extracted: 0,
-      status: 'error',
-      error_message: message.slice(0, 500),
-      model_used: 'claude-haiku-4.5',
-    }).then(undefined, () => {/* ignore secondary failure */})
+    log.error('memory extraction failed', { conversationId, error: err })
+
+    try {
+      await supabaseAdmin.from('memory_extraction_log').insert({
+        conversation_id: conversationId,
+        project_id: null,
+        content_hash: 'error',
+        memories_extracted: 0,
+        status: 'error',
+        error_message: message.slice(0, 500),
+        model_used: 'claude-haiku-4.5',
+      })
+    } catch (logErr) {
+      log.error('failed to log extraction error', { conversationId, error: logErr })
+    }
 
     return NextResponse.json({ error: message }, { status: 500 })
   }

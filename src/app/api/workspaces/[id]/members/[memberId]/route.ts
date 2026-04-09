@@ -40,7 +40,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (error) {
     log.error('[members/[memberId]] PATCH failed', { error: error.message, memberId })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 })
   }
 
   return NextResponse.json(data)
@@ -66,7 +66,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   if (error) {
     log.error('[members/[memberId]] DELETE failed', { error: error.message, memberId })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 })
   }
 
   return new NextResponse(null, { status: 204 })

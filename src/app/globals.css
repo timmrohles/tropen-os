@@ -39,6 +39,16 @@
   --info:           #2D7A50;
   --info-bg:        #D4EDDE;
 
+  /* Audit status colors */
+  --status-production: var(--accent);
+  --status-production-bg: var(--accent-light);
+  --status-stable:    #C49A06;
+  --status-stable-bg: #FEF9E7;
+  --status-risky:     var(--warning);
+  --status-risky-bg:  var(--warning-bg);
+  --status-prototype: var(--error);
+  --status-prototype-bg: var(--error-bg);
+
   /* ─── Tropen Theme (dunkle Features) ──────────────── */
   --tropen-process:     #7C6FF7;
   --tropen-process-bg:  #EEECFE;

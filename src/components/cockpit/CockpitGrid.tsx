@@ -11,6 +11,7 @@ import { ArtifactOverviewWidget }   from './widgets/ArtifactOverviewWidget'
 import { TeamActivityWidget }       from './widgets/TeamActivityWidget'
 import { BudgetUsageWidget }        from './widgets/BudgetUsageWidget'
 import { QuickActionsWidget }       from './widgets/QuickActionsWidget'
+import { CodeHealthWidget }         from './widgets/CodeHealthWidget'
 
 const WIDGET_COMPONENTS: Record<string, ComponentType> = {
   feed_highlights:     FeedHighlightsWidget,
@@ -21,6 +22,7 @@ const WIDGET_COMPONENTS: Record<string, ComponentType> = {
   team_activity:       TeamActivityWidget,
   budget_usage:        BudgetUsageWidget,
   quick_actions:       QuickActionsWidget,
+  code_health:         CodeHealthWidget,
 }
 
 interface Widget {
@@ -51,7 +53,7 @@ export function CockpitGrid({ widgets, onAddWidget, onRemoveWidget }: Props) {
           onRemove={() => onRemoveWidget(widget.id)}
         />
       ))}
-      {visible.length < 8 && (
+      {visible.length < 20 && (
         <button
           className="cockpit-add-slot"
           onClick={onAddWidget}

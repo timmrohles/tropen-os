@@ -223,6 +223,8 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
 | openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
 | ignore | ^7 | .gitignore parsing für File Discovery in src/lib/repo-map/ |
+| @ai-sdk/openai | ^1.x | GPT-5.4 via Vercel AI Gateway (Multi-Model Review Pipeline) |
+| @ai-sdk/google | ^1.x | Gemini 2.5 Pro via Vercel AI Gateway (Multi-Model Review Pipeline) |
 
 ### DB-Zugriff — kritische Constraint
 
@@ -242,10 +244,16 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 | Context-Zusammenfassung, Feed Stage 2 | `claude-haiku-4-5-20251001` |
 | Projekt-Einstieg, Chips, Prompt-Builder (Plan L) | `claude-haiku-4-5-20251001` |
 | Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-20250514` |
+| Multi-Model Review (Reviewer 1) | `anthropic/claude-sonnet-4.6` via AI Gateway |
+| Multi-Model Review (Reviewer 2) | `openai/gpt-5.4` via AI Gateway |
+| Multi-Model Review (Reviewer 3) | `google/gemini-2.5-pro` via AI Gateway |
+| Multi-Model Review (Reviewer 4) | `deepseek/deepseek-chat` via AI Gateway |
+| Multi-Model Review (Judge) | `anthropic/claude-opus-4.6` via AI Gateway |
 
 Feed Stage 1: kein API-Aufruf — regelbasiert.
 SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm/anthropic`. Nie `@anthropic-ai/sdk` direkt importieren.
 Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
+Multi-Model Review: plain `"provider/model"` Strings → automatisch über Vercel AI Gateway geroutet. Auth: `AI_GATEWAY_API_KEY` oder `VERCEL_OIDC_TOKEN`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
 
 ### CLI Scripts
@@ -253,7 +261,11 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 | Script | Befehl | Beschreibung |
 |--------|--------|-------------|
 | Repo Map Generator | `npx tsx src/scripts/generate-repo-map.ts [--budget 4096]` | Scannt Tropen OS Repo selbst, schreibt Ergebnis in `docs/repo-map/` |
-| Audit Runner | `npx tsx src/scripts/run-audit.ts [--skip-cli] [--budget N]` | Runs automated audit over 25 categories, writes report to `docs/audit-reports/` |
+| Audit Runner | `pnpm exec tsx src/scripts/run-audit.ts [--skip-cli] [--budget N]` | Standard audit (fast) — external-tool checks skipped by default |
+| Audit mit externen Tools | `pnpm exec tsx src/scripts/run-audit.ts --with-tools [--lighthouse-url URL] [--deep-secrets]` | Aktiviert depcruise, ESLint-detailed, gitleaks, Bundle-Analyse, optionales Lighthouse |
+| Audit Dashboard | `/audit` (App-Route, requireOrgAdmin) | Interaktives Dashboard: Score-Hero, Kategorie-Breakdown, Findings-Table, Score-Trend (Tremor), Run-Historie; POST /api/audit/trigger startet neuen Run und persistiert in DB |
+| Externes Projekt scannen | `/audit/scan` (App-Route) | Verbindet lokalen Projektordner via File System Access API; Client liest Dateien, POST /api/projects/scan startet Audit |
+| Agent Generator | `npx dotenv -e .env.local -- npx tsx src/scripts/generate-agents.ts` | Generiert 18 Agent-Dokumente via 4-Modell-Komitee + Opus-Judge; ~€7–10 Gesamtkosten; Ergebnisse in `docs/agents/` |
 
 ### API-Key Management
 
@@ -567,6 +579,36 @@ Klick [···]:  Umbenennen / Bearbeiten
   /plans                # Feature-Specs (agents-spec.md, etc.)
   /webapp-manifest      # Engineering Standards & Audit System
   /repo-map             # Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts)
+/src/lib/audit
+  /checkers             # Automatisierte Prüffunktionen pro Themenbereich
+    file-system-checker.ts       # Datei-Existenz-Checks
+    repo-map-checker.ts          # Symbol- und Struktur-Checks via RepoMap
+    documentation-checker.ts     # Docs-Checks (ADR, Runbooks, etc.)
+    cli-checker.ts               # Shell-basierte Checks
+    agent-committee-checker.ts   # Sprint 5b: 30+ Checks der 18 Komitee-Agenten
+  rule-registry.ts              # Alle ~70 AuditRule-Einträge mit agentSource + check-Funktion
+  index.ts                      # buildAuditContext (Disk) + buildAuditContextFromFiles (in-memory)
+  page-data.ts                  # fetchAuditRuns, fetchScanProjects, fetchAuditFindings etc.
+/src/lib/file-access             # File System Access API — browser-only
+  types.ts                      # ProjectFile, DirectoryReadResult, ScanRequest
+  browser-check.ts              # isFileSystemAccessSupported(), getBrowserInfo()
+  file-filter.ts                # DEFAULT_IGNORE_DIRS/FILES, createFileFilter(), getLanguage()
+  directory-reader.ts           # readDirectory(handle, onProgress?) — async, no disk access
+/src/app/audit/scan
+  page.tsx                      # Scan-Seite: Projekt verbinden + verbundene Projekte
+  _components/
+    ConnectProjectCard.tsx      # "use client" — showDirectoryPicker() → POST /api/projects/scan
+    ScanProgress.tsx            # Fortschrittsanzeige (reading/uploading/analyzing)
+    ProjectList.tsx             # Liste verbundener Projekte mit Link zu /audit?project=<id>
+/src/app/api/projects/scan
+  route.ts                      # POST — empfängt Dateien, baut AuditContext, persistiert in DB
+/src/app/superadmin/agents
+  page.tsx                       # Superadmin-Seite: Agent Rule Packs (Search, Filter, Stats)
+  agents.types.ts                # AgentTableRow-Interface
+  _components/
+    AgentTable.tsx               # Sortierbare Tabelle mit Status-Badges
+    AgentDetailDrawer.tsx        # Rechts-Drawer 520px: Rules-Liste, Markdown-Preview
+    AgentHealthBadge.tsx         # Status-Badge mit 90-Tage-Outdated-Logik
 ```
 
 ### Dateihygiene
@@ -697,6 +739,12 @@ Letzte relevante Migrationen:
 | 20260330000092_bookmarks_full_content.sql | bookmarks: full_content TEXT Spalte für vollständigen Nachrichtentext |
 | 20260330000093_conversations_intention_default.sql | conversations.intention: DEFAULT NULL gesetzt |
 | 20260330000094_model_catalog_capabilities.sql | model_catalog: capabilities JSONB DEFAULT '["general"]'; GIN-Index; Seeds für Anthropic/GPT/Mistral |
+| 20260408000095_audit_tables.sql | audit_runs (APPEND ONLY), audit_category_scores (APPEND ONLY), audit_findings (status updatable); RLS via get_my_organization_id() |
+| 20260408000096_audit_agent_source.sql | audit_findings: agent_source CHECK('core'/'architecture'/'security'/'observability') DEFAULT 'core', agent_rule_id TEXT, enforcement TEXT |
+| 20260408000097_audit_review_fields.sql | audit_runs: review_type, models_used, judge_model, review_cost_eur, quorum_met; audit_findings: consensus_level, models_flagged, avg_confidence |
+| 20260409000101_audit_fixes_consensus.sql | audit_fixes: fix_mode ('quick'/'consensus'), risk_level ('safe'/'moderate'/'critical'), risk_details JSONB, drafts JSONB DEFAULT '[]', judge_explanation TEXT |
+| 20260409000102_audit_findings_affected_files.sql | audit_findings: affected_files TEXT[] + fix_hint TEXT — multi-file finding support |
+| 20260409000103_scan_projects.sql | scan_projects Tabelle (id, org_id, name, source, file_count, total_size_bytes, last_scan_at, last_score, detected_stack) + audit_runs.scan_project_id FK |
 
 **Cockpit Widget System (Stand 2026-03-25):**
 Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
@@ -722,7 +770,7 @@ Prioritäts-Agenten: E-Mail-Agent (Haiku, tägl. 07:00) → Kalender-Agent (Haik
 Pakete: Kommunikation / Vertrieb / Marketing / Custom
 widgetCatalog.ts braucht bei Stufe 2+: Felder `tier` (1/2/3) + `package` + `requiresMcp`
 
-**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`
+**APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`, `memory_extraction_log`, `audit_runs`, `audit_category_scores`
 
 ### Feature-Flags (Stand 2026-03-27)
 
@@ -1021,6 +1069,11 @@ eslint src/           # keine Fehler
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
 | `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
+| `docs/agents/` | **21 Agent Rule Packs** — 3 manuell (Sprint 4a) + 18 per Multi-Model-Komitee (Sprint 5): ARCHITECTURE_AGENT_v3.md, SECURITY_AGENT_FINAL.md, OBSERVABILITY_AGENT_v3.md, CODE_STYLE_AGENT.md, ERROR_HANDLING_AGENT.md, DATABASE_AGENT.md, DEPENDENCIES_AGENT.md, GIT_GOVERNANCE_AGENT.md, BACKUP_DR_AGENT.md, TESTING_AGENT.md, PERFORMANCE_AGENT.md, PLATFORM_AGENT.md, API_AGENT.md, COST_AWARENESS_AGENT.md, SCALABILITY_AGENT.md, ACCESSIBILITY_AGENT.md, DESIGN_SYSTEM_AGENT.md, CONTENT_AGENT.md, LEGAL_AGENT.md, AI_INTEGRATION_AGENT.md, ANALYTICS_AGENT.md |
+| `src/lib/agents/agent-catalog.ts` | AgentDefinition-Interface + AGENT_CATALOG mit allen 21 Agenten (id, name, filename, version, categoryIds, themes, ruleCount, status, lastNormalized) — Sprint 5b: alle 18 Komitee-Agenten aktiv |
+| `src/lib/audit/checkers/agent-committee-checker.ts` | Sprint 5b: 30+ automatisierte Checks der 18 Komitee-Agenten (Legal, Database, API, Testing, etc.) |
+| `src/app/superadmin/agents/` | Superadmin-Seite für Agent Rule Packs: Übersicht, Search, Filter, Detail-Drawer mit Markdown-Preview |
+| `src/app/api/superadmin/agents/route.ts` | API: liefert AGENT_CATALOG angereichert mit findingsCount + lastCheckAt aus audit_findings |
 
 ---
 

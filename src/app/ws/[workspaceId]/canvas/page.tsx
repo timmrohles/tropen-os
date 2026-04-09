@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import { listCards } from '@/actions/cards'
 import { listConnections } from '@/actions/connections'
 import Canvas from '@/components/ws/Canvas'
@@ -20,13 +19,13 @@ export default async function CanvasPage({
   const [cards, connectionsWithCards, wsRow, participantRows] = await Promise.all([
     listCards(workspaceId),
     listConnections(workspaceId),
-    supabaseAdmin
+    supabase
       .from('workspaces')
       .select('id, title, domain, goal, meta, department_id, status, created_by, created_at, updated_at, deleted_at')
       .eq('id', workspaceId)
       .is('deleted_at', null)
       .maybeSingle(),
-    supabaseAdmin
+    supabase
       .from('workspace_participants')
       .select('id, workspace_id, user_id, role, joined_at')
       .eq('workspace_id', workspaceId),

@@ -31,7 +31,7 @@ export function BudgetUsageWidget() {
   const isCritical = percent >= 95
   const isWarning = percent >= 80
   const barColor = isCritical
-    ? 'var(--error, #dc2626)'
+    ? 'var(--error)'
     : isWarning
     ? 'var(--warning, #d97706)'
     : 'var(--accent)'

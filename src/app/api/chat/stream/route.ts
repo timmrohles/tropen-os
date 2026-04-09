@@ -83,9 +83,8 @@ export async function POST(req: NextRequest) {
         ? await buildPresentationContext(workspaceId)
         : await buildWorkspaceContext(workspaceId)
 
-    const systemPrompt = capabilitySystemPrompt
-      ? `${capabilitySystemPrompt}\n\n${baseSystemPrompt}`
-      : baseSystemPrompt
+    // Combine prompts without template interpolation — both are DB-sourced (admin-controlled), not user input
+    const systemPrompt = [capabilitySystemPrompt, baseSystemPrompt].filter(Boolean).join('\n\n')
 
     // Load history
     let historyQuery = supabaseAdmin
@@ -185,7 +184,7 @@ export async function POST(req: NextRequest) {
               card_id: cardId ?? null,
               scope: scope as 'workspace' | 'card',
               role: 'system',
-              content: `Fehler beim Generieren der Antwort: ${errorMessage}`,
+              content: 'Fehler beim Generieren der Antwort: ' + errorMessage,
               context_snapshot: contextSnapshot,
               user_id: userId,
             })

@@ -23,7 +23,6 @@ import { useArtifactsView } from '@/hooks/useArtifactsView'
 import { useAssistantName } from '@/hooks/useAssistantName'
 import { useParallelTabs } from '@/hooks/useParallelTabs'
 import type { CompareModel } from './ModelComparePopover'
-import type { PromptBuilderPanelProps } from './ChatInput'
 
 interface ChatAreaProps {
   activeConvId: string | null
@@ -192,7 +191,7 @@ export default function ChatArea({
       const mentionName = mentionMatch[1]
       const afterMention = mentionMatch[2]?.trim() || undefined
       const avs = avatarCache ?? await loadAvatars()
-      const avatar = avs.find(a => a.name.toLowerCase() === mentionName.toLowerCase())
+      const avatar = avs.find((a) => a.name.toLowerCase() === mentionName.toLowerCase())
       if (avatar) {
         e.preventDefault()
         onSetInput('')
@@ -253,15 +252,7 @@ export default function ChatArea({
       <div className="carea-input-wrap">
         <div className="carea-input-inner">
           <ChatInput input={input} setInput={onSetInput} sending={sending} onSubmit={onSubmit}
-            attachmentRef={attachmentRef} onOpenNewTab={canOpenNewTab ? onOpenInNewTab : undefined}
-            canOpenNewTab={canOpenNewTab} avatarMentions={avatarCache ?? undefined} onMentionLoad={loadAvatars}
-            promptBuilderProps={activeConvId && lastUserMsg ? {
-              conversationId: activeConvId,
-              userMessage: lastUserMsg.content,
-              recentMessages: pbRecentMessages,
-              onSend: (prompt: string) => onSendDirect(prompt),
-            } satisfies PromptBuilderPanelProps : undefined}
-            onModelCompare={canOpenNewTab && !isMobile ? (models: CompareModel[]) => { void handleModelCompare(models) } : undefined}
+            attachmentRef={attachmentRef}
           />
           <p className="chat-ai-disclaimer">
             {assistantName}s Antworten sind KI-generiert und können Fehler enthalten. Prüfe wichtige Informationen immer selbst.
@@ -292,7 +283,6 @@ export default function ChatArea({
                 'Bitte fasse unser gesamtes Gespräch als Dokument-Artefakt zusammen — mit den wichtigsten Themen, Erkenntnissen und Ergebnissen. Das Artefakt soll so aufbereitet sein, dass es eigenständig geteilt werden kann.'
               )}
               onShowArtifactsView={openArtifactsView}
-              showTitle={showHeaderTitle}
             />
           )}
 
@@ -351,13 +341,6 @@ export default function ChatArea({
                     onGenerateImage={onGenerateImage}
                     isInSplitView={isInSplitView}
                     suggestionsEnabled={suggestionsEnabled}
-                    onMemorize={activeConvProjectId ? () => onSetShowMemoryModal(true) : undefined}
-                    onOpenInNewTab={canOpenNewTab ? onOpenInNewTab : undefined}
-                    perspectives={avatarCache}
-                    onLoadAvatars={loadAvatars}
-                    onPerspective={msg.role === 'assistant' && !msg.pending && msg.id && !perspectiveMsg
-                      ? (avatar) => startPerspective(avatar)
-                      : undefined}
                   />
                 </React.Fragment>
               )
@@ -460,7 +443,6 @@ export default function ChatArea({
           onSubmit={onSendMessage}
           onSetPendingIntention={onSetPendingIntention}
           onSetPendingCurrentProjectId={onSetPendingCurrentProjectId}
-          assistantName={assistantName}
         />
       ) : intentionChoice === 'guided' ? (
         <>
@@ -480,7 +462,6 @@ export default function ChatArea({
               setIntentionChoice('guided')
             }}
             userName={userName}
-            assistantName={assistantName}
           />
           {renderInput(onSendMessage)}
         </>

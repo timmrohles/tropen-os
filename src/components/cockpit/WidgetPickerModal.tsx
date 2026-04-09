@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import {
   Rss, Bird, Clock, FolderSimple, Sparkle,
-  Users, CurrencyEur, Lightning, ArrowRight, X,
+  Users, CurrencyEur, Lightning, ArrowRight, X, ShieldCheck,
 } from '@phosphor-icons/react'
 import { WIDGET_CATALOG, type WidgetMeta } from '@/lib/cockpit/widgetCatalog'
 import type { ElementType } from 'react'
@@ -17,6 +17,7 @@ const WIDGET_ICONS: Record<string, ElementType> = {
   team_activity:       Users,
   budget_usage:        CurrencyEur,
   quick_actions:       Lightning,
+  code_health:         ShieldCheck,
 }
 
 interface Props {
