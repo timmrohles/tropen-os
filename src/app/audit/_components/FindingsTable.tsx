@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
 } from '@phosphor-icons/react/dist/ssr'
@@ -35,6 +35,63 @@ type AgentFilter = 'all' | AgentSource
 type SortKey = 'severity' | 'rule' | 'file' | 'message'
 
 const SEV_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
+
+interface FindingGroup {
+  ruleId: string
+  baseMessage: string
+  agentSource: AgentSource
+  severity: DbFinding['severity']
+  findings: DbFinding[]
+  count: number
+}
+
+function isGroup(item: DbFinding | FindingGroup): item is FindingGroup {
+  return 'count' in item
+}
+
+function extractBaseMessage(message: string): string {
+  const colonIdx = message.lastIndexOf(': src/')
+  if (colonIdx > 0) return message.substring(0, colonIdx)
+  const colonIdx2 = message.lastIndexOf(': ')
+  if (colonIdx2 > message.length * 0.5) return message.substring(0, colonIdx2)
+  return message
+}
+
+function getHighestSeverity(findings: DbFinding[]): DbFinding['severity'] {
+  return findings.reduce<DbFinding['severity']>((best, f) => {
+    return SEV_ORDER[f.severity] < SEV_ORDER[best] ? f.severity : best
+  }, 'info')
+}
+
+function groupFindings(findings: DbFinding[]): Array<DbFinding | FindingGroup> {
+  const groups = new Map<string, DbFinding[]>()
+  for (const f of findings) {
+    const key = f.rule_id || 'unknown'
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(f)
+  }
+  const result: Array<DbFinding | FindingGroup> = []
+  for (const [ruleId, group] of groups) {
+    if (group.length === 1) {
+      result.push(group[0])
+    } else {
+      result.push({
+        ruleId,
+        baseMessage: extractBaseMessage(group[0].message),
+        agentSource: (group[0].agent_source ?? 'core') as AgentSource,
+        severity: getHighestSeverity(group),
+        findings: group,
+        count: group.length,
+      })
+    }
+  }
+  return result.sort((a, b) => {
+    const sevA = SEV_ORDER[isGroup(a) ? a.severity : a.severity]
+    const sevB = SEV_ORDER[isGroup(b) ? b.severity : b.severity]
+    if (sevA !== sevB) return sevA - sevB
+    return (isGroup(b) ? b.count : 1) - (isGroup(a) ? a.count : 1)
+  })
+}
 
 interface FindingsTableProps {
   findings: DbFinding[]
@@ -119,6 +176,8 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
   const [consensusFixingId, setConsensusFixingId] = useState<string | null>(null)
   const [fixes, setFixes] = useState<Record<string, GeneratedFix>>({})
   const [fixErrors, setFixErrors] = useState<Record<string, string>>({})
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [groupBatchFixing, setGroupBatchFixing] = useState<string | null>(null)
 
   const filtered = findings
     .filter((f) => {
@@ -135,6 +194,9 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       if (sortKey === 'message')  v = a.message.localeCompare(b.message)
       return sortDir === 'asc' ? v : -v
     })
+
+  const groupedItems = useMemo(() => groupFindings(filtered), [filtered])
+  const totalFindings = filtered.length
 
   const allSelected = filtered.length > 0 && filtered.every((f) => selected.has(f.id))
 
@@ -201,8 +263,6 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
         riskLevel?: string; riskAssessment?: unknown
       }
       if (res.status === 409 && data.fixId) {
-        // Fix already exists — load it
-        // Expand the row to show existing fix info
         setFixes((prev) => ({
           ...prev,
           [findingId]: {
@@ -326,6 +386,43 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
     }
   }, [])
 
+  const handleGroupDismiss = useCallback(async (group: FindingGroup) => {
+    await Promise.all(
+      group.findings.map((f) =>
+        fetch(`/api/audit/findings/${f.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'dismissed' }),
+        })
+      )
+    )
+    setFindings((prev) =>
+      prev.map((f) =>
+        group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'dismissed' } : f
+      )
+    )
+  }, [])
+
+  const handleGroupFix = useCallback(async (group: FindingGroup) => {
+    if (!runId) return
+    const fixable = group.findings.filter((f) => f.file_path)
+    if (fixable.length === 0) return
+    setGroupBatchFixing(group.ruleId)
+    try {
+      await fetch('/api/audit/fix/batch-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          runId,
+          findingIds: fixable.map((f) => f.id),
+          mode: 'quick',
+        }),
+      })
+    } finally {
+      setGroupBatchFixing(null)
+    }
+  }, [runId])
+
   const severityChips: Array<{ value: SeverityFilter; label: string }> = [
     { value: 'all', label: `Alle (${findings.length})` },
     { value: 'critical', label: `Critical (${SEVERITY_COUNTS(findings, 'critical')})` },
@@ -376,7 +473,7 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
       <div className="card-header" style={{ marginBottom: 14 }}>
         <span className="card-header-label">Findings</span>
         <span suppressHydrationWarning style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-          {filtered.length} von {findings.length}
+          {groupedItems.length} Einträge · {totalFindings} Findings
         </span>
       </div>
 
@@ -471,194 +568,383 @@ const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
             </tr>
           </thead>
           <tbody>
-            {filtered.flatMap((f) => {
-              const isExpanded = expandedId === f.id
-              const agentKey = (f.agent_source ?? 'core') as AgentSource
-              const badge = AGENT_BADGE[agentKey] ?? AGENT_BADGE.core
+            {groupedItems.flatMap((item) => {
+              if (!isGroup(item)) {
+                // Single finding — same logic as before
+                const f = item
+                const isExpanded = expandedId === f.id
+                const agentKey = (f.agent_source ?? 'core') as AgentSource
+                const badge = AGENT_BADGE[agentKey] ?? AGENT_BADGE.core
 
-              const isSelected = selected.has(f.id)
-              const mainRow = (
-                <tr key={f.id} style={{
-                  borderBottom: isExpanded ? 'none' : '1px solid var(--border)',
-                  background: isSelected ? 'color-mix(in srgb, var(--accent) 6%, transparent)'
-                    : isExpanded ? 'var(--bg-surface)' : 'transparent',
-                }}>
-                  {/* Checkbox */}
-                  <td style={{ padding: '8px', verticalAlign: 'middle', width: 28 }}>
-                    <input type="checkbox" checked={isSelected}
-                      onChange={() => toggleSelect(f.id)}
-                      style={{ cursor: 'pointer' }} aria-label="Finding auswählen" />
-                  </td>
+                const isSelected = selected.has(f.id)
+                const mainRow = (
+                  <tr key={f.id} style={{
+                    borderBottom: isExpanded ? 'none' : '1px solid var(--border)',
+                    background: isSelected ? 'color-mix(in srgb, var(--accent) 6%, transparent)'
+                      : isExpanded ? 'var(--bg-surface)' : 'transparent',
+                  }}>
+                    {/* Checkbox */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle', width: 28 }}>
+                      <input type="checkbox" checked={isSelected}
+                        onChange={() => toggleSelect(f.id)}
+                        style={{ cursor: 'pointer' }} aria-label="Finding auswählen" />
+                    </td>
+                    {/* Severity */}
+                    <td style={{ padding: '8px', color: SEVERITY_COLOR[f.severity], verticalAlign: 'middle' }}>
+                      {SEVERITY_ICON[f.severity]}
+                    </td>
+
+                    {/* Agent badge + consensus */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                        background: badge.bg, color: badge.color, whiteSpace: 'nowrap',
+                      }}>
+                        {badge.label}
+                      </span>
+                      {f.consensus_level && (
+                        <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700, marginTop: 2 }}>
+                          {CONSENSUS_LABEL[f.consensus_level]}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Rule ID */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                      <code style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'var(--border)', padding: '2px 5px', borderRadius: 3 }}>
+                        {f.rule_id}
+                      </code>
+                    </td>
+
+                    {/* Message + models + expand */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle', maxWidth: 320 }}>
+                      <button
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 4, padding: 0,
+                          color: 'var(--text-primary)', fontSize: 13, width: '100%',
+                        }}
+                        onClick={() => setExpandedId(isExpanded ? null : f.id)}
+                      >
+                        <span style={{ flex: 1, lineHeight: 1.4 }}>{f.message}</span>
+                        {f.suggestion && (
+                          isExpanded
+                            ? <CaretUp size={12} weight="bold" style={{ flexShrink: 0, marginTop: 3, color: 'var(--text-tertiary)' }} aria-hidden="true" />
+                            : <CaretDown size={12} weight="bold" style={{ flexShrink: 0, marginTop: 3, color: 'var(--text-tertiary)' }} aria-hidden="true" />
+                        )}
+                      </button>
+                      {f.models_flagged && f.models_flagged.length > 0 && (
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                          {f.models_flagged.map((m) => (
+                            <span key={m} style={{
+                              fontSize: 10, padding: '1px 6px', borderRadius: 10,
+                              background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+                              color: 'var(--accent)', fontWeight: 600,
+                            }}>
+                              {MODEL_SHORT[m] ?? m}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* File */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle', maxWidth: 160 }}>
+                      {f.file_path ? (
+                        <code style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.file_path}{f.line ? `:${f.line}` : ''}
+                        </code>
+                      ) : <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>—</span>}
+                    </td>
+
+                    {/* Status + Fix */}
+                    <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                        <select
+                          value={f.status}
+                          disabled={updatingId === f.id}
+                          onChange={(e) => handleStatusChange(f.id, e.target.value as DbFinding['status'])}
+                          style={{
+                            fontSize: 12, padding: '3px 6px', borderRadius: 4,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-surface)',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            opacity: updatingId === f.id ? 0.5 : 1,
+                          }}
+                        >
+                          {STATUS_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        {runId && (
+                          <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
+                            {/* Quick fix button */}
+                            <button
+                                title="Quick Fix (1 Modell)"
+                                disabled={fixingId === f.id || consensusFixingId === f.id}
+                                onClick={() => handleGenerateFix(f.id, runId)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: 11, padding: '2px 7px',
+                                  border: 'none', borderRight: '1px solid var(--border)',
+                                  background: 'var(--bg-surface)', color: 'var(--accent)',
+                                  cursor: 'pointer', fontWeight: 600,
+                                  opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                                }}
+                              >
+                                {fixingId === f.id
+                                  ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                                  : <Wrench size={11} weight="bold" aria-hidden="true" />
+                                }
+                                {fixingId !== f.id && 'Quick'}
+                              </button>
+                              {/* Consensus fix button */}
+                              <button
+                                title="Konsens-Fix (4 Modelle + Opus-Judge)"
+                                disabled={fixingId === f.id || consensusFixingId === f.id}
+                                onClick={() => handleGenerateConsensusFix(f.id, runId)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: 11, padding: '2px 7px',
+                                  border: 'none',
+                                  background: 'var(--bg-surface)', color: 'var(--accent)',
+                                  cursor: 'pointer', fontWeight: 600,
+                                  opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                                }}
+                              >
+                                {consensusFixingId === f.id
+                                  ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                                  : <Scales size={11} weight="bold" aria-hidden="true" />
+                                }
+                                {consensusFixingId !== f.id && '4M'}
+                              </button>
+                            </div>
+                        )}
+                        {fixErrors[f.id] && (
+                          <span style={{ fontSize: 10, color: 'var(--error)', maxWidth: 120, wordBreak: 'break-word' }}>
+                            {fixErrors[f.id]}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+
+                const hasDetail = isExpanded && (f.suggestion || fixes[f.id] || fixErrors[f.id])
+                if (!hasDetail) return [mainRow]
+
+                return [
+                  mainRow,
+                  <tr key={`${f.id}-detail`} style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                    <td colSpan={7} style={{ padding: '0 8px 12px 32px' }}>
+                      {f.suggestion && (
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                          <strong style={{ color: 'var(--text-tertiary)' }}>Vorschlag: </strong>
+                          {f.suggestion}
+                        </p>
+                      )}
+                      {fixes[f.id] && (
+                        <FixPreview
+                          fix={fixes[f.id]}
+                          onApplied={() => setFindings((prev) => prev.map((fd) => fd.id === f.id ? { ...fd, status: 'fixed' } : fd))}
+                          onRejected={() => setFixes((prev) => { const n = { ...prev }; delete n[f.id]; return n })}
+                        />
+                      )}
+                      {fixErrors[f.id] && (
+                        <p style={{ fontSize: 12, color: 'var(--error)', margin: '4px 0 0' }}>
+                          {fixErrors[f.id]}
+                        </p>
+                      )}
+                    </td>
+                  </tr>,
+                ]
+              }
+
+              // Group row
+              const groupExpanded = expandedGroups.has(item.ruleId)
+              const groupMainRow = (
+                <tr key={`group-${item.ruleId}`} style={{
+                  borderBottom: groupExpanded ? 'none' : '1px solid var(--border)',
+                  background: groupExpanded ? 'color-mix(in srgb, var(--accent) 4%, transparent)' : 'transparent',
+                  cursor: 'pointer',
+                }} onClick={() => setExpandedGroups((prev) => {
+                  const next = new Set(prev)
+                  next.has(item.ruleId) ? next.delete(item.ruleId) : next.add(item.ruleId)
+                  return next
+                })}>
+                  {/* Checkbox-Spalte: leer */}
+                  <td style={{ padding: '8px', width: 28 }} />
+
                   {/* Severity */}
-                  <td style={{ padding: '8px', color: SEVERITY_COLOR[f.severity], verticalAlign: 'middle' }}>
-                    {SEVERITY_ICON[f.severity]}
+                  <td style={{ padding: '8px', color: SEVERITY_COLOR[item.severity], verticalAlign: 'middle' }}>
+                    {SEVERITY_ICON[item.severity]}
                   </td>
 
-                  {/* Agent badge + consensus */}
+                  {/* Agent badge */}
                   <td style={{ padding: '8px', verticalAlign: 'middle' }}>
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                      background: badge.bg, color: badge.color, whiteSpace: 'nowrap',
+                      background: AGENT_BADGE[item.agentSource]?.bg ?? 'var(--border)',
+                      color: AGENT_BADGE[item.agentSource]?.color ?? 'var(--text-tertiary)',
                     }}>
-                      {badge.label}
+                      {AGENT_BADGE[item.agentSource]?.label ?? 'Core'}
                     </span>
-                    {f.consensus_level && (
-                      <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700, marginTop: 2 }}>
-                        {CONSENSUS_LABEL[f.consensus_level]}
-                      </div>
-                    )}
                   </td>
 
                   {/* Rule ID */}
                   <td style={{ padding: '8px', verticalAlign: 'middle' }}>
                     <code style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'var(--border)', padding: '2px 5px', borderRadius: 3 }}>
-                      {f.rule_id}
+                      {item.ruleId}
                     </code>
                   </td>
 
-                  {/* Message + models + expand */}
+                  {/* Message + count badge + expand caret */}
                   <td style={{ padding: '8px', verticalAlign: 'middle', maxWidth: 320 }}>
-                    <button
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 4, padding: 0,
-                        color: 'var(--text-primary)', fontSize: 13, width: '100%',
-                      }}
-                      onClick={() => setExpandedId(isExpanded ? null : f.id)}
-                    >
-                      <span style={{ flex: 1, lineHeight: 1.4 }}>{f.message}</span>
-                      {f.suggestion && (
-                        isExpanded
-                          ? <CaretUp size={12} weight="bold" style={{ flexShrink: 0, marginTop: 3, color: 'var(--text-tertiary)' }} aria-hidden="true" />
-                          : <CaretDown size={12} weight="bold" style={{ flexShrink: 0, marginTop: 3, color: 'var(--text-tertiary)' }} aria-hidden="true" />
-                      )}
-                    </button>
-                    {f.models_flagged && f.models_flagged.length > 0 && (
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                        {f.models_flagged.map((m) => (
-                          <span key={m} style={{
-                            fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                            background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-                            color: 'var(--accent)', fontWeight: 600,
-                          }}>
-                            {MODEL_SHORT[m] ?? m}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{item.baseMessage}</span>
+                      <span style={{
+                        background: 'var(--accent-light)', color: 'var(--accent)',
+                        padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+                      }}>
+                        {item.count} Dateien
+                      </span>
+                      {groupExpanded
+                        ? <CaretUp size={12} weight="bold" style={{ flexShrink: 0, color: 'var(--text-tertiary)' }} aria-hidden="true" />
+                        : <CaretDown size={12} weight="bold" style={{ flexShrink: 0, color: 'var(--text-tertiary)' }} aria-hidden="true" />
+                      }
+                    </div>
                   </td>
 
-                  {/* File */}
-                  <td style={{ padding: '8px', verticalAlign: 'middle', maxWidth: 160 }}>
-                    {f.file_path ? (
-                      <code style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {f.file_path}{f.line ? `:${f.line}` : ''}
-                      </code>
-                    ) : <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>—</span>}
+                  {/* File: leer bei Gruppe */}
+                  <td style={{ padding: '8px' }}>
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>—</span>
                   </td>
 
-                  {/* Status + Fix */}
-                  <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                  {/* Batch-Aktionen */}
+                  <td style={{ padding: '8px', verticalAlign: 'middle' }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                      <select
-                        value={f.status}
-                        disabled={updatingId === f.id}
-                        onChange={(e) => handleStatusChange(f.id, e.target.value as DbFinding['status'])}
-                        style={{
-                          fontSize: 12, padding: '3px 6px', borderRadius: 4,
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-surface)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer',
-                          opacity: updatingId === f.id ? 0.5 : 1,
-                        }}
-                      >
-                        {STATUS_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
                       {runId && (
-                        <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
-                          {/* Quick fix button */}
+                        <div style={{ display: 'inline-flex', gap: 4 }}>
                           <button
-                              title="Quick Fix (1 Modell)"
-                              disabled={fixingId === f.id || consensusFixingId === f.id}
-                              onClick={() => handleGenerateFix(f.id, runId)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                fontSize: 11, padding: '2px 7px',
-                                border: 'none', borderRight: '1px solid var(--border)',
-                                background: 'var(--bg-surface)', color: 'var(--accent)',
-                                cursor: 'pointer', fontWeight: 600,
-                                opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                              }}
-                            >
-                              {fixingId === f.id
-                                ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                : <Wrench size={11} weight="bold" aria-hidden="true" />
-                              }
-                              {fixingId !== f.id && 'Quick'}
-                            </button>
-                            {/* Consensus fix button */}
-                            <button
-                              title="Konsens-Fix (4 Modelle + Opus-Judge)"
-                              disabled={fixingId === f.id || consensusFixingId === f.id}
-                              onClick={() => handleGenerateConsensusFix(f.id, runId)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                fontSize: 11, padding: '2px 7px',
-                                border: 'none',
-                                background: 'var(--bg-surface)', color: 'var(--accent)',
-                                cursor: 'pointer', fontWeight: 600,
-                                opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
-                              }}
-                            >
-                              {consensusFixingId === f.id
-                                ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                                : <Scales size={11} weight="bold" aria-hidden="true" />
-                              }
-                              {consensusFixingId !== f.id && '4M'}
-                            </button>
-                          </div>
-                      )}
-                      {fixErrors[f.id] && (
-                        <span style={{ fontSize: 10, color: 'var(--error)', maxWidth: 120, wordBreak: 'break-word' }}>
-                          {fixErrors[f.id]}
-                        </span>
+                            className="btn btn-ghost btn-sm"
+                            disabled={groupBatchFixing === item.ruleId}
+                            onClick={() => handleGroupFix(item)}
+                            style={{ fontSize: 11, padding: '2px 7px', opacity: groupBatchFixing === item.ruleId ? 0.5 : 1 }}
+                          >
+                            Alle fixen
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => handleGroupDismiss(item)}
+                            style={{ fontSize: 11, padding: '2px 7px' }}
+                          >
+                            Alle ignorieren
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
                 </tr>
               )
 
-              const hasDetail = isExpanded && (f.suggestion || fixes[f.id] || fixErrors[f.id])
-              if (!hasDetail) return [mainRow]
+              if (!groupExpanded) return [groupMainRow]
 
-              return [
-                mainRow,
-                <tr key={`${f.id}-detail`} style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-                  <td colSpan={7} style={{ padding: '0 8px 12px 32px' }}>
-                    {f.suggestion && (
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                        <strong style={{ color: 'var(--text-tertiary)' }}>Vorschlag: </strong>
-                        {f.suggestion}
-                      </p>
+              const childRows = item.findings.map((f, idx) => (
+                <tr key={f.id} style={{
+                  borderBottom: idx === item.findings.length - 1 ? '1px solid var(--border)' : 'none',
+                  background: 'color-mix(in srgb, var(--accent) 4%, transparent)',
+                }}>
+                  <td style={{ padding: '6px 8px', width: 28 }} />
+                  <td style={{ padding: '6px 8px' }} />
+                  <td style={{ padding: '6px 8px' }} />
+                  <td style={{ padding: '6px 8px' }} />
+
+                  {/* Dateiname */}
+                  <td style={{ padding: '6px 8px', paddingLeft: 24 }}>
+                    <code style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      {f.file_path ?? '—'}{f.line ? `:${f.line}` : ''}
+                    </code>
+                  </td>
+
+                  {/* Status-Dropdown */}
+                  <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
+                    <select
+                      value={f.status}
+                      disabled={updatingId === f.id}
+                      onChange={(e) => handleStatusChange(f.id, e.target.value as DbFinding['status'])}
+                      style={{
+                        fontSize: 12, padding: '2px 5px', borderRadius: 4,
+                        border: '1px solid var(--border)', background: 'var(--bg-surface)',
+                        color: 'var(--text-primary)', cursor: 'pointer',
+                        opacity: updatingId === f.id ? 0.5 : 1,
+                      }}
+                    >
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </td>
+
+                  {/* Quick/4M Fix-Buttons */}
+                  <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
+                    {runId && f.file_path && (
+                      <div style={{ display: 'inline-flex', borderRadius: 4, border: '1px solid var(--border)' }}>
+                        <button
+                          title="Quick Fix"
+                          disabled={fixingId === f.id || consensusFixingId === f.id}
+                          onClick={() => handleGenerateFix(f.id, runId)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            fontSize: 11, padding: '2px 7px',
+                            border: 'none', borderRight: '1px solid var(--border)',
+                            background: 'var(--bg-surface)', color: 'var(--accent)',
+                            cursor: 'pointer', fontWeight: 600,
+                            opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                          }}
+                        >
+                          {fixingId === f.id
+                            ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                            : <Wrench size={11} weight="bold" aria-hidden="true" />
+                          }
+                          {fixingId !== f.id && 'Quick'}
+                        </button>
+                        <button
+                          title="Konsens-Fix (4 Modelle + Opus-Judge)"
+                          disabled={fixingId === f.id || consensusFixingId === f.id}
+                          onClick={() => handleGenerateConsensusFix(f.id, runId)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            fontSize: 11, padding: '2px 7px',
+                            border: 'none',
+                            background: 'var(--bg-surface)', color: 'var(--accent)',
+                            cursor: 'pointer', fontWeight: 600,
+                            opacity: (fixingId === f.id || consensusFixingId === f.id) ? 0.6 : 1,
+                          }}
+                        >
+                          {consensusFixingId === f.id
+                            ? <PhosphorSpinner size={11} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+                            : <Scales size={11} weight="bold" aria-hidden="true" />
+                          }
+                          {consensusFixingId !== f.id && '4M'}
+                        </button>
+                      </div>
                     )}
+                    {/* Fix-Preview wenn vorhanden */}
                     {fixes[f.id] && (
-                      <FixPreview
-                        fix={fixes[f.id]}
-                        onApplied={() => setFindings((prev) => prev.map((fd) => fd.id === f.id ? { ...fd, status: 'fixed' } : fd))}
-                        onRejected={() => setFixes((prev) => { const n = { ...prev }; delete n[f.id]; return n })}
-                      />
-                    )}
-                    {fixErrors[f.id] && (
-                      <p style={{ fontSize: 12, color: 'var(--error)', margin: '4px 0 0' }}>
-                        {fixErrors[f.id]}
-                      </p>
+                      <div style={{ marginTop: 4 }}>
+                        <FixPreview
+                          fix={fixes[f.id]}
+                          onApplied={() => setFindings((prev) => prev.map((fd) => fd.id === f.id ? { ...fd, status: 'fixed' } : fd))}
+                          onRejected={() => setFixes((prev) => { const n = { ...prev }; delete n[f.id]; return n })}
+                        />
+                      </div>
                     )}
                   </td>
-                </tr>,
-              ]
+                </tr>
+              ))
+
+              return [groupMainRow, ...childRows]
             })}
           </tbody>
         </table>
