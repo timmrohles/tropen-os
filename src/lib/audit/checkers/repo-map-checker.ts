@@ -2,6 +2,8 @@
 import type { AuditContext, RuleResult, Finding } from '../types'
 import type { FileDependency } from '@/lib/repo-map'
 
+const SEV_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
+
 function pass(ruleId: string, score: number, reason: string): RuleResult {
   return { ruleId, score, reason, findings: [], automated: true }
 }
@@ -74,39 +76,62 @@ export async function checkCircularDependencies(ctx: AuditContext): Promise<Rule
   return fail('cat-1-rule-3', score, `${cycles.length} circular dependency cycle(s) detected`, findings)
 }
 
+function isExemptFile(filePath: string): boolean {
+  return /\.(types|config|test|spec)\.(ts|tsx|js)$/.test(filePath)
+    || /schema\.(ts|tsx)$/.test(filePath)
+    || /migrations?\//i.test(filePath)
+    || /_DESIGN_REFERENCE\.tsx$/.test(filePath)
+    || /\.d\.ts$/.test(filePath)
+}
+
+function fileSizeSeverity(lineCount: number, exempt: boolean): Finding['severity'] {
+  if (exempt) {
+    if (lineCount > 800) return 'high'
+    if (lineCount > 600) return 'medium'
+    return 'low'
+  }
+  if (lineCount > 500) return 'high'
+  if (lineCount > 400) return 'medium'
+  return 'low'
+}
+
 export async function checkFileSizes(ctx: AuditContext): Promise<RuleResult> {
   const over300 = ctx.repoMap.files.filter((f) => f.lineCount > 300)
-  const over500 = ctx.repoMap.files.filter((f) => f.lineCount > 500)
 
-  // Escalate to 'high' when there are many oversized files (systemic issue)
-  const warningSeverity: Finding['severity'] = over300.length > 15 ? 'high' : 'medium'
+  // For non-exempt files: >500 is a violation; for exempt files: >600 threshold applies
+  const violations = ctx.repoMap.files.filter((f) => {
+    if (isExemptFile(f.path)) return f.lineCount > 600
+    return f.lineCount > 500
+  })
 
-  const findings: Finding[] = [
-    ...over500.map((f) => ({
-      severity: 'high' as const,
-      message: `File size violation (> 500 lines): ${f.path} (${f.lineCount} lines)`,
+  const findings: Finding[] = over300.map((f) => {
+    const exempt = isExemptFile(f.path)
+    const severity = fileSizeSeverity(f.lineCount, exempt)
+    const thresholdLabel = exempt ? '> 600 lines (exempt file)' : '> 500 lines'
+    const isViolation = exempt ? f.lineCount > 600 : f.lineCount > 500
+    return {
+      severity,
+      message: isViolation
+        ? `File size violation (${thresholdLabel}): ${f.path} (${f.lineCount} lines)`
+        : `File size warning (> 300 lines): ${f.path} (${f.lineCount} lines)`,
       filePath: f.path,
       suggestion: 'Split into focused sub-modules (< 300 lines each)',
-    })),
-    ...over300
-      .filter((f) => f.lineCount <= 500)
-      .map((f) => ({
-        severity: warningSeverity,
-        message: `File size warning (> 300 lines): ${f.path} (${f.lineCount} lines)`,
-        filePath: f.path,
-      })),
-  ]
+    }
+  })
+
+  // Sort by severity (high first)
+  findings.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity])
 
   let score: number
   if (over300.length === 0) score = 5
-  else if (over300.length <= 3 && over500.length === 0) score = 4
-  else if (over300.length <= 10 && over500.length <= 2) score = 3
+  else if (over300.length <= 3 && violations.length === 0) score = 4
+  else if (over300.length <= 10 && violations.length <= 2) score = 3
   else if (over300.length <= 20) score = 2
   else score = 1
 
   const reason = over300.length === 0
     ? 'All files are under 300 lines'
-    : `${over300.length} file(s) over 300 lines (${over500.length} over 500 — violation)`
+    : `${over300.length} file(s) over 300 lines (${violations.length} violation(s))`
 
   return { ruleId: 'cat-1-rule-4', score, reason, findings, automated: true }
 }
