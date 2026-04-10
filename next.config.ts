@@ -43,9 +43,6 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
-  },
   env: {
     // Ändert sich bei jedem Server-Start / Build → SW-Cache wird automatisch invalidiert
     NEXT_PUBLIC_BUILD_TIME: String(Date.now()),
