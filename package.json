@@ -44,7 +44,7 @@
     "@upstash/redis": "^1.37.0",
     "ai": "^6.0.156",
     "cheerio": "^1.2.0",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "ignore": "^7.0.5",
     "langsmith": "^0.5.14",
     "next": "^16.1.6",
