@@ -45,25 +45,25 @@ describe('AUDIT_RULES', () => {
 })
 
 describe('Category 1 (Architektur)', () => {
-  it('has exactly 5 rules', () => {
-    expect(getRulesForCategory(1)).toHaveLength(5)
+  it('has exactly 8 rules', () => {
+    expect(getRulesForCategory(1)).toHaveLength(8)
   })
 
-  it('has correct weights [3, 3, 2, 1, 2]', () => {
+  it('has correct weights [3, 3, 2, 1, 2, 2, 1, 1]', () => {
     const weights = getRulesForCategory(1).map((r) => r.weight)
-    expect(weights).toEqual([3, 3, 2, 1, 2])
+    expect(weights).toEqual([3, 3, 2, 1, 2, 2, 1, 1])
   })
 })
 
 describe('Category 3 (Sicherheit)', () => {
-  it('has exactly 14 rules', () => {
-    expect(getRulesForCategory(3)).toHaveLength(14)
+  it('has exactly 26 rules', () => {
+    expect(getRulesForCategory(3)).toHaveLength(26)
   })
 })
 
 describe('Category 10 (Testing)', () => {
-  it('has exactly 5 rules', () => {
-    expect(getRulesForCategory(10)).toHaveLength(5)
+  it('has exactly 6 rules', () => {
+    expect(getRulesForCategory(10)).toHaveLength(6)
   })
 
   it('unit test coverage rule has weight 3', () => {

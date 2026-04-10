@@ -19,8 +19,17 @@ function makeCtx(): AuditContext {
 }
 
 function pnpmAuditOutput(critical: number, high: number): string {
+  const advisories: Record<string, unknown> = {}
+  let i = 0
+  for (let c = 0; c < critical; c++) {
+    advisories[String(++i)] = { id: i, title: `Critical vuln ${c}`, severity: 'critical', module_name: `pkg-${i}`, cves: [], findings: [] }
+  }
+  for (let h = 0; h < high; h++) {
+    advisories[String(++i)] = { id: i, title: `High vuln ${h}`, severity: 'high', module_name: `pkg-${i}`, cves: [], findings: [] }
+  }
   return JSON.stringify({
     metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high, critical, total: critical + high } },
+    advisories,
   })
 }
 

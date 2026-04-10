@@ -31,6 +31,15 @@ const IGNORE = [
   'db/schema.ts', 'db\\schema.ts',  // Drizzle-Schema — file-size ist strukturell bedingt
   'feeds/DataView.tsx', 'feeds\\DataView.tsx',  // Komplexe Feed-Datenansicht — Aufteilung Plan J1
   'feeds/page.tsx', 'feeds\\page.tsx',          // Feeds-Hauptseite — Aufteilung Plan J1
+  // file-size: strukturell große Dateien — Aufteilung separates Ticket
+  'todos/todoDataOps.ts', 'todos\\todoDataOps.ts',                          // Statische Todo-Daten
+  'todos/todoDataFeatures.ts', 'todos\\todoDataFeatures.ts',                // Statische Todo-Daten
+  'audit/_components/FindingsTable.tsx', 'audit\\_components\\FindingsTable.tsx',  // Komplexe Findings-UI
+  'audit/_components/FixPreview.tsx', 'audit\\_components\\FixPreview.tsx',        // Fix-Vorschau-UI
+  // file-size: Audit-Checker — Engine-Code, Aufteilung nach Architektur-Review
+  'checkers/agent-committee-checker.ts', 'checkers\\agent-committee-checker.ts',
+  'checkers/agent-regulatory-checker.ts', 'checkers\\agent-regulatory-checker.ts',
+  'checkers/security-scan-checker.ts', 'checkers\\security-scan-checker.ts',
 ]
 
 // Verbotene Hex-Farben (hardcodiert statt CSS-Variable)

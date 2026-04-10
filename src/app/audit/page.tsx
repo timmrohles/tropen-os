@@ -97,7 +97,6 @@ export default async function AuditPage({ searchParams }: PageProps) {
           <p className="page-header-sub">Automatisierte Qualitätsprüfung — 25 Kategorien</p>
         </div>
         <div className="page-header-actions">
-          <a href="/audit/scan" className="btn btn-ghost">Projekt scannen</a>
           <AuditActions
             runId={selectedRunId ?? undefined}
             reviewType={runDetail ? (runDetail.review_type as string | null) : null}
@@ -121,8 +120,8 @@ export default async function AuditPage({ searchParams }: PageProps) {
               {p.name}
             </a>
           ))}
-          <a href="/audit/scan" className="chip" style={{ color: 'var(--accent)' }}>
-            + Verbinden
+          <a href="/audit/scan" className="chip chip--active" style={{ color: '#ffffff' }}>
+            + Neues Projekt
           </a>
         </div>
       )}
@@ -130,7 +129,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
       {/* ── No runs yet ─────────────────────────────────────────────────── */}
       {!hasRuns && (
         <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <ShieldCheck size={40} color="var(--text-tertiary)" weight="duotone" aria-hidden="true" />
+          <ShieldCheck size={40} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 12, marginBottom: 4 }}>
             {activeScanProjectId ? 'Noch kein Audit-Run für dieses Projekt' : 'Noch kein Audit-Run vorhanden'}
           </p>

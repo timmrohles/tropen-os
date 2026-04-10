@@ -1,24 +1,31 @@
 // src/app/audit/scan/_components/ConnectProjectCard.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FolderOpen, WarningCircle } from '@phosphor-icons/react'
 import ScanProgress from './ScanProgress'
+import ProjectProfileStep from './ProjectProfileStep'
+import type { DetectedStack } from '@/lib/file-access/stack-detector'
+import type { ProjectProfile } from './ProjectProfileStep'
+import type { ProjectFile } from '@/lib/file-access/types'
 
-type Phase = 'reading' | 'uploading' | 'analyzing'
+type ScanStep = 'idle' | 'reading' | 'profile' | 'scanning'
 
-interface ScanState {
-  phase: Phase
+interface ReadState {
   filesRead?: number
+  total?: number
   message?: string
 }
 
 export default function ConnectProjectCard() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [scan, setScan] = useState<ScanState | null>(null)
+  const [step, setStep] = useState<ScanStep>('idle')
+  const [readState, setReadState] = useState<ReadState>({})
   const [error, setError] = useState<string | null>(null)
+  const [detectedStack, setDetectedStack] = useState<DetectedStack | null>(null)
+  const filesRef = useRef<ProjectFile[]>([])
+  const projectNameRef = useRef<string>('')
 
   async function handleConnect() {
     if (typeof window === 'undefined' || !('showDirectoryPicker' in window)) {
@@ -27,27 +34,58 @@ export default function ConnectProjectCard() {
     }
 
     setError(null)
-    setLoading(true)
-    setScan(null)
 
     try {
-      // 1. Ordner auswählen
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const handle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({ mode: 'read' })
+      projectNameRef.current = handle.name
 
-      // 2. Dateien lesen (lazy import — browser-only module)
-      setScan({ phase: 'reading', filesRead: 0 })
+      setStep('reading')
+      setReadState({ filesRead: 0 })
+
       const { readDirectory } = await import('@/lib/file-access/directory-reader')
-      const result = await readDirectory(handle, (filesRead) => {
-        setScan({ phase: 'reading', filesRead })
+      const result = await readDirectory(handle, (current, total) => {
+        setReadState({ filesRead: current, total })
       })
 
-      // 3. Upload + Audit
-      setScan({ phase: 'uploading', filesRead: result.files.length, message: `${result.files.length} Dateien werden übertragen…` })
+      filesRef.current = result.files
+
+      const { detectStack } = await import('@/lib/file-access/stack-detector')
+      const stack = detectStack(result.files)
+      setDetectedStack(stack)
+      setStep('profile')
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setStep('idle')
+        return
+      }
+      setError(err instanceof Error ? err.message : String(err))
+      setStep('idle')
+    }
+  }
+
+  async function handleProfileConfirm(profile: ProjectProfile) {
+    setError(null)
+    setStep('scanning')
+    setReadState({ message: `${filesRef.current.length} Dateien werden übertragen…` })
+
+    try {
       const res = await fetch('/api/projects/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName: result.projectName, files: result.files }),
+        body: JSON.stringify({
+          projectName: profile.detectedStack.packageName ?? projectNameRef.current,
+          files: filesRef.current,
+          profile: {
+            isPublic: profile.isPublic,
+            liveUrl: profile.liveUrl,
+            isLive: profile.isLive,
+            audience: profile.audience,
+            complianceRequirements: profile.complianceRequirements,
+            notApplicableCategories: profile.notApplicableCategories,
+            detectedStack: profile.detectedStack,
+          },
+        }),
       })
 
       if (!res.ok) {
@@ -55,26 +93,34 @@ export default function ConnectProjectCard() {
         throw new Error(body.error ?? `Scan fehlgeschlagen (${res.status})`)
       }
 
-      setScan({ phase: 'analyzing', message: 'Audit wird ausgewertet…' })
-      const { runId, projectId } = await res.json() as { runId: string; projectId: string; score: number; findingsCount: number }
-
-      // 4. Weiterleitung
+      const { runId, projectId } = await res.json() as { runId: string; projectId: string }
       router.push(`/audit?project=${projectId}&runId=${runId}`)
     } catch (err) {
-      // User cancelled picker → DOMException name 'AbortError'
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        setError(null)
-      } else {
-        setError(err instanceof Error ? err.message : String(err))
-      }
-      setLoading(false)
-      setScan(null)
+      setError(err instanceof Error ? err.message : String(err))
+      setStep('idle')
     }
+  }
+
+  function handleBack() {
+    filesRef.current = []
+    setDetectedStack(null)
+    setReadState({})
+    setStep('idle')
+  }
+
+  if (step === 'profile' && detectedStack) {
+    return (
+      <ProjectProfileStep
+        detectedStack={detectedStack}
+        onConfirm={handleProfileConfirm}
+        onBack={handleBack}
+      />
+    )
   }
 
   return (
     <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-      <FolderOpen size={36} color="var(--accent)" weight="duotone" aria-hidden="true" />
+      <FolderOpen size={36} color="var(--accent)" weight="fill" aria-hidden="true" />
       <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginTop: 12, marginBottom: 6 }}>
         Externes Projekt verbinden
       </p>
@@ -82,18 +128,18 @@ export default function ConnectProjectCard() {
         Wähle einen lokalen Projektordner. Dateien werden nur im Browser gelesen — nichts wird dauerhaft gespeichert.
       </p>
 
-      {scan ? (
+      {step === 'reading' || step === 'scanning' ? (
         <div style={{ maxWidth: 380, margin: '0 auto 16px' }}>
-          <ScanProgress phase={scan.phase} filesRead={scan.filesRead} message={scan.message} />
+          <ScanProgress
+            phase={step === 'reading' ? 'reading' : 'uploading'}
+            filesRead={readState.filesRead}
+            message={readState.message}
+          />
         </div>
       ) : (
-        <button
-          className="btn btn-primary"
-          onClick={handleConnect}
-          disabled={loading}
-        >
+        <button className="btn btn-primary" onClick={handleConnect}>
           <FolderOpen size={15} weight="bold" aria-hidden="true" />
-          {loading ? 'Wird geladen…' : 'Ordner auswählen'}
+          Ordner auswählen
         </button>
       )}
 

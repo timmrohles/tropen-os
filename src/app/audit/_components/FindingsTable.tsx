@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
-  Spinner as PhosphorSpinner, Scales, CheckCircle, X,
+  Spinner as PhosphorSpinner, Scales, CheckCircle, X, DownloadSimple,
 } from '@phosphor-icons/react'
 import type { AgentSource } from '@/lib/audit/types'
 import type { GeneratedFix } from '@/lib/fix-engine/types'
@@ -288,6 +288,54 @@ export default function FindingsTable({
       setUpdatingId(null)
     }
   }, [])
+
+  function handleExport(format: 'csv' | 'json') {
+    const rows = findings.filter((f) => selected.has(f.id))
+    if (rows.length === 0) return
+
+    let content: string
+    let mime: string
+    let ext: string
+
+    if (format === 'json') {
+      content = JSON.stringify(rows.map((f) => ({
+        id: f.id,
+        rule: f.rule_id,
+        severity: f.severity,
+        agent: f.agent_source ?? 'core',
+        message: f.message,
+        file: f.file_path ?? '',
+        line: f.line ?? '',
+        suggestion: f.suggestion ?? '',
+        status: f.status,
+        enforcement: f.enforcement ?? '',
+      })), null, 2)
+      mime = 'application/json'
+      ext = 'json'
+    } else {
+      const cols = ['rule', 'severity', 'agent', 'message', 'file', 'line', 'suggestion', 'status']
+      const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`
+      const lines = [
+        cols.join(','),
+        ...rows.map((f) => [
+          f.rule_id, f.severity, f.agent_source ?? 'core', f.message,
+          f.file_path ?? '', f.line ?? '', f.suggestion ?? '', f.status,
+        ].map(String).map(escape).join(',')),
+      ]
+      content = lines.join('\r\n')
+      mime = 'text/csv'
+      ext = 'csv'
+    }
+
+    const date = new Date().toISOString().slice(0, 10)
+    const blob = new Blob([content], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-findings-${date}.${ext}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handleBulkStatus = useCallback(async (newStatus: DbFinding['status']) => {
     if (selected.size === 0) return
@@ -586,10 +634,20 @@ export default function FindingsTable({
                 {s === 'open' ? 'Offen' : s === 'acknowledged' ? 'Bekannt' : s === 'fixed' ? 'Behoben' : 'Ignorieren'}
               </button>
             ))}
-            <button className="btn btn-ghost btn-sm" onClick={() => setSelected(new Set())}
-              style={{ marginLeft: 'auto', fontSize: 12 }}>
-              Abwählen
-            </button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => handleExport('csv')}
+                style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <DownloadSimple size={12} weight="bold" aria-hidden="true" /> CSV
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => handleExport('json')}
+                style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <DownloadSimple size={12} weight="bold" aria-hidden="true" /> JSON
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelected(new Set())}
+                style={{ fontSize: 12 }}>
+                Abwählen
+              </button>
+            </div>
           </div>
         )}
 

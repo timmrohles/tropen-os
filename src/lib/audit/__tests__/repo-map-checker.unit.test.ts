@@ -79,7 +79,7 @@ describe('checkFileSizes', () => {
   })
 
   it('returns lower score for many large files', async () => {
-    const largeFiles = Array.from({ length: 20 }, (_, i) => makeFile(`f${i}.ts`, 400))
+    const largeFiles = Array.from({ length: 20 }, (_, i) => makeFile(`f${i}.ts`, 510))
     const ctx = makeCtx(largeFiles)
     const result = await checkFileSizes(ctx)
     expect(result.score).toBeLessThanOrEqual(2)
