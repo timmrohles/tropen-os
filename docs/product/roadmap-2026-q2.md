@@ -1,7 +1,7 @@
 # Tropen OS → [Neuer Name] — Roadmap Q2/Q3 2026
 ## Production Readiness Guide für Vibe-Coders
 
-> **Letzte Aktualisierung:** 2026-04-10
+> **Letzte Aktualisierung:** 2026-04-10 (i18n done)
 > **Basis:** 5 Komitee-Reviews (€4.80 Gesamtkosten), Tiefe Wettbewerbsanalyse
 > **Positionierung:** "Von der Idee zum production-reifen Produkt — mit EU-Compliance."
 > **Namenskandidaten:** GuideVibe, VibeMate, ReadyCheck (Entscheidung pending)
