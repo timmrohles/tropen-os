@@ -13,6 +13,8 @@ export type AgentSource =
   | 'ai-integration' | 'analytics'
   // Security Scan Agent (Sprint 7)
   | 'security-scan'
+  // Regulatory Deep Agents (Sprint 8)
+  | 'dsgvo' | 'bfsg' | 'ai-act'
 
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
