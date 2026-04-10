@@ -77,7 +77,7 @@ export default function WorkspaceDetailPage() {
 
   if (loading) {
     return (
-      <div className="content-max" style={{ color: 'var(--text-tertiary)', fontSize: 14, paddingTop: 24 }}>
+      <div className="content-max" style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
         Lädt…
       </div>
     )
