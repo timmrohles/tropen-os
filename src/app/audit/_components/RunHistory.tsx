@@ -1,5 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { TrendUp, TrendDown, Minus, Brain } from '@phosphor-icons/react/dist/ssr'
+import { TrendUp, TrendDown, Brain, CaretRight, CaretDown } from '@phosphor-icons/react'
 
 interface RunSummary {
   id: string
@@ -32,141 +35,194 @@ interface RunHistoryProps {
 
 const STATUS_COLOR: Record<string, string> = {
   production_grade: 'var(--status-production)',
-  stable: 'var(--status-stable)',
-  risky: 'var(--status-risky)',
-  prototype: 'var(--status-prototype)',
+  stable:           'var(--status-stable)',
+  risky:            'var(--status-risky)',
+  prototype:        'var(--status-prototype)',
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  production_grade: 'Production Grade',
-  stable: 'Stable',
-  risky: 'Risky',
-  prototype: 'Prototype',
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }
 
-function formatDate(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    + ', '
-    + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+function groupByDay(runs: RunSummary[]): Map<string, RunSummary[]> {
+  const today = new Date().toDateString()
+  const yesterday = new Date(Date.now() - 86400000).toDateString()
+  const groups = new Map<string, RunSummary[]>()
+  for (const run of runs) {
+    const d = new Date(run.created_at).toDateString()
+    const key = d === today ? 'today' : d === yesterday ? 'yesterday' : new Date(run.created_at).toISOString().split('T')[0]
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(run)
+  }
+  return groups
+}
+
+function dayLabel(key: string): string {
+  if (key === 'today') return 'Heute'
+  if (key === 'yesterday') return 'Gestern'
+  return new Date(key).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export default function RunHistory({ runs, reviewRuns = [], selectedRunId }: RunHistoryProps) {
-  if (runs.length === 0) {
-    return null
-  }
+  const [filter, setFilter] = useState<'all' | 'auto' | 'deep'>('all')
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set(['today']))
 
-  // Group review runs by audit run id
+  if (runs.length === 0) return null
+
   const reviewsByRunId = reviewRuns.reduce<Record<string, ReviewRunSummary[]>>((acc, rr) => {
     if (!acc[rr.run_id]) acc[rr.run_id] = []
     acc[rr.run_id].push(rr)
     return acc
   }, {})
 
+  const filtered = runs.filter(run => {
+    if (filter === 'deep') return run.review_type === 'multi_model'
+    if (filter === 'auto') return run.review_type !== 'multi_model'
+    return true
+  })
+
+  const grouped = groupByDay(filtered)
+
+  function toggleDay(key: string) {
+    setExpandedDays(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
   return (
     <div className="card" style={{ padding: '20px 24px', marginBottom: 24 }}>
       <div className="card-header" style={{ marginBottom: 12 }}>
         <span className="card-header-label">Run-Historie</span>
-        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{runs.length} Runs</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['all', 'auto', 'deep'] as const).map(f => (
+            <button
+              key={f}
+              className={`chip${filter === f ? ' chip--active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {f === 'all' ? 'Alle' : f === 'auto' ? 'Auto' : 'Deep'}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{filtered.length} Runs</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {runs.map((run, idx) => {
-          const prevRun = runs[idx + 1]
-          const delta = prevRun ? run.percentage - prevRun.percentage : null
-          const isSelected = run.id === selectedRunId
-          const color = STATUS_COLOR[run.status] ?? 'var(--text-secondary)'
-          const runReviews = reviewsByRunId[run.id] ?? []
-
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {[...grouped.entries()].map(([dayKey, dayRuns]) => {
+          const isExpanded = expandedDays.has(dayKey)
           return (
-            <div key={run.id}>
-              <Link
-                href={`/audit?runId=${run.id}`}
-                className="list-row"
+            <div key={dayKey}>
+              <button
+                onClick={() => toggleDay(dayKey)}
+                aria-expanded={isExpanded}
                 style={{
-                  textDecoration: 'none',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 80px 80px 60px',
-                  gap: 8,
-                  alignItems: 'center',
-                  background: isSelected ? 'var(--accent-light)' : undefined,
-                  borderLeft: isSelected ? `3px solid var(--accent)` : '3px solid transparent',
+                  width: '100%', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '6px 0', border: 'none', background: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
                 }}
               >
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
-                    {formatDate(run.created_at)}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                    {run.critical_findings > 0 && (
-                      <span style={{ color: 'var(--error)', marginRight: 6 }}>
-                        {run.critical_findings} krit.
-                      </span>
-                    )}
-                    {run.total_findings} Findings
-                  </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {isExpanded
+                    ? <CaretDown size={10} weight="bold" aria-hidden="true" />
+                    : <CaretRight size={10} weight="bold" aria-hidden="true" />}
+                  {dayLabel(dayKey)}
                 </span>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{dayRuns.length} Runs</span>
+              </button>
 
-                <span style={{
-                  fontSize: 11, padding: '2px 7px', borderRadius: 10,
-                  background: `color-mix(in srgb, ${color} 15%, transparent)`,
-                  color,
-                  fontWeight: 600, textAlign: 'center',
-                }}>
-                  {STATUS_LABEL[run.status] ?? run.status}
-                </span>
+              {isExpanded && (
+                <div>
+                  {dayRuns.map((run, idx) => {
+                    const prevRun = filtered[filtered.indexOf(run) + 1]
+                    const delta = prevRun ? run.percentage - prevRun.percentage : null
+                    const isSelected = run.id === selectedRunId
+                    const color = STATUS_COLOR[run.status] ?? 'var(--text-secondary)'
+                    const runReviews = reviewsByRunId[run.id] ?? []
 
-                <span style={{ fontSize: 14, fontWeight: 700, color, textAlign: 'right' }}>
-                  {run.percentage.toFixed(1)}%
-                </span>
+                    return (
+                      <div key={run.id}>
+                        <Link
+                          href={`/audit?runId=${run.id}`}
+                          className="list-row"
+                          style={{
+                            textDecoration: 'none',
+                            display: 'grid',
+                            gridTemplateColumns: '40px 62px 1fr 52px 44px',
+                            gap: 6, alignItems: 'center', fontSize: 12,
+                            paddingLeft: 16,
+                            background: isSelected ? 'var(--accent-light)' : undefined,
+                            borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
+                          }}
+                        >
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
+                            {formatTime(run.created_at)}
+                          </span>
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
+                            {run.total_findings} Find.
+                          </span>
+                          <span style={{
+                            color: 'var(--text-tertiary)', fontSize: 11,
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {run.review_type === 'multi_model' && (
+                              <span style={{
+                                fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 3, marginRight: 4,
+                                background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+                                color: 'var(--accent)',
+                              }}>Deep</span>
+                            )}
+                            {run.project_name}
+                          </span>
+                          <span style={{ fontWeight: 700, color, textAlign: 'right', fontSize: 13 }}>
+                            {run.percentage.toFixed(1)}%
+                          </span>
+                          <span style={{
+                            fontSize: 11, textAlign: 'right',
+                            color: delta === null ? 'transparent'
+                              : delta > 0 ? 'var(--accent)'
+                              : delta < 0 ? 'var(--error)'
+                              : 'var(--text-tertiary)',
+                          }}>
+                            {delta !== null && delta !== 0
+                              ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`
+                              : delta === 0 ? '—' : ''}
+                          </span>
+                        </Link>
 
-                <span style={{
-                  fontSize: 12, display: 'flex', alignItems: 'center', gap: 2,
-                  justifyContent: 'flex-end',
-                  color: delta === null ? 'var(--text-tertiary)'
-                    : delta > 0 ? 'var(--accent)'
-                    : delta < 0 ? 'var(--error)'
-                    : 'var(--text-tertiary)',
-                }}>
-                  {delta === null ? null
-                    : delta > 0 ? <TrendUp size={12} weight="bold" aria-hidden="true" />
-                    : delta < 0 ? <TrendDown size={12} weight="bold" aria-hidden="true" />
-                    : <Minus size={12} weight="bold" aria-hidden="true" />}
-                  {delta !== null && delta !== 0 && `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`}
-                </span>
-              </Link>
-
-              {/* Deep Review sub-entries */}
-              {runReviews.map((rr) => (
-                <div
-                  key={rr.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto',
-                    gap: 8,
-                    alignItems: 'center',
-                    padding: '5px 12px 5px 28px',
-                    borderLeft: '3px solid transparent',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--accent)' }}>
-                    <Brain size={11} weight="fill" aria-hidden="true" />
-                    Deep Review · {formatDate(rr.created_at)}
-                    <span style={{ color: 'var(--text-tertiary)' }}>
-                      · {rr.findings_count} Findings
-                      {rr.cost_eur != null && ` · €${rr.cost_eur.toFixed(3)}`}
-                    </span>
-                  </span>
-                  {!rr.quorum_met && (
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                      kein Quorum
-                    </span>
-                  )}
+                        {runReviews.map(rr => (
+                          <div key={rr.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '3px 8px 3px 32px', fontSize: 11, color: 'var(--accent)',
+                          }}>
+                            <Brain size={10} weight="fill" aria-hidden="true" />
+                            <span>Deep Review · {formatTime(rr.created_at)}</span>
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                              · {rr.findings_count} Findings
+                              {rr.cost_eur != null && ` · €${rr.cost_eur.toFixed(3)}`}
+                            </span>
+                            {!rr.quorum_met && (
+                              <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>kein Quorum</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
+              )}
             </div>
           )
         })}
+
+        {filtered.length === 0 && (
+          <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '12px 0' }}>
+            Keine Runs für diesen Filter.
+          </p>
+        )}
       </div>
     </div>
   )

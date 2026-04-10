@@ -36,7 +36,6 @@ export default async function AuditPage({ searchParams }: PageProps) {
 
   // ── Project selector ──────────────────────────────────────────────────────
   const scanProjects = orgId ? await fetchScanProjects(orgId) : []
-  // projectParam: undefined = intern (Tropen OS), UUID = external scan project
   const activeScanProjectId = projectParam ?? null
 
   // ── Runs list ─────────────────────────────────────────────────────────────
@@ -62,7 +61,6 @@ export default async function AuditPage({ searchParams }: PageProps) {
       fetchAuditFindings(selectedRunId),
     ])
 
-    // Delta vs. previous run
     if (runDetail && runList.length > 1) {
       const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
       const prevRun = currentIdx >= 0 ? runList[currentIdx + 1] : null
@@ -72,7 +70,6 @@ export default async function AuditPage({ searchParams }: PageProps) {
     }
   }
 
-  // Split findings: Deep Review (models_flagged set) vs. Static Audit
   type RawFinding = Record<string, unknown>
   function isDeepReviewFinding(f: RawFinding): boolean {
     const mf = f.models_flagged as string[] | null | undefined
@@ -82,6 +79,10 @@ export default async function AuditPage({ searchParams }: PageProps) {
   const deepFindings = allFindings.filter(isDeepReviewFinding)
   const staticFindings = allFindings.filter((f) => !isDeepReviewFinding(f))
 
+  const openFindings = staticFindings.filter((f) => f.status === 'open').length
+  const criticalOpenFindings = staticFindings.filter((f) => f.status === 'open' && f.severity === 'critical').length
+  const highOpenFindings = staticFindings.filter((f) => f.status === 'open' && f.severity === 'high').length
+  const isFirstRun = runList.length === 1
   const hasRuns = runList.length > 0
 
   return (
@@ -108,10 +109,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
       {/* ── Project selector ─────────────────────────────────────────────── */}
       {scanProjects.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
-          <a
-            href="/audit"
-            className={`chip${!activeScanProjectId ? ' chip--active' : ''}`}
-          >
+          <a href="/audit" className={`chip${!activeScanProjectId ? ' chip--active' : ''}`}>
             Tropen OS (intern)
           </a>
           {scanProjects.map((p) => (
@@ -147,6 +145,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
       {/* ── Run data ────────────────────────────────────────────────────── */}
       {hasRuns && runDetail && (
         <>
+          {/* 1. Score Hero — compact */}
           <ScoreHero
             percentage={runDetail.percentage as number}
             status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
@@ -155,22 +154,37 @@ export default async function AuditPage({ searchParams }: PageProps) {
             projectName={runDetail.project_name as string}
             reviewType={runDetail.review_type as string | null ?? null}
             reviewCostEur={runDetail.review_cost_eur as number | null ?? null}
+            openFindings={openFindings}
+            highOpenFindings={highOpenFindings}
+            criticalOpenFindings={criticalOpenFindings}
+            isFirstRun={isFirstRun}
           />
 
-          <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
+          {/* 2. Categories + Score-Verlauf/Runs nebeneinander */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+            gap: 16,
+            marginTop: 0,
+          }}>
+            <CategoryBreakdown
+              categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
+              findings={staticFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
+              isExternalProject={activeScanProjectId !== null}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <ScoreTrend runs={runList} />
+              <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
+            </div>
+          </div>
 
-          <ScoreTrend runs={runList} />
-
-          <CategoryBreakdown
-            categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
-            findings={staticFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
-          />
-
+          {/* 3. Deep Review Findings */}
           <DeepReviewFindings
             findings={deepFindings as unknown as Parameters<typeof DeepReviewFindings>[0]['findings']}
             runId={selectedRunId ?? ''}
           />
 
+          {/* 4. Static Findings */}
           <div id="findings-table">
             <FindingsTable
               key={selectedRunId ?? 'none'}

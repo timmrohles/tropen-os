@@ -165,6 +165,9 @@ const AGENT_BADGE: Record<AgentSource, { label: string; bg: string; color: strin
   'ai-integration': _neutral('AI'),
   analytics:          _neutral('Track'),
   'security-scan':    { label: 'SecScan', bg: '#fef2f2', color: '#dc2626' },
+  dsgvo:              _neutral('DSGVO'),
+  bfsg:               _neutral('BFSG'),
+  'ai-act':           _neutral('AI Act'),
 }
 
 const STATUS_OPTIONS: Array<{ value: DbFinding['status']; label: string }> = [
