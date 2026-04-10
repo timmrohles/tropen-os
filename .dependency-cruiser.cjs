@@ -81,6 +81,7 @@ module.exports = {
         '\\.spec\\.',
         '__tests__',
         '__mocks__',
+        'src/lib/repo-map/fixtures',
       ],
     },
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { Warning, Tray, ArrowsClockwise, Export as ExportIcon, ChatCircle } from '@phosphor-icons/react'
-import type { CanvasCard } from '@/app/workspaces/[id]/CanvasClient'
+import type { CanvasCard } from '@/lib/types/canvas'
 
 const ROLE_CONFIG = {
   input:   { label: 'Eingabe',   color: 'var(--accent)',          bg: 'var(--accent-light)',    Icon: Tray },
