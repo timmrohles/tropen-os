@@ -33,6 +33,7 @@ import {
 import {
   checkAuthGuardConsistency, checkRlsCoverage, checkRateLimiting,
   checkCorsConfig, checkErrorLeakage, checkLlmInputSeparation,
+  checkFileUploadValidation,
 } from './checkers/agent-security-checker'
 import {
   checkInjectionPatterns, checkAuthPatterns, checkDataExposurePatterns,
@@ -61,7 +62,18 @@ import {
   checkPaginationOnListEndpoints,
   checkAnalyticsEventSchema,
   checkErrorPages,
+  checkStrictEquality,
+  checkImageAltText,
 } from './checkers/agent-committee-checker'
+import {
+  checkDsgvoPrivacyPage, checkDsgvoCookieConsentLibrary, checkDsgvoNoTrackingBeforeConsent,
+  checkDsgvoPasswordHashing, checkDsgvoHstsHeader, checkDsgvoCspHeader,
+  checkDsgvoDataExportEndpoint, checkDsgvoAccountDeletion,
+  checkBfsgAccessibilityStatement, checkBfsgFeedbackMechanism,
+  checkBfsgHtmlLang, checkBfsgSkipNavLink, checkBfsgAriaLiveRegions,
+  checkAiActRiskClassification, checkAiActDisclosure,
+  checkAiActDecisionLogging, checkAiActPurposeDocs, checkAiActProhibitedPractices,
+} from './checkers/agent-regulatory-checker'
 
 function manual(id: string, categoryId: number, name: string, weight: 1 | 2 | 3): AuditRule {
   return { id, categoryId, name, weight, checkMode: 'manual', automatable: false }
@@ -87,9 +99,10 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('cat-2-rule-5', 2, 'Explizites Error Handling durchgaengig', 2),
   manual('cat-2-rule-6', 2, 'Cognitive Complexity <= 15', 2),
   { id: 'cat-2-rule-9', categoryId: 2, name: 'ESLint: keine Violations (detailliert)', weight: 2, checkMode: 'external-tool', automatable: true, check: checkEslintDetailed, agentSource: 'code-style' },
-  // Code Style Agent R2, R9
+  // Code Style Agent R2, R9, R10
   { id: 'cat-2-rule-7', categoryId: 2, name: 'Keine leeren catch-Bloecke', weight: 2, checkMode: 'repo-map', automatable: true, check: checkEmptyCatchBlocks, agentSource: 'code-style', agentRuleId: 'R2', enforcement: 'blocked' },
   { id: 'cat-2-rule-8', categoryId: 2, name: 'Kein auskommentierter Code-Block > 2 Zeilen', weight: 1, checkMode: 'repo-map', automatable: true, check: checkCommentedOutCode, agentSource: 'code-style', agentRuleId: 'R9', enforcement: 'reviewed' },
+  { id: 'cat-2-rule-10', categoryId: 2, name: 'Strikte Gleichheitsoperatoren (=== statt ==)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkStrictEquality, agentSource: 'code-style', agentRuleId: 'R10', enforcement: 'blocked' },
 
   // ── Category 3: Sicherheit (weights: 3,3,3,2,2,3,2,3,2,2,2,3,2,3) ────────
   manual('cat-3-rule-1',  3, 'OWASP Top 10 beruecksichtigt', 3),
@@ -112,6 +125,8 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-3-rule-17', categoryId: 3, name: 'Rate Limiting konfiguriert', weight: 2, checkMode: 'file-system', automatable: true, check: checkRateLimiting, agentSource: 'security', agentRuleId: 'R6', enforcement: 'reviewed' },
   { id: 'cat-3-rule-18', categoryId: 3, name: 'CORS: keine Wildcard-Origin', weight: 2, checkMode: 'file-system', automatable: true, check: checkCorsConfig, agentSource: 'security', agentRuleId: 'R7', enforcement: 'blocked' },
   { id: 'cat-3-rule-19', categoryId: 3, name: 'Keine Error-Internals in API-Responses', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorLeakage, agentSource: 'security', agentRuleId: 'R8', enforcement: 'blocked' },
+  // Security Agent R10 (file upload validation)
+  { id: 'cat-3-rule-26', categoryId: 3, name: 'File-Upload-Validierung (Typ, Groesse, Pfad)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkFileUploadValidation, agentSource: 'security', agentRuleId: 'R10', enforcement: 'reviewed' },
   // Security Scan Agent: R1–R6
   { id: 'cat-3-rule-20', categoryId: 3, name: 'Keine Injection-Pattern (SQL/Cmd/Path/SSRF/XSS)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkInjectionPatterns, agentSource: 'security-scan', agentRuleId: 'R1', enforcement: 'blocked' },
   { id: 'cat-3-rule-21', categoryId: 3, name: 'Keine unsicheren Auth-Pattern (Secrets/Tokens)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkAuthPatterns, agentSource: 'security-scan', agentRuleId: 'R2', enforcement: 'blocked' },
@@ -132,6 +147,15 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-4-rule-8', categoryId: 4, name: 'VVT (Verarbeitungsverzeichnis) in docs/ vorhanden', weight: 2, checkMode: 'documentation', automatable: true, check: checkVVTPresent, agentSource: 'legal', agentRuleId: 'R2', enforcement: 'reviewed' },
   { id: 'cat-4-rule-9', categoryId: 4, name: 'Cookie-Consent implementiert', weight: 2, checkMode: 'repo-map', automatable: true, check: checkCookieConsent, agentSource: 'legal', agentRuleId: 'R3', enforcement: 'blocked' },
   { id: 'cat-4-rule-10', categoryId: 4, name: 'PII in Analytics-Events getrennt / anonymisiert', weight: 2, checkMode: 'repo-map', automatable: true, check: checkAnalyticsPiiSeparation, agentSource: 'analytics', agentRuleId: 'R3', enforcement: 'reviewed' },
+  // DSGVO Deep Agent: R1, R4, R5, R10, R11, R12, R13, R15–R18
+  { id: 'cat-4-rule-11', categoryId: 4, name: 'DSGVO: Datenschutzseite vorhanden (Art. 13)', weight: 3, checkMode: 'file-system', automatable: true, check: checkDsgvoPrivacyPage, agentSource: 'dsgvo', agentRuleId: 'R1', enforcement: 'blocked' },
+  { id: 'cat-4-rule-12', categoryId: 4, name: 'DSGVO: Cookie Consent Library (ePrivacy Art. 5(3))', weight: 2, checkMode: 'file-system', automatable: true, check: checkDsgvoCookieConsentLibrary, agentSource: 'dsgvo', agentRuleId: 'R4', enforcement: 'blocked' },
+  { id: 'cat-4-rule-13', categoryId: 4, name: 'DSGVO: Kein Tracking vor Consent (Art. 7)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkDsgvoNoTrackingBeforeConsent, agentSource: 'dsgvo', agentRuleId: 'R5', enforcement: 'blocked' },
+  { id: 'cat-4-rule-14', categoryId: 4, name: 'DSGVO: Passwort-Hashing (Art. 32)', weight: 3, checkMode: 'file-system', automatable: true, check: checkDsgvoPasswordHashing, agentSource: 'dsgvo', agentRuleId: 'R10', enforcement: 'blocked' },
+  { id: 'cat-4-rule-15', categoryId: 4, name: 'DSGVO: HSTS-Header konfiguriert (Art. 32)', weight: 2, checkMode: 'file-system', automatable: true, check: checkDsgvoHstsHeader, agentSource: 'dsgvo', agentRuleId: 'R11', enforcement: 'reviewed' },
+  { id: 'cat-4-rule-16', categoryId: 4, name: 'DSGVO: CSP-Header konfiguriert (Art. 32)', weight: 2, checkMode: 'file-system', automatable: true, check: checkDsgvoCspHeader, agentSource: 'dsgvo', agentRuleId: 'R17', enforcement: 'reviewed' },
+  { id: 'cat-4-rule-17', categoryId: 4, name: 'DSGVO: Datenexport-Endpunkt (Art. 20 — Portabilitaet)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkDsgvoDataExportEndpoint, agentSource: 'dsgvo', agentRuleId: 'R12', enforcement: 'reviewed' },
+  { id: 'cat-4-rule-18', categoryId: 4, name: 'DSGVO: Account-Loeschung (Art. 17 — Recht auf Vergessenwerden)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkDsgvoAccountDeletion, agentSource: 'dsgvo', agentRuleId: 'R13', enforcement: 'blocked' },
 
   // ── Category 5: Datenbank (weights: 3,2,2,1,3,3) ─────────────────────────
   { id: 'cat-5-rule-1', categoryId: 5, name: 'FK-Constraints vorhanden', weight: 3, checkMode: 'documentation', automatable: true, check: checkFKConstraintsInMigrations },
@@ -248,6 +272,14 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-16-rule-3', categoryId: 16, name: 'Korrekte ARIA-Nutzung', weight: 1, checkMode: 'repo-map', automatable: true, check: checkAriaAttributes },
   // Accessibility Agent R2
   { id: 'cat-16-rule-4', categoryId: 16, name: 'axe-core fuer Accessibility-Tests installiert', weight: 2, checkMode: 'file-system', automatable: true, check: checkAxeCoreInstalled, agentSource: 'accessibility', agentRuleId: 'R2', enforcement: 'reviewed' },
+  // BFSG Deep Agent: R1 (statement), R2 (feedback), R5 (html lang), R6 (skip nav), R11 (aria-live)
+  { id: 'cat-16-rule-5', categoryId: 16, name: 'BFSG: Erklaerung zur Barrierefreiheit vorhanden', weight: 3, checkMode: 'file-system', automatable: true, check: checkBfsgAccessibilityStatement, agentSource: 'bfsg', agentRuleId: 'R1', enforcement: 'blocked' },
+  { id: 'cat-16-rule-6', categoryId: 16, name: 'BFSG: Feedback-Mechanismus in Erklaerung (§ 3 BFSG)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkBfsgFeedbackMechanism, agentSource: 'bfsg', agentRuleId: 'R2', enforcement: 'reviewed' },
+  { id: 'cat-16-rule-7', categoryId: 16, name: 'BFSG: HTML lang-Attribut gesetzt (WCAG 2.1 SC 3.1.1)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkBfsgHtmlLang, agentSource: 'bfsg', agentRuleId: 'R5', enforcement: 'blocked' },
+  { id: 'cat-16-rule-8', categoryId: 16, name: 'BFSG: Skip-Navigation-Link vorhanden (WCAG 2.1 SC 2.4.1)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkBfsgSkipNavLink, agentSource: 'bfsg', agentRuleId: 'R6', enforcement: 'reviewed' },
+  { id: 'cat-16-rule-9', categoryId: 16, name: 'BFSG: ARIA live-Regions fuer dynamische Inhalte', weight: 2, checkMode: 'repo-map', automatable: true, check: checkBfsgAriaLiveRegions, agentSource: 'bfsg', agentRuleId: 'R11', enforcement: 'reviewed' },
+  // Accessibility Agent R9 (deepened)
+  { id: 'cat-16-rule-10', categoryId: 16, name: 'Accessibility: <img> mit alt-Text (WCAG 2.1 SC 1.1.1)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkImageAltText, agentSource: 'accessibility', agentRuleId: 'R9', enforcement: 'blocked' },
 
   // ── Category 17: Internationalisierung (weights: 2,2,2) ──────────────────
   { id: 'cat-17-rule-1', categoryId: 17, name: 'i18n-Framework im Einsatz', weight: 2, checkMode: 'file-system', automatable: true, check: checkI18nFramework },
@@ -297,6 +329,12 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-22-rule-7', categoryId: 22, name: 'AI-Provider ueber Abstraktionsschicht angebunden', weight: 2, checkMode: 'repo-map', automatable: true, check: checkAiProviderAbstraction, agentSource: 'ai-integration', agentRuleId: 'R2', enforcement: 'reviewed' },
   // Security Scan Agent: R8
   { id: 'cat-22-rule-8', categoryId: 22, name: 'Kein AI-Security-Risk (Prompt-Injection/Output-Eval)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkAiSecurityPatterns, agentSource: 'security-scan', agentRuleId: 'R8', enforcement: 'blocked' },
+  // AI Act Deep Agent: R2 (risk classification), R3 (disclosure), R6 (decision logging), R9 (purpose docs), R10 (prohibited)
+  { id: 'cat-22-rule-9', categoryId: 22, name: 'AI Act: Risikoeinstufung dokumentiert (Art. 9)', weight: 2, checkMode: 'documentation', automatable: true, check: checkAiActRiskClassification, agentSource: 'ai-act', agentRuleId: 'R2', enforcement: 'reviewed' },
+  { id: 'cat-22-rule-10', categoryId: 22, name: 'AI Act: KI-Interaktionen erkennbar (Art. 52)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkAiActDisclosure, agentSource: 'ai-act', agentRuleId: 'R3', enforcement: 'reviewed' },
+  { id: 'cat-22-rule-11', categoryId: 22, name: 'AI Act: KI-Entscheidungs-Logging (Art. 12)', weight: 2, checkMode: 'documentation', automatable: true, check: checkAiActDecisionLogging, agentSource: 'ai-act', agentRuleId: 'R6', enforcement: 'reviewed' },
+  { id: 'cat-22-rule-12', categoryId: 22, name: 'AI Act: Zweckbeschreibung dokumentiert (Art. 13)', weight: 1, checkMode: 'documentation', automatable: true, check: checkAiActPurposeDocs, agentSource: 'ai-act', agentRuleId: 'R9', enforcement: 'advisory' },
+  { id: 'cat-22-rule-13', categoryId: 22, name: 'AI Act: Keine verbotenen Praktiken (Art. 5)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkAiActProhibitedPractices, agentSource: 'ai-act', agentRuleId: 'R10', enforcement: 'blocked' },
 
   // ── Category 23: Infrastructure (weights: 3,2,2,2) ───────────────────────
   manual('cat-23-rule-1', 23, 'Multi-AZ Deployment', 3),

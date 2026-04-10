@@ -1,5 +1,5 @@
 // src/lib/audit/checkers/agent-security-checker.ts
-// Security Agent v2.1 — automated checks for R3, R4, R6, R7, R8, R9
+// Security Agent v2.1 — automated checks for R3, R4, R6, R7, R8, R9, R10
 import * as fs from 'node:fs'
 import { join } from 'node:path'
 import type { AuditContext, RuleResult, Finding } from '../types'
@@ -197,7 +197,7 @@ export async function checkErrorLeakage(ctx: AuditContext): Promise<RuleResult> 
     (f) => f.path.startsWith('src/app/api/') && f.path.endsWith('route.ts')
   )
   const leakPatterns = ['error.stack', 'err.stack', 'e.stack']
-  // Only flag when it's in a response context (message/error/detail key)
+  // Flag when internal details (stack or message) are returned directly in a response
   const responseLeakPattern = /(?:message|error|detail|stack)\s*:\s*(?:error|err|e)\.(?:message|stack)/
 
   const violations: Finding[] = []
@@ -207,8 +207,11 @@ export async function checkErrorLeakage(ctx: AuditContext): Promise<RuleResult> 
 
     const hasStackLeak = leakPatterns.some((p) => content.includes(p))
     const hasResponseLeak = responseLeakPattern.test(content)
+    // Catch NextResponse.json({ error: <var>.message }) — but only for DB/error vars,
+    // not intermediary helper objects like access.message (which contain safe static strings)
+    const hasMessageLeak = /NextResponse\.json\(\{[^}]*:\s*(?:error|err|e|[a-z]+Error|[a-z]+Err)\.message/.test(content)
 
-    if (hasStackLeak || hasResponseLeak) {
+    if (hasStackLeak || hasResponseLeak || hasMessageLeak) {
       violations.push({
         severity: 'high' as const,
         message: `Potential error internals leaked in API response: ${route.path}`,
@@ -252,4 +255,64 @@ export async function checkLlmInputSeparation(ctx: AuditContext): Promise<RuleRe
 
   if (violations.length === 0) return pass('cat-22-rule-5', 5, 'No system-prompt interpolation patterns found')
   return fail('cat-22-rule-5', 1, `${violations.length} potential prompt injection risk(s)`, violations)
+}
+
+// R10 — Secure file upload handling
+export async function checkFileUploadValidation(ctx: AuditContext): Promise<RuleResult> {
+  // Find routes that handle file uploads (multipart or binary)
+  const uploadRoutes = ctx.repoMap.files.filter((f) => {
+    const p = f.path
+    return p.startsWith('src/app/api/') && p.endsWith('route.ts') && (
+      p.includes('upload') || p.includes('file') || p.includes('attachment') || p.includes('import')
+    )
+  })
+
+  if (uploadRoutes.length === 0) {
+    // No upload routes found — not applicable
+    return pass('cat-3-rule-26', 5, 'No file upload routes detected — not applicable')
+  }
+
+  const findings: Finding[] = []
+  for (const route of uploadRoutes) {
+    let content = ''
+    try { content = fs.readFileSync(join(ctx.rootPath, route.path), 'utf-8') } catch { continue }
+
+    const hasFormData = /formData|multipart|FormData/i.test(content)
+    if (!hasFormData) continue // route doesn't parse files
+
+    const hasTypeValidation = /mimetype|mime\.lookup|fileTypeFromBuffer|magic\.detect|\.type\b|allowedTypes|contentType/i.test(content)
+    const hasSizeValidation = /maxSize|MAX_SIZE|size\s*[<>]=?\s*\d|fileSizeLimit|sizeLimit/i.test(content)
+    const hasPathSanitization = /path\.join|sanitizeFilename|sanitize|generateUniqueId|uuid|crypto\.random|nanoid/i.test(content)
+
+    if (!hasTypeValidation) {
+      findings.push({
+        severity: 'high',
+        message: `Upload route lacks MIME/content-type validation: ${route.path}`,
+        filePath: route.path,
+        suggestion: 'Use file-type or magic-bytes library to validate file content, not just extension',
+      })
+    }
+    if (!hasSizeValidation) {
+      findings.push({
+        severity: 'medium',
+        message: `Upload route lacks file size limit: ${route.path}`,
+        filePath: route.path,
+        suggestion: 'Add MAX_FILE_SIZE check before processing upload (SECURITY R10)',
+      })
+    }
+    if (!hasPathSanitization && /join\(.*req|join\(.*param|join\(.*user|join\(.*body/i.test(content)) {
+      findings.push({
+        severity: 'critical',
+        message: `Potential path traversal: user input in file path construction: ${route.path}`,
+        filePath: route.path,
+        suggestion: 'Sanitize filenames with sanitize-filename package or use UUID-based storage paths',
+      })
+    }
+  }
+
+  if (findings.length === 0) {
+    return pass('cat-3-rule-26', 5, `${uploadRoutes.length} upload route(s) — validation patterns found`)
+  }
+  const score = findings.some((f) => f.severity === 'critical') ? 1 : findings.length <= 2 ? 3 : 2
+  return fail('cat-3-rule-26', score, `File upload validation issues in ${uploadRoutes.length} route(s)`, findings)
 }

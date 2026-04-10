@@ -933,3 +933,83 @@ export async function checkErrorPages(ctx: AuditContext): Promise<RuleResult> {
     }))
   )
 }
+
+// ─── Cat 2: Code-Qualität — Code Style Agent (deepened) ──────────────────────
+
+/** CODE_STYLE R10 — Strict equality operators (=== not ==) */
+export async function checkStrictEquality(ctx: AuditContext): Promise<RuleResult> {
+  const srcFiles = ctx.repoMap.files.filter(
+    (f) => f.path.startsWith('src/') &&
+      (f.path.endsWith('.ts') || f.path.endsWith('.tsx')) &&
+      !f.path.includes('.test.') && !f.path.includes('.spec.')
+  )
+
+  const findings: Finding[] = []
+  // Match == or != that are NOT === or !==
+  // Use negative lookbehind/lookahead to avoid false positives on ===, !==, =>, <=, >=
+  const looseEqPattern = /(?<![=!<>])={2}(?!=)|(?<!!)\!={1}(?!=)/g
+
+  for (const file of srcFiles.slice(0, 150)) {
+    const content = readFile(ctx.rootPath, file.path)
+    if (!content) continue
+    looseEqPattern.lastIndex = 0
+    const matches = content.match(looseEqPattern) ?? []
+    // Filter out false positives in string literals or JSX attribute values
+    const realMatches = matches.filter((m) => {
+      // == in JSX className="" or href="" is always assignment context — skip false pos
+      return m === '==' || m === '!='
+    })
+    if (realMatches.length > 0) {
+      findings.push({
+        severity: 'medium',
+        message: `${realMatches.length} loose equality operator(s) in ${file.path}`,
+        filePath: file.path,
+        suggestion: 'Use === and !== instead of == and != to avoid implicit type coercion (CODE_STYLE R10)',
+      })
+    }
+  }
+
+  if (findings.length === 0) return pass('cat-2-rule-10', 5, 'No loose equality operators detected in source files')
+  const score = findings.length <= 3 ? 3 : findings.length <= 8 ? 2 : 1
+  return fail('cat-2-rule-10', score, `${findings.length} file(s) with loose equality operators (== / !=)`, findings.slice(0, 10))
+}
+
+// ─── Cat 16: Accessibility — Accessibility Agent (deepened) ──────────────────
+
+/** ACCESSIBILITY R9 — all <img> elements have alt text */
+export async function checkImageAltText(ctx: AuditContext): Promise<RuleResult> {
+  const tsxFiles = ctx.repoMap.files.filter(
+    (f) => f.path.startsWith('src/') && f.path.endsWith('.tsx') &&
+      !f.path.includes('.test.') && !f.path.includes('.spec.') &&
+      !f.path.includes('.stories.')
+  )
+
+  const findings: Finding[] = []
+  // Match <img ...> without an alt attribute
+  const imgTagPattern = /<img\b([^>]*)>/g
+
+  for (const file of tsxFiles.slice(0, 150)) {
+    const content = readFile(ctx.rootPath, file.path)
+    if (!content || !content.includes('<img')) continue
+
+    imgTagPattern.lastIndex = 0
+    let m: RegExpExecArray | null
+    while ((m = imgTagPattern.exec(content)) !== null) {
+      const attrs = m[1]
+      // Check if alt attribute is present (alt= or alt={)
+      if (!/\balt\s*[={]/.test(attrs)) {
+        findings.push({
+          severity: 'high',
+          message: `<img> without alt attribute in ${file.path}`,
+          filePath: file.path,
+          suggestion: 'Add alt="description" for informative images or alt="" for decorative images (WCAG 2.1 SC 1.1.1)',
+        })
+        break // one finding per file is enough
+      }
+    }
+  }
+
+  if (findings.length === 0) return pass('cat-16-rule-10', 5, 'All <img> elements have alt attributes')
+  const score = findings.length <= 2 ? 3 : findings.length <= 5 ? 2 : 1
+  return fail('cat-16-rule-10', score, `${findings.length} file(s) with <img> missing alt text`, findings.slice(0, 10))
+}

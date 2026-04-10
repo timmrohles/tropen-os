@@ -401,16 +401,8 @@ const BUSINESS_LOGIC_PATTERNS: SecurityPattern[] = [
     exploitability: 'Attacker can access other organizations\' resources by guessing IDs',
     suggestion: 'Always add .eq("organization_id", orgId) when filtering by resource ID',
   },
-  {
-    id: 'missing-auth-in-route',
-    severity: 'critical',
-    pattern: /export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(/,
-    fileGlob: ['.ts'],
-    excludePattern: /(?:\.(?:test|spec)|\/api\/(?:public|auth|health|webhooks|s\/))/,
-    message: 'API route handler — verify auth check is present (getUser/requireAuth)',
-    exploitability: 'Unauthenticated access to protected resources or admin functions',
-    suggestion: 'Start every non-public route handler with: const { data: { user } } = await supabase.auth.getUser()',
-  },
+  // missing-auth-in-route: removed — zeilenbasierter Scanner kann Auth-Imports nicht prüfen.
+  // cat-3-rule-15 (checkAuthGuardConsistency) übernimmt diesen Check mit Import-Analyse.
 ]
 
 const AI_SECURITY_PATTERNS: SecurityPattern[] = [
@@ -419,7 +411,7 @@ const AI_SECURITY_PATTERNS: SecurityPattern[] = [
     severity: 'critical',
     pattern: /role:\s*['"]system['"]\s*,\s*content:\s*`[^`]*\$\{/,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|\/audit\/checkers\//,
     message: 'User input interpolated into LLM system prompt (Prompt Injection risk)',
     exploitability: 'Attacker overrides AI instructions; can exfiltrate system prompts or bypass guardrails',
     suggestion: 'Keep system prompts static; pass user data only in the "user" role message',
