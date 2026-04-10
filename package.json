@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_NO_TURBOPACK=1 next build",
+    "build": "next build",
     "security:scan": "gitleaks detect --config .gitleaks.toml --verbose",
     "start": "next start",
     "lint": "eslint src",
@@ -47,7 +47,7 @@
     "drizzle-orm": "^0.45.2",
     "ignore": "^7.0.5",
     "langsmith": "^0.5.14",
-    "next": "^16.2.3",
+    "next": "^15.5.15",
     "next-intl": "^4.9.1",
     "nodemailer": "^8.0.4",
     "openai": "^6.29.0",
