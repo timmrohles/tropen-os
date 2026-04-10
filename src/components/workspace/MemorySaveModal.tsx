@@ -144,7 +144,7 @@ export default function MemorySaveModal({ open, onClose, projectId, conversation
         aria-modal="true"
         aria-labelledby="memory-modal-title"
         style={{
-          background: 'var(--bg-surface)',
+          background: 'var(--bg-surface-solid)',
           borderRadius: 'var(--radius-lg)',
           width: 480,
           maxWidth: '92vw',

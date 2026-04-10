@@ -5,6 +5,7 @@ import { validateBody } from '@/lib/validators'
 import { getAuthUser } from '@/lib/api/workspaces'
 import { createWorkspacePlanCSchema } from '@/lib/validators/workspace-plan-c'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces')
 
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
 
   if (error) {
     log.error('[workspaces] GET failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
 
   if (error) {
     log.error('[workspaces] POST insert failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   // Auto-add creator as admin participant

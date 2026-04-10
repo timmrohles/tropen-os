@@ -32,9 +32,20 @@ const fileSchema = z.object({
   language: z.string(),
 })
 
+const profileSchema = z.object({
+  isPublic: z.boolean(),
+  liveUrl: z.string().nullable(),
+  isLive: z.boolean(),
+  audience: z.enum(['b2b', 'b2c', 'internal', 'unclear']),
+  complianceRequirements: z.array(z.string()),
+  notApplicableCategories: z.array(z.number()),
+  detectedStack: z.record(z.string(), z.unknown()),
+}).optional()
+
 const requestSchema = z.object({
   projectName: z.string().min(1).max(200),
   files: z.array(fileSchema).max(LIMITS.maxFiles),
+  profile: profileSchema,
 })
 
 function isValidPath(p: string): boolean {
@@ -82,13 +93,13 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabaseAdmin
+  const { data: orgProfile } = await supabaseAdmin
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.organization_id) {
+  if (!orgProfile?.organization_id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -98,7 +109,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request', details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { projectName, files } = parsed.data
+  const { projectName, files, profile } = parsed.data
 
   // Path traversal check
   const invalidPaths = files.filter((f) => !isValidPath(f.path))
@@ -114,7 +125,7 @@ export async function POST(request: Request) {
     }, { status: 400 })
   }
 
-  log.info('Scan started', { projectName, fileCount: files.length, totalSize, orgId: profile.organization_id })
+  log.info('Scan started', { projectName, fileCount: files.length, totalSize, orgId: orgProfile.organization_id })
 
   try {
     // 1. Build AuditContext from in-memory files
@@ -139,7 +150,7 @@ export async function POST(request: Request) {
     const { data: upsertRow, error: projErr } = await supabaseAdmin
       .from('scan_projects')
       .upsert({
-        organization_id: profile.organization_id,
+        organization_id: orgProfile.organization_id,
         name: projectName,
         source: 'file_system',
         file_count: files.length,
@@ -148,6 +159,15 @@ export async function POST(request: Request) {
         last_score: report.automatedPercentage,
         detected_stack: detectedStack,
         updated_at: new Date().toISOString(),
+        ...(profile ? {
+          profile: profile.detectedStack,
+          is_public: profile.isPublic,
+          live_url: profile.liveUrl,
+          is_live: profile.isLive,
+          audience: profile.audience,
+          compliance_requirements: profile.complianceRequirements,
+          not_applicable_categories: profile.notApplicableCategories,
+        } : {}),
       }, { onConflict: 'organization_id,name' })
       .select('id')
       .single()
@@ -160,7 +180,7 @@ export async function POST(request: Request) {
       const { data: insertRow, error: insertErr } = await supabaseAdmin
         .from('scan_projects')
         .insert({
-          organization_id: profile.organization_id,
+          organization_id: orgProfile.organization_id,
           name: projectName,
           source: 'file_system',
           file_count: files.length,
@@ -186,7 +206,7 @@ export async function POST(request: Request) {
     const { data: runRow, error: runErr } = await supabaseAdmin
       .from('audit_runs')
       .insert({
-        organization_id: profile.organization_id,
+        organization_id: orgProfile.organization_id,
         project_name: projectName,
         triggered_by: user.id,
         trigger_type: 'manual',
@@ -234,7 +254,7 @@ export async function POST(request: Request) {
     const enrichedFindings = allFindings as EnrichedFinding[]
     let newFindings = enrichedFindings
     try {
-      const result = await deduplicateFindings(enrichedFindings, runId, profile.organization_id)
+      const result = await deduplicateFindings(enrichedFindings, runId, orgProfile.organization_id)
       newFindings = result.newFindings
     } catch {
       log.warn('Deduplication failed — proceeding with all findings')

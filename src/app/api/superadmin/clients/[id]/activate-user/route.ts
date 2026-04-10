@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 async function requireSuperadmin() {
   const supabase = await createClient()
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Auth-User per Email suchen
   const { data: authList, error: listError } = await supabaseAdmin.auth.admin.listUsers()
-  if (listError) return NextResponse.json({ error: listError.message }, { status: 500 })
+  if (listError) return apiError(listError)
 
   const authUser = authList.users.find((u) => u.email === email)
   if (!authUser) {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     { id: authUser.id, email, organization_id: orgId, role, full_name: email.split('@')[0] },
     { onConflict: 'id' }
   )
-  if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 })
+  if (userErr) return apiError(userErr)
 
   // user_preferences – Onboarding abgeschlossen
   await supabaseAdmin.from('user_preferences').upsert(

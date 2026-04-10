@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createPromptTemplateSchema } from '@/lib/validators/prompt-templates'
+import { apiError } from '@/lib/api-error'
 
 export async function GET(req: Request) {
   const supabase = await createClient()
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError(error)
     return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
   }
 
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
@@ -74,6 +75,6 @@ export async function POST(req: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data, { status: 201 })
 }

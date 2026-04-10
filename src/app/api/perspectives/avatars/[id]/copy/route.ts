@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const logger = createLogger('api:perspectives:avatar-copy')
 
@@ -42,7 +43,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   if (error) {
     logger.error('avatar copy failed', { sourceId: id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   logger.info('avatar copied', { sourceId: id, copyId: copy.id, userId: user.id })

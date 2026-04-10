@@ -2,6 +2,7 @@ import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('superadmin/perspectives')
 
@@ -31,7 +32,7 @@ export async function GET() {
 
   if (error) {
     log.error('GET perspectives failed', { error })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   return NextResponse.json({ avatars: data })
 }
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     log.error('POST perspectives failed', { error })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   return NextResponse.json({ avatar: data }, { status: 201 })
 }

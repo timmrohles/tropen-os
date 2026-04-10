@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 type AccessResult =
   | { ann: { created_by: string; organization_id: string }; allowed: true }
@@ -20,7 +21,7 @@ async function checkAccess(id: string): Promise<AccessResult> {
     .maybeSingle()
 
   if (annError) {
-    return { ann: null, allowed: false, status: 500, message: annError.message }
+    return { ann: null, allowed: false, status: 500, message: 'Ein Fehler ist aufgetreten' }
   }
 
   if (!ann) {
@@ -64,7 +65,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select()
     .single()
 
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+  if (updateError) return apiError(updateError)
   return NextResponse.json(updated)
 }
 
@@ -82,6 +83,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     .delete()
     .eq('id', id)
 
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  if (deleteError) return apiError(deleteError)
   return new NextResponse(null, { status: 204 })
 }

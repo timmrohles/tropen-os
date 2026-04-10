@@ -6,20 +6,15 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import type { AccountRole } from '@/components/AccountSwitcher'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
-  ShieldCheck, ClipboardText, ListChecks, Speedometer, Cpu, CurrencyEur,
-  FileText, Users, PaintBrush, ChatCircle, FolderSimple,
-  Buildings, RssSimple, Sparkle, Robot, CaretLeft, CaretRight, GearSix, ShareNetwork,
+  CaretLeft, CaretRight, GearSix, House,
 } from '@phosphor-icons/react'
 
-const VIEW_AS_KEY = 'tropen_view_as'
 
 interface OrgBranding {
   logo_url: string | null
   organization_display_name: string | null
-  members_see_models: boolean
 }
 
 interface NavItem {
@@ -38,104 +33,35 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const supabase = createClient()
   const pathname = usePathname()
   const [branding, setBranding] = useState<OrgBranding | null>(null)
-  const [isSuperadmin, setIsSuperadmin] = useState(false)
-  const [dbRole, setDbRole] = useState<string | null>(null)
-  const [viewAs, setViewAs] = useState<AccountRole>('superadmin')
   const [user, setUser] = useState<User | null>(null)
 
+  // Strip locale prefix (/en, /de) before comparing against route paths
+  const localePath = pathname.replace(/^\/(en|de)(?=\/|$)/, '')
+
   const isActive = (path: string, prefix?: string) =>
-    prefix ? pathname.startsWith(prefix) : pathname === path || pathname.startsWith(path + '/')
+    prefix
+      ? localePath.startsWith(prefix)
+      : localePath === path || localePath.startsWith(path + '/')
 
   useEffect(() => {
-    // Restore viewAs from sessionStorage
-    const stored = sessionStorage.getItem(VIEW_AS_KEY) as AccountRole | null
-    if (stored === ('solo' as string)) {
-      sessionStorage.setItem(VIEW_AS_KEY, 'member')
-      setViewAs('member')
-    } else if (stored === ('org_admin' as string)) {
-      sessionStorage.setItem(VIEW_AS_KEY, 'admin')
-      setViewAs('admin')
-    } else if (stored) {
-      setViewAs(stored)
-    }
-
-    // Listen for viewAs changes from TopBar
-    function handler(e: Event) {
-      setViewAs((e as CustomEvent<AccountRole>).detail)
-    }
-    window.addEventListener('tropen:viewas', handler)
-
-    // Load branding + auth
     supabase
       .from('organization_settings')
-      .select('logo_url, organization_display_name, members_see_models')
+      .select('logo_url, organization_display_name')
       .maybeSingle()
       .then(({ data }) => { if (data) setBranding(data) })
 
-    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
-      if (!authUser) return
-      setUser(authUser)
-      const { data: profile } = await supabase.from('users').select('role').eq('id', authUser.id).maybeSingle()
-      if (profile?.role === 'superadmin') setIsSuperadmin(true)
-      setDbRole(profile?.role ?? null)
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (authUser) setUser(authUser)
     })
-
-    return () => window.removeEventListener('tropen:viewas', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const showSuperadminNav = isSuperadmin && viewAs === 'superadmin'
-  const showAdminNav = !showSuperadminNav && (
-    (isSuperadmin && (viewAs === 'admin' || viewAs === 'viewer')) ||
-    (!isSuperadmin && (dbRole === 'admin' || dbRole === 'viewer'))
-  )
-  const showMemberNav = !showSuperadminNav && !showAdminNav && (
-    (isSuperadmin && viewAs === 'member') ||
-    (!isSuperadmin && dbRole === 'member')
-  )
 
   const displayName = branding?.organization_display_name
   const logoUrl = branding?.logo_url
 
-  const superadminItems: NavItem[] = [
-    { href: '/superadmin/clients', icon: <ShieldCheck size={18} weight="bold" aria-hidden="true" />, label: 'Superadmin', matchPrefix: '/superadmin' },
-    { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-    { href: '/admin/qa', icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'QA', matchPrefix: '/admin/qa' },
-    { href: '/admin/todos', icon: <ListChecks size={18} weight="bold" aria-hidden="true" />, label: 'To-Dos', matchPrefix: '/admin/todos' },
-    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
-    { href: '/design-reference', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Design Ref', matchPrefix: '/design-reference' },
-  ]
-
-  const adminPrimaryItems: NavItem[] = [
-    { href: '/cockpit', icon: <Speedometer size={18} weight="bold" aria-hidden="true" />, label: 'Cockpit', matchPrefix: '/cockpit' },
-    { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/workspaces', icon: <ShareNetwork size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-  ]
-  const adminItems: NavItem[] = [
-    { href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' },
-    { href: '/admin/budget', icon: <CurrencyEur size={18} weight="bold" aria-hidden="true" />, label: 'Budget', matchPrefix: '/admin/budget' },
-    { href: '/admin/logs', icon: <FileText size={18} weight="bold" aria-hidden="true" />, label: 'Logs', matchPrefix: '/admin/logs' },
-    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
-    { href: '/admin/users', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'User', matchPrefix: '/admin/users' },
-    { href: '/admin/branding', icon: <PaintBrush size={18} weight="bold" aria-hidden="true" />, label: 'Branding', matchPrefix: '/admin/branding' },
-    { href: '/department', icon: <Buildings size={18} weight="bold" aria-hidden="true" />, label: 'Department', matchPrefix: '/department' },
-  ]
-
-  // Member nav — Dashboard top, then core items, then Feeds/Agenten
-  const memberTopItems: NavItem[] = [
-    { href: '/cockpit', icon: <Speedometer size={18} weight="bold" aria-hidden="true" />, label: 'Cockpit', matchPrefix: '/cockpit' },
-  ]
-  const memberCoreItems: NavItem[] = [
-    { href: '/chat', icon: <ChatCircle size={18} weight="bold" aria-hidden="true" />, label: 'Chat', matchPrefix: '/chat' },
-    { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
-    { href: '/artifacts', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
-    { href: '/workspaces', icon: <ShareNetwork size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
-    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
-    ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
-  ]
-  const memberFeedItems: NavItem[] = [
-    { href: '/feeds', icon: <RssSimple size={18} weight="bold" aria-hidden="true" />, label: 'Feeds', matchPrefix: '/feeds' },
-    { href: '/agenten', icon: <Robot size={18} weight="bold" aria-hidden="true" />, label: 'Agenten', matchPrefix: '/agenten' },
+  // ── Universal nav: 2 Items ─────────────────────────────────────────────────
+  const navItems: NavItem[] = [
+    { href: '/dashboard', icon: <House size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
   ]
 
   const userName = user?.user_metadata?.full_name as string | undefined ?? user?.email ?? 'Account'
@@ -177,14 +103,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {!collapsed && <span>{item.label}</span>}
         </Link>
       </li>
-    )
-  }
-
-  function Divider() {
-    return (
-      <li role="none" aria-hidden="true" style={{
-        height: 1, background: 'var(--sidebar-border)', margin: '6px 12px',
-      }} />
     )
   }
 
@@ -261,25 +179,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         className="sidebar-scroll"
       >
         <ul role="list" style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {showSuperadminNav && superadminItems.map(item => <NavLink key={item.href} item={item} />)}
-
-          {showAdminNav && (
-            <>
-              {adminPrimaryItems.map(item => <NavLink key={item.href} item={item} />)}
-              <Divider />
-              {adminItems.map(item => <NavLink key={item.href} item={item} />)}
-            </>
-          )}
-
-          {showMemberNav && (
-            <>
-              {memberTopItems.map(item => <NavLink key={item.href} item={item} />)}
-              <Divider />
-              {memberCoreItems.map(item => <NavLink key={item.href} item={item} />)}
-              <Divider />
-              {memberFeedItems.map(item => <NavLink key={item.href} item={item} />)}
-            </>
-          )}
+          {navItems.map(item => <NavLink key={item.href} item={item} />)}
         </ul>
       </nav>
 
@@ -292,36 +192,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         flexDirection: 'column',
         gap: 2,
       }}>
-        {/* Neuer Chat */}
-        {showMemberNav && (
-          <Link
-            href="/chat/new"
-            aria-label={collapsed ? 'Neuer Chat' : undefined}
-            title={collapsed ? 'Neuer Chat' : undefined}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: collapsed ? 'center' : 'center',
-              gap: 8,
-              height: 36,
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--accent)',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: 'none',
-              marginBottom: 4,
-              flexShrink: 0,
-              transition: 'background var(--t-fast)',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--accent-dark, #225f3e)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--accent)' }}
-          >
-            {!collapsed && <span>+ Neuer Chat</span>}
-            {collapsed && <span style={{ fontSize: 16 }}>+</span>}
-          </Link>
-        )}
-
         {/* Account link — no avatar, TopBar has the primary account UI */}
         <Link
           href="/settings"

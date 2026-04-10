@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/logger'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
 import { updateWorkspacePlanCSchema } from '@/lib/validators/workspace-plan-c'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:[id]')
 type Params = { params: Promise<{ id: string }> }
@@ -58,7 +59,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (error) {
     log.error('[workspaces/[id]] PATCH failed', { error: error.message, id })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   // Mark last export as stale when workspace changes
@@ -89,7 +90,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   if (error) {
     log.error('[workspaces/[id]] DELETE failed', { error: error.message, id })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   if (!deleted) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 

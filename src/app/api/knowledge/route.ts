@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json(data ?? [])
 }
@@ -86,7 +87,7 @@ export async function DELETE(req: NextRequest) {
     .delete()
     .eq('id', document_id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ success: true })
 }

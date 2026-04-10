@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench } from '@phosphor-icons/react'
+import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench, DownloadSimple } from '@phosphor-icons/react'
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
 
@@ -10,9 +10,10 @@ interface AuditActionsProps {
   runId?: string
   reviewType?: string | null
   criticalCount?: number
+  scanProjectId?: string | null
 }
 
-export default function AuditActions({ runId, reviewType, criticalCount }: AuditActionsProps) {
+export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId }: AuditActionsProps) {
   const router = useRouter()
   const [auditState, setAuditState] = useState<TriggerState>('idle')
   const [reviewState, setReviewState] = useState<TriggerState>('idle')
@@ -21,6 +22,7 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [batchState, setBatchState] = useState<TriggerState>('idle')
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   async function handleTrigger() {
     setAuditState('running')
@@ -101,6 +103,13 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
     }
   }
 
+  function handleExport(format: 'cursorrules' | 'claude-md') {
+    setExportOpen(false)
+    const params = new URLSearchParams({ format })
+    if (scanProjectId) params.set('projectId', scanProjectId)
+    window.location.href = `/api/audit/export-rules?${params.toString()}`
+  }
+
   const isAuditRunning  = auditState === 'running'
   const isReviewRunning = reviewState === 'running'
   const alreadyReviewed = reviewType === 'multi_model' && reviewState === 'idle'
@@ -132,6 +141,55 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
             {alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
           </button>
         )}
+
+        {/* Regeln exportieren */}
+        <div style={{ position: 'relative' }}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setExportOpen((v) => !v)}
+            disabled={isAuditRunning || isReviewRunning}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            aria-haspopup="true"
+            aria-expanded={exportOpen}
+          >
+            <DownloadSimple size={15} weight="bold" aria-hidden="true" />
+            Regeln exportieren
+          </button>
+          {exportOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                onClick={() => setExportOpen(false)}
+                aria-hidden="true"
+              />
+              {/* Dropdown */}
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 100,
+                background: 'var(--bg-surface-solid)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '4px 0', minWidth: 220,
+                boxShadow: '0 4px 16px rgba(26,23,20,0.10)',
+              }}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => handleExport('cursorrules')}
+                  style={{ width: '100%', textAlign: 'left', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>.cursorrules</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Für Cursor, Windsurf, Zed</span>
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => handleExport('claude-md')}
+                  style={{ width: '100%', textAlign: 'left', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>CLAUDE.md</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Für Claude Code</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         {runId && (criticalCount ?? 0) > 0 && (
           <button
@@ -173,6 +231,13 @@ export default function AuditActions({ runId, reviewType, criticalCount }: Audit
           </span>
         )}
       </div>
+
+      {/* Deep Review hint — shown before first review */}
+      {!alreadyReviewed && !!runId && reviewState === 'idle' && (
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'right' }}>
+          4 KI-Modelle prüfen unabhängig — findet was Auto-Checks übersehen · ca. €0.50
+        </p>
+      )}
 
       {/* Running status banner */}
       {isReviewRunning && (

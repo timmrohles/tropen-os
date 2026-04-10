@@ -113,10 +113,10 @@ Alle Dokumente liegen in `docs/webapp-manifest/`:
 
 | Score | Status |
 |-------|--------|
-| 85–100% | 🟢 Production Grade |
-| 70–84% | 🟡 Stable |
-| 50–69% | 🟠 Risky |
-| < 50% | 🔴 Prototype |
+| 90–100% | 🟢 Production Grade |
+| 80–89% | 🟡 Stable |
+| 60–79% | 🟠 Risky |
+| < 60% | 🔴 Prototype |
 
 **Letzter Audit:** 2026-03-15 — Score und Status siehe aktuellen Report.
 
@@ -147,6 +147,12 @@ Kein einziger Punkt ist optional.
 [ ] Semantisches HTML: <button> für Aktionen, <a href> für Navigation, nie <div onClick>?
 [ ] Alle interaktiven Elemente per Tastatur erreichbar, Fokus-Indikator sichtbar?
 [ ] Icons ohne sichtbaren Text haben aria-label oder aria-hidden="true"?
+[ ] Section-Tag (Monospace, grün, mit Linie) über jeder Section-Headline?
+[ ] Nummerierte Listen (01/02/03) statt drei gleiche Icon-Karten mit farbiger Border links?
+[ ] Score-Farbe korrekt: grün (var(--accent)) für Production/Stable, amber (#E5A000) für Risky, rot (var(--error)) für Prototype?
+[ ] Maximal 3 dunkle Sections (var(--active-bg)) pro Seite — nie zwei direkt hintereinander?
+[ ] Section-Padding: 80px Desktop, 48px Mobile?
+[ ] Display-Headlines (H1, H2) in var(--font-display) = Plus Jakarta Sans, fontWeight 700/800?
 ```
 
 ### Verbindliches Seiten-Layout (Stand 2026-03-16)
@@ -221,6 +227,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | nodemailer | ^8 | SMTP-Adapter für Self-Hosting |
 | pnpm | — | Package Manager |
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
+| next-intl | ^4.9.1 | i18n — Locales: `en` (default), `de`; messages in `messages/*.json`; config in `src/i18n/` |
 | openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
 | ignore | ^7 | .gitignore parsing für File Discovery in src/lib/repo-map/ |
 | @ai-sdk/openai | ^1.x | GPT-5.4 via Vercel AI Gateway (Multi-Model Review Pipeline) |
@@ -265,7 +272,10 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 | Audit mit externen Tools | `pnpm exec tsx src/scripts/run-audit.ts --with-tools [--lighthouse-url URL] [--deep-secrets]` | Aktiviert depcruise, ESLint-detailed, gitleaks, Bundle-Analyse, optionales Lighthouse |
 | Audit Dashboard | `/audit` (App-Route, requireOrgAdmin) | Interaktives Dashboard: Score-Hero, Kategorie-Breakdown, Findings-Table, Score-Trend (Tremor), Run-Historie; POST /api/audit/trigger startet neuen Run und persistiert in DB |
 | Externes Projekt scannen | `/audit/scan` (App-Route) | Verbindet lokalen Projektordner via File System Access API; Client liest Dateien, POST /api/projects/scan startet Audit |
-| Agent Generator | `npx dotenv -e .env.local -- npx tsx src/scripts/generate-agents.ts` | Generiert 18 Agent-Dokumente via 4-Modell-Komitee + Opus-Judge; ~€7–10 Gesamtkosten; Ergebnisse in `docs/agents/` |
+| Agent Generator | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/generate-agents.ts` | Generiert 18 Agent-Dokumente via 4-Modell-Komitee + Opus-Judge; ~€7–10 Gesamtkosten; Ergebnisse in `docs/agents/` |
+| Meta-Review Agenten | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/meta-review-agents.ts` | Fachliche Vollständigkeitsprüfung aller Agenten via Opus; ~€0.40; Ergebnis in `docs/agents/_reviews/meta-review-YYYY-MM-DD.md` |
+| Deep Agents Generator | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/generate-deep-agents.ts [dsgvo\|bfsg\|ai-act]` | Erstellt regulatorische Deep Agents (DSGVO/BFSG/AI Act) via Komitee; ~€1.50; Ergebnisse in `docs/agents/` |
+| Schwache Agenten vertiefen | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/deepen-weak-agents.ts [AGENT_ID]` | Vertieft Top-N schwache Agenten aus Meta-Review; ~€0.25/Agent; ohne Argument: Top-4 aus letztem Meta-Review |
 
 ### API-Key Management
 
@@ -329,7 +339,9 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 | Variable | Wert | Verwendung |
 |----------|------|------------|
 | `var(--bg-base)` | `#EAE9E5` | Seitenhintergrund |
-| `var(--bg-surface)` | `rgba(255,255,255,0.80)` | Cards, Panels |
+| `var(--bg-surface)` | `rgba(255,255,255,0.80)` | Cards, Panels **in der Seite** (kein Floating) |
+| `var(--bg-surface-solid)` | `#FFFFFF` | Modals, Drawer, Dropdowns, Sheets — alle schwebenden Elemente |
+| `var(--bg-tooltip)` | `#FFFFFF` | Tooltips, Popovers, Inline-Hinweisboxen |
 | `var(--bg-nav)` | `rgba(255,255,255,0.72)` | Navigation |
 | `var(--text-primary)` | `#1A1714` | Haupttext, H1-Icons |
 | `var(--text-secondary)` | `#4A4540` | Sekundärtext |
@@ -341,13 +353,18 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 
 **Das alte Dunkelgrün-Theme (`#0d1f16`, `#134e3a`, `#a3b554`) ist abgelöst — nie verwenden.**
 
+**Floating-Element-Regel (nicht verhandelbar):**
+- `--bg-surface` (halbtransparent) → **nur** für Cards/Panels die fester Bestandteil der Seite sind
+- Alles was schwebt (Modal, Drawer, Dropdown, Sheet, Tooltip, Popover) → `--bg-surface-solid` oder `--bg-tooltip`
+- Niemals `var(--bg-surface)` für `position: fixed/absolute` Elemente mit `z-index`
+
 ### Content-Breiten (verbindlich — genau eine pro Seite)
 
 | Klasse | Max-Width | Verwendet für |
 |--------|-----------|---------------|
-| `.content-max` | 1200px | Standard-Seiten (Dashboard, Settings, Knowledge, Projects, Feeds) |
+| `.content-max` | 1400px | Standard-Seiten (Dashboard, Audit, Settings, Knowledge, Projects) |
 | `.content-narrow` | 720px | Formular-Seiten (Login, Onboarding, Forgot-Password) |
-| `.content-wide` | 1400px | Superadmin-Seiten |
+| `.content-wide` | 1400px | Alias für content-max — backwards compat, nicht neu verwenden |
 | `.content-full` | 100% | Chat-Interface, Full-Bleed-Layouts |
 
 Vertikales Padding (32px oben / 48px unten) ist **automatisch** in content-Klassen enthalten.
@@ -398,6 +415,66 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 ```
 - H1-Icons: `color="var(--text-primary)"` — **nie `var(--accent)` (grün) in Überschriften**
 - `.page-header` hat automatisch `margin-bottom: 32px` — kein manuelles `marginBottom`
+
+#### Section-Tag (Eyebrow Label — vor jeder Section-Headline)
+```tsx
+{/* Helles Layout */}
+<span style={{
+  display: 'inline-flex', alignItems: 'center', gap: 12,
+  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+  color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
+}}>
+  <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+  Deine Projekte
+</span>
+
+{/* Dunkles Layout (auf var(--active-bg)) */}
+<span style={{
+  display: 'inline-flex', alignItems: 'center', gap: 12,
+  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+  color: 'rgba(77,184,122,0.85)', marginBottom: 20,
+}}>
+  <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
+  EU-Compliance
+</span>
+```
+- Monospace-Font, 12px, kein uppercase
+- Grün `var(--accent)` auf hellem, `rgba(77,184,122,0.85)` auf dunklem Hintergrund
+- Immer `marginBottom: 20` vor der Headline
+
+#### Dunkle Section (Hero / CTA)
+```tsx
+<section style={{
+  background: 'var(--active-bg)',
+  padding: '80px 0',
+  width: '100vw',
+  marginLeft: 'calc(-50vw + 50%)',
+}}>
+  <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' }}>
+    <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', color: '#ffffff', fontWeight: 800 }}>
+      Headline
+    </h2>
+  </div>
+</section>
+```
+- Maximal 3 dunkle Sections pro Seite
+- Nie zwei dunkle Sections direkt hintereinander
+- Streifenmuster: dunkel → hell → dunkel → hell → dunkel
+
+#### Nummerierte Feature-Liste (statt Icon-Karten)
+```tsx
+<div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-tertiary)', minWidth: 28, flexShrink: 0 }}>
+    01
+  </span>
+  <div>
+    <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>Titel</h3>
+    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>Beschreibung</p>
+  </div>
+</div>
+```
+- Statt drei gleiche Karten mit farbiger Border links ("KI-generiert"-Muster)
+- Nummer in `var(--text-tertiary)`, 14px, fontWeight 500
 
 #### User-Bubble Struktur — NICHT ANFASSEN
 
@@ -455,7 +532,8 @@ auf dem Wrapper clippt nur den Inhalt, löst aber nicht das Layout-Problem.
 
 #### Drawer-System / Modal-Backdrop
 - Backdrop-Standard: `className="modal-backdrop"` (reines Backdrop-Div) oder `className="modal-overlay"` (Backdrop + flex-center)
-- Farbe: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` — **niemals `rgba(0,0,0,...)`**
+- Backdrop-Farbe: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` — **niemals `rgba(0,0,0,...)`**
+- **Modal/Drawer-Hintergrund: immer `var(--bg-surface-solid)` (#FFFFFF) — niemals `var(--bg-surface)` (halbtransparent)**
 - zIndex als inline `style={{ zIndex: N }}` ergänzen wenn CSS-Default nicht passt
 - Escape schließt immer
 - Animation: `200ms ease-out`
@@ -549,6 +627,12 @@ Klick [···]:  Umbenennen / Bearbeiten
 /src
   /actions              # Server Actions (cards, workspaces, feeds, chat, connections)
   /app                  # Nur Routing — kein Business-Code
+    /[locale]           # Alle App-Seiten unter Locale-Prefix (/en, /de)
+    /api                # API-Routes — kein Locale-Prefix
+    /auth               # OAuth callback — kein Locale-Prefix
+    /s                  # Share-Links /s/[token] — kein Locale-Prefix
+  /i18n                 # next-intl config: routing.ts, request.ts, navigation.ts
+  /messages             # Übersetzungen: en.json, de.json
   /components
     /ui                 # Primitive Komponenten
     /layout             # Strukturelle Komponenten (AppShell, Sidebar, TopBar, BottomNav)
@@ -594,14 +678,16 @@ Klick [···]:  Umbenennen / Bearbeiten
   browser-check.ts              # isFileSystemAccessSupported(), getBrowserInfo()
   file-filter.ts                # DEFAULT_IGNORE_DIRS/FILES, createFileFilter(), getLanguage()
   directory-reader.ts           # readDirectory(handle, onProgress?) — async, no disk access
+  stack-detector.ts             # detectStack(files) → DetectedStack — Framework/DB/Auth/Styling/Testing/Deployment/Flags
 /src/app/audit/scan
   page.tsx                      # Scan-Seite: Projekt verbinden + verbundene Projekte
   _components/
-    ConnectProjectCard.tsx      # "use client" — showDirectoryPicker() → POST /api/projects/scan
+    ConnectProjectCard.tsx      # "use client" — 3-Schritt-Flow: reading → profile → scanning
     ScanProgress.tsx            # Fortschrittsanzeige (reading/uploading/analyzing)
     ProjectList.tsx             # Liste verbundener Projekte mit Link zu /audit?project=<id>
+    ProjectProfileStep.tsx      # Auto-Detect-Anzeige + 4-Fragen-Interview (Chips) + N/A-Kategorien
 /src/app/api/projects/scan
-  route.ts                      # POST — empfängt Dateien, baut AuditContext, persistiert in DB
+  route.ts                      # POST — empfängt Dateien + Profil, baut AuditContext, persistiert in DB
 /src/app/superadmin/agents
   page.tsx                       # Superadmin-Seite: Agent Rule Packs (Search, Filter, Stats)
   agents.types.ts                # AgentTableRow-Interface
@@ -745,6 +831,34 @@ Letzte relevante Migrationen:
 | 20260409000101_audit_fixes_consensus.sql | audit_fixes: fix_mode ('quick'/'consensus'), risk_level ('safe'/'moderate'/'critical'), risk_details JSONB, drafts JSONB DEFAULT '[]', judge_explanation TEXT |
 | 20260409000102_audit_findings_affected_files.sql | audit_findings: affected_files TEXT[] + fix_hint TEXT — multi-file finding support |
 | 20260409000103_scan_projects.sql | scan_projects Tabelle (id, org_id, name, source, file_count, total_size_bytes, last_scan_at, last_score, detected_stack) + audit_runs.scan_project_id FK |
+| 20260409000105_audit_agent_source_security_scan.sql | audit_findings: agent_source CHECK erweitert um 'security-scan' (Sprint 7) |
+| 20260409000106_project_profile.sql | scan_projects: profile JSONB, is_public, live_url, is_live, audience, compliance_requirements, not_applicable_categories |
+| 20260410000107_audit_agent_source_regulatory.sql | audit_findings: agent_source CHECK erweitert um 'dsgvo', 'bfsg', 'ai-act' |
+| 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
+
+**Navigation — Produkt-Pivot (Stand 2026-04-10):**
+Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
+
+Neue Sidebar-Struktur (alle Rollen):
+- **Dashboard** → `/dashboard` (Projekt-Übersicht, Score-Cards, Onboarding-Hero)
+- **Audit** → `/audit` (Detail-Ansicht, Top-5-Findings, Score-Trend)
+- Admin-only: Budget, Logs, User, Branding, Department
+- Superadmin: zusätzlich interne Tools (QA, To-Dos, Design Ref)
+
+Eingefroren (Routen existieren, nicht in Nav):
+- `/chat`, `/projects`, `/artifacts`, `/workspaces`, `/feeds`, `/agenten`
+- "Neuer Chat"-Button entfernt aus Sidebar-Bottom
+
+Dashboard (`/dashboard`):
+- Server Component mit `fetchScanProjects` + `fetchAuditRuns`
+- Kein Projekt → Hero + 3 Track-Karten (Speedrun / Guided / Rescue)
+- Hat Projekte → Card-Grid: Score (groß), Status-Badge, Trend-Pfeil, "Noch X% bis [Status]"
+- Routing: /audit?project=[id] für externe Projekte, /audit für internes Tropen OS
+
+Audit Top-5-Findings (`src/app/audit/_components/Top5FindingsCards.tsx`):
+- Zeigt oben die 5 kritischsten offenen Findings als Cards (statt direkt volle Tabelle)
+- Aktionen: "Als Aufgabe" (POST /api/audit/tasks), "Als Prompt kopieren" (Clipboard), "Ignorieren" (PATCH status:dismissed)
+- "Alle [N] Findings anzeigen" scrollt zu #findings-table
 
 **Cockpit Widget System (Stand 2026-03-25):**
 Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
@@ -1057,7 +1171,8 @@ eslint src/           # keine Fehler
 | `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/product/architecture.md` | Phase-2-Architektur, DB-Hierarchie, Kontroll-Spektrum |
 | `docs/product/architecture-navigation.md` | Produkt-Nordstern: Navigation, Workspace-Konzept, Live/Agenten/Community |
-| `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne |
+| `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne (alt) |
+| `docs/product/roadmap-2026-q2.md` | **Aktuelle Roadmap Q2/Q3 2026** — Production Readiness Guide für Vibe-Coders, 3 MVP-Features, User-Typen, Kill-the-Darlings, GTM |
 | `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
 | `docs/product/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
 | `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |

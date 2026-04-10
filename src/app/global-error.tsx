@@ -1,6 +1,5 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 
 export default function GlobalError({
@@ -11,25 +10,31 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    console.error(error)
   }, [error])
 
   return (
-    <html>
-      <body style={{ fontFamily: 'sans-serif', padding: 32, background: '#EAE9E5' }}>
-        <h2 style={{ color: '#1A1714' }}>Ein Fehler ist aufgetreten.</h2>
-        <p style={{ color: '#4A4540' }}>Das Team wurde automatisch informiert.</p>
+    <html lang="de">
+      <body style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        gap: 16,
+        padding: 24,
+        textAlign: 'center',
+        fontFamily: 'sans-serif',
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600 }}>
+          Kritischer Fehler
+        </h2>
+        <p style={{ fontSize: 14, color: '#666', maxWidth: 400 }}>
+          {error.message || 'Ein unerwarteter Fehler ist aufgetreten.'}
+        </p>
         <button
           onClick={reset}
-          style={{
-            marginTop: 16,
-            padding: '8px 16px',
-            background: '#2D7A50',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
+          style={{ padding: '8px 16px', cursor: 'pointer' }}
         >
           Erneut versuchen
         </button>

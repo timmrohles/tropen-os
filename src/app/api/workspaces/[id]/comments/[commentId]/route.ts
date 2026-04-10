@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:comments:[commentId]')
 type Params = { params: Promise<{ id: string; commentId: string }> }
@@ -27,7 +28,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   if (error) {
     log.error('[comments/[commentId]] DELETE failed', { error: error.message, commentId })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return new NextResponse(null, { status: 204 })

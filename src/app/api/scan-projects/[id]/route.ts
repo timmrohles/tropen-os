@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:scan-projects')
 
@@ -39,7 +40,7 @@ export async function PATCH(
 
   if (error) {
     log.error('Failed to rename scan project', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   log.info('Scan project renamed', { id, name })

@@ -1,14 +1,17 @@
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   WarningOctagon, Warning, Info, Note, CaretDown, CaretUp,
   Spinner as PhosphorSpinner, Scales, CheckCircle, X, DownloadSimple,
+  Stop, WarningDiamond,
 } from '@phosphor-icons/react'
 import type { AgentSource } from '@/lib/audit/types'
 import type { GeneratedFix } from '@/lib/fix-engine/types'
 import dynamic from 'next/dynamic'
+import RecommendationCard, { type FindingGroupInfo } from './RecommendationCard'
+import { findRecommendation } from '@/lib/audit/finding-recommendations'
 
 const FixPreview = dynamic(() => import('./FixPreview'), { ssr: false })
 
@@ -111,6 +114,10 @@ interface FindingsTableProps {
   statusFilter?: string
   severityFilter?: string
   agentFilter?: string
+  // Maps finding_id → task_id for findings already in the task list
+  initialTaskMap?: Record<string, string>
+  // Whether this is an external scan project (hides Fix buttons)
+  isExternalProject?: boolean
 }
 
 const SEVERITY_ICON = {
@@ -186,6 +193,8 @@ export default function FindingsTable({
   statusFilter: statusFilterProp = 'all',
   severityFilter: severityFilterProp = 'all',
   agentFilter: agentFilterProp = 'all',
+  initialTaskMap = {},
+  isExternalProject = false,
 }: FindingsTableProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -205,6 +214,18 @@ export default function FindingsTable({
   const [groupBatchFixingIds, setGroupBatchFixingIds] = useState<Set<string>>(new Set())
   const [batchConfirmGroup, setBatchConfirmGroup] = useState<FindingGroup | null>(null)
   const [expandedSubGroups, setExpandedSubGroups] = useState<Record<string, Set<string>>>({})
+  // finding_id → task_id (present = finding is in task list)
+  const [taskMap, setTaskMap] = useState<Record<string, string>>(initialTaskMap)
+  const [taskTogglingIds, setTaskTogglingIds] = useState<Set<string>>(new Set())
+  // ruleId → taskId for group tasks (one task per rule group)
+  const [groupTaskMap, setGroupTaskMap] = useState<Record<string, string>>({})
+  const [groupTaskTogglingIds, setGroupTaskTogglingIds] = useState<Set<string>>(new Set())
+  // View mode: grouped shows RecommendationCards for large groups
+  const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
+
+  // Abort control for running fix generations
+  const fixAbortRef = useRef<AbortController | null>(null)
+  const [abortedFixIds, setAbortedFixIds] = useState<Set<string>>(new Set())
 
   // Filter values come from URL params (via props) — no client state needed
   const VALID_SEVERITIES: SeverityFilter[] = ['all', 'critical', 'high', 'medium', 'low', 'info']
@@ -337,6 +358,50 @@ export default function FindingsTable({
     URL.revokeObjectURL(url)
   }
 
+  async function handleTaskToggle(f: DbFinding) {
+    if (taskTogglingIds.has(f.id)) return
+    setTaskTogglingIds((prev) => new Set([...prev, f.id]))
+    const existingTaskId = taskMap[f.id]
+    try {
+      if (existingTaskId) {
+        // Optimistically remove
+        setTaskMap((prev) => { const m = { ...prev }; delete m[f.id]; return m })
+        await fetch(`/api/audit/tasks/${existingTaskId}`, { method: 'DELETE' })
+      } else {
+        const body = {
+          finding_id:   f.id,
+          audit_run_id: runId ?? undefined,
+          title:        f.message,
+          agent_source: f.agent_source ?? undefined,
+          rule_id:      f.rule_id ?? undefined,
+          severity:     f.severity,
+          file_path:    f.file_path ?? undefined,
+          suggestion:   f.suggestion ?? undefined,
+        }
+        const res = await fetch('/api/audit/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (res.ok) {
+          const created = await res.json() as { id: string }
+          setTaskMap((prev) => ({ ...prev, [f.id]: created.id }))
+        } else if (res.status === 409) {
+          // Already exists — treat as success
+          const data = await res.json() as { id?: string }
+          if (data.id) setTaskMap((prev) => ({ ...prev, [f.id]: data.id! }))
+        }
+      }
+    } catch {
+      // Revert optimistic removal
+      if (existingTaskId) {
+        setTaskMap((prev) => ({ ...prev, [f.id]: existingTaskId }))
+      }
+    } finally {
+      setTaskTogglingIds((prev) => { const s = new Set(prev); s.delete(f.id); return s })
+    }
+  }
+
   const handleBulkStatus = useCallback(async (newStatus: DbFinding['status']) => {
     if (selected.size === 0) return
     setBulkUpdating(true)
@@ -356,14 +421,49 @@ export default function FindingsTable({
     }
   }, [selected])
 
+  async function handleRejectFix(findingId: string, fixId: string) {
+    try {
+      await fetch('/api/audit/fix/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fixId }),
+      })
+      setFixes((prev) => {
+        if (!prev[findingId]) return prev
+        return { ...prev, [findingId]: { ...prev[findingId], status: 'rejected' } }
+      })
+    } catch { /* ignore */ }
+  }
+
+  async function handleBulkRejectFixes() {
+    const pendingEntries = [...selected]
+      .map((id) => ({ findingId: id, fix: fixes[id] }))
+      .filter((e) => e.fix && e.fix.status === 'pending')
+    if (pendingEntries.length === 0) return
+    await Promise.all(pendingEntries.map(({ findingId, fix }) => handleRejectFix(findingId, fix.id)))
+  }
+
+  function handleAbortFixes() {
+    fixAbortRef.current?.abort()
+    fixAbortRef.current = null
+    // Mark all currently-fixing IDs as aborted (not yet applied)
+    setAbortedFixIds((prev) => new Set([...prev, ...fixingIds, ...groupBatchFixingIds]))
+    setFixingIds(new Set())
+    setGroupBatchFixingIds(new Set())
+  }
+
   const handleGenerateFix = useCallback(async (findingId: string, runId: string) => {
+    const controller = new AbortController()
+    fixAbortRef.current = controller
     setFixingIds((prev) => new Set(prev).add(findingId))
+    setAbortedFixIds((prev) => { const s = new Set(prev); s.delete(findingId); return s })
     setFixErrors((prev) => { const n = { ...prev }; delete n[findingId]; return n })
     try {
       const res = await fetch('/api/audit/fix/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ findingId, runId }),
+        signal: controller.signal,
       })
       const data = await res.json() as {
         fixId?: string; explanation?: string; confidence?: string; diffs?: unknown[]; model?: string; costEur?: number; error?: string; status?: string;
@@ -430,8 +530,12 @@ export default function FindingsTable({
         },
       }))
       setExpandedId(findingId)
-    } catch {
-      setFixErrors((prev) => ({ ...prev, [findingId]: 'Netzwerkfehler' }))
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setAbortedFixIds((prev) => new Set([...prev, findingId]))
+      } else {
+        setFixErrors((prev) => ({ ...prev, [findingId]: 'Netzwerkfehler' }))
+      }
     } finally {
       setFixingIds((prev) => { const s = new Set(prev); s.delete(findingId); return s })
     }
@@ -493,7 +597,76 @@ export default function FindingsTable({
     }
   }, [])
 
-  const handleGroupDismiss = useCallback(async (group: FindingGroup) => {
+  const handleAddGroupTask = useCallback(async (group: FindingGroupInfo & { agentSource?: string }) => {
+    if (groupTaskTogglingIds.has(group.ruleId)) return
+    setGroupTaskTogglingIds((prev) => new Set([...prev, group.ruleId]))
+    const existingId = groupTaskMap[group.ruleId]
+    try {
+      if (existingId) {
+        setGroupTaskMap((prev) => { const m = { ...prev }; delete m[group.ruleId]; return m })
+        await fetch(`/api/audit/tasks/${existingId}`, { method: 'DELETE' })
+      } else {
+        const rec = findRecommendation(group.ruleId, group.baseMessage)
+        const body = {
+          finding_id:   null,
+          audit_run_id: runId ?? undefined,
+          title:        rec?.title ?? `${group.count} Findings: ${group.ruleId}`,
+          agent_source: group.agentSource,
+          rule_id:      group.ruleId,
+          severity:     group.severity,
+          suggestion:   rec?.firstStep ?? undefined,
+        }
+        const res = await fetch('/api/audit/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (res.ok || res.status === 201) {
+          const created = await res.json() as { id: string }
+          setGroupTaskMap((prev) => ({ ...prev, [group.ruleId]: created.id }))
+        }
+      }
+    } catch {
+      if (existingId) setGroupTaskMap((prev) => ({ ...prev, [group.ruleId]: existingId }))
+    } finally {
+      setGroupTaskTogglingIds((prev) => { const s = new Set(prev); s.delete(group.ruleId); return s })
+    }
+  }, [groupTaskMap, groupTaskTogglingIds, runId])
+
+  const handleGroupAcknowledge = useCallback(async (group: FindingGroupInfo) => {
+    await Promise.all(
+      group.findings.map((f) =>
+        fetch(`/api/audit/findings/${f.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'acknowledged' }),
+        })
+      )
+    )
+    setFindings((prev) =>
+      prev.map((f) =>
+        group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'acknowledged' } : f
+      )
+    )
+  }, [])
+
+  function handleCopyGroupPrompt(group: FindingGroupInfo) {
+    const rec = findRecommendation(group.ruleId, group.baseMessage)
+    const filePaths = [...new Set(group.findings.map((f) => f.file_path).filter(Boolean))].join('\n')
+    const lines = [
+      `Du bist ein erfahrener Software-Architekt. Ich habe ${group.count} Findings vom Typ "${group.ruleId}" in meinem Projekt:`,
+      '',
+      `Beschreibung: ${rec?.problem ?? group.baseMessage}`,
+      '',
+      `Betroffene Dateien:\n${filePaths}`,
+    ]
+    if (rec?.strategy) lines.push('', `Empfohlene Strategie: ${rec.strategy}`)
+    if (rec?.firstStep) lines.push('', `Erster Schritt: ${rec.firstStep}`)
+    lines.push('', 'Bitte hilf mir, diese systematisch zu beheben.')
+    navigator.clipboard.writeText(lines.join('\n')).catch(() => { /* ignore */ })
+  }
+
+  const handleGroupDismiss = useCallback(async (group: FindingGroupInfo) => {
     await Promise.all(
       group.findings.map((f) =>
         fetch(`/api/audit/findings/${f.id}`, {
@@ -514,17 +687,20 @@ export default function FindingsTable({
     if (!runId) return
     const fixable = group.findings.filter((f) => f.file_path)
     if (fixable.length === 0) return
+    const controller = new AbortController()
+    fixAbortRef.current = controller
     setGroupBatchFixingIds((prev) => new Set(prev).add(group.ruleId))
     try {
       await fetch('/api/audit/fix/batch-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          runId,
-          findingIds: fixable.map((f) => f.id),
-          mode: 'quick',
-        }),
+        body: JSON.stringify({ runId, findingIds: fixable.map((f) => f.id), mode: 'quick' }),
+        signal: controller.signal,
       })
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Silently handled — groupBatchFixingIds already cleared by handleAbortFixes
+      }
     } finally {
       setGroupBatchFixingIds((prev) => { const s = new Set(prev); s.delete(group.ruleId); return s })
     }
@@ -580,9 +756,43 @@ export default function FindingsTable({
     <div className="card" style={{ padding: '20px 24px', marginBottom: 24 }}>
       <div className="card-header" style={{ marginBottom: 14 }}>
         <span className="card-header-label">Findings</span>
-        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-          {groupedItems.length} Einträge · {totalFindings} Findings
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Running-fixes abort bar */}
+          {(fixingIds.size > 0 || groupBatchFixingIds.size > 0) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PhosphorSpinner size={12} weight="bold" style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} aria-hidden="true" />
+              <span style={{ fontSize: 12, color: 'var(--accent)' }}>
+                {fixingIds.size + groupBatchFixingIds.size > 1
+                  ? `${fixingIds.size + groupBatchFixingIds.size} Fixes laufen…`
+                  : 'Fix läuft…'}
+              </span>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleAbortFixes}
+                style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--error)' }}
+              >
+                <Stop size={11} weight="fill" aria-hidden="true" />
+                Abbrechen
+              </button>
+            </div>
+          )}
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+            {groupedItems.length} Einträge · {totalFindings} Findings
+          </span>
+        </div>
+      </div>
+
+      {/* View mode toggle */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Ansicht
         </span>
+        <button className={`chip${viewMode === 'grouped' ? ' chip--active' : ''}`} onClick={() => setViewMode('grouped')}>
+          Gruppiert
+        </button>
+        <button className={`chip${viewMode === 'flat' ? ' chip--active' : ''}`} onClick={() => setViewMode('flat')}>
+          Einzeln
+        </button>
       </div>
 
       {/* Severity filter */}
@@ -635,6 +845,14 @@ export default function FindingsTable({
               </button>
             ))}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              {/* Reject all pending fixes for selected findings */}
+              {[...selected].some((id) => fixes[id]?.status === 'pending') && (
+                <button className="btn btn-ghost btn-sm" onClick={handleBulkRejectFixes}
+                  style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--error)' }}>
+                  <X size={12} weight="bold" aria-hidden="true" />
+                  Fixes verwerfen
+                </button>
+              )}
               <button className="btn btn-ghost btn-sm" onClick={() => handleExport('csv')}
                 style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <DownloadSimple size={12} weight="bold" aria-hidden="true" /> CSV
@@ -650,6 +868,35 @@ export default function FindingsTable({
             </div>
           </div>
         )}
+
+        {/* Grouped view: RecommendationCards for groups with count > 3 */}
+        {viewMode === 'grouped' && (() => {
+          const bigGroups = groupedItems.filter(
+            (item): item is FindingGroup => isGroup(item) && item.count > 3
+          )
+          if (bigGroups.length === 0) return null
+          return (
+            <div style={{ marginBottom: 16 }}>
+              {bigGroups.map((group) => {
+                const rec = findRecommendation(group.ruleId, group.baseMessage)
+                return (
+                  <RecommendationCard
+                    key={group.ruleId}
+                    group={group}
+                    recommendation={rec}
+                    isExternalProject={isExternalProject}
+                    groupTaskExists={!!groupTaskMap[group.ruleId]}
+                    groupTaskToggling={groupTaskTogglingIds.has(group.ruleId)}
+                    onAddGroupTask={handleAddGroupTask}
+                    onDismissGroup={handleGroupDismiss}
+                    onAcknowledgeGroup={handleGroupAcknowledge}
+                    onCopyGroupPrompt={handleCopyGroupPrompt}
+                  />
+                )
+              })}
+            </div>
+          )
+        })()}
 
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -795,7 +1042,7 @@ export default function FindingsTable({
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </select>
-                        {runId && (
+                        {runId && !isExternalProject && !fixes[f.id] && !abortedFixIds.has(f.id) && (
                           <button
                             className="btn btn-ghost btn-sm"
                             title="Fix generieren"
@@ -808,6 +1055,36 @@ export default function FindingsTable({
                             }
                           </button>
                         )}
+                        {/* Pending fix: inline Verwerfen without expanding */}
+                        {fixes[f.id]?.status === 'pending' && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title="Fix verwerfen"
+                            onClick={() => handleRejectFix(f.id, fixes[f.id].id)}
+                            style={{ fontSize: 11, color: 'var(--error)' }}
+                          >
+                            <X size={11} weight="bold" aria-hidden="true" /> Verwerfen
+                          </button>
+                        )}
+                        {fixes[f.id]?.status === 'rejected' && (
+                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Fix verworfen</span>
+                        )}
+                        {abortedFixIds.has(f.id) && (
+                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Abgebrochen</span>
+                        )}
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title={taskMap[f.id] ? 'Aus Aufgabenliste entfernen' : 'Zu Aufgabenliste hinzufügen'}
+                          disabled={taskTogglingIds.has(f.id)}
+                          onClick={() => handleTaskToggle(f)}
+                          style={{
+                            fontSize: 11,
+                            color: taskMap[f.id] ? 'var(--accent)' : undefined,
+                            opacity: taskTogglingIds.has(f.id) ? 0.5 : 1,
+                          }}
+                        >
+                          {taskMap[f.id] ? '✓ Aufgabe' : 'Aufgabe +'}
+                        </button>
                         {fixErrors[f.id] && (
                           <span style={{ fontSize: 10, color: 'var(--error)', maxWidth: 120, wordBreak: 'break-word' }}>
                             {fixErrors[f.id]}
@@ -927,8 +1204,8 @@ export default function FindingsTable({
                   {/* Batch-Aktionen */}
                   <td style={{ padding: '8px', verticalAlign: 'middle' }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                      {runId && (
-                        <div style={{ display: 'inline-flex', gap: 4 }}>
+                      <div style={{ display: 'inline-flex', gap: 4 }}>
+                        {runId && !isExternalProject && (
                           <button
                             className="btn btn-ghost btn-sm"
                             disabled={groupBatchFixingIds.has(item.ruleId)}
@@ -937,67 +1214,94 @@ export default function FindingsTable({
                           >
                             Alle fixen
                           </button>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleGroupDismiss(item)}
-                            style={{ fontSize: 11, padding: '2px 7px' }}
-                          >
-                            Alle ignorieren
-                          </button>
-                        </div>
-                      )}
+                        )}
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleGroupDismiss(item)}
+                          style={{ fontSize: 11, padding: '2px 7px' }}
+                        >
+                          Alle ignorieren
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
               )
 
-              const batchConfirmRow = batchConfirmGroup?.ruleId === item.ruleId ? (
-                <tr key={`batch-confirm-${item.ruleId}`} style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-                  <td colSpan={7} style={{ padding: '8px 8px 12px 32px' }}>
-                    {/* Matches FixPreview layout exactly */}
-                    <div style={{ marginTop: 4 }}>
-                      <div style={{
-                        display: 'flex', gap: 10, alignItems: 'flex-start',
-                        padding: '10px 12px', borderRadius: 6,
-                        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                        border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-                        marginBottom: 12,
-                      }}>
-                        <Info size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 2px', lineHeight: 1.5 }}>
-                            {batchConfirmGroup.count} Findings für Regel <code style={{ fontSize: 12, background: 'color-mix(in srgb, var(--accent) 15%, transparent)', padding: '1px 4px', borderRadius: 3 }}>{item.ruleId}</code> fixen?
-                          </p>
-                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', lineHeight: 1.5 }}>
-                            Fixes werden generiert aber nicht automatisch angewendet. Du reviewst jeden einzeln.
-                          </p>
-                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                            Geschätzte Kosten: ca. €{(batchConfirmGroup.findings.filter(f => f.file_path).length * 0.02).toFixed(2)}
-                          </span>
+              const batchConfirmRow = batchConfirmGroup?.ruleId === item.ruleId ? (() => {
+                const fixable = batchConfirmGroup.findings.filter(f => f.file_path).length
+                const estCost = (fixable * 0.02).toFixed(2)
+                const isLargeBatch = batchConfirmGroup.count > 10
+                return (
+                  <tr key={`batch-confirm-${item.ruleId}`} style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                    <td colSpan={7} style={{ padding: '8px 8px 12px 32px' }}>
+                      <div style={{ marginTop: 4 }}>
+                        {/* Large-batch warning */}
+                        {isLargeBatch && (
+                          <div style={{
+                            display: 'flex', gap: 10, alignItems: 'flex-start',
+                            padding: '10px 12px', borderRadius: 6, marginBottom: 8,
+                            background: 'color-mix(in srgb, var(--error) 8%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--error) 25%, transparent)',
+                          }}>
+                            <WarningDiamond size={14} weight="fill" color="var(--error)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--error)', margin: '0 0 2px' }}>
+                                {batchConfirmGroup.count} Findings fixen · Geschätzte Kosten: ~€{estCost} · Fortfahren?
+                              </p>
+                              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+                                Großer Batch — jeder Fix wird zur Review vorgelegt, nichts wird automatisch angewendet.
+                                Du kannst den Batch jederzeit über „Abbrechen" stoppen.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {/* Standard info box */}
+                        <div style={{
+                          display: 'flex', gap: 10, alignItems: 'flex-start',
+                          padding: '10px 12px', borderRadius: 6, marginBottom: 12,
+                          background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                          border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                        }}>
+                          <Info size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 2px', lineHeight: 1.5 }}>
+                              {batchConfirmGroup.count} Findings für Regel{' '}
+                              <code style={{ fontSize: 12, background: 'color-mix(in srgb, var(--accent) 15%, transparent)', padding: '1px 4px', borderRadius: 3 }}>
+                                {item.ruleId}
+                              </code>{' '}fixen?
+                            </p>
+                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', lineHeight: 1.5 }}>
+                              Fixes werden generiert aber nicht automatisch angewendet. Du reviewst jeden einzeln.
+                            </p>
+                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                              {fixable} fixbare Findings · Geschätzte Kosten: ca. €{estCost}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
+                            onClick={() => { const group = batchConfirmGroup; setBatchConfirmGroup(null); handleGroupFix(group) }}
+                          >
+                            <CheckCircle size={13} weight="fill" aria-hidden="true" />
+                            {isLargeBatch ? `Ja, ${batchConfirmGroup.count} Fixes generieren` : 'Fixes generieren'}
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
+                            onClick={() => setBatchConfirmGroup(null)}
+                          >
+                            <X size={13} weight="bold" aria-hidden="true" />
+                            Abbrechen
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-                          onClick={() => { const group = batchConfirmGroup; setBatchConfirmGroup(null); handleGroupFix(group) }}
-                        >
-                          <CheckCircle size={13} weight="fill" aria-hidden="true" />
-                          Fixes generieren
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-                          onClick={() => setBatchConfirmGroup(null)}
-                        >
-                          <X size={13} weight="bold" aria-hidden="true" />
-                          Abbrechen
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ) : null
+                    </td>
+                  </tr>
+                )
+              })() : null
 
               if (!groupExpanded) return batchConfirmRow ? [groupMainRow, batchConfirmRow] : [groupMainRow]
 
@@ -1070,7 +1374,7 @@ export default function FindingsTable({
                             </select>
                           </td>
                           <td style={{ padding: '4px 8px', verticalAlign: 'middle' }}>
-                            {runId && f.file_path && (
+                            {runId && !isExternalProject && f.file_path && (
                               <button
                                 title="Fix generieren"
                                 className="btn btn-ghost btn-sm"
@@ -1131,7 +1435,7 @@ export default function FindingsTable({
 
                   {/* Fix-Button */}
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
-                    {runId && f.file_path && (
+                    {runId && !isExternalProject && f.file_path && (
                       <button
                         className="btn btn-ghost btn-sm"
                         title="Fix generieren"

@@ -22,9 +22,9 @@ export const NOT_APPLICABLE_CATEGORY_IDS: ReadonlySet<number> = new Set([17, 21]
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export function getStatus(percentage: number): AuditStatus {
-  if (percentage >= 85) return 'production-grade'
-  if (percentage >= 70) return 'stable'
-  if (percentage >= 50) return 'risky'
+  if (percentage >= 90) return 'production-grade'
+  if (percentage >= 80) return 'stable'
+  if (percentage >= 60) return 'risky'
   return 'prototype'
 }
 

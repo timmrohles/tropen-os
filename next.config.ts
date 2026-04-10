@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 import bundleAnalyzer from '@next/bundle-analyzer'
+import createNextIntlPlugin from 'next-intl/plugin'
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
@@ -40,6 +43,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   env: {
     // Ändert sich bei jedem Server-Start / Build → SW-Cache wird automatisch invalidiert
     NEXT_PUBLIC_BUILD_TIME: String(Date.now()),
@@ -54,7 +60,7 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withSentryConfig(withBundleAnalyzer(nextConfig), {
+export default withNextIntl(withSentryConfig(withBundleAnalyzer(nextConfig), {
   org: 'tropen',
   project: 'javascript-nextjs',
 
@@ -64,4 +70,4 @@ export default withSentryConfig(withBundleAnalyzer(nextConfig), {
   // Sentry-eigene Performance-Tracing Instrumentierung
   widenClientFileUpload: true,
   hideSourceMaps: true,
-})
+}))

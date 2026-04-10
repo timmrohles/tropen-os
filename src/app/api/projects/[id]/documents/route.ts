@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // GET /api/projects/[id]/documents
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data ?? [])
 }
 
@@ -66,7 +67,7 @@ export async function POST(
     .from('project-docs')
     .upload(storagePath, buffer, { contentType: file.type })
 
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
+  if (uploadError) return apiError(uploadError)
 
   const { data, error } = await supabaseAdmin
     .from('project_documents')
@@ -82,6 +83,6 @@ export async function POST(
     .select('id, filename, file_size, mime_type, created_at')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data)
 }

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // GET /api/projects/[id]/chats
 export async function GET(
@@ -22,6 +23,6 @@ export async function GET(
     .order('updated_at', { ascending: false })
     .limit(100)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data ?? [])
 }

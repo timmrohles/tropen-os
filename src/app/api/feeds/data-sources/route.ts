@@ -8,6 +8,7 @@ import { createLogger } from '@/lib/logger'
 import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 import { parsePaginationParams } from '@/lib/api/pagination'
 import type { FeedDataSource } from '@/types/feeds'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:feeds:data-sources')
 
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     log.error('list data sources failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     log.error('create data source failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(mapSource(data as Record<string, unknown>), { status: 201 })

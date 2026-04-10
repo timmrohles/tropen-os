@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -21,7 +22,7 @@ export async function PATCH(
     .eq('id', id)
     .eq('user_id', user.id) // ownership guard
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { apiError } from '@/lib/api-error'
 const log = createLogger('superadmin/clients')
 
 async function requireSuperadmin() {
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     log.error('GET /api/superadmin/clients failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })

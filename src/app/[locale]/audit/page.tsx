@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { ShieldCheck } from '@phosphor-icons/react/dist/ssr'
+import { ShieldCheck, ArrowLeft } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/utils/supabase/server'
 import {
   fetchUserOrgId,
@@ -9,14 +9,18 @@ import {
   fetchAuditCategoryScores,
   fetchAuditFindings,
   fetchScanProjects,
+  fetchAuditTasks,
 } from '@/lib/audit/page-data'
+import Link from 'next/link'
 import ScoreHero from './_components/ScoreHero'
 import CategoryBreakdown from './_components/CategoryBreakdown'
 import ScoreTrend from './_components/ScoreTrend'
 import FindingsTable from './_components/FindingsTable'
+import TaskList from './_components/TaskList'
 import DeepReviewFindings from './_components/DeepReviewFindings'
 import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
+import Top5FindingsCards from './_components/Top5FindingsCards'
 
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
@@ -54,12 +58,18 @@ export default async function AuditPage({ searchParams }: PageProps) {
   let findings: unknown[] = []
   let delta: number | null = null
 
+  let auditTasks: unknown[] = []
+
   if (selectedRunId) {
     ;[runDetail, categories, findings] = await Promise.all([
       fetchAuditRunDetail(selectedRunId),
       fetchAuditCategoryScores(selectedRunId),
       fetchAuditFindings(selectedRunId),
     ])
+
+    if (orgId) {
+      auditTasks = await fetchAuditTasks(orgId, activeScanProjectId)
+    }
 
     if (runDetail && runList.length > 1) {
       const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
@@ -69,6 +79,13 @@ export default async function AuditPage({ searchParams }: PageProps) {
       }
     }
   }
+
+  type RawTask = { id: string; finding_id: string | null; [key: string]: unknown }
+  // Build finding_id → task_id map for FindingsTable + pass tasks to TaskList
+  const initialTaskMap: Record<string, string> = {}
+  ;(auditTasks as RawTask[]).forEach((t) => {
+    if (t.finding_id) initialTaskMap[t.finding_id] = t.id
+  })
 
   type RawFinding = Record<string, unknown>
   function isDeepReviewFinding(f: RawFinding): boolean {
@@ -85,14 +102,30 @@ export default async function AuditPage({ searchParams }: PageProps) {
   const isFirstRun = runList.length === 1
   const hasRuns = runList.length > 0
 
+  // Projektname für Header bestimmen
+  const activeProjectName = activeScanProjectId
+    ? (scanProjects.find((p) => p.id === activeScanProjectId)?.name ?? 'Projekt')
+    : 'Tropen OS'
+
   return (
     <div className="content-max">
+      {/* ── Breadcrumb ──────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 8 }}>
+        <Link
+          href="/dashboard"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
+        >
+          <ArrowLeft size={13} weight="bold" aria-hidden="true" />
+          Dashboard
+        </Link>
+      </div>
+
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
             <ShieldCheck size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
-            Code Audit
+            {activeProjectName}
           </h1>
           <p className="page-header-sub">Automatisierte Qualitätsprüfung — 25 Kategorien</p>
         </div>
@@ -101,30 +134,10 @@ export default async function AuditPage({ searchParams }: PageProps) {
             runId={selectedRunId ?? undefined}
             reviewType={runDetail ? (runDetail.review_type as string | null) : null}
             criticalCount={runDetail ? (runDetail.critical_findings as number ?? 0) : 0}
+            scanProjectId={activeScanProjectId}
           />
         </div>
       </div>
-
-      {/* ── Project selector ─────────────────────────────────────────────── */}
-      {scanProjects.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
-          <a href="/audit" className={`chip${!activeScanProjectId ? ' chip--active' : ''}`}>
-            Tropen OS (intern)
-          </a>
-          {scanProjects.map((p) => (
-            <a
-              key={p.id}
-              href={`/audit?project=${p.id}`}
-              className={`chip${activeScanProjectId === p.id ? ' chip--active' : ''}`}
-            >
-              {p.name}
-            </a>
-          ))}
-          <a href="/audit/scan" className="chip chip--active" style={{ color: '#ffffff' }}>
-            + Neues Projekt
-          </a>
-        </div>
-      )}
 
       {/* ── No runs yet ─────────────────────────────────────────────────── */}
       {!hasRuns && (
@@ -177,13 +190,24 @@ export default async function AuditPage({ searchParams }: PageProps) {
             </div>
           </div>
 
-          {/* 3. Deep Review Findings */}
+          {/* 3. Top-5-Findings (Default-Ansicht) */}
+          {staticFindings.filter((f) => f.status === 'open').length > 0 && (
+            <Top5FindingsCards
+              findings={staticFindings as unknown as Parameters<typeof Top5FindingsCards>[0]['findings']}
+              runId={selectedRunId ?? ''}
+              scanProjectId={activeScanProjectId}
+              initialTaskMap={initialTaskMap}
+              totalCount={staticFindings.filter((f) => f.status === 'open').length}
+            />
+          )}
+
+          {/* 4. Deep Review Findings */}
           <DeepReviewFindings
             findings={deepFindings as unknown as Parameters<typeof DeepReviewFindings>[0]['findings']}
             runId={selectedRunId ?? ''}
           />
 
-          {/* 4. Static Findings */}
+          {/* 5. Static Findings (expandiert) */}
           <div id="findings-table">
             <FindingsTable
               key={selectedRunId ?? 'none'}
@@ -192,8 +216,15 @@ export default async function AuditPage({ searchParams }: PageProps) {
               statusFilter={status}
               severityFilter={severity}
               agentFilter={agent}
+              initialTaskMap={initialTaskMap}
+              isExternalProject={activeScanProjectId !== null}
             />
           </div>
+
+          {/* 6. Task List */}
+          <TaskList
+            initialTasks={auditTasks as unknown as Parameters<typeof TaskList>[0]['initialTasks']}
+          />
         </>
       )}
 

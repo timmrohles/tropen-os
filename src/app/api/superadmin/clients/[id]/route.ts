@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 async function requireSuperadmin() {
   const supabase = await createClient()
@@ -34,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .eq('id', id)
 
   if (orgError) {
-    return NextResponse.json({ error: orgError.message }, { status: 500 })
+    return apiError(orgError)
   }
 
   // Update first workspace
@@ -100,7 +101,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   await supabaseAdmin.from('users').delete().eq('organization_id', id)
 
   const { error } = await supabaseAdmin.from('organizations').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ success: true })
 }

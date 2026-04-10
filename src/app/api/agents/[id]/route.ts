@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent, mapAgentRun } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -118,7 +119,7 @@ export async function PATCH(
 
   if (error) {
     log.error('PATCH /api/agents/[id] failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) })
@@ -156,7 +157,7 @@ export async function DELETE(
 
   if (error) {
     log.error('DELETE /api/agents/[id] failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ ok: true })

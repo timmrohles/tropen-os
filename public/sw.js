@@ -4,11 +4,11 @@
 // Version aus Registrierungs-URL lesen (wird bei jedem Build/Dev-Start gewechselt)
 const _swVersion = new URL(location.href).searchParams.get('v') || 'v1'
 const CACHE_NAME = `tropen-os-${_swVersion}`
-const OFFLINE_URL = '/offline'
+const OFFLINE_URL = '/en/offline'
 
 // Assets die beim Install gecacht werden
 const PRECACHE_ASSETS = [
-  '/offline',
+  '/en/offline',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
 ]

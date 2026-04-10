@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { runTtlCleanup } from '@/lib/feeds/ttl-cleanup'
+import { apiError } from '@/lib/api-error'
 
 export async function GET() {
   const h = await headers()
@@ -14,6 +15,6 @@ export async function GET() {
     return NextResponse.json({ archived: result.archived }, { status: 200 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }

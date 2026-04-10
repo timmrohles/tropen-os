@@ -17,14 +17,14 @@ const s: Record<string, React.CSSProperties> = {
   },
   drawer: {
     width: '520px', maxWidth: '90vw', height: '100%',
-    background: 'var(--bg-surface)', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+    background: 'var(--bg-surface-solid)', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
     display: 'flex', flexDirection: 'column', overflowY: 'auto',
     animation: 'slideInRight 200ms ease-out',
   },
   header: {
     padding: '20px 24px 16px', borderBottom: '1px solid var(--border)',
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
-    position: 'sticky', top: 0, background: 'var(--bg-surface)', zIndex: 1,
+    position: 'sticky', top: 0, background: 'var(--bg-surface-solid)', zIndex: 1,
   },
   title: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 },
   meta: { fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 },

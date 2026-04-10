@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     log.error('GET /api/agents failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   const isSuperadmin = me.role === 'superadmin'
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     log.error('POST /api/agents failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) }, { status: 201 })

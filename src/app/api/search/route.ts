@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(30)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   const results = (messages ?? []).map((m) => ({
     id: m.id,

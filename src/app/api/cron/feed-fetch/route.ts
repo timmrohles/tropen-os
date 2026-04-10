@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { triggerFetch } from '@/actions/feeds'
+import { apiError } from '@/lib/api-error'
 
 export async function GET() {
   const h = await headers()
@@ -17,7 +18,7 @@ export async function GET() {
       .eq('is_active', true)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError(error)
     }
 
     let totalItemsFound = 0
@@ -48,6 +49,6 @@ export async function GET() {
     )
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }

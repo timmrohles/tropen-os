@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createArtifactSchema } from '@/lib/validators/artifacts'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const logger = createLogger('api:artifacts:save')
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   if (artifactError) {
     logger.error('artifact insert failed', { error: artifactError.message, conversationId: body.conversationId })
-    return NextResponse.json({ error: artifactError.message }, { status: 500 })
+    return apiError(artifactError)
   }
 
   logger.info('artifact saved', { artifactId: artifact.id, type: body.type, conversationId: body.conversationId })

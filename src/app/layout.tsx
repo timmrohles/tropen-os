@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
-import { Suspense } from 'react'
-import ConditionalAppShell from '@/components/layout/ConditionalAppShell'
-import ImpersonationBanner from '@/components/ImpersonationBanner'
+import { headers } from 'next/headers'
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import './globals.css'
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
@@ -50,19 +48,15 @@ export const viewport: Viewport = {
   themeColor: '#2D7A50', // eslint-disable-line -- browser meta tag, kein CSS-Var möglich
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const hdrs = await headers()
+  const locale = hdrs.get('x-locale') ?? 'de'
+
   return (
-    <html lang="de">
+    <html lang={locale}>
       <body className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
         <ServiceWorkerRegistrar />
-        <Suspense>
-          <ImpersonationBanner />
-        </Suspense>
-        <Suspense>
-          <ConditionalAppShell>
-            {children}
-          </ConditionalAppShell>
-        </Suspense>
+        {children}
       </body>
     </html>
   )

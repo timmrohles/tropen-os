@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { createAssetSchema } from '@/lib/validators/workspace-plan-c'
+import { apiError } from '@/lib/api-error'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -20,7 +21,7 @@ export async function GET(_req: Request, { params }: Params) {
     .eq('workspace_id', id)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
 }
 
@@ -49,6 +50,6 @@ export async function POST(request: Request, { params }: Params) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data, { status: 201 })
 }

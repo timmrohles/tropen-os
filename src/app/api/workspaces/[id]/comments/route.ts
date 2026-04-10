@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { z } from 'zod'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:comments')
 type Params = { params: Promise<{ id: string }> }
@@ -31,7 +32,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   if (error) {
     log.error('[comments] GET failed', { error: error.message, workspaceId: id })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(data ?? [])
@@ -68,7 +69,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (error) {
     log.error('[comments] POST failed', { error: error.message, workspaceId: id })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(data, { status: 201 })

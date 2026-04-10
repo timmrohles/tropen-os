@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -34,7 +35,7 @@ export async function DELETE(
     .delete()
     .eq('id', distId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
 }

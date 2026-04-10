@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -60,7 +61,7 @@ export async function POST(
 
   if (error) {
     log.error('POST /api/agents/[id]/copy failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) }, { status: 201 })

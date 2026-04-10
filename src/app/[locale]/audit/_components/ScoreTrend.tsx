@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { AreaChart } from '@tremor/react'
 
 interface RunSummary {
@@ -18,6 +19,9 @@ function formatDate(iso: string) {
 }
 
 export default function ScoreTrend({ runs }: ScoreTrendProps) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   if (runs.length < 2) {
     return (
       <div className="card" style={{ padding: '20px 24px', marginBottom: 24 }}>
@@ -47,18 +51,22 @@ export default function ScoreTrend({ runs }: ScoreTrendProps) {
         </span>
       </div>
 
-      <AreaChart
-        data={chartData}
-        index="Datum"
-        categories={['Score %']}
-        colors={['green']}
-        valueFormatter={(v) => `${v.toFixed(1)}%`}
-        showAnimation
-        showLegend={false}
-        minValue={0}
-        maxValue={100}
-        className="h-36"
-      />
+      {mounted ? (
+        <AreaChart
+          data={chartData}
+          index="Datum"
+          categories={['Score %']}
+          colors={['green']}
+          valueFormatter={(v) => `${v.toFixed(1)}%`}
+          showAnimation
+          showLegend={false}
+          minValue={0}
+          maxValue={100}
+          className="h-36"
+        />
+      ) : (
+        <div className="h-36" />
+      )}
 
       {/* Reference lines legend */}
       <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>

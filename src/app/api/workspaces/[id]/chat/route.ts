@@ -7,6 +7,7 @@ import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/ap
 import { sendChatMessageSchema } from '@/lib/validators/workspace-plan-c'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/workspace-context'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:chat')
 type Params = { params: Promise<{ id: string }> }
@@ -34,7 +35,7 @@ export async function GET(request: Request, { params }: Params) {
   query = cardId ? query.eq('card_id', cardId) : query.is('card_id', null)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
 }
 

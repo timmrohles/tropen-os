@@ -290,7 +290,7 @@ const CLIENT_SIDE_PATTERNS: SecurityPattern[] = [
     severity: 'critical',
     pattern: /(?:^|[^a-zA-Z.])eval\s*\(|new\s+Function\s*\(/,
     fileGlob: ['.ts', '.tsx', '.js', '.jsx'],
-    excludePattern: /(?:\.(?:test|spec)|node_modules|sucrase|babel|transform)/,
+    excludePattern: /(?:\.(?:test|spec)|node_modules|sucrase|babel|transform|security-scan-checker)/,
     message: 'eval() or new Function() with potentially dynamic input',
     exploitability: 'Attacker-controlled input reaching eval() achieves Remote Code Execution',
     suggestion: 'Remove eval(); use JSON.parse for data, sucrase for sandboxed code transforms',

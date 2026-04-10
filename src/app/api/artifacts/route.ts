@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createArtifactSchema } from '@/lib/validators/artifacts'
+import { apiError } from '@/lib/api-error'
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error, count } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json(data, { status: 201 })
 }

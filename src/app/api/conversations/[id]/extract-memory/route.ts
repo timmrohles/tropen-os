@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 import { extractMemoryFromConversation, hashContent } from '@/lib/memory/memory-extractor'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('extract-memory')
 
@@ -143,6 +144,6 @@ export async function POST(
       log.error('failed to log extraction error', { conversationId, error: logErr })
     }
 
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }

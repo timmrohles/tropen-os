@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:copy')
 type Params = { params: Promise<{ id: string }> }
@@ -30,7 +31,7 @@ export async function POST(_req: Request, { params }: Params) {
 
   if (wsErr || !copy) {
     log.error('[copy] workspace insert failed', { error: wsErr?.message })
-    return NextResponse.json({ error: wsErr?.message ?? 'Fehler beim Kopieren' }, { status: 500 })
+    return apiError(wsErr)
   }
 
   // Add creator as participant

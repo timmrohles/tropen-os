@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // POST /api/projects/[id]/merge — move chats + memory to target, archive source
 export async function POST(
@@ -32,7 +33,7 @@ export async function POST(
     .eq('project_id', id)
     .is('deleted_at', null)
 
-  if (convErr) return NextResponse.json({ error: convErr.message }, { status: 500 })
+  if (convErr) return apiError(convErr)
 
   // 2. Copy non-deleted memory entries to target (APPEND ONLY — insert copies)
   const { data: memories } = await supabaseAdmin
@@ -50,7 +51,7 @@ export async function POST(
     const { error: memErr } = await supabaseAdmin
       .from('project_memory')
       .insert(copies)
-    if (memErr) return NextResponse.json({ error: memErr.message }, { status: 500 })
+    if (memErr) return apiError(memErr)
   }
 
   // 3. Archive source project
@@ -59,7 +60,7 @@ export async function POST(
     .update({ archived_at: new Date().toISOString() })
     .eq('id', id)
 
-  if (archErr) return NextResponse.json({ error: archErr.message }, { status: 500 })
+  if (archErr) return apiError(archErr)
 
   return NextResponse.json({ success: true, merged_into: targetId })
 }

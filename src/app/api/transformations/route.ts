@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { createTransformationSchema } from '@/lib/validators/transformations'
+import { apiError } from '@/lib/api-error'
 
 // GET /api/transformations?source_type=project&source_id=...
 export async function GET(request: Request) {
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
     .eq('created_by', me.id)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
 }
 
@@ -50,6 +51,6 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data, { status: 201 })
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { runStage2, runStage3 } from '@/lib/feeds/pipeline'
+import { apiError } from '@/lib/api-error'
 
 interface FeedSchemaRow {
   id: string
@@ -67,7 +68,7 @@ export async function GET() {
       .limit(50)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError(error)
     }
 
     let processed = 0
@@ -127,6 +128,6 @@ export async function GET() {
     return NextResponse.json({ processed, stage2Only, stage3Also, errors }, { status: 200 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }
