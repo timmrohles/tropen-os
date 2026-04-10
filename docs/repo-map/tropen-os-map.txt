@@ -1,0 +1,446 @@
+src/utils/supabase/server.ts:
+⋮...
+│export function createClient()
+⋮...
+
+src/lib/supabase-admin.ts:
+⋮...
+│export supabaseAdmin
+│function getClient(): SupabaseClient
+│_client: SupabaseClient | null
+⋮...
+
+src/lib/logger.ts:
+⋮...
+│export function createLogger(service: string)
+│export function redact(_value: unknown): string
+│type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+│function write(level: LogLevel, service: string, message: string, ...args: unknown[])
+│isProd
+⋮...
+
+src/lib/api/projects.ts:
+⋮...
+│export function getAuthUser()
+│export function verifyProjectAccess(projectId: string, me: { id: string; organization_id: string; role: string }): Promise<boolean>
+⋮...
+
+src/utils/supabase/client.ts:
+⋮...
+│export function createClient()
+⋮...
+
+src/lib/api/workspaces.ts:
+⋮...
+│export function getAuthUser(): Promise<AuthUser | null>
+│export function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
+│export function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>
+│export function canReadWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
+│export export type AuthUser = { id: string; organization_id: string; role: OrgRole | 'superadmin' }
+⋮...
+
+src/db/schema.ts:
+⋮...
+│export export type Card = typeof cards.$inferSelect
+│export export type Connection = typeof connections.$inferSelect
+│export export type CardType = typeof cardTypeEnum.enumValues[number]
+│export export type Workspace = typeof workspaces.$inferSelect
+│export export type WorkspaceDomain = typeof workspaceDomainEnum.enumValues[number]
+│export export type CardStatus = typeof cardStatusEnum.enumValues[number]
+│export export type WorkspaceParticipant = typeof workspaceParticipants.$inferSelect
+│export export type WorkspaceMessage = typeof workspaceMessages.$inferSelect
+│export export type ConnectionType = typeof connectionTypeEnum.enumValues[number]
+│export export type ConnectionStrength = typeof connectionStrengthEnum.enumValues[number]
+│export export type Department = typeof departments.$inferSelect
+│export export type DepartmentInsert = typeof departments.$inferInsert
+│export export type WorkspaceTemplate = typeof workspaceTemplates.$inferSelect
+│export export type WorkspaceTemplateInsert = typeof workspaceTemplates.$inferInsert
+│export export type WorkspaceInsert = typeof workspaces.$inferInsert
+│export export type WorkspaceParticipantInsert = typeof workspaceParticipants.$inferInsert
+│export export type CardInsert = typeof cards.$inferInsert
+│export export type CardHistory = typeof cardHistory.$inferSelect
+│export export type CardHistoryInsert = typeof cardHistory.$inferInsert
+│export export type ConnectionInsert = typeof connections.$inferInsert
+│export export type KnowledgeEntry = typeof knowledgeEntries.$inferSelect
+│export export type KnowledgeEntryInsert = typeof knowledgeEntries.$inferInsert
+│export export type WorkspaceMessageInsert = typeof workspaceMessages.$inferInsert
+│export export type Operator = typeof operators.$inferSelect
+│export export type OperatorInsert = typeof operators.$inferInsert
+│export export type OperatorResult = typeof operatorResults.$inferSelect
+│export export type OperatorResultInsert = typeof operatorResults.$inferInsert
+│export export type WorkspaceOutcome = typeof workspaceOutcomes.$inferSelect
+│export export type WorkspaceOutcomeInsert = typeof workspaceOutcomes.$inferInsert
+│export export type SystemOutcome = typeof outcomes.$inferSelect
+│export export type SystemOutcomeInsert = typeof outcomes.$inferInsert
+│export export type MessageRole = typeof messageRoleEnum.enumValues[number]
+│export export type MessageScope = typeof messageScopeEnum.enumValues[number]
+│export export type OperatorType = typeof operatorTypeEnum.enumValues[number]
+│export export type OperatorStatus = typeof operatorStatusEnum.enumValues[number]
+│export export type OutcomeType = typeof outcomeTypeEnum.enumValues[number]
+│export export type KnowledgeEntryType = typeof knowledgeEntryTypeEnum.enumValues[number]
+│export export type ParticipantRole = typeof participantRoleEnum.enumValues[number]
+│export export type FeedSource = typeof feedSources.$inferSelect
+│export export type FeedSourceInsert = typeof feedSources.$inferInsert
+│export export type FeedSchema = typeof feedSchemas.$inferSelect
+│export export type FeedSchemaInsert = typeof feedSchemas.$inferInsert
+│export export type FeedSourceSchema = typeof feedSourceSchemas.$inferSelect
+│export export type FeedItem = typeof feedItems.$inferSelect
+│export export type FeedItemInsert = typeof feedItems.$inferInsert
+│export export type FeedProcessingLog = typeof feedProcessingLogs.$inferSelect
+│export export type FeedDistribution = typeof feedDistributions.$inferSelect
+│export export type FeedDistributionInsert = typeof feedDistributions.$inferInsert
+│export export type FeedSourceType = typeof feedSourceTypeEnum.enumValues[number]
+│export export type FeedImportance = typeof feedImportanceEnum.enumValues[number]
+│export export type FeedDistributionType = typeof feedDistributionTypeEnum.enumValues[number]
+│export export type FeedDigestMode = typeof feedDigestModeEnum.enumValues[number]
+│export export type FeedDigestFormat = typeof feedDigestFormatEnum.enumValues[number]
+│export workspaceDomainEnum
+│export cardTypeEnum
+│export cardStatusEnum
+│export connectionTypeEnum
+│export connectionStrengthEnum
+│export messageRoleEnum
+│export messageScopeEnum
+│export operatorTypeEnum
+│export operatorStatusEnum
+│export outcomeTypeEnum
+│export knowledgeEntryTypeEnum
+│export participantRoleEnum
+│export departments
+│export workspaceTemplates
+│export workspaces
+│export workspaceParticipants
+│export cards
+│export cardHistory
+│export connections
+│export knowledgeEntries
+│export workspaceMessages
+│export operators
+│export operatorResults
+│export workspaceOutcomes
+│export outcomes
+│export workspacesRelations
+│export workspaceParticipantsRelations
+│export cardsRelations
+│export cardHistoryRelations
+│export connectionsRelations
+│export knowledgeEntriesRelations
+│export workspaceMessagesRelations
+│export operatorsRelations
+│export operatorResultsRelations
+│export workspaceOutcomesRelations
+│export workspaceTemplatesRelations
+│export feedSourceTypeEnum
+│export feedImportanceEnum
+│export feedDistributionTypeEnum
+│export feedDigestModeEnum
+│export feedDigestFormatEnum
+│export feedSources
+│export feedSchemas
+│export feedSourceSchemas
+│export feedItems
+│export feedProcessingLogs
+│export feedDistributions
+│tsvector
+⋮...
+
+src/lib/audit/types.ts:
+⋮...
+│export interface AuditContext
+│export interface Finding
+│export interface RuleResult
+│export interface AuditReport
+│export interface CategoryScore
+│export export type AgentSource =
+│export interface AuditRule
+│export export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'
+│export interface PackageJson
+│export interface TsConfig
+│export interface GitInfo
+│export interface AuditOptions
+│export export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
+│export CATEGORIES: CategoryDefinition[]
+│export interface CategoryDefinition
+│export interface ExternalToolsOptions
+⋮...
+
+src/lib/workspace-types.ts:
+⋮...
+│export interface ChipItem
+│export interface ChatMessage extends Pick<Message, 'role' | 'content' | 'model_used' | 'cost_eur' | 'tokens_input' | 'tokens_output'>
+│export interface Conversation
+│export interface Project
+│export interface AttachmentData
+│export export type GuidedAction =
+│export interface GuidedStep
+│export interface SearchSource
+│export interface JungleProject
+│export interface GuidedOption
+│export interface GuidedAnswer
+│export interface GuidedData
+│export interface WorkspaceState
+│export export type PeriodValue = (typeof PERIODS)[number]['value']
+│export export type TaskValue = (typeof TASK_TYPES)[number]['value']
+│export export type AttachmentMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf'
+│export function formatDate(dateStr: string): string
+│export function defaultConvTitle(): string
+│export function matchesPeriod(conv: Conversation, period: PeriodValue): boolean
+│export PERIODS
+│export TASK_TYPES
+⋮...
+
+src/lib/repo-map/types.ts:
+⋮...
+│export interface RepoSymbol
+│export interface RepoFile
+│export interface FileDependency
+│export interface RepoMap
+│export interface RepoMapOptions
+⋮...
+
+src/lib/types.ts:
+⋮...
+│export interface User
+│export interface Message
+│export interface ModelCatalog
+│export interface Database
+│export export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'
+│export interface Organization
+│export interface Department
+│export interface DepartmentMember
+│export interface Conversation
+│export interface UsageLog
+│export interface RoutingInfo
+│export export type Plan = 'free' | 'pro' | 'enterprise'
+│export export type DepartmentRole = 'admin' | 'member' | 'viewer'
+│export export type WorkspaceRole = DepartmentRole
+│export export type MessageRole = 'user' | 'assistant' | 'guided_picker' | 'guided_step' | 'guided_summary'
+│export export type Provider = 'openai' | 'anthropic' | 'mistral' | 'google'
+│export export type ModelClass = 'fast' | 'deep' | 'safe'
+│export export type TaskType = 'chat' | 'summarize' | 'extract' | 'research' | 'create'
+│export export type Agent = 'general' | 'knowledge' | 'content' | 'business'
+│export export type Workspace = Department
+│export export type WorkspaceMember = DepartmentMember
+⋮...
+
+src/types/feeds.ts:
+⋮...
+│export interface FeedSource
+│export interface RawFeedItem
+│export interface FeedDataSource
+│export interface FeedTopic
+│export interface FeedDataRecord
+│export interface FeedRun
+│export interface FeedRunResult
+│export interface FeedItem
+│export interface FeedDistribution
+│export export type FeedSourceType = 'rss' | 'email' | 'api' | 'url'
+│export interface FeedRunError
+│export interface Stage2Result
+│export interface FeedNotification
+│export interface FeedSchema
+│export export type FeedItemStatus = 'unread' | 'read' | 'saved' | 'archived' | 'deleted' | 'not_relevant'
+│export export type FeedSourceStatus = 'active' | 'paused' | 'error' | 'archived'
+│export export type FeedRunStatus = 'running' | 'success' | 'partial' | 'error'
+⋮...
+
+src/lib/validators/index.ts:
+⋮...
+│export function validateBody(req: Request, schema: ZodSchema<T>): Promise<{ data: T; error: null } | { data: null; error: NextResponse }>
+⋮...
+
+src/app/admin/todos/todo.types.ts:
+⋮...
+│export interface Todo
+│export export type Status = 'offen' | 'in_arbeit' | 'erledigt' | 'blockiert' | 'geplant' | 'teilweise'
+⋮...
+
+src/components/cockpit/widgets/shared.tsx:
+⋮...
+│export function WidgetSkeleton({ rows = 3 }: SkeletonProps)
+│export function WidgetEmpty({ text, actionLabel, actionHref }: EmptyProps)
+│export function formatRelativeDate(dateStr: string | null | undefined): string
+⋮...
+
+src/lib/llm/providers/types.ts:
+⋮...
+│export interface ReviewResponse
+│export interface ReviewProvider
+│export interface ProviderFinding
+│export export type ProviderId = 'anthropic' | 'openai' | 'google' | 'xai'
+⋮...
+
+src/types/qa.ts:
+⋮...
+│export interface OverviewResponse
+│export interface QualityResponse
+│export interface RoutingResponse
+│export interface PerformanceResponse
+│export interface ComplianceResponse
+│export export type QaRunType =
+│export export type QaComplianceStatus = 'pass' | 'warn' | 'fail'
+│export interface RunResponse
+│export interface ModelScore
+│export interface BiasScore
+│export interface RoutingLogEntry
+│export interface ComplianceItem
+│export interface QaErrorResponse
+│export export type QaRunStatus = 'running' | 'passed' | 'failed' | 'partial'
+│export export type QaTriggeredBy = 'ci_cd' | 'manual' | 'scheduled'
+│export export type QaMetricType =
+⋮...
+
+src/lib/chat/parse-artifacts.ts:
+⋮...
+│export interface ArtifactSegment
+│export function parseArtifacts(content: string): ContentSegment[]
+│export interface TextSegment
+│export export type ArtifactType = 'react' | 'chart' | 'code' | 'document' | 'table' | 'list' | 'data' | 'image' | 'other' | 'presentation'
+│export export type ContentSegment = ArtifactSegment | TextSegment
+⋮...
+
+src/app/projects/_components/types.ts:
+⋮...
+│export export type Project = {
+│export function formatRelDate(iso: string): string
+│export function getProjectIcon(name: string | null): PhosphorIconType
+│export export type Chat = { id: string; title: string | null; updated_at: string }
+│export export type Doc  = { id: string; filename: string; file_size: number | null; mime_type: string | null; created_at: string }
+│export export type Mem  = { id: string; type: string; content: string; created_at: string; frozen?: boolean }
+│export export type ProjectTab = 'uebersicht' | 'chats' | 'dokumente' | 'gedaechtnis'
+│export function formatBytes(b: number | null): string
+│export ICON_OPTIONS: { name: string; Icon: PhosphorIconType }[]
+⋮...
+
+src/hooks/use-focus-trap.ts:
+⋮...
+│export function useFocusTrap(active: boolean)
+⋮...
+
+src/lib/fix-engine/types.ts:
+⋮...
+│export interface FixContext
+│export interface FileDiff
+│export interface GeneratedFix
+│export interface FixLlmResponse
+│export interface DiffHunk
+│export interface RiskAssessment
+│export interface ProviderFixDraft
+│export interface ConsensusFix
+│export export type FixStatus = 'pending' | 'applied' | 'rejected'
+⋮...
+
+src/lib/repo-map/index.ts:
+⋮...
+│function generateRepoMap(options: RepoMapOptions): Promise<RepoMap>
+│function generateRepoMapFromFiles(files: Array<{ path: string; content: string }>, options: { tokenBudget?: number | 'auto' | 'small' | 'medium' | 'large' } = {}): Promise<RepoMap>
+│function getCompressedRepoMap(rootPath: string, tokenBudget: RepoMapOptions['tokenBudget'] = 'auto'): Promise<string>
+│VERSION
+⋮...
+
+src/lib/llm/anthropic.ts:
+⋮...
+│export anthropic
+⋮...
+
+src/components/ParrotIcon.tsx:
+⋮...
+│export function ParrotIcon({ size = 24, className, style }: ParrotIconProps)
+⋮...
+
+src/types/workspace-plan-c.types.ts:
+⋮...
+│export interface CardHistoryEntry
+│export interface WorkspacePlanC
+│export interface CardPlanC
+⋮...
+
+src/types/workspace.ts:
+⋮...
+│export interface WorkspaceWithDetails extends Workspace
+│export interface WorkspaceMeta
+│export interface ParticipantWithUser extends WorkspaceParticipant
+⋮...
+
+src/lib/api/pagination.ts:
+⋮...
+│export function parsePaginationParams(searchParams: URLSearchParams, defaultLimit = 100, maxLimit = 500): { limit: number; offset: number }
+⋮...
+
+src/lib/repo-map/parser.ts:
+⋮...
+│export function parseSource(filePath: string, content: string): ParsedFile
+│export export type ParsedFile = {
+│export function getLineNumber(sourceFile: ts.SourceFile, pos: number): number
+│export function getFirstLine(text: string): string
+⋮...
+
+src/components/workspaces/CommentThread.tsx:
+⋮...
+│export export type Comment = {
+│export function CommentThread({ workspaceId, comments: initial, currentUserId, canAdmin, isGuest = false, itemId = null }: {
+  workspaceId: string
+  comments: Comment[]
+  currentUserId: string | null
+  c
+⋮...
+
+src/components/Parrot.tsx:
+⋮...
+│export function Parrot({ size = 24, style, className }: ParrotProps)
+⋮...
+
+src/lib/supabase/server.ts:
+⋮...
+│export function createServiceClient()
+⋮...
+
+src/components/admin/qa/QaShared.tsx:
+⋮...
+│export function Skeleton({ width, height }: { width?: string | number; height?: string | number })
+│export function SectionCard({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  action?: React.ReactNode
+  children: React.ReactNode
+})
+│export function KpiCard({
+  label,
+  value,
+  sub,
+  valueColor = 'var(--accent)',
+  loading = false,
+}: {
+  label: string
+  value: string
+  sub: string
+  valueColor?: string
+  loading?: boolean
+
+│export s: Record<string, React.CSSProperties>
+⋮...
+
+src/lib/cockpit/widgetCatalog.ts:
+⋮...
+│export interface WidgetMeta
+⋮...
+
+src/app/onboarding/onboarding.styles.ts:
+⋮...
+│export s: Record<string, React.CSSProperties>
+⋮...
+
+src/types/agents.ts:
+⋮...
+│export interface Skill
+│export interface AgentSkill
+│export interface AgentStep
+│export interface AgentTriggerConfig
+│export interface Agent
+│export interface AgentRun
+│export function mapSkill(row: Record<string, any>): Skill
+│export function mapAgent(row: Record<string, any>): Agent
+⋮...

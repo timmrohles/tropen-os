@@ -1,0 +1,79 @@
+{
+  "agentId": "database",
+  "agentName": "Database",
+  "filename": "DATABASE_AGENT.md",
+  "reviewedAt": "2026-04-09T11:16:46.892Z",
+  "overallScore": 100,
+  "passed": true,
+  "ruleScores": [
+    {
+      "ruleId": "R1",
+      "ruleName": "Required Sections Present",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R2",
+      "ruleName": "Every Rule Has Severity and Enforcement",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R3",
+      "ruleName": "Rule Count Within Bounds",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R4",
+      "ruleName": "Every Rule Has a Bad → Good Example",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R5",
+      "ruleName": "No Boundary Conflicts Between Agents",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R6",
+      "ruleName": "Enforcement Tools Must Be Named",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R7",
+      "ruleName": "Agent Document Has Version and Last-Updated",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R8",
+      "ruleName": "Agent Checklist Matches Rule Count",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    }
+  ],
+  "strengths": [
+    "All 7 required sections present: Meta, Purpose, Applicability, Rules, Exceptions, Checklist, Tool Integration",
+    "All 9 rules properly formatted with severity [BLOCKER/CRITICAL/WARNING] and enforcement [BLOCKED/PREVENTED/REVIEWED/ADVISORY] labels",
+    "Rule count of 9 is within the required 5-9 bounds",
+    "Every rule includes concrete Bad → Good code examples with clear violations and corrections",
+    "Comprehensive boundary definitions in related section with explicit handoffs to Architecture and Security agents",
+    "Specific enforcement tools named throughout: Migration Tool, Database Linter, Bundle Analyzer, Database Policy Check, etc.",
+    "YAML metadata includes version: 1.0 and last_updated: 2026-04-09",
+    "Checklist has exactly 9 items matching the 9 rules (R1-R9) in correct order",
+    "Tool Integration table provides complete mapping of rules to enforcement mechanisms with coverage levels"
+  ],
+  "gaps": [],
+  "recommendation": "approve"
+}

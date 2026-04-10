@@ -47,7 +47,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#2D7A50',
+  themeColor: '#2D7A50', // eslint-disable-line -- browser meta tag, kein CSS-Var möglich
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

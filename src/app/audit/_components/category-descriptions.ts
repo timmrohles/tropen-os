@@ -1,0 +1,30 @@
+// Einzeiler-Beschreibungen für alle 25 Audit-Kategorien.
+// Wird in CategoryBreakdown für Tooltips verwendet.
+
+export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  'Architektur': 'Klare Schichten, keine Spaghetti-Imports, saubere Modul-Grenzen.',
+  'Code-Qualität': 'TypeScript strict, ESLint, keine Magic Numbers, kein toter Code.',
+  'Sicherheit': 'Schutz vor Angriffen: Input-Validierung, Auth-Guards, keine Secrets im Code.',
+  'Datenschutz & Compliance': 'DSGVO, Cookie-Consent, Datenlöschung, AI Act Transparenz.',
+  'Datenbank': 'Schema-Design, Indexes, Foreign Keys, Migrations sauber geführt.',
+  'API-Design': 'Konsistente Fehler-Responses, Timeouts, Retry-Logik für externe Calls.',
+  'Performance': 'Ladezeiten, Bundle-Größe, Caching, keine blockierenden Operationen.',
+  'Skalierbarkeit': 'Stateless Server, Background Jobs für lange Operationen.',
+  'State Management': 'Klare Trennung: Server-State, Client-State, URL-State.',
+  'Testing': 'Unit-Tests, E2E-Tests, Coverage. Tests laufen in der CI-Pipeline.',
+  'CI/CD': 'Automatische Pipeline: Lint → Test → Build → Deploy. Rollback-Plan.',
+  'Observability': 'Structured Logging, Error-Tracking (Sentry), Uptime-Monitoring.',
+  'Backup & Disaster Recovery': 'Backups getestet, Restore-Plan dokumentiert, RTO/RPO definiert.',
+  'Dependency Management': 'Lockfile committed, keine kritischen CVEs, Dependabot aktiv.',
+  'Design System': 'Konsistente Farben, Abstände, Komponenten. Keine hardcodierten Werte.',
+  'Accessibility': 'Tastatur-Navigation, Screen-Reader-Support, Farbkontraste (WCAG 2.1 AA).',
+  'Internationalisierung': 'Mehrsprachigkeit: Texte externalisiert, Datumsformate lokalisiert.',
+  'Dokumentation': 'README aktuell, Setup in unter 30 Minuten, Entscheidungen dokumentiert.',
+  'Git Governance': 'Branch-Schutz, einheitliche Commit-Messages, Semantic Versioning.',
+  'Cost Awareness': 'Budget-Alerts, Token-Limits für KI-APIs, Vendor-Abstraktion.',
+  'PWA & Resilience': 'Offline-Fähigkeit, Service Worker, installierbare Web-App.',
+  'AI Integration': 'Prompt-Injection-Schutz, Token-Limits, Fallback bei Modell-Ausfall.',
+  'Infrastructure': 'Health-Checks, Multi-Region, Autoscaling konfiguriert.',
+  'Supply Chain Security': 'SBOM vorhanden, Dependencies geprüft, keine unsicheren Packages.',
+  'Namenskonventionen & Dateihygiene': 'Einheitliche Dateinamen, keine Dateien über 300 Zeilen, kein toter Code.',
+}

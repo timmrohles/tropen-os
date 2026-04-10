@@ -1,5 +1,4 @@
 import { createClient } from '@/utils/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import { redirect } from 'next/navigation'
 import AnnouncementsFeed from '@/components/home/AnnouncementsFeed'
 import ChatCTA from '@/components/home/ChatCTA'
@@ -21,7 +20,7 @@ export default async function HomePage() {
   if (!user) redirect('/login')
 
   // Profile must be fetched first to get orgId
-  const { data: profile } = await supabaseAdmin
+  const { data: profile } = await supabase
     .from('users')
     .select('full_name, organization_id')
     .eq('id', user.id)
@@ -33,7 +32,7 @@ export default async function HomePage() {
 
   // Parallelize all remaining queries; org-scoped ones are bundled conditionally
   const [tropenAnnResult, chatsResult, membershipResult, orgResult] = await Promise.all([
-    supabaseAdmin
+    supabase
       .from('announcements')
       .select('id, title, body, url, url_label, type, source, published_at')
       .is('organization_id', null)
@@ -43,14 +42,14 @@ export default async function HomePage() {
       .order('published_at', { ascending: false })
       .limit(3),
 
-    supabaseAdmin
+    supabase
       .from('conversations')
       .select('id, title, updated_at')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(3),
 
-    supabaseAdmin
+    supabase
       .from('department_members')
       .select('workspace_id')
       .eq('user_id', user.id)
@@ -58,7 +57,7 @@ export default async function HomePage() {
       .maybeSingle(),
 
     orgId ? Promise.all([
-      supabaseAdmin
+      supabase
         .from('announcements')
         .select('id, title, body, url, url_label, type, source, published_at')
         .eq('organization_id', orgId)
@@ -68,7 +67,7 @@ export default async function HomePage() {
         .order('published_at', { ascending: false })
         .limit(3),
 
-      supabaseAdmin
+      supabase
         .from('workspaces')
         .select('id, title, updated_at')
         .eq('organization_id', orgId)
@@ -76,7 +75,7 @@ export default async function HomePage() {
         .order('updated_at', { ascending: false })
         .limit(2),
 
-      supabaseAdmin
+      supabase
         .from('organizations')
         .select('name')
         .eq('id', orgId)

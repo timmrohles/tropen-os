@@ -102,6 +102,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/workspaces', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
     { href: '/admin/qa', icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'QA', matchPrefix: '/admin/qa' },
     { href: '/admin/todos', icon: <ListChecks size={18} weight="bold" aria-hidden="true" />, label: 'To-Dos', matchPrefix: '/admin/todos' },
+    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
     { href: '/design-reference', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Design Ref', matchPrefix: '/design-reference' },
   ]
 
@@ -114,6 +115,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' },
     { href: '/admin/budget', icon: <CurrencyEur size={18} weight="bold" aria-hidden="true" />, label: 'Budget', matchPrefix: '/admin/budget' },
     { href: '/admin/logs', icon: <FileText size={18} weight="bold" aria-hidden="true" />, label: 'Logs', matchPrefix: '/admin/logs' },
+    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
     { href: '/admin/users', icon: <Users size={18} weight="bold" aria-hidden="true" />, label: 'User', matchPrefix: '/admin/users' },
     { href: '/admin/branding', icon: <PaintBrush size={18} weight="bold" aria-hidden="true" />, label: 'Branding', matchPrefix: '/admin/branding' },
     { href: '/department', icon: <Buildings size={18} weight="bold" aria-hidden="true" />, label: 'Department', matchPrefix: '/department' },
@@ -128,6 +130,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/projects', icon: <FolderSimple size={18} weight="bold" aria-hidden="true" />, label: 'Projekte', matchPrefix: '/projects' },
     { href: '/artifacts', icon: <Sparkle size={18} weight="bold" aria-hidden="true" />, label: 'Artefakte', matchPrefix: '/artifacts' },
     { href: '/workspaces', icon: <ShareNetwork size={18} weight="bold" aria-hidden="true" />, label: 'Workspaces', matchPrefix: '/workspaces' },
+    { href: '/audit', icon: <ShieldCheck size={18} weight="fill" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
     ...(branding?.members_see_models ? [{ href: '/admin/models', icon: <Cpu size={18} weight="bold" aria-hidden="true" />, label: 'Modelle', matchPrefix: '/admin/models' }] : []),
   ]
   const memberFeedItems: NavItem[] = [

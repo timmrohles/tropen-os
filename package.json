@@ -1,11 +1,12 @@
 {
   "name": "tropen-os",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "security:scan": "gitleaks detect --config .gitleaks.toml --verbose",
     "start": "next start",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -22,11 +23,14 @@
     "lint:design": "node scripts/ci/lint-design-system.mjs",
     "lint:deps": "depcruise src --config .dependency-cruiser.cjs",
     "lint:features": "node scripts/ci/check-feature-guards.mjs",
-    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features"
+    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features",
+    "analyze": "ANALYZE=true pnpm build"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.64",
+    "@ai-sdk/google": "^3.0.60",
     "@ai-sdk/mistral": "^3.0.27",
+    "@ai-sdk/openai": "^3.0.52",
     "@anthropic-ai/sdk": "^0.80.0",
     "@neondatabase/serverless": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",
@@ -38,9 +42,10 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
-    "ai": "^6.0.141",
+    "ai": "^6.0.156",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.1",
+    "ignore": "^7.0.5",
     "langsmith": "^0.5.14",
     "next": "^16.1.6",
     "nodemailer": "^8.0.4",
@@ -60,6 +65,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
+    "@next/bundle-analyzer": "^16.2.2",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

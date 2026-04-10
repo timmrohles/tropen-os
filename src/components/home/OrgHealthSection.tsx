@@ -58,7 +58,7 @@ export function OrgHealthSection() {
             <CurrencyEur
               size={16}
               weight="fill"
-              color={stats.budgetWarning ? 'var(--error, #dc2626)' : 'var(--accent)'}
+              color={stats.budgetWarning ? 'var(--error)' : 'var(--accent)'}
               aria-hidden="true"
             />
           }

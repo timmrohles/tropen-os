@@ -239,7 +239,7 @@ export default function MemorySaveModal({ open, onClose, projectId, conversation
 
               {aiPhase === 'error' && (
                 <div>
-                  <p style={{ color: 'var(--error, #dc2626)', fontSize: 13, marginBottom: 16 }}>{aiError}</p>
+                  <p style={{ color: 'var(--error)', fontSize: 13, marginBottom: 16 }}>{aiError}</p>
                   <button className="btn btn-ghost btn-sm" onClick={loadAiSummary}>
                     Erneut versuchen
                   </button>
@@ -344,7 +344,7 @@ export default function MemorySaveModal({ open, onClose, projectId, conversation
               </div>
 
               {manualError && (
-                <p style={{ color: 'var(--error, #dc2626)', fontSize: 13 }} aria-live="polite">{manualError}</p>
+                <p style={{ color: 'var(--error)', fontSize: 13 }} aria-live="polite">{manualError}</p>
               )}
               {manualSuccess && (
                 <p style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600 }} aria-live="polite">✓ Gespeichert</p>

@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import Link from 'next/link'
 
 const s: Record<string, React.CSSProperties> = {
@@ -82,7 +81,7 @@ export default async function WorkspaceLayout({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: workspace } = await supabaseAdmin
+  const { data: workspace } = await supabase
     .from('workspaces')
     .select('id, title, domain, status')
     .eq('id', workspaceId)

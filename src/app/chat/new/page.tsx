@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import SingleChatClient from '../[id]/SingleChatClient'
 
 export default async function NewChatPage() {
@@ -8,7 +7,7 @@ export default async function NewChatPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: membership } = await supabaseAdmin
+  const { data: membership } = await supabase
     .from('department_members')
     .select('workspace_id')
     .eq('user_id', user.id)

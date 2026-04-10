@@ -1,0 +1,81 @@
+{
+  "agentId": "cost-awareness",
+  "agentName": "Cost Awareness",
+  "filename": "COST_AWARENESS_AGENT.md",
+  "reviewedAt": "2026-04-09T11:20:48.985Z",
+  "overallScore": 85,
+  "passed": true,
+  "ruleScores": [
+    {
+      "ruleId": "R1",
+      "ruleName": "Required Sections Present",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R2",
+      "ruleName": "Every Rule Has Severity and Enforcement",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R3",
+      "ruleName": "Rule Count Within Bounds",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R4",
+      "ruleName": "Every Rule Has a Bad → Good Example",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R5",
+      "ruleName": "No Boundary Conflicts Between Agents",
+      "pass": false,
+      "score": 2,
+      "issue": "Related section has inconsistent relationship types - lists 'overlaps' with both observability and security agents but also lists 'delegates' and 'consult' with the same agents, creating unclear boundaries"
+    },
+    {
+      "ruleId": "R6",
+      "ruleName": "Enforcement Tools Must Be Named",
+      "pass": false,
+      "score": 3,
+      "issue": "Some enforcement tools are vaguely named: 'Infrastructure Validation', 'Runtime Guards', 'API Middleware' are generic rather than specific tool names like ESLint rules or specific middleware packages"
+    },
+    {
+      "ruleId": "R7",
+      "ruleName": "Agent Document Has Version and Last-Updated",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    },
+    {
+      "ruleId": "R8",
+      "ruleName": "Agent Checklist Matches Rule Count",
+      "pass": true,
+      "score": 5,
+      "issue": null
+    }
+  ],
+  "strengths": [
+    "All required sections present with proper structure",
+    "All 7 rules have proper severity and enforcement labels",
+    "Rule count of 7 is within the 5-9 bounds",
+    "Every rule includes concrete Bad → Good code examples",
+    "Version 1.0 and last_updated date properly specified",
+    "Checklist has exactly 7 items matching the 7 rules",
+    "Tool Integration table is complete with all rules mapped"
+  ],
+  "gaps": [
+    "Related section has conflicting relationship types (overlaps + delegates + consult) with same agents, creating boundary confusion",
+    "Enforcement tools use generic names like 'Infrastructure Validation' instead of specific tools like 'AWS Config Rules' or 'Terraform Sentinel'",
+    "Boundary statements in related section could be more precise about handoff points"
+  ],
+  "recommendation": "approve"
+}

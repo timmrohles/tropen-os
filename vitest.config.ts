@@ -7,8 +7,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.unit.test.ts', 'src/**/*.unit.test.tsx'],
+    setupFiles: ['./test/setup.ts'],
+    include: ['src/**/*.unit.test.ts', 'src/**/*.unit.test.tsx', 'test/**/*.unit.test.ts', 'test/**/*.unit.test.tsx'],
     exclude: ['node_modules', '.next'],
     coverage: {
       provider: 'v8',
@@ -23,9 +23,11 @@ export default defineConfig({
         'src/lib/qa/routing-logger.ts',
         'src/lib/qa/task-classifier.ts',
         'src/app/api/admin/qa/compliance/route.ts',
+        'src/lib/repo-map/**/*.ts',
+        'src/lib/audit/**/*.ts',
       ],
       exclude: [
-        'src/test/**',
+        'test/**',
         '**/*.d.ts',
         '**/*.test.ts',
         '**/*.test.tsx',
@@ -34,6 +36,9 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@test': path.resolve(__dirname, './test'),
+    },
   },
 })

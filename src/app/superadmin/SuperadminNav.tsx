@@ -7,6 +7,7 @@ const LINKS = [
   { href: '/superadmin/clients', label: 'Clients' },
   { href: '/superadmin/announcements', label: 'Announcements' },
   { href: '/superadmin/perspectives', label: 'Perspectives' },
+  { href: '/superadmin/agents', label: 'Agent Rule Packs' },
   { href: '/admin/todos', label: 'To-Dos & Compliance' },
 ]
 

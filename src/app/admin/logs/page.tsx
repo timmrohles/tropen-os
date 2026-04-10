@@ -1,8 +1,9 @@
 import { ClipboardText } from '@phosphor-icons/react/dist/ssr'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/utils/supabase/server'
 
 export default async function LogsPage() {
-  const { data: logs, count } = await supabaseAdmin
+  const supabase = await createClient()
+  const { data: logs, count } = await supabase
     .from('usage_logs')
     .select(
       `

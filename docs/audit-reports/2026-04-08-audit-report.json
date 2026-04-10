@@ -1,0 +1,1788 @@
+{
+  "project": "tropen-os",
+  "date": "2026-04-08",
+  "rootPath": "C:\\Users\\timmr\\tropenOS",
+  "categories": [
+    {
+      "categoryId": 1,
+      "name": "Architektur",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-1-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-1-rule-2",
+          "score": 3,
+          "reason": "407 exported symbols in src/lib/ vs 523 in API routes (44% in lib/)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-3",
+          "score": 2,
+          "reason": "2 circular dependency cycle(s) detected",
+          "findings": [
+            {
+              "severity": "high",
+              "message": "Circular dependency: src/app/workspaces/[id]/CanvasClient.tsx -> src/components/workspaces/CardTile.tsx",
+              "suggestion": "Extract shared code to a third module that neither file imports"
+            },
+            {
+              "severity": "high",
+              "message": "Circular dependency: src/lib/repo-map/fixtures/circular-a.ts -> src/lib/repo-map/fixtures/circular-b.ts",
+              "suggestion": "Extract shared code to a third module that neither file imports"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-4",
+          "score": 1,
+          "reason": "44 file(s) over 300 lines (5 over 500 — violation)",
+          "findings": [
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/app/admin/todos/todoDataFeatures.ts (593 lines)",
+              "filePath": "src/app/admin/todos/todoDataFeatures.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/app/feeds/page.tsx (521 lines)",
+              "filePath": "src/app/feeds/page.tsx",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/components/_DESIGN_REFERENCE.tsx (1085 lines)",
+              "filePath": "src/components/_DESIGN_REFERENCE.tsx",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/db/schema.ts (645 lines)",
+              "filePath": "src/db/schema.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): supabase/functions/ai-chat/index.ts (924 lines)",
+              "filePath": "supabase/functions/ai-chat/index.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): scripts/migrate-projects.ts (471 lines)",
+              "filePath": "scripts/migrate-projects.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/actions/feeds.ts (448 lines)",
+              "filePath": "src/actions/feeds.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/actions/workspaces.ts (442 lines)",
+              "filePath": "src/actions/workspaces.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/branding/page.tsx (389 lines)",
+              "filePath": "src/app/admin/branding/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/models/page.tsx (415 lines)",
+              "filePath": "src/app/admin/models/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/todos/todoDataConcepts.ts (398 lines)",
+              "filePath": "src/app/admin/todos/todoDataConcepts.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/todos/todoDataOps.ts (434 lines)",
+              "filePath": "src/app/admin/todos/todoDataOps.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/artifacts/page.tsx (430 lines)",
+              "filePath": "src/app/artifacts/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/chat/ChatPageClient.tsx (431 lines)",
+              "filePath": "src/app/chat/ChatPageClient.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/feeds/SourcesView.tsx (428 lines)",
+              "filePath": "src/app/feeds/SourcesView.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/feeds/new/page.tsx (316 lines)",
+              "filePath": "src/app/feeds/new/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/knowledge/page.tsx (400 lines)",
+              "filePath": "src/app/knowledge/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/announcements/page.tsx (356 lines)",
+              "filePath": "src/app/superadmin/announcements/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/clients/page.tsx (477 lines)",
+              "filePath": "src/app/superadmin/clients/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/perspectives/page.tsx (459 lines)",
+              "filePath": "src/app/superadmin/perspectives/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/workspaces/[id]/CanvasClient.tsx (343 lines)",
+              "filePath": "src/app/workspaces/[id]/CanvasClient.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/workspaces/page.tsx (326 lines)",
+              "filePath": "src/app/workspaces/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/layout/Sidebar.tsx (385 lines)",
+              "filePath": "src/components/layout/Sidebar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/layout/TopBar.tsx (327 lines)",
+              "filePath": "src/components/layout/TopBar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ArtifactRenderer.tsx (495 lines)",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatArea.tsx (472 lines)",
+              "filePath": "src/components/workspace/ChatArea.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatHeaderStrip.tsx (346 lines)",
+              "filePath": "src/components/workspace/ChatHeaderStrip.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatMessage.tsx (402 lines)",
+              "filePath": "src/components/workspace/ChatMessage.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/MemorySaveModal.tsx (375 lines)",
+              "filePath": "src/components/workspace/MemorySaveModal.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/PerspectivesBottomSheet.tsx (301 lines)",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ProjectSidebar.tsx (445 lines)",
+              "filePath": "src/components/workspace/ProjectSidebar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/SessionPanel.tsx (335 lines)",
+              "filePath": "src/components/workspace/SessionPanel.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/TemplateDrawer.tsx (366 lines)",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/WorkspaceBriefing.tsx (471 lines)",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/WorkspaceLayout.tsx (305 lines)",
+              "filePath": "src/components/workspace/WorkspaceLayout.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspaces/WorkspacesList.tsx (338 lines)",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/hooks/useWorkspaceState.ts (451 lines)",
+              "filePath": "src/hooks/useWorkspaceState.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/agent-engine.ts (395 lines)",
+              "filePath": "src/lib/agent-engine.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/audit/checkers/file-system-checker.ts (436 lines)",
+              "filePath": "src/lib/audit/checkers/file-system-checker.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/audit/checkers/repo-map-checker.ts (341 lines)",
+              "filePath": "src/lib/audit/checkers/repo-map-checker.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/guided-workflow-engine.unit.test.ts (319 lines)",
+              "filePath": "src/lib/guided-workflow-engine.unit.test.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-chat.ts (445 lines)",
+              "filePath": "src/lib/workspace-chat.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-context.ts (330 lines)",
+              "filePath": "src/lib/workspace-context.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-types.ts (325 lines)",
+              "filePath": "src/lib/workspace-types.ts"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-5",
+          "score": 5,
+          "reason": "19 ADRs in docs/adr/ — excellent documentation",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 24,
+      "weightedMax": 40,
+      "automatedPercentage": 60,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 2,
+      "name": "Code-Qualität",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-2-rule-1",
+          "score": 5,
+          "reason": "TypeScript strict mode is enabled in tsconfig.json",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-2",
+          "score": 5,
+          "reason": "ESLint configured: eslint.config.mjs",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-3",
+          "score": 5,
+          "reason": "Prettier configured: .prettierrc",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 30,
+      "weightedMax": 30,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 3,
+      "name": "Sicherheit",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-3-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-2",
+          "score": 1,
+          "reason": "33/171 API routes use validateBody (19%)",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/branding/route.ts",
+              "filePath": "src/app/api/admin/branding/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/budget/route.ts",
+              "filePath": "src/app/api/admin/budget/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/logs/route.ts",
+              "filePath": "src/app/api/admin/logs/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/models/[id]/route.ts",
+              "filePath": "src/app/api/admin/models/[id]/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/models/route.ts",
+              "filePath": "src/app/api/admin/models/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/compliance/[id]/route.ts",
+              "filePath": "src/app/api/admin/qa/compliance/[id]/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/compliance/route.ts",
+              "filePath": "src/app/api/admin/qa/compliance/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/overview/route.ts",
+              "filePath": "src/app/api/admin/qa/overview/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/performance/route.ts",
+              "filePath": "src/app/api/admin/qa/performance/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/quality/route.ts",
+              "filePath": "src/app/api/admin/qa/quality/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/routing/route.ts",
+              "filePath": "src/app/api/admin/qa/routing/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/qa/runs/route.ts",
+              "filePath": "src/app/api/admin/qa/runs/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/admin/users/route.ts",
+              "filePath": "src/app/api/admin/users/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/agents/[id]/copy/route.ts",
+              "filePath": "src/app/api/agents/[id]/copy/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            },
+            {
+              "severity": "medium",
+              "message": "API route missing validateBody: src/app/api/agents/[id]/route.ts",
+              "filePath": "src/app/api/agents/[id]/route.ts",
+              "suggestion": "Add validateBody(body, schema) before business logic"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-3",
+          "score": null,
+          "reason": "gitleaks not installed — install for secret scanning",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-7",
+          "score": null,
+          "reason": "Could not run pnpm audit: Error: spawnSync pnpm ENOENT",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-8",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-9",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-10",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-11",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-12",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-13",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-14",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 3,
+      "weightedMax": 15,
+      "automatedPercentage": 20,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 13
+    },
+    {
+      "categoryId": 4,
+      "name": "Datenschutz & Compliance",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-4-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-6",
+          "score": 5,
+          "reason": "AI Act classification documentation found in docs/",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 10,
+      "weightedMax": 10,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 5
+    },
+    {
+      "categoryId": 5,
+      "name": "Datenbank",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-5-rule-1",
+          "score": 5,
+          "reason": "FK constraints found in migrations (REFERENCES + ON DELETE CASCADE)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-2",
+          "score": 5,
+          "reason": "143 indexes defined in migrations — strong index strategy",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-3",
+          "score": 5,
+          "reason": "Migrations tool active: 88 migration file(s) in supabase/migrations/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-5-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-5-rule-6",
+          "score": 5,
+          "reason": "supabaseAdmin service key not found in client-side code",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 50,
+      "weightedMax": 50,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 6,
+      "name": "API-Design",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-6-rule-1",
+          "score": 0,
+          "reason": "No API versioning: no /api/v1/ routes found",
+          "findings": [
+            {
+              "severity": "low",
+              "message": "All API routes are unversioned (/api/* without /v1/)",
+              "suggestion": "Consider adding /api/v1/ prefix or using header-based versioning"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-2",
+          "score": 0,
+          "reason": "No OpenAPI/Swagger spec found",
+          "findings": [
+            {
+              "severity": "low",
+              "message": "No openapi.json or swagger.yaml found",
+              "suggestion": "Generate OpenAPI spec with zod-to-openapi or similar"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-3",
+          "score": 2,
+          "reason": "3 vendor adapter(s) missing",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "Missing vendor abstraction layer: email adapter (src/lib/email/)",
+              "suggestion": "Create src/lib/email/index.ts with adapter interface"
+            },
+            {
+              "severity": "medium",
+              "message": "Missing vendor abstraction layer: monitoring adapter (src/lib/monitoring/)",
+              "suggestion": "Create src/lib/monitoring/index.ts with adapter interface"
+            },
+            {
+              "severity": "medium",
+              "message": "Missing vendor abstraction layer: rate limit adapter (src/lib/ratelimit/)",
+              "suggestion": "Create src/lib/ratelimit/index.ts with adapter interface"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-6-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 4,
+      "weightedMax": 30,
+      "automatedPercentage": 13.3,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 7,
+      "name": "Performance",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-7-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-2",
+          "score": 5,
+          "reason": "Bundle analyzer is installed",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-7-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 10,
+      "weightedMax": 10,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 8,
+      "name": "Skalierbarkeit",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-8-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-8-rule-2",
+          "score": 4,
+          "reason": "2 cron job(s) configured in vercel.json",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-8-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-8-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 8,
+      "weightedMax": 10,
+      "automatedPercentage": 80,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 9,
+      "name": "State Management",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-9-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-9-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-9-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 0,
+      "weightedMax": 0,
+      "automatedPercentage": null,
+      "automatedRuleCount": 0,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 10,
+      "name": "Testing",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-10-rule-1",
+          "score": null,
+          "reason": "Coverage report not found — run pnpm test --coverage first",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-10-rule-2",
+          "score": 3,
+          "reason": "1 integration test file(s) found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-3",
+          "score": 5,
+          "reason": "E2E tests present: 3 spec file(s), playwright configured",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-4",
+          "score": 5,
+          "reason": "Tests found in CI pipeline (vitest/jest step detected)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-5",
+          "score": 3,
+          "reason": "Coverage thresholds configured but < 80%",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 37,
+      "weightedMax": 45,
+      "automatedPercentage": 82.2,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 11,
+      "name": "CI/CD",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-11-rule-1",
+          "score": 5,
+          "reason": "CI pipeline present: 5 workflow file(s)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-11-rule-3",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-4",
+          "score": 3,
+          "reason": "vercel.json present (partial IaC — no Terraform/Pulumi)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 36,
+      "weightedMax": 40,
+      "automatedPercentage": 90,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 12,
+      "name": "Observability",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-12-rule-1",
+          "score": 5,
+          "reason": "Logger abstraction: 127/311 lib/api files use createLogger; 0 direct console calls",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-2",
+          "score": 5,
+          "reason": "@sentry/nextjs found in dependencies — error tracking active",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-12-rule-4",
+          "score": 5,
+          "reason": "Distributed tracing dependency found (LangSmith/OpenTelemetry/Vercel OTEL)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 40,
+      "weightedMax": 40,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 13,
+      "name": "Backup & Disaster Recovery",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-13-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-4",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-5",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 20,
+      "weightedMax": 20,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 14,
+      "name": "Dependency Management",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-14-rule-1",
+          "score": 5,
+          "reason": "Lockfile present: pnpm-lock.yaml",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-2",
+          "score": 5,
+          "reason": "Vulnerability scan step found in CI",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-3",
+          "score": 5,
+          "reason": "Automated dependency updates configured: Dependabot",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-4",
+          "score": 5,
+          "reason": "Node version pinned: .nvmrc",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 45,
+      "weightedMax": 45,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 0
+    },
+    {
+      "categoryId": 15,
+      "name": "Design System",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-15-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 0,
+      "weightedMax": 0,
+      "automatedPercentage": null,
+      "automatedRuleCount": 0,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 16,
+      "name": "Accessibility",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-16-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-3",
+          "score": 4,
+          "reason": "418 component/page files found — aria attribute coverage estimated (content scan required for exact count)",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 4,
+      "weightedMax": 5,
+      "automatedPercentage": 80,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 17,
+      "name": "Internationalisierung",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-17-rule-1",
+          "score": 0,
+          "reason": "No i18n framework installed",
+          "findings": [
+            {
+              "severity": "low",
+              "message": "All UI strings are hardcoded — no i18n framework",
+              "suggestion": "Install next-intl for Next.js-native i18n support"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-17-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-17-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 0,
+      "weightedMax": 10,
+      "automatedPercentage": 0,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 18,
+      "name": "Dokumentation",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-18-rule-1",
+          "score": 0,
+          "reason": "No README.md found",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "Missing README.md",
+              "suggestion": "Create README.md with project overview, setup, and deployment"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-2",
+          "score": 5,
+          "reason": "19 ADRs in docs/adr/ — excellent documentation",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-18-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 10,
+      "weightedMax": 20,
+      "automatedPercentage": 50,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 19,
+      "name": "Git Governance",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-19-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-19-rule-2",
+          "score": 5,
+          "reason": "100% of commits follow Conventional Commits",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-19-rule-3",
+          "score": 0,
+          "reason": "Version 0.1.0 is pre-1.0 — no stable release tag",
+          "findings": [
+            {
+              "severity": "low",
+              "message": "package.json version is 0.1.0 — no stable release",
+              "suggestion": "Tag first stable release as v1.0.0"
+            }
+          ],
+          "automated": true
+        }
+      ],
+      "weightedScore": 5,
+      "weightedMax": 15,
+      "automatedPercentage": 33.3,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 20,
+      "name": "Cost Awareness",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-20-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-20-rule-2",
+          "score": 1,
+          "reason": "Budget enforcement: 3/30 LLM routes check budget",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-20-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-20-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 2,
+      "weightedMax": 10,
+      "automatedPercentage": 20,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 21,
+      "name": "PWA & Resilience",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-21-rule-1",
+          "score": 5,
+          "reason": "PWA manifest found in public/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-2",
+          "score": 5,
+          "reason": "Service worker found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 20,
+      "weightedMax": 20,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 22,
+      "name": "AI Integration",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-22-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-22-rule-2",
+          "score": 3,
+          "reason": "Token limit configuration not detectable from symbol signatures (requires content scan)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-22-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 6,
+      "weightedMax": 10,
+      "automatedPercentage": 60,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 23,
+      "name": "Infrastructure",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-23-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-2",
+          "score": 5,
+          "reason": "Health check endpoint found: /api/health/route.ts",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-23-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 10,
+      "weightedMax": 10,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 1,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 24,
+      "name": "Supply Chain Security",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-24-rule-1",
+          "score": 0,
+          "reason": "No SBOM (Software Bill of Materials) found",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "No sbom.json and no syft/cyclonedx step in CI",
+              "suggestion": "Add: syft . -o cyclonedx-json=sbom.json in CI"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-24-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-24-rule-3",
+          "score": 5,
+          "reason": "Lockfile present: pnpm-lock.yaml",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-24-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 10,
+      "weightedMax": 25,
+      "automatedPercentage": 40,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 25,
+      "name": "Namenskonventionen & Dateihygiene",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-25-rule-1",
+          "score": 3,
+          "reason": "Naming convention check: 4 violation(s) found",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "Component file not PascalCase: src/components/_DESIGN_REFERENCE.tsx",
+              "filePath": "src/components/_DESIGN_REFERENCE.tsx",
+              "suggestion": "Rename to _DESIGN_REFERENCE.tsx"
+            },
+            {
+              "severity": "medium",
+              "message": "Component file not PascalCase: src/components/cockpit/widgets/shared.tsx",
+              "filePath": "src/components/cockpit/widgets/shared.tsx",
+              "suggestion": "Rename to Shared.tsx"
+            },
+            {
+              "severity": "medium",
+              "message": "Component file not PascalCase: src/components/workspace/chat-renderers.tsx",
+              "filePath": "src/components/workspace/chat-renderers.tsx",
+              "suggestion": "Rename to Chat-renderers.tsx"
+            },
+            {
+              "severity": "medium",
+              "message": "Hook file missing 'use' prefix: src/hooks/use-focus-trap.ts",
+              "filePath": "src/hooks/use-focus-trap.ts",
+              "suggestion": "Rename to useUse-focus-trap.ts"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-2",
+          "score": 1,
+          "reason": "44 file(s) over 300 lines (5 over 500 — violation)",
+          "findings": [
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/app/admin/todos/todoDataFeatures.ts (593 lines)",
+              "filePath": "src/app/admin/todos/todoDataFeatures.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/app/feeds/page.tsx (521 lines)",
+              "filePath": "src/app/feeds/page.tsx",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/components/_DESIGN_REFERENCE.tsx (1085 lines)",
+              "filePath": "src/components/_DESIGN_REFERENCE.tsx",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): src/db/schema.ts (645 lines)",
+              "filePath": "src/db/schema.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size violation (> 500 lines): supabase/functions/ai-chat/index.ts (924 lines)",
+              "filePath": "supabase/functions/ai-chat/index.ts",
+              "suggestion": "Split into focused sub-modules (< 300 lines each)"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): scripts/migrate-projects.ts (471 lines)",
+              "filePath": "scripts/migrate-projects.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/actions/feeds.ts (448 lines)",
+              "filePath": "src/actions/feeds.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/actions/workspaces.ts (442 lines)",
+              "filePath": "src/actions/workspaces.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/branding/page.tsx (389 lines)",
+              "filePath": "src/app/admin/branding/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/models/page.tsx (415 lines)",
+              "filePath": "src/app/admin/models/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/todos/todoDataConcepts.ts (398 lines)",
+              "filePath": "src/app/admin/todos/todoDataConcepts.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/admin/todos/todoDataOps.ts (434 lines)",
+              "filePath": "src/app/admin/todos/todoDataOps.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/artifacts/page.tsx (430 lines)",
+              "filePath": "src/app/artifacts/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/chat/ChatPageClient.tsx (431 lines)",
+              "filePath": "src/app/chat/ChatPageClient.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/feeds/SourcesView.tsx (428 lines)",
+              "filePath": "src/app/feeds/SourcesView.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/feeds/new/page.tsx (316 lines)",
+              "filePath": "src/app/feeds/new/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/knowledge/page.tsx (400 lines)",
+              "filePath": "src/app/knowledge/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/announcements/page.tsx (356 lines)",
+              "filePath": "src/app/superadmin/announcements/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/clients/page.tsx (477 lines)",
+              "filePath": "src/app/superadmin/clients/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/superadmin/perspectives/page.tsx (459 lines)",
+              "filePath": "src/app/superadmin/perspectives/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/workspaces/[id]/CanvasClient.tsx (343 lines)",
+              "filePath": "src/app/workspaces/[id]/CanvasClient.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/app/workspaces/page.tsx (326 lines)",
+              "filePath": "src/app/workspaces/page.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/layout/Sidebar.tsx (385 lines)",
+              "filePath": "src/components/layout/Sidebar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/layout/TopBar.tsx (327 lines)",
+              "filePath": "src/components/layout/TopBar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ArtifactRenderer.tsx (495 lines)",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatArea.tsx (472 lines)",
+              "filePath": "src/components/workspace/ChatArea.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatHeaderStrip.tsx (346 lines)",
+              "filePath": "src/components/workspace/ChatHeaderStrip.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ChatMessage.tsx (402 lines)",
+              "filePath": "src/components/workspace/ChatMessage.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/MemorySaveModal.tsx (375 lines)",
+              "filePath": "src/components/workspace/MemorySaveModal.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/PerspectivesBottomSheet.tsx (301 lines)",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/ProjectSidebar.tsx (445 lines)",
+              "filePath": "src/components/workspace/ProjectSidebar.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/SessionPanel.tsx (335 lines)",
+              "filePath": "src/components/workspace/SessionPanel.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/TemplateDrawer.tsx (366 lines)",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/WorkspaceBriefing.tsx (471 lines)",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspace/WorkspaceLayout.tsx (305 lines)",
+              "filePath": "src/components/workspace/WorkspaceLayout.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/components/workspaces/WorkspacesList.tsx (338 lines)",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/hooks/useWorkspaceState.ts (451 lines)",
+              "filePath": "src/hooks/useWorkspaceState.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/agent-engine.ts (395 lines)",
+              "filePath": "src/lib/agent-engine.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/audit/checkers/file-system-checker.ts (436 lines)",
+              "filePath": "src/lib/audit/checkers/file-system-checker.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/audit/checkers/repo-map-checker.ts (341 lines)",
+              "filePath": "src/lib/audit/checkers/repo-map-checker.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/guided-workflow-engine.unit.test.ts (319 lines)",
+              "filePath": "src/lib/guided-workflow-engine.unit.test.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-chat.ts (445 lines)",
+              "filePath": "src/lib/workspace-chat.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-context.ts (330 lines)",
+              "filePath": "src/lib/workspace-context.ts"
+            },
+            {
+              "severity": "high",
+              "message": "File size warning (> 300 lines): src/lib/workspace-types.ts (325 lines)",
+              "filePath": "src/lib/workspace-types.ts"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-25-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-25-rule-5",
+          "score": 5,
+          "reason": "Project structure follows standard (src/app, src/lib, src/components, docs)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 18,
+      "weightedMax": 30,
+      "automatedPercentage": 60,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 3
+    }
+  ],
+  "automatedPercentage": 74.4,
+  "status": "stable",
+  "criticalFindings": [],
+  "automatedRuleCount": 50,
+  "manualRuleCount": 70,
+  "priorAudit": {
+    "date": "2026-04-08",
+    "percentage": 74.4,
+    "delta": 0
+  }
+}
