@@ -231,11 +231,11 @@ export default async function HomePage() {
         ═══════════════════════════════════════════════════════════════ */}
         <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(26,46,35,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <C style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <a href="/" style={{ textDecoration: 'none' }}>
+            <Link href="/" style={{ textDecoration: 'none' }}>
               <span style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontWeight: 800, fontSize: 18, letterSpacing: '-0.025em', color: '#ffffff' }}>
                 Tropen OS
               </span>
-            </a>
+            </Link>
             <nav aria-label="Primäre Navigation" style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
               {[
                 { label: 'Kategorien', href: '#kategorien' },

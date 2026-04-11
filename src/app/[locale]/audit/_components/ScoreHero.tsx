@@ -117,7 +117,7 @@ export default function ScoreHero({
             Dein erster Audit ist fertig!
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Der Score basiert auf automatischen Checks. Für eine tiefere Analyse klicke auf „Deep Review" —
+            Der Score basiert auf automatischen Checks. Für eine tiefere Analyse klicke auf &bdquo;Deep Review&ldquo; —
             4 KI-Modelle prüfen deinen Code unabhängig.
           </p>
         </div>

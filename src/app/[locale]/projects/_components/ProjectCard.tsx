@@ -1,5 +1,6 @@
 'use client'
 
+import { createElement } from 'react'
 import { Brain, ChatCircle, DotsThree, ShareNetwork } from '@phosphor-icons/react'
 import { type Project, formatRelDate, getProjectIcon } from './types'
 
@@ -24,7 +25,7 @@ export function ProjectCard({
       aria-label={`Projekt ${project.title} öffnen`}
     >
       <div className="project-card-header">
-        {(() => { const PIcon = getProjectIcon(project.emoji); return <PIcon size={18} weight="fill" className="project-card-emoji" aria-hidden="true" /> })()}
+        {createElement(getProjectIcon(project.emoji), { size: 18, weight: 'fill', className: 'project-card-emoji', 'aria-hidden': 'true' })}
         <span className="project-card-title">{project.title}</span>
         <button
           className="btn-icon project-card-menu"

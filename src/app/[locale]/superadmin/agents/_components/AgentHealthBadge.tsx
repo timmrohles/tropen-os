@@ -25,6 +25,7 @@ export function AgentHealthBadge({ status, lastCheckAt }: Props) {
   // auto-downgrade to outdated if lastCheckAt is > 90 days ago
   let resolvedStatus = status
   if (status === 'active' && lastCheckAt) {
+    // eslint-disable-next-line react-hooks/purity
     const days = (Date.now() - new Date(lastCheckAt).getTime()) / (1000 * 60 * 60 * 24)
     if (days > 90) resolvedStatus = 'outdated'
   }

@@ -71,7 +71,7 @@ export function DataSourceForm({ open, editingId, form, saving, error, onChange,
               hint={
                 <>
                   Die vollständige Web-Adresse des Datenzugangs. Diese steht in der Dokumentation des Dienstes.
-                  {' '}<strong>Tipp:</strong> Suche nach „API Endpoint", „Data Export URL" oder „Integration URL"
+                  {' '}<strong>Tipp:</strong> Suche nach &bdquo;API Endpoint&ldquo;, &bdquo;Data Export URL&ldquo; oder &bdquo;Integration URL&ldquo;
                   in den Einstellungen deines Tools.
                 </>
               }

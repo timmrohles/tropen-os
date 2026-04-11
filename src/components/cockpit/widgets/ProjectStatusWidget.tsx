@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { FolderSimple } from '@phosphor-icons/react'
 import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
 
@@ -38,7 +39,7 @@ export function ProjectStatusWidget() {
   return (
     <div className="widget-content widget-content--list">
       {projects.map(project => (
-        <a key={project.id} href="/projekte" className="widget-list-item">
+        <Link key={project.id} href="/projekte" className="widget-list-item">
           {project.emoji ? (
             <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>{project.emoji}</span>
           ) : (
@@ -50,9 +51,9 @@ export function ProjectStatusWidget() {
               {project.chat_count} Chats · {formatRelativeDate(project.updated_at)}
             </span>
           </div>
-        </a>
+        </Link>
       ))}
-      <a href="/projekte" className="widget-more-link">Alle Projekte →</a>
+      <Link href="/projekte" className="widget-more-link">Alle Projekte →</Link>
     </div>
   )
 }

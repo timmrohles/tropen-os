@@ -78,7 +78,7 @@ export default function WorkspacePicker({
             </button>
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.4 }}>
-            „{itemTitle.length > 50 ? itemTitle.slice(0, 50) + '…' : itemTitle}"
+            „{itemTitle.length > 50 ? itemTitle.slice(0, 50) + '…' : itemTitle}&ldquo;
           </p>
 
           {/* Search */}

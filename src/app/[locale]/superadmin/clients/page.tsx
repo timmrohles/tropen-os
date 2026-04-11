@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Buildings } from '@phosphor-icons/react'
 import type { ImpModal, ImpForm, OrgRow, EditState } from './clients.types'
 import { owner, onboardingDone, planStyle, s } from './clients.types'
@@ -177,7 +178,7 @@ export default function ClientsPage() {
           <p className="page-header-sub">Organisationen, Workspaces und Pakete verwalten</p>
         </div>
         <div className="page-header-actions">
-          <a href="/superadmin/clients/new" className="btn btn-primary">+ Neuer Client</a>
+          <Link href="/superadmin/clients/new" className="btn btn-primary">+ Neuer Client</Link>
         </div>
       </div>
 

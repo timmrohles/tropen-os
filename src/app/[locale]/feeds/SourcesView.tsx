@@ -1,6 +1,7 @@
 'use client'
 // src/app/feeds/SourcesView.tsx — Quellen-Verwaltung Tab
 import { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import {
   listFeedSources, updateFeedSource, deleteFeedSource, copyFeedSource,
 } from '@/actions/feeds'
@@ -164,7 +165,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
   if (sources.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>
-        Noch keine Quellen. <a href="/feeds/new" style={{ color: 'var(--accent)' }}>Erste Quelle anlegen →</a>
+        Noch keine Quellen. <Link href="/feeds/new" style={{ color: 'var(--accent)' }}>Erste Quelle anlegen →</Link>
       </div>
     )
   }

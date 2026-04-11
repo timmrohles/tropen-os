@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { MagnifyingGlass, Plus, FolderSimple, Trash, X, ChatCircle, ShareNetwork } from '@phosphor-icons/react'
@@ -35,7 +35,7 @@ function formatRelative(dateStr: string): string {
 
 export default function ChatListClient({ workspaceId }: { workspaceId: string }) {
   const router = useRouter()
-  const supabase = useRef(createClient()).current
+  const [supabase] = useState(() => createClient())
   const [conversations, setConversations] = useState<ConvItem[]>([])
   const [projects, setProjects] = useState<ProjectItem[]>([])
   const [workspaceName, setWorkspaceName] = useState('')

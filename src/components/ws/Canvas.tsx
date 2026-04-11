@@ -241,7 +241,7 @@ export default function Canvas({ initialCards, initialConnections, workspaceId, 
                   Noch keine Karten
                 </p>
                 <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-                  Klicke oben auf „+ Karte hinzufügen" um zu starten.
+                  Klicke oben auf „+ Karte hinzufügen&ldquo; um zu starten.
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6 }}>
                   Beispiele: Zielgruppenanalyse · Kampagnenbrief · Social-Media-Post

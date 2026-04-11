@@ -1,6 +1,7 @@
 'use client'
 // src/app/feeds/page.tsx — Newscenter
 import { useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import {
   listFeedItems, listFeedSources,
   markItemRead, toggleItemSaved, markItemNotRelevant, archiveItem, deleteItem,
@@ -54,9 +55,11 @@ export default function FeedsPage() {
   const viewRef         = useRef<View>('articles')
   const activeTopicRef  = useRef<string | null>(null)
   const searchRef       = useRef('')
-  viewRef.current        = view
-  activeTopicRef.current = activeTopic
-  searchRef.current      = search
+  useEffect(() => {
+    viewRef.current        = view
+    activeTopicRef.current = activeTopic
+    searchRef.current      = search
+  })
 
   useEffect(() => {
     listFeedSources().then((data) => setSources(data))
@@ -312,7 +315,7 @@ export default function FeedsPage() {
         </div>
         <div className="page-header-actions">
           <NotificationBadge />
-          <a href="/feeds/new" className="btn btn-primary">+ Quelle</a>
+          <Link href="/feeds/new" className="btn btn-primary">+ Quelle</Link>
         </div>
       </div>
 

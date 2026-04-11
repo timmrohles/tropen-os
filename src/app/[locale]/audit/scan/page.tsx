@@ -1,5 +1,6 @@
 // src/app/audit/scan/page.tsx
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { FolderOpen } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/utils/supabase/server'
 import { fetchUserOrgId, fetchScanProjects } from '@/lib/audit/page-data'
@@ -31,7 +32,7 @@ export default async function AuditScanPage() {
           </p>
         </div>
         <div className="page-header-actions">
-          <a href="/audit" className="btn btn-ghost">← Zum Audit</a>
+          <Link href="/audit" className="btn btn-ghost">← Zum Audit</Link>
         </div>
       </div>
 

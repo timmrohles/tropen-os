@@ -49,6 +49,23 @@ const s: Record<string, React.CSSProperties> = {
   },
 }
 
+function SortIcon({ col, sortKey, sortAsc }: { col: SortKey; sortKey: SortKey; sortAsc: boolean }) {
+  if (sortKey !== col) return null
+  return sortAsc
+    ? <CaretUp size={10} weight="bold" />
+    : <CaretDown size={10} weight="bold" />
+}
+
+function ColHead({ col, label, sortKey, sortAsc, onSort }: {
+  col: SortKey; label: string; sortKey: SortKey; sortAsc: boolean; onSort: (key: SortKey) => void
+}) {
+  return (
+    <th style={s.th} onClick={() => onSort(col)}>
+      <div style={s.thInner}>{label}<SortIcon col={col} sortKey={sortKey} sortAsc={sortAsc} /></div>
+    </th>
+  )
+}
+
 export function AgentTable({ agents, onSelect, selectedId }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortAsc, setSortAsc] = useState(true)
@@ -60,33 +77,18 @@ export function AgentTable({ agents, onSelect, selectedId }: Props) {
 
   const sorted = sortAgents(agents, sortKey, sortAsc)
 
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return null
-    return sortAsc
-      ? <CaretUp size={10} weight="bold" />
-      : <CaretDown size={10} weight="bold" />
-  }
-
-  function ColHead({ col, label }: { col: SortKey; label: string }) {
-    return (
-      <th style={s.th} onClick={() => handleSort(col)}>
-        <div style={s.thInner}>{label}<SortIcon col={col} /></div>
-      </th>
-    )
-  }
-
   return (
     <div style={s.tableWrapper}>
       <table style={s.table}>
         <thead style={s.thead}>
           <tr>
-            <ColHead col="status" label="Status" />
-            <ColHead col="name" label="Agent" />
-            <ColHead col="version" label="Version" />
-            <ColHead col="ruleCount" label="Regeln" />
+            <ColHead col="status" label="Status" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
+            <ColHead col="name" label="Agent" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
+            <ColHead col="version" label="Version" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
+            <ColHead col="ruleCount" label="Regeln" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
             <th style={s.th}>Kategorien</th>
-            <ColHead col="createdBy" label="Erstellt durch" />
-            <ColHead col="lastUpdated" label="Letztes Update" />
+            <ColHead col="createdBy" label="Erstellt durch" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
+            <ColHead col="lastUpdated" label="Letztes Update" sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
             <th style={s.th}>Letzter Check</th>
           </tr>
         </thead>

@@ -1251,7 +1251,7 @@ export default function FindingsTable({
                               </p>
                               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
                                 Großer Batch — jeder Fix wird zur Review vorgelegt, nichts wird automatisch angewendet.
-                                Du kannst den Batch jederzeit über „Abbrechen" stoppen.
+                                Du kannst den Batch jederzeit über &bdquo;Abbrechen&ldquo; stoppen.
                               </p>
                             </div>
                           </div>
