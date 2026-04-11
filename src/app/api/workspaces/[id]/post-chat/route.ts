@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { MODEL_HAIKU } from '@/lib/llm/models'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:post-chat')
 type Params = { params: Promise<{ id: string }> }
@@ -94,7 +95,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (error) {
     log.error('[post-chat] Insert failed', { error: error.message, workspaceId })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(item, { status: 201 })

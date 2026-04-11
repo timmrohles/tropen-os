@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
 
 interface CodeHealthData {
@@ -119,8 +120,8 @@ export function CodeHealthWidget() {
         </div>
       )}
 
-      <a href="/audit" className="widget-more-link">Zum Audit →</a>
-      <a href="/audit/scan" className="widget-more-link">Neues Projekt scannen →</a>
+      <Link href="/audit" className="widget-more-link">Zum Audit →</Link>
+      <Link href="/audit/scan" className="widget-more-link">Neues Projekt scannen →</Link>
     </div>
   )
 }

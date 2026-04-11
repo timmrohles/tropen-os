@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import type { FeedDataRecord } from '@/types/feeds'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:feeds:data-sources:records')
 
@@ -64,7 +65,7 @@ export async function GET(
 
   if (error) {
     log.error('list records failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json((data ?? []).map((r) => mapRecord(r as Record<string, unknown>)))

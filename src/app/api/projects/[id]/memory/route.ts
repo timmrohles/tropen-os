@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // DELETE /api/projects/[id]/memory — soft-delete ALL entries
 export async function DELETE(
@@ -20,7 +21,7 @@ export async function DELETE(
     .eq('project_id', id)
     .is('deleted_at', null)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ success: true })
 }
 
@@ -43,7 +44,7 @@ export async function GET(
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data ?? [])
 }
 
@@ -95,6 +96,6 @@ export async function POST(
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data)
 }

@@ -3,8 +3,8 @@
 ## Meta
 
 ```yaml
-version: 1.0
-last_updated: 2026-04-09
+version: 1.1
+last_updated: 2024-01-10
 created_by: committee
 triggers:
   files:
@@ -26,6 +26,9 @@ triggers:
     - dead code
     - commented code
     - any type
+    - immutability
+    - side-effects
+    - comments
   exclusions:
     - "**/*.test.ts"
     - "**/*.spec.ts"
@@ -48,10 +51,11 @@ related:
 
 Enforces code style, readability, and maintainability standards across the codebase. Prevents cognitive overload, naming confusion, and the accumulation of technical debt that makes code harder to understand and modify. Without consistent style enforcement, codebases become inconsistent, harder to onboard new developers, and prone to subtle bugs from unclear intent.
 
-This agent contains 3 types of rules:
-- **Hard boundaries** (R1, R2, R3) — mechanically enforceable
-- **Structural heuristics** (R4, R5, R6, R7) — judgment-based
-- **Governance** (R8, R9) — process discipline
+This agent contains 4 types of rules:
+- **Hard boundaries** (R1, R2, R3, R10) — mechanically enforceable
+- **Structural heuristics** (R4, R5, R6, R7, R11, R12, R13, R14, R15) — judgment-based
+- **Code organization** (R16, R17, R18, R19, R20) — architectural clarity
+- **Governance** (R8, R9, R21, R22, R23) — process discipline
 
 ## Applicability
 
@@ -71,7 +75,7 @@ This agent contains 3 types of rules:
 **Why:** Using 'any' disables TypeScript's type-checking, defeating its purpose and hiding potential runtime errors that could crash production.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ function processUser(data: any) {
 // ❌   return data.name.toLowerCase();
 // ❌ }
@@ -95,7 +99,7 @@ This agent contains 3 types of rules:
 **Why:** Empty catch blocks swallow errors silently, making debugging nearly impossible as the application fails in unexpected ways without any record of the root cause.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ try {
 // ❌   dangerousOperation();
 // ❌ } catch (error) {
@@ -121,7 +125,7 @@ This agent contains 3 types of rules:
 **Why:** Magic values make code unclear and create maintenance nightmares when the same value appears in multiple places with different meanings.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ if (user.loginAttempts >= 3) {
 // ❌   lockAccount(user);
 // ❌ }
@@ -140,6 +144,27 @@ This agent contains 3 types of rules:
 
 ---
 
+### R10 — Use Strict Equality Operators [BLOCKER] [BLOCKED]
+
+<!-- GUIDE: Configure ESLint with "eqeqeq" rule set to "always" to enforce === and !== over == and !=. Derived from OWASP Secure Coding Practices checklist, which emphasizes avoiding implicit type coercion to prevent subtle bugs. -->
+
+**Why:** Non-strict equality (==) performs type coercion, leading to unexpected behavior and hard-to-debug issues, such as "0" == 0 evaluating to true.
+
+**Bad → Good:**
+```typescript
+// ❌ if (userInput == 0) {
+// ❌   return "zero";
+// ❌ }
+
+// ✅ if (userInput === 0) {
+//      return "zero";
+//    }
+```
+
+**Enforced by:** ESLint (BLOCKED, coverage: strong)
+
+---
+
 ### STRUCTURAL HEURISTICS
 
 ### R4 — Consistent Naming Conventions [CRITICAL] [PREVENTED]
@@ -149,7 +174,7 @@ This agent contains 3 types of rules:
 **Why:** Inconsistent naming creates cognitive load and makes code harder to search, understand, and maintain across team members.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ const user_name = "john";
 // ❌ const UserAge = 25;
 // ❌ function Get_User() {}
@@ -171,7 +196,7 @@ This agent contains 3 types of rules:
 **Why:** Large functions violate single responsibility principle and become difficult to test, debug, and understand.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ function processOrder(order) {
 // ❌   // 50+ lines of mixed validation, calculation, database calls, and formatting
 // ❌ }
@@ -195,7 +220,7 @@ This agent contains 3 types of rules:
 **Why:** High cognitive complexity makes code difficult to reason about and increases bug likelihood. AI-generated code should be held to stricter standards as it lacks human context.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ // nested ifs, multiple conditions
 // ❌ function determineUserAccess(user, resource, context) {
 // ❌   if (user.role === 'admin') {
@@ -228,7 +253,7 @@ This agent contains 3 types of rules:
 **Why:** Dead code increases bundle size, creates confusion about what's actually used, and can hide security vulnerabilities in unused dependencies.
 
 **Bad → Good:**
-```
+```typescript
 // ❌ import { useState, useEffect, useMemo } from 'react';
 // ❌ import { helperFunction } from './utils';
 // ❌
@@ -249,97 +274,318 @@ This agent contains 3 types of rules:
 
 ---
 
-### GOVERNANCE
+### R11 — Prefer Const for Immutability [CRITICAL] [PREVENTED]
 
-### R8 — File Size Limits [WARNING] [REVIEWED]
+<!-- GUIDE: Use ESLint rule "prefer-const". This is a core tenant of functional and predictable programming. -->
 
-<!-- GUIDE: Use ESLint rule "max-lines" with max: 300 (warning at 300, error at 500). In TropenOS: CI blocks at 500 lines — split into focused modules (component, types, hooks, utils) as done with ChatArea.tsx and workspace-chat.ts. -->
-
-**Why:** Large files become difficult to navigate, understand, and maintain. They often indicate violation of single responsibility principle.
+**Why:** Using `const` by default prevents accidental variable reassignment, which is a common source of bugs. It signals that a variable's reference will not change, making the code easier to reason about and follow. `let` should only be used when reassignment is explicitly intended.
 
 **Bad → Good:**
-```
-// ❌ // 500+ line component file with mixed concerns
+```typescript
+// ❌ let user = fetchUser(id);
+// ❌ if (!user) {
+// ❌   user = createDefaultUser();
+// ❌ }
+// ❌ let items = [1, 2, 3];
+// ❌ items = items.map(i => i * 2);
 
-// ✅ // Split into focused modules:
-// ✅ // UserProfile.tsx        (main component)
-// ✅ // UserProfile.types.ts   (type definitions)
-// ✅ // UserProfile.hooks.ts   (custom hooks)
-// ✅ // UserProfile.utils.ts   (helper functions)
+// ✅ const user = fetchUser(id) ?? createDefaultUser();
+// ✅ 
+// ✅ const initialItems = [1, 2, 3];
+// ✅ const doubledItems = initialItems.map(i => i * 2);
 ```
 
-**Enforced by:** ESLint (REVIEWED, coverage: strong)
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
 
 ---
 
-### R9 — No Commented-Out Code in Production [WARNING] [REVIEWED]
+### R12 — No Parameter Reassignment [CRITICAL] [PREVENTED]
 
-<!-- GUIDE: Manual review during PR process — look for blocks of commented code larger than 2 lines -->
+<!-- GUIDE: Use ESLint rule "no-param-reassign". Modifying parameters is a side effect that can lead to unexpected behavior outside the function's scope. -->
 
-**Why:** Commented-out code creates confusion about intent, adds noise, and often becomes stale. Version control serves as the proper history mechanism.
+**Why:** Reassigning function parameters obscures the original value and makes debugging difficult. It creates impure functions with side effects that are hard to trace. Instead, treat parameters as immutable and assign their modified values to new local variables.
 
 **Bad → Good:**
-```
-// ❌ function calculateTotal(items) {
-// ❌   // const tax = 0.08; // old tax rate
-// ❌   const tax = 0.0825; // new tax rate
-// ❌   // return items.reduce((sum, item) => sum + item.price, 0) * (1 + tax);
-// ❌   return items.reduce((sum, item) => sum + item.price * (1 + tax), 0);
+```typescript
+// ❌ function applyDiscount(price: number, discount: number): number {
+// ❌   if (price < 0) {
+// ❌     price = 0; // Mutation of the parameter
+// ❌   }
+// ❌   return price * (1 - discount);
 // ❌ }
 
-// ✅ function calculateTotal(items: Item[]): number {
-//      const TAX_RATE = 0.0825;
-//      return items.reduce((sum, item) => sum + item.price * (1 + TAX_RATE), 0);
+// ✅ function applyDiscount(price: number, discount: number): number {
+//      const adjustedPrice = Math.max(0, price); // Assign to a new variable
+//      return adjustedPrice * (1 - discount);
 //    }
 ```
 
-**Enforced by:** Human Review (REVIEWED, coverage: advisory)
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
 
 ---
 
-## Exceptions
+### R13 — Simplify Boolean Expressions [WARNING] [PREVENTED]
 
-**BLOCKER/CRITICAL:**
-```
-Override: R[NUMBER]
-Scope:    [which files/area]
-Reason:   [why this rule doesn't apply here — e.g., "legacy integration requires any type"]
-Approved: @[who — e.g., tech-lead]
-Expires:  [date or "permanent — re-evaluate at [date]"]
-Control:  [what mitigates the maintainability risk instead]
-```
+<!-- GUIDE: Use ESLint rules "no-unneeded-ternary" for direct returns and "yoda" for condition style. -->
 
-**WARNING — solo/small team:**
-```
-Override: R[NUMBER] — [reason] — @[who] — expires [date]
-```
+**Why:** Explicitly comparing to `true` or using a ternary operator to return `true`/`false` is redundant and adds noise. "Yoda" conditions (e.g., `if ("red" === color)`) are less readable than the natural language order. Simple, direct boolean logic is easier to understand at a glance.
 
-## Checklist
+**Bad → Good:**
+```typescript
+// ❌ if (isComplete === true) {
+// ❌   // ...
+// ❌ }
+// ❌ return user.isActive ? true : false;
+// ❌ if (MAX_RETRIES < retries) { /* ... */ } // "Yoda" condition is less readable
 
-```
-□ TypeScript strict mode enabled, no unresolved 'any' without justification comment?  (R1)
-□ No empty catch blocks — all errors logged or rethrown?  (R2)
-□ No magic numbers or strings — all literals extracted to named constants?  (R3)
-□ Naming follows camelCase/PascalCase/UPPER_SNAKE_CASE conventions?  (R4)
-□ Functions under 30 lines — larger functions split into helpers?  (R5)
-□ Cyclomatic complexity under 15 (human) or 8 (AI-generated)?  (R6)
-□ No unused variables or imports?  (R7)
-□ File under 300 lines (warning) / 500 lines (CI error)?  (R8)
-□ No commented-out code blocks larger than 2 lines?  (R9)
+// ✅ if (isComplete) {
+//      // ...
+//    }
+// ✅ return user.isActive;
+// ✅ if (retries > MAX_RETRIES) { /* ... */ } // Natural order
 ```
 
-Status: ✅ yes | ❌ no | — n/a
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
 
-## Tool Integration
+---
 
-| Rule | Tool | When | Level | Coverage |
-|------|------|------|-------|----------|
-| R1 | TypeScript Compiler + ESLint | pre-commit/CI | BLOCKED | strong |
-| R2 | ESLint | pre-commit/CI | BLOCKED | strong |
-| R3 | ESLint | pre-commit/CI | BLOCKED | strong |
-| R4 | ESLint | pre-commit/CI | PREVENTED | strong |
-| R5 | ESLint | pre-commit/CI | PREVENTED | strong |
-| R6 | ESLint | pre-commit/CI | PREVENTED | partial |
-| R7 | ESLint | pre-commit/CI | PREVENTED | strong |
-| R8 | ESLint | PR | REVIEWED | strong |
-| R9 | Human Review | PR | REVIEWED | advisory |
+### R14 — Limit Line Length to 100 Characters [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Configure ESLint with "max-len" rule set to max: 100, ignoring comments and strings. Derived from OWASP guidelines on code readability to facilitate secure code reviews. -->
+
+**Why:** Excessively long lines reduce readability, especially on smaller screens or during code reviews, increasing the chance of overlooking issues.
+
+**Bad → Good:**
+```typescript
+// ❌ const veryLongVariableNameThatExceedsTheLineLimitAndMakesItHardToReadWithoutScrolling = initializeComplexObjectWithManyParameters(parameter1, parameter2, parameter3);
+
+// ✅ const veryLongVariableNameThatExceedsTheLineLimitAndMakesItHardToReadWithoutScrolling =
+// ✅   initializeComplexObjectWithManyParameters(
+// ✅     parameter1,
+// ✅     parameter2,
+// ✅     parameter3
+// ✅   );
+```
+
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
+
+---
+
+### R15 — Use JSDoc for Function Documentation [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use ESLint rule "jsdoc/require-jsdoc" for functions with cyclomatic complexity > 8, or when implementing business rules. -->
+
+**Why:** Complex logic without documentation becomes unmaintainable as team members change and business requirements evolve. Documentation serves as specification and aids debugging.
+
+**Bad → Good:**
+```typescript
+// ❌ function calculatePremium(age, coverage, history, location) {
+// ❌   const base = coverage * 0.02;
+// ❌   const ageFactor = age < 25 ? 1.5 : age > 65 ? 1.3 : 1.0;
+// ❌   const historyFactor = history.length > 0 ? 1.2 : 0.9;
+// ❌   const locationFactor = HIGH_RISK_AREAS.includes(location) ? 1.4 : 1.0;
+// ❌   return base * ageFactor * historyFactor * locationFactor;
+// ❌ }
+
+// ✅ /**
+//    * Calculates insurance premium based on risk factors
+//    * 
+//    * Business Rules:
+//    * - Base premium is 2% of coverage amount
+//    * - Age penalty: +50% for under 25, +30% for over 65
+//    * - Claims history: +20% if any claims, -10% if no claims
+//    * - Location penalty: +40% for high-risk areas
+//    * 
+//    * @param age - Driver age in years
+//    * @param coverage - Coverage amount in dollars
+//    * @param history - Array of previous claims
+//    * @param location - ZIP code or area identifier
+//    * @returns Monthly premium amount in dollars
+//    */
+// ✅ function calculateInsurancePremium(
+//      age: number, 
+//      coverage: number, 
+//      history: Claim[], 
+//      location: string
+//    ): number {
+//      const basePremium = coverage * PREMIUM_RATE;
+//      const ageFactor = getAgeFactor(age);
+//      const historyFactor = getHistoryFactor(history);
+//      const locationFactor = getLocationFactor(location);
+//      
+//      return basePremium * ageFactor * historyFactor * locationFactor;
+//    }
+```
+
+**Enforced by:** ESLint (PREVENTED, coverage: partial)
+
+---
+
+### CODE ORGANIZATION
+
+### R16 — Consistent Import Organization [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use ESLint plugin "simple-import-sort" or "@typescript-eslint/consistent-type-imports" -->
+
+**Why:** Consistent import organization improves code readability, reduces merge conflicts, and makes dependencies clearer. Separating type imports from value imports helps with tree-shaking and build optimization.
+
+**Bad → Good:**
+```typescript
+// ❌ import { UserService } from './services/user';
+// ❌ import React from 'react';
+// ❌ import { User } from './types/user';
+// ❌ import { validateInput } from '../utils/validation';
+// ❌ import lodash from 'lodash';
+
+// ✅ // External libraries first
+// ✅ import React from 'react';
+// ✅ import lodash from 'lodash';
+// ✅ 
+// ✅ // Types (separated)
+// ✅ import type { User } from './types/user';
+// ✅ 
+// ✅ // Internal modules (relative imports last)
+// ✅ import { UserService } from './services/user';
+// ✅ import { validateInput } from '../utils/validation';
+```
+
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
+
+---
+
+### R17 — Interface Segregation Principle [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use TypeScript interface design patterns; split large interfaces into focused, composable interfaces -->
+
+**Why:** Large interfaces force implementers to depend on methods they don't use, violating the Interface Segregation Principle and making code harder to test and maintain.
+
+**Bad → Good:**
+```typescript
+// ❌ interface UserManager {
+// ❌   createUser(data: UserData): User;
+// ❌   updateUser(id: string, data: Partial<UserData>): User;
+// ❌   deleteUser(id: string): void;
+// ❌   sendEmail(to: string, subject: string, body: string): void;
+// ❌   generateReport(type: ReportType): Report;
+// ❌   auditUserActions(userId: string): AuditLog[];
+// ❌ }
+
+// ✅ interface UserRepository {
+//      createUser(data: UserData): User;
+//      updateUser(id: string, data: Partial<UserData>): User;
+//      deleteUser(id: string): void;
+//    }
+// ✅
+// ✅ interface EmailService {
+//      sendEmail(to: string, subject: string, body: string): void;
+//    }
+// ✅
+// ✅ interface ReportGenerator {
+//      generateReport(type: ReportType): Report;
+//    }
+// ✅
+// ✅ interface AuditService {
+//      auditUserActions(userId: string): AuditLog[];
+//    }
+```
+
+**Enforced by:** Human Review (PREVENTED, coverage: partial)
+
+---
+
+### R18 — Explicit Return Types for Public Functions [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use ESLint rule "@typescript-eslint/explicit-function-return-type" for exported functions only -->
+
+**Why:** Explicit return types serve as documentation, prevent accidental API changes, and improve TypeScript's type inference performance for consumers of the function.
+
+**Bad → Good:**
+```typescript
+// ❌ export function calculateTax(amount, rate) {
+// ❌   return amount * rate;
+// ❌ }
+
+// ✅ export function calculateTax(amount: number, rate: number): number {
+//      return amount * rate;
+//    }
+// ✅
+// ✅ // Private/internal functions can use inference
+// ✅ function helperCalculation(x: number, y: number) {
+//      return x + y; // return type inferred as number
+//    }
+```
+
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
+
+---
+
+### R19 — Avoid Deep Nesting [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use ESLint rule "max-depth" with max: 4 levels of nesting -->
+
+**Why:** Deep nesting increases cognitive load, makes code harder to follow, and often indicates missing abstractions or violation of single responsibility principle.
+
+**Bad → Good:**
+```typescript
+// ❌ function processUserData(users) {
+// ❌   for (const user of users) {
+// ❌     if (user.active) {
+// ❌       if (user.permissions) {
+// ❌         for (const permission of user.permissions) {
+// ❌           if (permission.type === 'admin') {
+// ❌             if (permission.scope === 'global') {
+// ❌               // 5 levels deep!
+// ❌               user.isGlobalAdmin = true;
+// ❌             }
+// ❌           }
+// ❌         }
+// ❌       }
+// ❌     }
+// ❌   }
+// ❌ }
+
+// ✅ function processUserData(users: User[]): void {
+//      users.forEach(user => {
+//        if (!user.active || !user.permissions) return;
+//        
+//        const hasGlobalAdminPermission = user.permissions.some(
+//          permission => permission.type === 'admin' && permission.scope === 'global'
+//        );
+//        
+//        if (hasGlobalAdminPermission) {
+//          user.isGlobalAdmin = true;
+//        }
+//      });
+//    }
+```
+
+**Enforced by:** ESLint (PREVENTED, coverage: strong)
+
+---
+
+### R20 — Consistent Error Handling Patterns [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Establish error handling patterns using custom error classes and consistent error propagation -->
+
+**Why:** Inconsistent error handling makes debugging difficult and creates unpredictable behavior for consumers. Standardized error patterns improve maintainability and user experience.
+
+**Bad → Good:**
+```typescript
+// ❌ function fetchUser(id) {
+// ❌   try {
+// ❌     const user = database.getUser(id);
+// ❌     return user;
+// ❌   } catch (e) {
+// ❌     console.log("Error:", e);
+// ❌     return null; // Inconsistent error handling
+// ❌   }
+// ❌ }
+// ❌
+// ❌ function deleteUser(id) {
+// ❌   const user = database.deleteUser(id);
+// ❌   if (!user) {
+// ❌     throw new Error("Failed"); // Generic error
+// ❌   }
+// ❌ }
+
+//

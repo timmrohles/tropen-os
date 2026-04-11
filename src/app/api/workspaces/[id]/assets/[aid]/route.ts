@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
+import { apiError } from '@/lib/api-error'
 
 type Params = { params: Promise<{ id: string; aid: string }> }
 
@@ -18,6 +19,6 @@ export async function DELETE(_req: Request, { params }: Params) {
     .eq('id', aid)
     .eq('workspace_id', id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return new NextResponse(null, { status: 204 })
 }

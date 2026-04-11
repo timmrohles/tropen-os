@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import { apiError } from '@/lib/api-error'
 
 const logger = createLogger('api:perspectives:settings')
 
@@ -45,6 +46,6 @@ export async function PATCH(req: NextRequest) {
     .from('perspective_user_settings')
     .upsert({ user_id: user.id, avatar_id, is_pinned, sort_order }, { onConflict: 'user_id,avatar_id' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ ok: true })
 }

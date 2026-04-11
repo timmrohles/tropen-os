@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/logger'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { createCardSchema } from '@/lib/validators/workspace-plan-c'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:cards')
 type Params = { params: Promise<{ id: string }> }
@@ -23,7 +24,7 @@ export async function GET(_req: Request, { params }: Params) {
     .is('deleted_at', null)
     .order('sort_order', { ascending: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
 }
 
@@ -57,7 +58,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (error) {
     log.error('[cards] POST failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(card, { status: 201 })

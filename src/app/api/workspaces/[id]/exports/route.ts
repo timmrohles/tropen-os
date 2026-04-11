@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { apiError } from '@/lib/api-error'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -19,6 +20,6 @@ export async function GET(_req: Request, { params }: Params) {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
 }

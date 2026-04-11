@@ -4,6 +4,7 @@ import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { exportWorkspaceSchema } from '@/lib/validators/workspace-plan-c'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:export')
 type Params = { params: Promise<{ id: string }> }
@@ -37,7 +38,7 @@ export async function POST(request: Request, { params }: Params) {
     .is('deleted_at', null)
     .order('sort_order', { ascending: true })
 
-  if (cardsErr) return NextResponse.json({ error: cardsErr.message }, { status: 500 })
+  if (cardsErr) return apiError(cardsErr)
 
   const cards = (cardRows ?? []) as Record<string, unknown>[]
   const staleCards = cards.filter((c) => c.status === 'stale')
@@ -52,7 +53,7 @@ export async function POST(request: Request, { params }: Params) {
     .select()
     .single()
 
-  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
+  if (insertErr) return apiError(insertErr)
 
   const content = body.format === 'markdown'
     ? generateMarkdownExport(workspace as unknown as Record<string, unknown>, cards)

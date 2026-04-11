@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
   if (unreadOnly) query = query.eq('is_read', false)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ notifications: data ?? [] })
 }
@@ -42,7 +43,7 @@ export async function PATCH(request: Request) {
     .eq('user_id', user.id)
     .eq('is_read', false)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
 }

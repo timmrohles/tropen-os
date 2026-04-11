@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 // GET — load active announcements for current user (max 5)
 // Returns: tropen-wide (source='tropen', org IS NULL) + org-specific
@@ -102,6 +103,6 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+  if (insertError) return apiError(insertError)
   return NextResponse.json(ann, { status: 201 })
 }

@@ -1,0 +1,73 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "close": "Schließen",
+    "loading": "Laden…",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "tryAgain": "Erneut versuchen",
+    "comingSoon": "bald"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "audit": "Audit",
+    "settings": "Einstellungen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle_projects": "{count, plural, one {# Projekt im Überblick} other {# Projekte im Überblick}}",
+    "subtitle_empty": "Von der Idee zum production-reifen Produkt",
+    "scanProject": "Projekt scannen",
+    "newScanProject": "Neues Projekt scannen",
+    "yourProjects": "Deine Projekte",
+    "goalReached": "Ziel erreicht",
+    "nextStatus": "Noch {count}% bis {label}",
+    "hero_headline": "Was hast du gebaut?",
+    "hero_subline": "Lass es uns prüfen.",
+    "hero_description": "60 Sekunden. Score + Top-Probleme. Kein Setup, kein Konto nötig für den ersten Scan.",
+    "scanFolder": "Ordner scannen",
+    "connectGitHub": "GitHub verbinden",
+    "track_speedrun_title": "Speedrun",
+    "track_speedrun_desc": "Sofort scannen, Score in 60 Sekunden. Sieh auf einen Blick was deine App production-ready macht.",
+    "track_guided_title": "Guided",
+    "track_guided_desc": "Schritt für Schritt zum Launch. Für jedes Finding gibt es einen Prompt den du direkt in Cursor oder Claude kopieren kannst.",
+    "track_rescue_title": "Rescue",
+    "track_rescue_desc": "Bestehendes Projekt verbessern. Score-Verlauf zeigt dir ob du in die richtige Richtung gehst."
+  },
+  "status": {
+    "production_grade": "Production Grade",
+    "stable": "Stable",
+    "risky": "Risky",
+    "prototype": "Prototype"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPassword": "Passwort zurücksetzen",
+    "loginError": "Anmeldung fehlgeschlagen. Bitte prüfe deine Zugangsdaten.",
+    "sendResetLink": "Zurücksetzen-Link senden"
+  },
+  "audit": {
+    "title": "Audit",
+    "subtitle": "Production Readiness Score",
+    "runAudit": "Audit starten",
+    "lastAudit": "Letzter Audit",
+    "score": "Score",
+    "findings": "Findings",
+    "categories": "Kategorien",
+    "trend": "Trend",
+    "noRunsYet": "Noch kein Audit durchgeführt.",
+    "startFirstAudit": "Ersten Audit starten"
+  },
+  "error": {
+    "somethingWentWrong": "Etwas ist schiefgelaufen",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten."
+  }
+}

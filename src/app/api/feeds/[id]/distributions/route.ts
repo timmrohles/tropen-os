@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 import { createDistributionSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -37,7 +38,7 @@ export async function GET(
 
   if (error) {
     log.error('list distributions failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side
@@ -108,7 +109,7 @@ export async function POST(
 
   if (error) {
     log.error('create distribution failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side

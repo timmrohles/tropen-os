@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 async function guardSuperadmin() {
   const supabase = await createClient()
@@ -22,7 +23,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orgId: 
     .select('id, package_id, is_active, activated_at')
     .eq('organization_id', orgId)
 
-  if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
+  if (dbErr) return apiError(dbErr)
   return NextResponse.json(data ?? [])
 }
 
@@ -45,6 +46,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ orgId: 
     .select()
     .single()
 
-  if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
+  if (dbErr) return apiError(dbErr)
   return NextResponse.json(data)
 }

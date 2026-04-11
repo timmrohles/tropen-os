@@ -42,7 +42,7 @@ export default function ShareModal({ convId, convTitle, onClose }: ShareModalPro
   }
 
   const s: Record<string, React.CSSProperties> = {
-    modal: { background: 'var(--bg-surface)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' },
+    modal: { background: 'var(--bg-surface-solid)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' },
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     title: { fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
     sub: { fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16 },

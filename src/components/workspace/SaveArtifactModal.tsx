@@ -39,7 +39,7 @@ export function SaveArtifactModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, width: 340, display: 'flex', flexDirection: 'column', gap: 16 }}
+        style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, width: 340, display: 'flex', flexDirection: 'column', gap: 16 }}
       >
         <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 15 }}>Artefakt speichern</div>
         <div>

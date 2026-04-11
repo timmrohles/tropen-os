@@ -2,6 +2,7 @@ import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('superadmin/perspectives/[id]')
 
@@ -45,7 +46,7 @@ export async function PATCH(
 
   if (error) {
     log.error('PATCH perspective failed', { id, error })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   return NextResponse.json({ avatar: data })
 }
@@ -67,7 +68,7 @@ export async function DELETE(
 
   if (error) {
     log.error('DELETE perspective failed', { id, error })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   return NextResponse.json({ ok: true })
 }

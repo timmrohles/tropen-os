@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import { apiError } from '@/lib/api-error'
 
 const logger = createLogger('api:perspectives:avatars')
 
@@ -46,7 +47,7 @@ export async function GET() {
 
   if (error) {
     logger.error('avatars fetch failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   // Fetch user's pin settings
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     logger.error('avatar create failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   logger.info('avatar created', { avatarId: avatar.id, scope })

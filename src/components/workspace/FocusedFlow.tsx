@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import type { Project } from '@/lib/workspace-types'
 import ChatInput from './ChatInput'
 
@@ -154,16 +155,16 @@ export default function FocusedFlow({
           </button>
         ))}
         {projects.length > MAX_PROJECTS && (
-          <a
+          <Link
             href={`/workspaces/${workspaceId}/projects`}
             className="suggestion-pill"
           >
             Alle Projekte →
-          </a>
+          </Link>
         )}
-        <a href="/projects" className="suggestion-pill">
+        <Link href="/projects" className="suggestion-pill">
           Neues Projekt →
-        </a>
+        </Link>
       </div>
     </div>
   )

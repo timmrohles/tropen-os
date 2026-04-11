@@ -98,6 +98,28 @@ export default function ChatMessage({
     setActionLayerOpen(false)
   }
 
+  // Hooks must be declared before any early returns (Rules of Hooks)
+  const isUser = msg.role === 'user'
+  const suggestionsMatch = !isUser ? msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/) : null
+  const suggestions: string[] = React.useMemo(() => {
+    if (!suggestionsMatch) return []
+    try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }
+  }, [suggestionsMatch])
+  const handleShareToChat = useCallback(async () => {
+    try {
+      const res = await fetch('/api/conversations/new-from-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: msg.content, source_message_id: msg.id }),
+      })
+      if (!res.ok) return
+      const { conversation_id } = await res.json() as { conversation_id: string }
+      router.push(`?conv=${conversation_id}`)
+    } catch {
+      // silently ignore
+    }
+  }, [msg.content, msg.id, router])
+
   // ── Guided Chat Mode rendering ───────────────────────────
   if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
     const gd = msg.guidedData
@@ -133,16 +155,9 @@ export default function ChatMessage({
     )
   }
 
-  const isUser = msg.role === 'user'
   const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
   const showActions = !isUser && !msg.pending && !!conversationId && !!msg.id
 
-  // Extract <suggestions> block from assistant content
-  const suggestionsMatch = !isUser ? msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/) : null
-  const suggestions: string[] = React.useMemo(() => {
-    if (!suggestionsMatch) return []
-    try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }
-  }, [suggestionsMatch])
   const displayContent = suggestionsMatch
     ? msg.content.replace(/<suggestions>[\s\S]*?<\/suggestions>/, '').trimEnd()
     : msg.content
@@ -192,21 +207,6 @@ export default function ChatMessage({
     if (!conversationId || !organizationId) return
     setSaveModal({ content, language })
   }
-
-  const handleShareToChat = useCallback(async () => {
-    try {
-      const res = await fetch('/api/conversations/new-from-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: msg.content, source_message_id: msg.id }),
-      })
-      if (!res.ok) return
-      const { conversation_id } = await res.json() as { conversation_id: string }
-      router.push(`?conv=${conversation_id}`)
-    } catch {
-      // silently ignore
-    }
-  }, [msg.content, msg.id, router])
 
   const mdComponents = makeMdComponents(
     showActions && organizationId ? handleSaveArtifact : undefined

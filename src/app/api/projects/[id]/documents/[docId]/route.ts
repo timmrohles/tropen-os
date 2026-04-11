@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // DELETE /api/projects/[id]/documents/[docId] — soft-delete + remove from storage
 export async function DELETE(
@@ -32,6 +33,6 @@ export async function DELETE(
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', docId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ success: true })
 }

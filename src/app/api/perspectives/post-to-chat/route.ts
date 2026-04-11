@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import { apiError } from '@/lib/api-error'
 
 const logger = createLogger('api:perspectives:post-to-chat')
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     logger.error('post-to-chat insert failed', { conversationId, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   logger.info('perspectives message posted', { conversationId, userId: user.id, contentLength: content.length })

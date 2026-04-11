@@ -66,10 +66,10 @@ describe('calculateOverallScore', () => {
 })
 
 describe('getStatus', () => {
-  it('returns production-grade for >= 85', () => expect(getStatus(85)).toBe('production-grade'))
+  it('returns production-grade for >= 90', () => expect(getStatus(90)).toBe('production-grade'))
   it('returns production-grade for 100', () => expect(getStatus(100)).toBe('production-grade'))
-  it('returns stable for 70-84', () => expect(getStatus(75)).toBe('stable'))
-  it('returns risky for 50-69', () => expect(getStatus(60)).toBe('risky'))
-  it('returns prototype for < 50', () => expect(getStatus(49)).toBe('prototype'))
+  it('returns stable for 80-89', () => expect(getStatus(85)).toBe('stable'))
+  it('returns risky for 60-79', () => expect(getStatus(70)).toBe('risky'))
+  it('returns prototype for < 60', () => expect(getStatus(59)).toBe('prototype'))
   it('returns prototype for 0', () => expect(getStatus(0)).toBe('prototype'))
 })

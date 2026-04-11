@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { createProjectSchema } from '@/lib/validators/projects'
+import { apiError } from '@/lib/api-error'
 const log = createLogger('projects')
 
 async function verifyDeptOrg(departmentId: string, organizationId: string): Promise<boolean> {
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
 }
 
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
 
   // Auto-add creator as admin participant
   const { error: participantErr } = await supabaseAdmin.from('project_participants').insert({

@@ -6,6 +6,7 @@ import { validateBody } from '@/lib/validators'
 import { updateDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
 import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:feeds:data-sources:[id]')
 
@@ -62,7 +63,7 @@ export async function PATCH(
 
   if (error) {
     log.error('update data source failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -86,7 +87,7 @@ export async function DELETE(
 
   if (error) {
     log.error('delete data source failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ ok: true })

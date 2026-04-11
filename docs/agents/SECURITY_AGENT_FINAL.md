@@ -3,8 +3,8 @@
 ## Meta
 
 ```yaml
-version: 2.1
-last_updated: 2026-04-09
+version: 3.0
+last_updated: 2024-12-19
 triggers:
   files:
     - "**/auth/**"
@@ -14,6 +14,9 @@ triggers:
     - "**/*session*"
     - "**/*token*"
     - "**/*cookie*"
+    - "**/*crypto*"
+    - "**/*permission*"
+    - "**/*role*"
   keywords:
     - auth
     - login
@@ -24,6 +27,12 @@ triggers:
     - cors
     - csrf
     - cookie
+    - permission
+    - role
+    - policy
+    - crypto
+    - encrypt
+    - hash
   exclusions:
     - "**/*.spec.*"
     - "**/*.test.*"
@@ -50,15 +59,16 @@ related:
 ## Purpose
 
 Defines security requirements for authentication, authorization,
-input validation, secrets management, session security, and API
-hardening.
+input validation, secrets management, session security, API
+hardening, cryptography, and security monitoring.
 
 ## Applicability
 
-- R1–R3, R5, R8: All projects
+- R1–R3, R5, R8, R10–R13, R15–R16: All projects
 - R4: Only multi-tenant projects
 - R6–R7: Only projects with public-facing endpoints
 - R9: Only projects making LLM API calls
+- R14: Only projects with forms or state-changing requests
 
 ---
 
@@ -450,3 +460,222 @@ via retrieved content, tool outputs, or multi-step attacks.
 3. **Retrieval trust** — Content from external sources (RAG,
    web search, user documents) is treated as untrusted input,
    never injected into system context. [REVIEWED]
+
+---
+
+### R10 — Secure file handling [CRITICAL] [BLOCKED + REVIEWED]
+
+All file uploads are validated for type, size, and content.
+Files are stored in non-executable locations. File paths are
+never constructed from user input without sanitization.
+
+**Why:** Unrestricted file uploads can lead to code execution,
+storage exhaustion, or path traversal attacks. File type validation
+based only on extensions is insufficient — content validation
+is required.
+
+**Required controls:**
+
+1. **File type validation** — Content-based detection, not just
+   extension checking. Use magic bytes/MIME detection libraries.
+   [BLOCKED — static analysis can detect extension-only validation]
+
+2. **Size limits** — Maximum file size per upload and total
+   storage per user/tenant. [BLOCKED — CI can check for
+   size validation in upload handlers]
+
+3. **Path sanitization** — All file paths sanitized to prevent
+   directory traversal. Never concatenate user input directly
+   into file paths. [BLOCKED — static analysis for path
+   construction patterns]
+
+4. **Non-executable storage** — Files stored in locations where
+   execution is disabled (separate domain, no-exec mount,
+   cloud storage). [REVIEWED — deployment-specific]
+
+**Bad → Good:**
+```
+// ❌ Extension-only validation
+if (filename.endsWith('.jpg')) { upload() }
+
+// ❌ Direct path concatenation
+savePath = './uploads/' + userFilename
+
+// ❌ Executable storage location
+savePath = './public/uploads/' // served by web server
+
+// ✅ Content validation + size limits
+if (detectMimeType(fileBytes) in ['image/jpeg', 'image/png'] 
+    && fileSize < MAX_SIZE) {
+  upload()
+}
+
+// ✅ Path sanitization
+cleanName = sanitizeFilename(userFilename)
+savePath = path.join(UPLOAD_DIR, generateUniqueId(), cleanName)
+
+// ✅ Non-executable storage
+savePath = 'https://storage.cloudprovider.com/bucket/' + fileId
+```
+
+**Enforced by:** CI checks for file validation patterns and
+path construction (coverage: partial). Review for storage
+configuration and deployment-level protections.
+
+---
+
+### R11 — SQL injection prevention [BLOCKER] [BLOCKED]
+
+All database queries use parameterized statements or ORM
+methods that prevent SQL injection. No dynamic query construction
+with string concatenation.
+
+**Why:** SQL injection allows attackers to read, modify, or
+delete arbitrary data, escalate privileges, or execute
+system commands. Even one vulnerable query compromises
+the entire database.
+
+**Required approach:**
+```
+✅ Parameterized queries: db.query("SELECT * FROM users WHERE id = ?", [userId])
+✅ ORM methods:          User.findById(userId)
+✅ Query builders:       knex('users').where('id', userId)
+❌ String concatenation: db.query("SELECT * FROM users WHERE id = " + userId)
+❌ Template literals:    db.query(`SELECT * FROM users WHERE id = ${userId}`)
+```
+
+**Bad → Good:**
+```
+// ❌ Vulnerable to SQL injection
+query = "SELECT * FROM products WHERE category = '" + userCategory + "'"
+db.execute(query)
+
+// ❌ Template literal still vulnerable
+query = `DELETE FROM posts WHERE author = '${userInput}'`
+
+// ✅ Parameterized query
+db.execute("SELECT * FROM products WHERE category = ?", [userCategory])
+
+// ✅ ORM with safe methods
+Product.where(category: userCategory)
+
+// ❌ Even ORMs can be vulnerable with raw queries
+User.raw("SELECT * FROM users WHERE name = '" + userName + "'")
+
+// ✅ ORM with parameterized raw query
+User.raw("SELECT * FROM users WHERE name = ?", [userName])
+```
+
+**Enforced by:** Static analysis for string concatenation and
+template literals in query contexts (coverage: strong for
+obvious patterns, may miss complex dynamic queries). 
+SAST tools like Semgrep, CodeQL, or SonarQube.
+
+---
+
+### R12 — Cryptographic security [CRITICAL] [BLOCKED + REVIEWED]
+
+All cryptographic operations use secure algorithms and implementations.
+No custom crypto. Passwords are hashed with salt using approved
+algorithms. Random values use cryptographically secure generators.
+
+**Why:** Weak cryptography provides false security while being
+complex to implement correctly. Cryptographic failures expose
+sensitive data, authentication bypasses, and integrity violations.
+
+**Required standards:**
+
+1. **Password hashing** — bcrypt (cost ≥12), Argon2, or PBKDF2.
+   Never SHA-1, MD5, or plain hashing. [BLOCKED — static analysis
+   for weak hash functions]
+
+2. **Symmetric encryption** — AES-256-GCM or ChaCha20-Poly1305.
+   Never DES, 3DES, RC4. [BLOCKED — static analysis for
+   deprecated algorithms]
+
+3. **Random generation** — Crypto-secure PRNG for tokens,
+   salts, and keys. Never Math.random() or predictable
+   sequences. [BLOCKED — static analysis for weak RNG usage]
+
+4. **Key management** — Keys rotated regularly, never hardcoded,
+   stored securely. Different keys for different purposes.
+   [REVIEWED — key lifecycle is deployment-specific]
+
+**Bad → Good:**
+```
+// ❌ Weak password hashing
+passwordHash = sha1(password + "salt123")
+passwordHash = md5(password)
+
+// ❌ Weak encryption
+cipher = DES.encrypt(data, key)
+token = base64(data)  // encoding ≠ encryption
+
+// ❌ Weak random generation
+sessionId = Math.random().toString(36)
+resetToken = Date.now() + userId
+
+// ✅ Strong password hashing
+passwordHash = bcrypt.hash(password, 12)
+passwordHash = argon2.hash(password)
+
+// ✅ Strong encryption
+encrypted = AES256GCM.encrypt(data, key, iv)
+
+// ✅ Cryptographically secure random
+sessionId = crypto.randomBytes(32).toString('hex')
+resetToken = crypto.randomUUID()
+```
+
+**Enforced by:** Static analysis for deprecated crypto functions
+(coverage: strong for function names, weaker for configuration).
+SAST rules for weak algorithms. Review for key management practices.
+
+---
+
+### R13 — Secure logging practices [MEDIUM] [BLOCKED + REVIEWED]
+
+Log security events for monitoring while never logging sensitive
+data. Logs are protected against tampering and unauthorized access.
+Centralized logging with structured format preferred.
+
+**Why:** Logs containing PII, credentials, or business logic create
+compliance violations and attack vectors. Missing security event
+logs prevent incident detection and forensic analysis.
+
+**Required practices:**
+
+1. **Never log sensitive data** — No passwords, tokens, PII,
+   payment data, or full request/response bodies in logs.
+   [BLOCKED — static analysis for common sensitive patterns
+   in log statements]
+
+2. **Security event logging** — Authentication attempts,
+   authorization failures, data access patterns, administrative
+   actions, rate limit violations. [REVIEWED — coverage and
+   log quality assessment]
+
+3. **Log integrity** — Write-only log destinations, secure
+   transport, retention policies. [REVIEWED — infrastructure
+   and deployment specific]
+
+**Bad → Good:**
+```
+// ❌ Logging sensitive data
+log.info("User login", { email, password, ssn: user.ssn })
+log.debug("API call", { request: req, response: res })
+log.error("Payment failed", { creditCard: cardNumber })
+
+// ❌ Missing security events
+// No logging of failed login attempts or permission denials
+
+// ✅ Safe event logging
+log.info("User login success", { userId: user.id, ip: req.ip })
+log.warn("Login failed", { email, ip: req.ip, reason: "invalid_password" })
+log.error("Permission denied", { userId, resource, action, ip })
+
+// ✅ Sanitized request logging
+log.debug("API call", { 
+  method: req.method, 
+  path: req.path, 
+  status:

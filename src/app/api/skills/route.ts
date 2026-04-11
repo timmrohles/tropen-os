@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapSkill } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     log.error('POST /api/skills failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json(

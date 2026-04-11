@@ -1,0 +1,73 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "close": "Close",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success",
+    "tryAgain": "Try again",
+    "comingSoon": "soon"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "audit": "Audit",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle_projects": "{count, plural, one {# project overview} other {# projects overview}}",
+    "subtitle_empty": "From idea to production-ready product",
+    "scanProject": "Scan project",
+    "newScanProject": "Scan new project",
+    "yourProjects": "Your projects",
+    "goalReached": "Goal reached",
+    "nextStatus": "{count}% left until {label}",
+    "hero_headline": "What did you build?",
+    "hero_subline": "Let us check it.",
+    "hero_description": "60 seconds. Score + top issues. No setup, no account needed for the first scan.",
+    "scanFolder": "Scan folder",
+    "connectGitHub": "Connect GitHub",
+    "track_speedrun_title": "Speedrun",
+    "track_speedrun_desc": "Scan immediately, score in 60 seconds. See at a glance what makes your app production-ready.",
+    "track_guided_title": "Guided",
+    "track_guided_desc": "Step by step to launch. For every finding there's a prompt you can copy directly into Cursor or Claude.",
+    "track_rescue_title": "Rescue",
+    "track_rescue_desc": "Improve an existing project. Score history shows whether you're heading in the right direction."
+  },
+  "status": {
+    "production_grade": "Production Grade",
+    "stable": "Stable",
+    "risky": "Risky",
+    "prototype": "Prototype"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "loginError": "Login failed. Please check your credentials.",
+    "sendResetLink": "Send reset link"
+  },
+  "audit": {
+    "title": "Audit",
+    "subtitle": "Production Readiness Score",
+    "runAudit": "Run audit",
+    "lastAudit": "Last audit",
+    "score": "Score",
+    "findings": "Findings",
+    "categories": "Categories",
+    "trend": "Trend",
+    "noRunsYet": "No audit run yet.",
+    "startFirstAudit": "Start first audit"
+  },
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedError": "An unexpected error occurred."
+  }
+}

@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapSkill } from '@/types/agents'
 import { resolveSkill, canModifySkill } from '@/lib/skill-resolver'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -78,7 +79,7 @@ export async function PATCH(
 
   if (error) {
     log.error('PATCH /api/skills/[id] failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ skill: mapSkill(data as Record<string, unknown>) })
@@ -108,7 +109,7 @@ export async function DELETE(
 
   if (error) {
     log.error('DELETE /api/skills/[id] failed', { id, error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
 
   return NextResponse.json({ ok: true })

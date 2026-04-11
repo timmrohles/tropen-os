@@ -145,9 +145,9 @@ export default function DesignReference() {
               </thead>
               <tbody>
                 {[
-                  ['content-max',    '1200px', 'Dashboard, Settings, Knowledge, Projects, Feeds'],
+                  ['content-max',    '1400px', 'Dashboard, Audit, Settings, Knowledge, Projects'],
                   ['content-narrow', '720px',  'Login, Onboarding, Forgot-Password'],
-                  ['content-wide',   '1400px', 'Superadmin-Seiten'],
+                  ['content-wide',   '1400px', 'Alias für content-max — backwards compat, nicht neu verwenden'],
                   ['content-full',   '100%',   'Chat-Interface, Full-Bleed-Layouts'],
                 ].map(([cls, width, usage]) => (
                   <tr key={cls} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -1076,6 +1076,195 @@ style={{ transition: 'transform 200ms ease-out' }}`}
   - CTA: btn btn-primary mit Plus-Icon
   - KEIN btn-ghost als primäre Aktion im Empty State
 */}`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          20. SECTION-TAG — Eyebrow Label (Landing Page Standard)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="20. Section-Tag — Eyebrow Label">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 24 }}>
+            <p className="t-label" style={{ marginBottom: 16 }}>Vor jeder Section-Headline — helles Layout</p>
+            {/* Live-Beispiel helles Layout */}
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+              fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+              color: 'var(--accent)', marginBottom: 12, letterSpacing: '0.02em',
+            }}>
+              <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+              Was wir finden
+            </span>
+            <h2 style={{ margin: 0, fontSize: 28, fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontWeight: 700 }}>
+              Section Headline
+            </h2>
+          </div>
+        </div>
+        <Code>{`{/* ✅ Section-Tag vor Headline — helles Layout */}
+<span style={{
+  display: 'inline-flex', alignItems: 'center', gap: 12,
+  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+  color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
+}}>
+  <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+  Deine Projekte
+</span>
+
+{/* ✅ Section-Tag — dunkles Layout (auf var(--active-bg)) */}
+<span style={{
+  display: 'inline-flex', alignItems: 'center', gap: 12,
+  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+  color: 'rgba(77,184,122,0.85)', marginBottom: 20, letterSpacing: '0.02em',
+}}>
+  <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
+  EU-Compliance
+</span>
+
+{/* ❌ FALSCH — Section ohne Tag */}
+<h2>Was wir finden</h2>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          21. DUNKLE SECTIONS (Hero / CTA-Bereiche)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="21. Dunkle Sections — Hero & CTA">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              Dunkle Sections verwenden <code className="t-mono">var(--active-bg)</code> (#1A2E23).
+              Volle Viewport-Breite mit negativem Margin-Trick. Maximal 3 dunkle Sections pro Seite.
+              Nie zwei dunkle Sections direkt hintereinander.
+            </p>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <tbody>
+                {[
+                  ['Hintergrund',  'var(--active-bg)   → #1A2E23'],
+                  ['Text',         '#ffffff'],
+                  ['Subtext',      'rgba(255,255,255,0.7)'],
+                  ['Tag-Farbe',    'rgba(77,184,122,0.85)'],
+                  ['Section-Pad',  '80px vertikal (Desktop), 48px (Mobile)'],
+                ].map(([k, v]) => (
+                  <tr key={k} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '6px 12px 6px 0', fontWeight: 600, color: 'var(--text-secondary)', width: 140 }}>{k}</td>
+                    <td style={{ padding: '6px 0' }}><code className="t-mono" style={{ color: 'var(--accent)' }}>{v}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <Code>{`{/* ✅ Dunkle Section — volle Breite */}
+<section style={{
+  background: 'var(--active-bg)',
+  padding: '80px 0',
+  width: '100vw',
+  marginLeft: 'calc(-50vw + 50%)',
+}}>
+  <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' }}>
+    {/* Section-Tag */}
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 12,
+      fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+      color: 'rgba(77,184,122,0.85)', marginBottom: 20,
+    }}>
+      <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
+      EU-Compliance
+    </span>
+    <h2 style={{
+      fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)',
+      fontWeight: 800, color: '#ffffff',
+    }}>
+      Headline
+    </h2>
+  </div>
+</section>
+
+{/* Streifenrhythmus: dunkel → hell → dunkel → hell → dunkel
+    Nie zwei dunkle Sections direkt hintereinander */}`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          22. NUMMERIERTE FEATURE-LISTE
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="22. Nummerierte Feature-Liste">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {[
+              { n: '01', title: 'Projekt verbinden', desc: 'Ordner auswählen — dein Code bleibt lokal.' },
+              { n: '02', title: 'Scan in 60 Sekunden', desc: '25 Kategorien. 195 Regeln.' },
+              { n: '03', title: 'Aufgaben für deine KI', desc: 'Jedes Finding wird zum kopierbaren Prompt.' },
+            ].map(({ n, title, desc }) => (
+              <div key={n} style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-tertiary)', minWidth: 28, flexShrink: 0 }}>
+                  {n}
+                </span>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>{title}</h3>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <Code>{`{/* ✅ Nummerierte Feature-Liste — statt Icon-Karten */}
+<div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+  <span style={{
+    fontSize: 14, fontWeight: 500,
+    color: 'var(--text-tertiary)', minWidth: 28, flexShrink: 0,
+  }}>01</span>
+  <div>
+    <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+      Titel
+    </h3>
+    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+      Beschreibung
+    </p>
+  </div>
+</div>
+
+{/* ❌ FALSCH — drei gleiche Boxen mit farbiger Border links
+    (das ist das "KI-generiert"-Muster, das wir vermeiden) */}
+<div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: 16 }}>…</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          23. SCORE-FARBEN
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="23. Score-Farben">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              {[
+                { score: '91%', label: 'Production Grade', color: 'var(--accent)',   bg: 'rgba(45,122,80,0.12)' },
+                { score: '83%', label: 'Stable',           color: 'var(--accent)',   bg: 'rgba(45,122,80,0.12)' },
+                { score: '71%', label: 'Risky',            color: '#E5A000',         bg: 'rgba(229,160,0,0.12)' },
+                { score: '42%', label: 'Prototype',        color: 'var(--error)',    bg: 'rgba(192,57,43,0.12)' },
+              ].map(({ score, label, color, bg }) => (
+                <div key={label} style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: 40, fontWeight: 800, color, lineHeight: 1, display: 'block' }}>{score}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, color, background: bg, display: 'inline-block', marginTop: 6 }}>
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Code>{`{/* Score-Farben — verbindliche Zuordnung */}
+const STATUS_COLOR = {
+  production_grade: 'var(--accent)',   // #2D7A50 grün
+  stable:           'var(--accent)',   // #2D7A50 grün
+  risky:            '#E5A000',         // amber — NICHT #d97706 oder orange
+  prototype:        'var(--error)',    // rot
+}
+
+{/* ✅ Score-Anzeige */}
+<span style={{ fontSize: 40, fontWeight: 800, color: STATUS_COLOR[status], lineHeight: 1 }}>
+  {score}%
+</span>`}
         </Code>
       </Section>
 

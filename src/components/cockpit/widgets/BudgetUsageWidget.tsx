@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { WidgetSkeleton } from './shared'
 
 interface BudgetData {
@@ -64,7 +65,7 @@ export function BudgetUsageWidget() {
         <span>{budget?.limitEur != null ? `€${budget.limitEur.toFixed(2)}` : 'kein Limit'}</span>
       </div>
 
-      <a href="/settings#kosten" className="widget-more-link">Details →</a>
+      <Link href="/settings#kosten" className="widget-more-link">Details →</Link>
     </div>
   )
 }

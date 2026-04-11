@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:shared:[token]')
 type Params = { params: Promise<{ token: string }> }
@@ -19,7 +20,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   if (error) {
     log.error('[shared] GET failed', { error: error.message })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   if (!workspace) {
     return NextResponse.json({ error: 'Nicht gefunden oder Freigabe deaktiviert' }, { status: 404 })

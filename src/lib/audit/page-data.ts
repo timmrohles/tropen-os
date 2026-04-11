@@ -75,3 +75,20 @@ export async function fetchUserOrgId(userId: string): Promise<string | null> {
     .single()
   return data?.organization_id ?? null
 }
+
+export async function fetchAuditTasks(orgId: string, scanProjectId?: string | null) {
+  let query = supabaseAdmin
+    .from('audit_tasks')
+    .select('id, finding_id, audit_run_id, scan_project_id, title, agent_source, rule_id, severity, file_path, description, suggestion, completed, completed_at, created_at')
+    .eq('organization_id', orgId)
+    .order('created_at', { ascending: false })
+
+  if (scanProjectId === null) {
+    query = query.is('scan_project_id', null)
+  } else if (scanProjectId) {
+    query = query.eq('scan_project_id', scanProjectId)
+  }
+
+  const { data } = await query
+  return data ?? []
+}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { WidgetSkeleton, WidgetEmpty } from './shared'
 
 interface ArtifactStats {
@@ -50,7 +51,7 @@ export function ArtifactOverviewWidget() {
           <span className="widget-list-item-title">{artifact.title}</span>
         </div>
       ))}
-      <a href="/artefakte" className="widget-more-link">Alle Artefakte →</a>
+      <Link href="/artefakte" className="widget-more-link">Alle Artefakte →</Link>
     </div>
   )
 }

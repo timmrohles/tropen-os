@@ -22,6 +22,29 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-04-09 — Sprint 6b: Projekt-Onboarding — Auto-Detect + Interview
+
+**Ampel:** 🟢
+**Prompt:** Build-Prompt: Projekt-Onboarding — Auto-Detect + Interview
+
+**Entscheidungen:**
+- **Auto-Detect Client-seitig:** `detectStack()` läuft im Browser direkt nach dem Datei-Lesen — kein Server-Roundtrip nötig, weil die Dateien bereits im Speicher sind
+- **4 Fragen, kein Freitext:** Audience, Public/Live, Compliance — alle als Chips; nur die URL ist ein Textfeld. Minimiert Abbrüche.
+- **N/A-Kategorien Client-seitig abgeleitet:** `useMemo` über `detectedStack.hasI18n/hasPwa` → keine LLM-Inferenz, keine extra API
+- **Profil in `scan_projects` persistiert:** JSONB für `detectedStack` + eigene Spalten für strukturierte Felder (is_public, audience, compliance_requirements, not_applicable_categories)
+- **Naming Conflict gelöst:** DB-Userrow in route.ts von `profile` → `orgProfile` umbenannt, da `profile` jetzt den Request-Body belegt
+
+**Was gebaut wurde:**
+- `src/lib/file-access/stack-detector.ts` — Framework, DB, Auth, Styling, Testing, Deployment, Flags (i18n, PWA, publicApi, CI, Docker)
+- `src/app/audit/scan/_components/ProjectProfileStep.tsx` — Chip-basiertes Interview + Auto-Detect-Anzeige + N/A-Kategorien
+- `src/app/audit/scan/_components/ConnectProjectCard.tsx` — 3-Schritt-Flow: reading → profile → scanning; `useRef` für files + projectName
+- `src/app/api/projects/scan/route.ts` — `profileSchema` Zod-Validierung + Upsert mit Profil-Feldern
+- `supabase/migrations/20260409000106_project_profile.sql` — 7 neue Spalten auf `scan_projects`
+
+**Offene Punkte:** keine
+
+---
+
 ## 2026-04-09 — Sprint 7: SECURITY_SCAN_AGENT — Angriffsflächen-Scanner
 
 **Ampel:** 🟢

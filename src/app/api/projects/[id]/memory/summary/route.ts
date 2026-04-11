@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { apiError } from '@/lib/api-error'
 
 // POST /api/projects/[id]/memory/summary
 // Body: { conversation_id }
@@ -82,6 +83,6 @@ ${convText}`,
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(error)
   return NextResponse.json(data)
 }

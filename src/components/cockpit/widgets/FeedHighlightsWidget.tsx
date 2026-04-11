@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
 
 interface FeedItem {
@@ -53,7 +54,7 @@ export function FeedHighlightsWidget() {
           </div>
         </a>
       ))}
-      <a href="/feeds" className="widget-more-link">Alle Feeds öffnen →</a>
+      <Link href="/feeds" className="widget-more-link">Alle Feeds öffnen →</Link>
     </div>
   )
 }

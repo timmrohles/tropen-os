@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import {
   CaretRight, Brain,
@@ -322,11 +323,11 @@ export default function SessionPanel({
       {/* Einstellungen — immer unten */}
       <div style={{ marginTop: 'auto' }}>
         <div className="right-panel-divider" />
-        <a href="/settings" className="right-panel-settings-link">
+        <Link href="/settings" className="right-panel-settings-link">
           <GearSix size={14} weight="bold" aria-hidden="true" />
           Einstellungen
           <ArrowRight size={12} weight="bold" aria-hidden="true" style={{ marginLeft: 'auto' }} />
-        </a>
+        </Link>
       </div>
 
     </aside>

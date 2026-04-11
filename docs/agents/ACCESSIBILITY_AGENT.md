@@ -3,7 +3,7 @@
 ## Meta
 
 ```yaml
-version: 1.0
+version: 1.1
 last_updated: 2026-04-09
 created_by: committee
 triggers:
@@ -46,9 +46,9 @@ This agent ensures UI components meet WCAG 2.1 AA accessibility standards throug
 **Gewicht im Audit: ×3 (kritisch — EU Accessibility Act 2025 ist seit Juni 2025 in Kraft und gilt für B2B SaaS).**
 
 This agent contains 3 types of rules:
-- **Hard boundaries** (R1, R2, R3) — mechanically enforceable
-- **Structural heuristics** (R4, R5, R6) — judgment-based
-- **Governance** (R7, R8) — process discipline
+- **Hard boundaries** (R1, R2, R3, R9, R10, R11) — mechanically enforceable
+- **Structural heuristics** (R4, R5, R6, R12, R13, R14, R15) — judgment-based
+- **Governance** (R7, R8, R16, R17, R18) — process discipline
 
 ## Applicability
 
@@ -116,6 +116,66 @@ This agent contains 3 types of rules:
 
 ---
 
+### R9 — Provide Text Alternatives for Images [BLOCKER] [BLOCKED]
+
+<!-- GUIDE: Configure ESLint jsx-a11y "img-has-alt" rule, require alt text for informative images, alt="" for decorative -->
+
+**Why:** Screen readers cannot interpret visual content without text alternatives, violating WCAG 2.1 Success Criterion 1.1.1.
+
+**Bad → Good:**
+```
+// ❌ <img src="/chart.png" />
+// ❌ <img src="/avatar.jpg" alt="Image" />
+
+// ✅ <img src="/chart.png" alt="Sales increased 25% from Q1 to Q2" />
+// ✅ <img src="/decorative-border.svg" alt="" role="presentation" />
+```
+
+**Enforced by:** ESLint jsx-a11y (BLOCKED, coverage: strong)
+
+---
+
+### R10 — Ensure Minimum Touch Target Size [BLOCKER] [BLOCKED]
+
+<!-- GUIDE: Configure stylelint-a11y plugin, enforce minimum 44x44px touch targets per WCAG 2.1 AAA guideline 2.5.5 -->
+
+**Why:** Touch targets smaller than 44×44 CSS pixels are difficult to activate for users with motor impairments or those using assistive pointing devices.
+
+**Bad → Good:**
+```
+// ❌ button { width: 24px; height: 24px; }
+
+// ✅ button { 
+//      width: 44px; 
+//      height: 44px;
+//      min-width: 44px;
+//      min-height: 44px;
+//    }
+```
+
+**Enforced by:** stylelint-a11y (BLOCKED, coverage: strong)
+
+---
+
+### R11 — Provide Skip Navigation Links [BLOCKER] [BLOCKED]
+
+<!-- GUIDE: Include visually hidden skip links as first focusable element, targeting main content and navigation landmarks -->
+
+**Why:** Keyboard and screen reader users need to bypass repetitive navigation content to reach main content efficiently, per WCAG 2.1 Success Criterion 2.4.1.
+
+**Bad → Good:**
+```
+// ❌ <header><nav>...lengthy navigation...</nav></header><main>content</main>
+
+// ✅ <a href="#main-content" className="skip-link">Skip to main content</a>
+// ✅ <header><nav>...navigation...</nav></header>
+// ✅ <main id="main-content">content</main>
+```
+
+**Enforced by:** axe-core (BLOCKED, coverage: strong)
+
+---
+
 ### STRUCTURAL HEURISTICS
 
 ### R4 — Provide Accessible Names for Form Controls [CRITICAL] [PREVENTED]
@@ -177,6 +237,95 @@ This agent contains 3 types of rules:
 
 ---
 
+### R12 — Use Proper Heading Hierarchy [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Configure ESLint jsx-a11y "heading-has-content" and custom rule for sequential heading levels (h1→h2→h3, no skipping) -->
+
+**Why:** Screen readers use heading structure to navigate content; skipping heading levels or improper nesting creates confusing document outlines per WCAG 2.1 Success Criterion 2.4.6.
+
+**Bad → Good:**
+```
+// ❌ <h1>Page Title</h1>
+// ❌ <h3>Section Title</h3>  // Skipped h2
+// ❌ <h5>Subsection</h5>     // Skipped h4
+
+// ✅ <h1>Page Title</h1>
+// ✅ <h2>Section Title</h2>
+// ✅ <h3>Subsection</h3>
+```
+
+**Enforced by:** ESLint jsx-a11y + custom rules (PREVENTED, coverage: strong)
+
+---
+
+### R13 — Provide Form Error Identification and Suggestions [CRITICAL] [REVIEWED]
+
+<!-- GUIDE: Associate error messages with form controls using aria-describedby, provide specific error descriptions and correction suggestions -->
+
+**Why:** Users with cognitive disabilities and screen reader users need clear error identification and guidance to successfully complete forms per WCAG 2.1 Success Criteria 3.3.1 and 3.3.3.
+
+**Bad → Good:**
+```
+// ❌ <input type="email" className={hasError ? 'error' : ''} />
+// ❌ {hasError && <div>Invalid input</div>}
+
+// ✅ <input 
+// ✅   type="email" 
+// ✅   aria-invalid={hasError}
+// ✅   aria-describedby="email-error"
+// ✅ />
+// ✅ {hasError && 
+// ✅   <div id="email-error" role="alert">
+// ✅     Email format is invalid. Please enter a valid email like user@example.com
+// ✅   </div>
+// ✅ }
+```
+
+**Enforced by:** Code Review (REVIEWED, coverage: advisory)
+
+---
+
+### R14 — Ensure Sufficient Animation Control [CRITICAL] [REVIEWED]
+
+<!-- GUIDE: Respect prefers-reduced-motion media query, provide pause/stop controls for auto-playing content longer than 5 seconds -->
+
+**Why:** Users with vestibular disorders can experience nausea, dizziness, or seizures from excessive motion, per WCAG 2.1 Success Criteria 2.2.2 and 2.3.3.
+
+**Bad → Good:**
+```
+// ❌ .carousel { animation: slide 3s infinite; }
+
+// ✅ .carousel { animation: slide 3s infinite; }
+// ✅ @media (prefers-reduced-motion: reduce) {
+// ✅   .carousel { animation: none; }
+// ✅ }
+```
+
+**Enforced by:** Code Review + CSS analysis (REVIEWED, coverage: advisory)
+
+---
+
+### R15 — Use Landmark Regions Appropriately [CRITICAL] [PREVENTED]
+
+<!-- GUIDE: Use semantic HTML5 elements (header, nav, main, aside, footer) or ARIA landmarks, ensure single main landmark per page -->
+
+**Why:** Screen reader users rely on landmark navigation to quickly move between page sections, per WCAG 2.1 Success Criterion 2.4.1.
+
+**Bad → Good:**
+```
+// ❌ <div className="header">...</div>
+// ❌ <div className="navigation">...</div>
+// ❌ <div className="content">...</div>
+
+// ✅ <header>...</header>
+// ✅ <nav aria-label="Main navigation">...</nav>
+// ✅ <main>...</main>
+```
+
+**Enforced by:** ESLint jsx-a11y (PREVENTED, coverage: strong)
+
+---
+
 ### GOVERNANCE
 
 ### R7 — Complex Widgets Must Follow ARIA Patterns [WARNING] [REVIEWED]
@@ -223,6 +372,65 @@ This agent contains 3 types of rules:
 
 ---
 
+### R16 — Document Language and Language Changes [WARNING] [PREVENTED]
+
+<!-- GUIDE: Set html lang attribute, use lang attribute on elements with different language content than page default -->
+
+**Why:** Screen readers need language information to use correct pronunciation and speech characteristics per WCAG 2.1 Success Criteria 3.1.1 and 3.1.2.
+
+**Bad → Good:**
+```
+// ❌ <html>
+// ❌ <span>Café Résumé</span>
+
+// ✅ <html lang="en">
+// ✅ <span lang="fr">Café Résumé</span>
+```
+
+**Enforced by:** ESLint jsx-a11y (PREVENTED, coverage: strong)
+
+---
+
+### R17 — Provide Consistent Navigation and Identification [WARNING] [REVIEWED]
+
+<!-- GUIDE: Maintain consistent navigation order and labeling across pages, use consistent identification for same-function components -->
+
+**Why:** Predictable navigation patterns help users with cognitive disabilities and screen reader users understand site structure per WCAG 2.1 Success Criteria 3.2.3 and 3.2.4.
+
+**Bad → Good:**
+```
+// ❌ Page 1: Home | About | Contact
+// ❌ Page 2: Products | Home | About | Contact | Support
+
+// ✅ Page 1: Home | About | Products | Contact | Support
+// ✅ Page 2: Home | About | Products | Contact | Support
+```
+
+**Enforced by:** Design Review (REVIEWED, coverage: advisory)
+
+---
+
+### R18 — Implement Timeout Warnings and Extensions [WARNING] [REVIEWED]
+
+<!-- GUIDE: Warn users before session timeouts, provide mechanism to extend or eliminate time limits for non-security essential timeouts -->
+
+**Why:** Users with disabilities may need more time to read and interact with content per WCAG 2.1 Success Criterion 2.2.1.
+
+**Bad → Good:**
+```
+// ❌ // Silent timeout after 20 minutes
+
+// ✅ // Warning at 18 minutes with option to extend
+// ✅ <TimeoutWarning 
+// ✅   onExtend={() => extendSession(20 * 60 * 1000)}
+// ✅   timeRemaining={timeLeft}
+// ✅ />
+```
+
+**Enforced by:** Product Review (REVIEWED, coverage: advisory)
+
+---
+
 ## Exceptions
 
 **BLOCKER/CRITICAL:**
@@ -251,6 +459,16 @@ Override: R[NUMBER] — [reason] — @[who] — expires [date]
 □ ARIA used correctly, no redundant roles?  (R6)
 □ Complex widgets follow WAI-ARIA patterns (tabs, menus, accordions)?  (R7)
 □ New components tested with screen reader and result documented in PR?  (R8)
+□ All images have appropriate alt text or alt="" for decorative?  (R9)
+□ Interactive elements meet minimum 44x44px touch target size?  (R10)
+□ Skip navigation links provided for keyboard users?  (R11)
+□ Heading hierarchy is logical and sequential (h1→h2→h3)?  (R12)
+□ Form errors clearly identified with correction suggestions?  (R13)
+□ Animation respects prefers-reduced-motion preference?  (R14)
+□ Landmark regions (header, nav, main, footer) properly used?  (R15)
+□ Page language set and language changes marked with lang attribute?  (R16)
+□ Navigation order and component identification consistent across pages?  (R17)
+□ Timeout warnings provided with extension options?  (R18)
 ```
 
 Status: ✅ yes | ❌ no | — n/a
@@ -267,3 +485,13 @@ Status: ✅ yes | ❌ no | — n/a
 | R6 | ESLint jsx-a11y | pre-commit | PREVENTED | strong |
 | R7 | Code Review | PR | REVIEWED | advisory |
 | R8 | PR Review Process | PR | REVIEWED | advisory |
+| R9 | ESLint jsx-a11y | pre-commit | BLOCKED | strong |
+| R10 | stylelint-a11y | pre-commit | BLOCKED | strong |
+| R11 | axe-core | CI | BLOCKED | strong |
+| R12 | ESLint jsx-a11y + custom | pre-commit | PREVENTED | strong |
+| R13 | Code Review | PR | REVIEWED | advisory |
+| R14 | Code Review + CSS analysis | PR | REVIEWED | advisory |
+| R15 | ESLint jsx-a11y | pre-commit | PREVENTED | strong |
+| R16 | ESLint jsx-a11y | pre-commit | PREVENTED | strong |
+| R17 | Design Review | design phase | REVIEWED | advisory |
+| R18 | Product Review | feature planning | REVIEWED | advisory |

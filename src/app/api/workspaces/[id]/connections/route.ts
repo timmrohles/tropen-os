@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
 import { createConnectionSchema } from '@/lib/validators/workspace-plan-c'
+import { apiError } from '@/lib/api-error'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -42,7 +43,7 @@ export async function POST(request: Request, { params }: Params) {
   if (error) {
     if (error.code === '23505')
       return NextResponse.json({ error: 'Verbindung existiert bereits' }, { status: 409 })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError(error)
   }
   return NextResponse.json(data, { status: 201 })
 }
