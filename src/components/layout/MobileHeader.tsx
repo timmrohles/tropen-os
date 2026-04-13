@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { Bell, Gear, SignOut } from '@phosphor-icons/react'
 import ParrotIcon from '@/components/ParrotIcon'

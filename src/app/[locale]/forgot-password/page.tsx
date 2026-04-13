@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth')
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -32,16 +34,16 @@ export default function ForgotPasswordPage() {
     <div className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
-        <p style={s.sub}>Passwort zurücksetzen</p>
+        <p style={s.sub}>{t('resetPassword')}</p>
 
         {sent ? (
           <div style={s.success}>
-            <p style={s.successText}>E-Mail gesendet. Bitte prüfe dein Postfach.</p>
-            <Link href="/login" style={s.backLink}>← Zurück zum Login</Link>
+            <p style={s.successText}>{t('emailSent')}</p>
+            <Link href="/login" style={s.backLink}>{t('backToLogin')}</Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={s.form}>
-            <label style={s.label}>E-Mail</label>
+            <label style={s.label}>{t('email')}</label>
             <input
               style={s.input}
               type="email"
@@ -55,10 +57,10 @@ export default function ForgotPasswordPage() {
             {error && <p style={s.error}>{error}</p>}
 
             <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Wird gesendet…' : 'Reset-Link senden'}
+              {loading ? t('sending') : t('sendResetLink')}
             </button>
 
-            <Link href="/login" style={s.backLink}>← Zurück zum Login</Link>
+            <Link href="/login" style={s.backLink}>{t('backToLogin')}</Link>
           </form>
         )}
       </div>

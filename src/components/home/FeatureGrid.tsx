@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { SquaresFour, RssSimple, Robot, ArrowRight } from '@phosphor-icons/react'
 
 const FEATURES = [

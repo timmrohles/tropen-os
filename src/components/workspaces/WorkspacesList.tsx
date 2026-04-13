@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import { SquaresFour, Plus, SquaresFour as WsIcon, DotsThree, CopySimple, Trash } from '@phosphor-icons/react'
 
 type Workspace = {

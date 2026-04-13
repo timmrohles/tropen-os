@@ -1,7 +1,7 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
-import Link from 'next/link'
+import { usePathname } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 
 // Nicht im Workspace/Chat anzeigen — dort ist kein Platz
 const HIDE_ON = ['/workspaces/', '/chat']

@@ -27,13 +27,16 @@ export async function PATCH(
   if (!orgId) return NextResponse.json({ error: 'No org' }, { status: 403 })
 
   const { id } = await params
-  let body: { completed?: boolean }
+  let body: { completed?: boolean; dismissed?: boolean }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const updates: Record<string, unknown> = {}
   if (typeof body.completed === 'boolean') {
     updates.completed = body.completed
     updates.completed_at = body.completed ? new Date().toISOString() : null
+  }
+  if (typeof body.dismissed === 'boolean') {
+    updates.dismissed_at = body.dismissed ? new Date().toISOString() : null
   }
 
   const { data, error } = await supabaseAdmin

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { SquaresFour } from '@phosphor-icons/react'
 
 export default function WorkspaceActionCard({ title }: { title: string }) {

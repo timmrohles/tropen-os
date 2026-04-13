@@ -1,14 +1,14 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
-  CaretLeft, CaretRight, GearSix, House,
+  CaretLeft, CaretRight, GearSix, House, ClipboardText, ListChecks,
 } from '@phosphor-icons/react'
 
 
@@ -24,6 +24,54 @@ interface NavItem {
   matchPrefix?: string
 }
 
+interface NavLinkProps {
+  item: NavItem
+  collapsed: boolean
+  pathname: string
+}
+
+function NavLink({ item, collapsed, pathname }: NavLinkProps) {
+  const active = item.matchPrefix
+    ? pathname.startsWith(item.matchPrefix)
+    : pathname === item.href || pathname.startsWith(item.href + '/')
+  return (
+    <li>
+      <Link
+        href={item.href}
+        aria-current={active ? 'page' : undefined}
+        aria-label={collapsed ? item.label : undefined}
+        title={collapsed ? item.label : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: collapsed ? 0 : 10,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          height: 'var(--nav-item-height)',
+          padding: collapsed ? '0' : '0 12px',
+          borderRadius: 'var(--radius-md)',
+          fontSize: 13,
+          fontWeight: active ? 600 : 400,
+          textDecoration: 'none',
+          color: active ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)',
+          background: active ? 'var(--sidebar-active-bg)' : 'transparent',
+          transition: 'background var(--t-fast), color var(--t-fast)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+        }}
+        onMouseEnter={e => {
+          if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'var(--sidebar-hover)'
+        }}
+        onMouseLeave={e => {
+          if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'
+        }}
+      >
+        {item.icon}
+        {!collapsed && <span>{item.label}</span>}
+      </Link>
+    </li>
+  )
+}
+
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
@@ -34,14 +82,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const [branding, setBranding] = useState<OrgBranding | null>(null)
   const [user, setUser] = useState<User | null>(null)
-
-  // Strip locale prefix (/en, /de) before comparing against route paths
-  const localePath = pathname.replace(/^\/(en|de)(?=\/|$)/, '')
-
-  const isActive = (path: string, prefix?: string) =>
-    prefix
-      ? localePath.startsWith(prefix)
-      : localePath === path || localePath.startsWith(path + '/')
 
   useEffect(() => {
     supabase
@@ -59,54 +99,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const displayName = branding?.organization_display_name
   const logoUrl = branding?.logo_url
 
-  // ── Universal nav: 2 Items ─────────────────────────────────────────────────
+  // ── Universal nav ─────────────────────────────────────────────────────────
   const navItems: NavItem[] = [
     { href: '/dashboard', icon: <House size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
+    { href: '/audit',     icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
+    { href: '/tasks',     icon: <ListChecks size={18} weight="bold" aria-hidden="true" />, label: 'Tasks', matchPrefix: '/tasks' },
   ]
 
   const userName = user?.user_metadata?.full_name as string | undefined ?? user?.email ?? 'Account'
 
-  function NavLink({ item }: { item: NavItem }) {
-    const active = isActive(item.href, item.matchPrefix)
-    return (
-      <li role="none">
-        <Link
-          href={item.href}
-          aria-current={active ? 'page' : undefined}
-          aria-label={collapsed ? item.label : undefined}
-          title={collapsed ? item.label : undefined}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            height: 'var(--nav-item-height)',
-            padding: collapsed ? '0' : '0 12px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 13,
-            fontWeight: active ? 600 : 400,
-            textDecoration: 'none',
-            color: active ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)',
-            background: active ? 'var(--sidebar-active-bg)' : 'transparent',
-            transition: 'background var(--t-fast), color var(--t-fast)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-          }}
-          onMouseEnter={e => {
-            if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'var(--sidebar-hover)'
-          }}
-          onMouseLeave={e => {
-            if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'
-          }}
-        >
-          {item.icon}
-          {!collapsed && <span>{item.label}</span>}
-        </Link>
-      </li>
-    )
-  }
-
-  const isSettingsActive = pathname.startsWith('/settings')
+  const isSettingsActive = pathname === '/settings' || pathname.startsWith('/settings/')
 
   return (
     <aside
@@ -130,7 +132,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div style={{ display: 'flex', alignItems: 'center', height: 'var(--header-height)', flexShrink: 0, borderBottom: '1px solid var(--sidebar-border)' }}>
         <Link
           href="/"
-          aria-label="Tropen OS — Startseite"
+          aria-label={collapsed ? (displayName ? `${displayName} — Startseite` : 'Tropen OS — Startseite') : undefined}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -178,8 +180,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 0' }}
         className="sidebar-scroll"
       >
-        <ul role="list" style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {navItems.map(item => <NavLink key={item.href} item={item} />)}
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {navItems.map(item => <NavLink key={item.href} item={item} collapsed={collapsed} pathname={pathname} />)}
         </ul>
       </nav>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { DotsThree, Trash, PencilSimple, Archive, ArrowCounterClockwise, Copy, ShareNetwork, SquaresFour, ChatCircle, Paperclip } from '@phosphor-icons/react'
 
 export type WorkspaceItem = {

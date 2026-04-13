@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { X, Code, Table, FileText, ListBullets, DownloadSimple, Atom } from '@phosphor-icons/react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 interface Artifact {

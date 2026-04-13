@@ -1,5 +1,5 @@
 'use client'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 
 interface Chat { id: string; title: string | null; updated_at: string }
 interface Workspace { id: string; title: string; updated_at: string }

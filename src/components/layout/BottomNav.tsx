@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
 import {
   ChartBar, ChatCircle, FolderSimple, DotsThreeCircle,
   Sparkle, ShareNetwork, RssSimple, Robot, GearSix, X,

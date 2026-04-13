@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 import {
   CaretRight, Brain,

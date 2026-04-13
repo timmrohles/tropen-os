@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 import type { AccountRole } from '@/components/AccountSwitcher'
 import { Bell, CaretDown, Gear, SignOut } from '@phosphor-icons/react'
@@ -214,7 +214,6 @@ export default function TopBar() {
         type="button"
         aria-haspopup="true"
         aria-expanded={accountOpen}
-        aria-label="Account-Menü"
         onClick={handleAccountClick}
         className="topbar-account"
       >

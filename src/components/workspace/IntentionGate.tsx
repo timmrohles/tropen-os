@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Target, Lightning } from '@phosphor-icons/react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 interface IntentionGateProps {
   userName?: string

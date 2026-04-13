@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { PaperPlaneTilt } from '@phosphor-icons/react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import ParrotIcon from './ParrotIcon'
 
 // ─── Typen ────────────────────────────────────────────────────────────────────

@@ -1,16 +1,14 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { setRequestLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
-import { ArrowRight, Check } from '@phosphor-icons/react/dist/ssr'
+import { ArrowRight } from '@phosphor-icons/react/dist/ssr'
 import HowItWorksClient from './_lp/HowItWorksClient'
 import { LpPricing } from './_lp/LpPricing'
 import { LpCta } from './_lp/LpCta'
 import { LpFooter } from './_lp/LpFooter'
-
-export const metadata = {
-  title: 'Tropen OS — Production Readiness Guide für Vibe-Coders',
-  description: '60 Sekunden. 25 Kategorien. Ein Score. Wir prüfen was Cursor, Lovable und Bolt nicht prüfen — DSGVO, Security, Barrierefreiheit.',
-}
+import { LpLocaleSwitcher } from './_lp/LpLocaleSwitcher'
+import { getLpContent } from './_lp/lp-content'
 
 // ── Shared max-width container ─────────────────────────────────────────────────
 function C({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -33,21 +31,6 @@ function Tag({ children, dark }: { children: React.ReactNode; dark?: boolean }) 
   )
 }
 
-const STATS = [
-  { value: '94%', text: 'der Vibe-Apps verstoßen gegen DSGVO' },
-  { value: '+23%', text: 'Ø Score-Verbesserung nach erstem Fix' },
-  { value: '195', text: 'Regeln in 25 Kategorien' },
-  { value: '€20.000', text: 'durchschn. DSGVO-Bußgeld' },
-]
-
-const CATEGORIES = [
-  'Security', 'DSGVO', 'BFSG', 'AI Act', 'Code-Qualität', 'Architektur',
-  'Performance', 'Testing', 'API-Design', 'Datenbank', 'Observability', 'CI/CD',
-  'Dependencies', 'Error Handling', 'State Management', 'Design System',
-  'Accessibility', 'Git Governance', 'Cost Awareness', 'Dokumentation',
-  'Infrastructure', 'Supply Chain', 'Namenskonventionen', 'Skalierbarkeit', 'PWA',
-]
-
 const TOOLS = [
   { name: 'Cursor',      src: 'https://cdn.simpleicons.org/cursor/4A4540' },
   { name: 'Lovable',     src: 'https://www.google.com/s2/favicons?domain=lovable.dev&sz=128' },
@@ -61,7 +44,10 @@ const TOOLS = [
   { name: 'Supabase',    src: 'https://cdn.simpleicons.org/supabase/4A4540' },
 ]
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const c = getLpContent(locale)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
@@ -239,15 +225,13 @@ export default async function HomePage() {
                 Tropen OS
               </span>
             </Link>
-            <nav aria-label="Primäre Navigation" style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
-              {[
-                { label: 'Kategorien', href: '#kategorien' },
-                { label: 'Pricing', href: '#pricing' },
-              ].map(l => (
+            <nav aria-label="Primäre Navigation" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+              {c.nav.links.map(l => (
                 <a key={l.label} href={l.href} className="lp-nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}>{l.label}</a>
               ))}
+              <LpLocaleSwitcher currentLocale={locale} />
               <Link href="/login" className="btn btn-primary" style={{ fontSize: 13, padding: '7px 18px', textDecoration: 'none' }}>
-                Anmelden
+                {c.nav.cta}
               </Link>
             </nav>
           </C>
@@ -283,25 +267,23 @@ export default async function HomePage() {
               fontWeight: 800, lineHeight: 0.92, letterSpacing: '-0.04em',
               color: '#ffffff', marginBottom: 48,
             }}>
-              <span style={{ display: 'block' }}>Ist deine App</span>
-              <span style={{ display: 'block' }}>ready für</span>
-              <span style={{ display: 'block', color: 'rgba(255,255,255,0.35)' }}>echte User?</span>
+              <span style={{ display: 'block' }}>{c.hero.h1[0]}</span>
+              <span style={{ display: 'block' }}>{c.hero.h1[1]}</span>
+              <span style={{ display: 'block', color: 'rgba(255,255,255,0.35)' }}>{c.hero.h1[2]}</span>
             </h1>
 
             {/* Optimus pattern: 2-col grid — description left, CTAs right */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '32px 80px', alignItems: 'end' }}>
               <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, maxWidth: 480 }}>
-                60 Sekunden. 25 Kategorien. Ein Score.<br />
-                Wir prüfen was Cursor, Lovable und Bolt nicht prüfen —<br />
-                DSGVO, Security, Barrierefreiheit.
+                {c.hero.sub.split('\n').map((line, i) => <span key={i} style={{ display: 'block' }}>{line}</span>)}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
                 <Link href="/login" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '13px 26px', fontSize: 15, fontWeight: 600 }}>
-                  Kostenlos scannen
+                  {c.hero.ctaPrimary}
                   <ArrowRight size={15} weight="bold" aria-hidden="true" style={{ transition: 'transform 200ms' }} />
                 </Link>
                 <Link href="#" className="btn btn-ghost lp-ghost-dark" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', padding: '13px 22px', fontSize: 15 }}>
-                  Demo ansehen
+                  {c.hero.ctaSecondary}
                 </Link>
               </div>
             </div>
@@ -310,7 +292,7 @@ export default async function HomePage() {
           {/* Stats marquee pinned at bottom of hero */}
           <div className="lp-ticker-wrap" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '18px 0' }} aria-hidden="true">
             <div className="lp-ticker-inner">
-              {[...STATS, ...STATS].map((s, i) => (
+              {[...c.stats, ...c.stats].map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', paddingRight: 64 }}>
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)', marginRight: 20, flexShrink: 0 }} />
                   <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 13, whiteSpace: 'nowrap' }}>
@@ -322,7 +304,7 @@ export default async function HomePage() {
               ))}
             </div>
           </div>
-          <p className="lp-sr">{STATS.map(s => `${s.value} ${s.text}`).join(' · ')}</p>
+          <p className="lp-sr">{c.stats.map(s => `${s.value} ${s.text}`).join(' · ')}</p>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════
@@ -331,19 +313,14 @@ export default async function HomePage() {
         <section id="features" style={{ background: 'var(--bg-base)', padding: 'clamp(72px, 10vw, 96px) 0' }}>
           <C>
             <div style={{ marginBottom: 'clamp(48px, 6vw, 64px)' }}>
-              <Tag>Was wir finden</Tag>
+              <Tag>{c.features.tag}</Tag>
               <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', lineHeight: 1.05 }}>
-                Die Probleme die dein<br />
-                <span style={{ color: 'var(--text-tertiary)' }}>Coding-Tool übersieht.</span>
+                {c.features.h2[0]}<br />
+                <span style={{ color: 'var(--text-tertiary)' }}>{c.features.h2[1]}</span>
               </h2>
             </div>
 
-            {[
-              { n: '01', title: 'DSGVO & Legal', text: 'Impressum fehlt, Cookies ohne Consent, personenbezogene Daten falsch gespeichert. Das sind keine Kleinigkeiten — das sind Bußgelder.' },
-              { n: '02', title: 'Security & Auth', text: 'API-Routes ohne Validierung, Secrets im Code, fehlende Rate-Limits. Ein schlechter Tag kann deine gesamte User-Datenbank leaken.' },
-              { n: '03', title: 'Barrierefreiheit', text: 'Fehlende Alt-Texte, kein Keyboard-Support, Kontraste unter dem Minimum. Seit Juni 2025 ist Barrierefreiheit in der EU Pflicht (BFSG).' },
-              { n: '04', title: 'Code-Qualität & Architektur', text: 'Dateien über 500 Zeilen, Business-Logik in UI-Komponenten, keine Error-Boundaries. Code der funktioniert ist nicht Code der wartbar ist.' },
-            ].map(f => (
+            {c.features.items.map(f => (
               <div key={f.n} className="lp-feat-row" style={{ display: 'flex', gap: 'clamp(24px, 4vw, 64px)', padding: 'clamp(28px, 4vw, 40px) 0', borderBottom: '1px solid var(--border)', alignItems: 'flex-start' }}>
                 {/* Number */}
                 <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: 'var(--text-tertiary)', paddingTop: 6, flexShrink: 0, width: 28 }}>{f.n}</span>
@@ -365,14 +342,14 @@ export default async function HomePage() {
         <section id="how-it-works" style={{ background: 'var(--active-bg)', padding: 'clamp(72px, 10vw, 96px) 0' }}>
           <C>
             <div style={{ marginBottom: 'clamp(48px, 6vw, 72px)' }}>
-              <Tag dark>So funktioniert&apos;s</Tag>
+              <Tag dark>{c.howItWorks.tag}</Tag>
               <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.03em', color: '#ffffff', lineHeight: 1.05 }}>
-                Drei Schritte.<br />
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>Kein Setup.</span>
+                {c.howItWorks.h2[0]}<br />
+                <span style={{ color: 'rgba(255,255,255,0.45)' }}>{c.howItWorks.h2[1]}</span>
               </h2>
             </div>
 
-            <HowItWorksClient />
+            <HowItWorksClient steps={c.howItWorks.steps} badgeRules={c.categories.badgeRules} />
           </C>
         </section>
 
@@ -382,14 +359,14 @@ export default async function HomePage() {
         <section id="kategorien" style={{ background: 'var(--bg-base)', padding: 'clamp(72px, 10vw, 96px) 0' }}>
           <C>
             <div style={{ maxWidth: 720, marginBottom: 48 }}>
-              <Tag>Vollständige Abdeckung</Tag>
+              <Tag>{c.categories.tag}</Tag>
               <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(2rem, 4.5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', lineHeight: 1.05 }}>
-                25 Kategorien.<br />
-                <span style={{ color: 'var(--text-tertiary)' }}>Kein Punkt wird übersprungen.</span>
+                {c.categories.h2[0]}<br />
+                <span style={{ color: 'var(--text-tertiary)' }}>{c.categories.h2[1]}</span>
               </h2>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {CATEGORIES.map(cat => (
+              {c.categories.items.map(cat => (
                 <span key={cat} style={{ display: 'inline-flex', alignItems: 'center', fontSize: 15, padding: '6px 14px', borderRadius: 4, border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>
                   {cat}
                 </span>
@@ -406,28 +383,27 @@ export default async function HomePage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'clamp(40px, 6vw, 80px)', alignItems: 'start' }}>
               {/* Left */}
               <div>
-                <Tag dark>EU-Compliance</Tag>
+                <Tag dark>{c.compliance.tag}</Tag>
                 <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(2rem, 4.5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.03em', color: '#ffffff', lineHeight: 1.05, marginBottom: 20 }}>
-                  Compliance ist<br />Schutz, nicht<br />Bürokratie.
+                  {c.compliance.h2[0]}<br />{c.compliance.h2[1]}<br />{c.compliance.h2[2]}
                 </h2>
                 <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 28, maxWidth: 380 }}>
-                  Europäische Regulierung schützt echte Menschen. Wir übersetzen sie in konkrete Code-Checks.
+                  {c.compliance.sub}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {['DSGVO', 'BFSG', 'AI Act', 'WCAG 2.1 AA'].map(b => (
-                    <span key={b} style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '6px 14px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.02em' }}>
-                      {b}
+                  {c.compliance.cards.map(card => (
+                    <span key={card.title} style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '6px 14px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.02em' }}>
+                      {card.title}
                     </span>
                   ))}
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '6px 14px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.02em' }}>
+                    WCAG 2.1 AA
+                  </span>
                 </div>
               </div>
               {/* Right — feature cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { title: 'DSGVO', text: 'Datenschutzerklärung, Consent, Datenexport, Löschrecht — auf Code-Architektur-Ebene geprüft.' },
-                  { title: 'BFSG', text: 'Seit Juni 2025 Pflicht für B2C-Apps in der EU. Barrierefreiheit ist kein Nice-to-have mehr.' },
-                  { title: 'AI Act', text: 'Transparenzpflicht, Risiko-Klassifizierung. Das erste Tool das AI Act auf Code-Ebene prüft.' },
-                ].map(item => (
+                {c.compliance.cards.map(item => (
                   <div key={item.title} className="lp-comp-card-dark" style={{ padding: '20px 22px' }}>
                     <h3 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 16, fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>{item.title}</h3>
                     <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65 }}>{item.text}</p>
@@ -443,11 +419,11 @@ export default async function HomePage() {
         ═══════════════════════════════════════════════════════════════ */}
         <section style={{ background: 'var(--bg-base)', padding: 'clamp(72px, 10vw, 96px) 0' }}>
           <C style={{ textAlign: 'center' }}>
-            <Tag>Egal womit du gebaut hast</Tag>
+            <Tag>{c.tools.tag}</Tag>
             <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', lineHeight: 1.05, marginBottom: 12 }}>
-              Funktioniert mit jedem Stack.
+              {c.tools.h2}
             </h2>
-            <p style={{ fontSize: 16, color: 'var(--text-tertiary)', marginBottom: 44 }}>Kein Lock-in. Kein Framework-Zwang.</p>
+            <p style={{ fontSize: 16, color: 'var(--text-tertiary)', marginBottom: 44 }}>{c.tools.sub}</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 28px', justifyContent: 'center', alignItems: 'center' }}>
               {TOOLS.map(({ name, src }) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -460,10 +436,10 @@ export default async function HomePage() {
           </C>
         </section>
 
-        <LpPricing />
+        <LpPricing locale={locale} />
 
-        <LpCta />
-        <LpFooter />
+        <LpCta locale={locale} />
+        <LpFooter locale={locale} />
 
       </div>
     </>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 import type { ChatStyle, ModelPref, TeamSize } from './onboarding.types'
 import { s } from './onboarding.styles'

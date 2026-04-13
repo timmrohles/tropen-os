@@ -15,14 +15,14 @@
   /* ─── Typografie ────────────────────────────────────── */
   --text-primary:   #1A1714;
   --text-secondary: #4A4540;
-  --text-tertiary:  #6B6560;
+  --text-tertiary:  #5C5753;
   --text-muted:     #6B6560;
   --text-inverse:   #FFFFFF;
 
   /* ─── Akzent (helles Grün) ──────────────────────────── */
-  --accent:         #2D7A50;
+  --accent:         #256845;
   --accent-light:   #D4EDDE;
-  --accent-subtle:  rgba(45, 122, 80, 0.08);
+  --accent-subtle:  rgba(37, 104, 69, 0.08);
   --accent-dark:    #1A3D29;
 
   /* ─── Active/Selected (dunkelgrüne Pill, Variant D) ─── */
@@ -32,18 +32,19 @@
   /* ─── Semantische Farben ────────────────────────────── */
   --success:        #2D7A50;
   --success-bg:     #D4EDDE;
-  --warning:        #C07A2A;
+  --warning:        #8C5A00;
   --warning-bg:     #FEF4E7;
-  --error:          #C0392B;
+  --error:          #A8301E;
+  --error-dark:     #8B2419;
   --error-bg:       #FDECEA;
-  --error-border:   color-mix(in srgb, #C0392B 20%, transparent);
+  --error-border:   color-mix(in srgb, #A8301E 20%, transparent);
   --info:           #2D7A50;
   --info-bg:        #D4EDDE;
 
   /* Audit status colors */
   --status-production: var(--accent);
   --status-production-bg: var(--accent-light);
-  --status-stable:    #C49A06;
+  --status-stable:    #7E6200;
   --status-stable-bg: #FEF9E7;
   --status-risky:     var(--warning);
   --status-risky-bg:  var(--warning-bg);
@@ -106,7 +107,7 @@
   --bg-elevated:   #FFFFFF;
   --bg-inset:      rgba(26, 23, 20, 0.04);
   --border-muted:  rgba(26,23,20,0.08);
-  --accent-muted:  rgba(45,122,80,0.5);
+  --accent-muted:  rgba(37,104,69,0.5);
 
   /* ─── Sidebar Layout ────────────────────────────────── */
   --sidebar-width:           240px;
@@ -1307,7 +1308,7 @@ body {
 
 .sidebar-account-role {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.60);
 }
 
 /* ── Settings Page ──────────────────────────────────────────────────────── */

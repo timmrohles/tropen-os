@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import { Suspense } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages } from 'next-intl/server'
+import { getMessages, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
-import ConditionalAppShell from '@/components/layout/ConditionalAppShell'
 import ImpersonationBanner from '@/components/ImpersonationBanner'
 
 interface Props {
@@ -19,6 +18,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound()
   }
 
+  setRequestLocale(locale)
   const messages = await getMessages()
 
   return (
@@ -26,11 +26,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <Suspense>
         <ImpersonationBanner />
       </Suspense>
-      <Suspense>
-        <ConditionalAppShell>
-          {children}
-        </ConditionalAppShell>
-      </Suspense>
+      {children}
     </NextIntlClientProvider>
   )
 }

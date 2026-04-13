@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import type { Workspace, WorkspaceDomain } from '@/db/schema'
 
 const MONO = "'DM Mono', 'Courier New', monospace"

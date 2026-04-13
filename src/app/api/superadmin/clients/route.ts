@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parsePaginationParams } from '@/lib/api/pagination'
-import { apiError } from '@/lib/api-error'
 const log = createLogger('superadmin/clients')
 
 async function requireSuperadmin() {
@@ -48,8 +47,8 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + limit - 1)
 
   if (error) {
-    log.error('GET /api/superadmin/clients failed', { error: error.message })
-    return apiError(error)
+    log.error('GET /api/superadmin/clients failed', { error: error.message, code: error.code })
+    return NextResponse.json({ error: 'Fehler beim Laden der Clients' }, { status: 500 })
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
@@ -84,8 +83,9 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (orgError || !org) {
+    log.error('POST /api/superadmin/clients: org insert failed', { error: orgError?.message, code: orgError?.code })
     return NextResponse.json(
-      { error: `Organisation konnte nicht erstellt werden: ${orgError?.message}` },
+      { error: 'Organisation konnte nicht erstellt werden' },
       { status: 500 }
     )
   }
@@ -102,10 +102,11 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (workspaceError || !workspace) {
+    log.error('POST /api/superadmin/clients: workspace insert failed', { error: workspaceError?.message, code: workspaceError?.code })
     // Cleanup: delete org
     await supabaseAdmin.from('organizations').delete().eq('id', org.id)
     return NextResponse.json(
-      { error: `Workspace konnte nicht erstellt werden: ${workspaceError?.message}` },
+      { error: 'Workspace konnte nicht erstellt werden' },
       { status: 500 }
     )
   }
@@ -122,11 +123,12 @@ export async function POST(req: NextRequest) {
     })
 
   if (settingsError) {
+    log.error('POST /api/superadmin/clients: settings insert failed', { error: settingsError.message, code: settingsError.code })
     // Cleanup: delete workspace + org
     await supabaseAdmin.from('departments').delete().eq('id', workspace.id)
     await supabaseAdmin.from('organizations').delete().eq('id', org.id)
     return NextResponse.json(
-      { error: `Einstellungen konnten nicht gespeichert werden: ${settingsError.message}` },
+      { error: 'Einstellungen konnten nicht gespeichert werden' },
       { status: 500 }
     )
   }
@@ -142,9 +144,9 @@ export async function POST(req: NextRequest) {
 
   if (inviteError) {
     // Org + Workspace wurden angelegt, nur E-Mail fehlgeschlagen → trotzdem erfolgreich zurückgeben
-    log.error('Invite email failed:', inviteError.message)
+    log.error('POST /api/superadmin/clients: invite email failed', { error: inviteError.message })
     return NextResponse.json(
-      { organization: org, workspace, invited: false, invite_error: inviteError.message },
+      { organization: org, workspace, invited: false },
       { status: 201 }
     )
   }

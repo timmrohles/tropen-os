@@ -216,7 +216,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 
 | Technologie | Version | Hinweis |
 |-------------|---------|---------|
-| Next.js | ^16.1.6 | App Router, `'use client'` wo nötig |
+| Next.js | ^15.5.15 | App Router, `'use client'` wo nötig — auf 16.x warten bis Turbopack NFT-Bug gefixt (ADR-019) |
 | React | ^19 | |
 | TypeScript | ^5 | strict mode, kein `any` ohne Begründung |
 | Tailwind CSS | ^3.4 | nur global styles — Seiten nutzen `const s: Record<string, React.CSSProperties>` |

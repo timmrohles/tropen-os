@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const t = useTranslations('auth')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,7 +23,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(error.message)
+      setError(t('loginError'))
       setLoading(false)
       return
     }
@@ -43,7 +45,7 @@ export default function LoginPage() {
         <p style={s.sub}>Responsible AI Department für den Mittelstand</p>
 
         <form onSubmit={handleLogin} style={s.form}>
-          <label htmlFor="email" style={s.label}>E-Mail</label>
+          <label htmlFor="email" style={s.label}>{t('email')}</label>
           <input
             id="email"
             style={s.input}
@@ -54,7 +56,7 @@ export default function LoginPage() {
             required
           />
 
-          <label htmlFor="password" style={s.label}>Passwort</label>
+          <label htmlFor="password" style={s.label}>{t('password')}</label>
           <input
             id="password"
             style={s.input}
@@ -68,16 +70,16 @@ export default function LoginPage() {
           {error && <p style={s.error}>{error}</p>}
 
           <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Anmelden…' : 'Anmelden'}
+            {loading ? t('loading') : t('login')}
           </button>
 
           <Link href="/forgot-password" style={s.forgotLink}>
-            Passwort vergessen?
+            {t('forgotPassword')}
           </Link>
         </form>
 
         <p style={s.inviteNote}>
-          Kein Konto? Tropen OS ist einladungsbasiert –{' '}
+          {t('noAccount')}{' '}
           <a href="https://tropen.de" style={s.inviteLink} target="_blank" rel="noreferrer">
             tropen.de
           </a>

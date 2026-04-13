@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
-// Redirect root to default locale — next-intl middleware handles this,
-// but this is a fallback for direct server renders.
+// next-intl middleware redirects / → /de automatically.
+// This is a safety net for environments without middleware (e.g. unit tests).
 export default function RootPage() {
-  redirect('/en')
+  redirect('/de')
 }

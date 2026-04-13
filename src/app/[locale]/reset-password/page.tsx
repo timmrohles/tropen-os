@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 export default function ResetPasswordPage() {
+  const t = useTranslations('auth')
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -17,11 +19,11 @@ export default function ResetPasswordPage() {
     setError('')
 
     if (password.length < 8) {
-      setError('Passwort muss mindestens 8 Zeichen haben.')
+      setError(t('passwordTooShort'))
       return
     }
     if (password !== confirm) {
-      setError('Passwörter stimmen nicht überein.')
+      setError(t('passwordMismatch'))
       return
     }
 
@@ -43,15 +45,15 @@ export default function ResetPasswordPage() {
     <div className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
-        <p style={s.sub}>Neues Passwort setzen</p>
+        <p style={s.sub}>{t('setNewPassword')}</p>
 
         {success ? (
           <div style={s.successBox}>
-            <p style={s.successText}>Passwort erfolgreich geändert. Weiterleitung…</p>
+            <p style={s.successText}>{t('passwordChanged')}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={s.form}>
-            <label style={s.label}>Neues Passwort</label>
+            <label style={s.label}>{t('newPassword')}</label>
             <input
               style={s.input}
               type="password"
@@ -63,7 +65,7 @@ export default function ResetPasswordPage() {
               minLength={8}
             />
 
-            <label style={s.label}>Passwort bestätigen</label>
+            <label style={s.label}>{t('confirmPassword')}</label>
             <input
               style={s.input}
               type="password"
@@ -77,7 +79,7 @@ export default function ResetPasswordPage() {
             {error && <p style={s.error}>{error}</p>}
 
             <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Wird gespeichert…' : 'Passwort speichern'}
+              {loading ? t('passwordSaving') : t('savePassword')}
             </button>
           </form>
         )}

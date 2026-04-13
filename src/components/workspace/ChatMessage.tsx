@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
 import type { ChipItem, GuidedAction } from '@/lib/workspace-types'
 import ParrotIcon from '@/components/ParrotIcon'

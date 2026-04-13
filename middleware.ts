@@ -1,19 +1,22 @@
 import createMiddleware from 'next-intl/middleware'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { routing } from '@/i18n/routing'
 
 const handleI18n = createMiddleware(routing)
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
   const response = handleI18n(request)
 
   // Pass through request ID for tracing
   const requestId = request.headers.get('x-request-id') || uuidv4()
   response.headers.set('x-request-id', requestId)
 
-  // Expose detected locale to root layout for <html lang="...">
-  const locale = request.nextUrl.pathname.split('/')[1]
+  // Expose pathname and locale to server layouts
+  response.headers.set('x-pathname', pathname)
+  const locale = pathname.split('/')[1]
   if (routing.locales.includes(locale as 'en' | 'de')) {
     response.headers.set('x-locale', locale)
   }
