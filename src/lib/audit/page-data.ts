@@ -24,7 +24,7 @@ export async function fetchAuditRuns(orgId: string, scanProjectId?: string | nul
 export async function fetchScanProjects(orgId: string) {
   const { data } = await supabaseAdmin
     .from('scan_projects')
-    .select('id, name, source, file_count, last_scan_at, last_score, detected_stack, created_at')
+    .select('id, name, source, file_count, last_scan_at, last_score, detected_stack, created_at, live_url')
     .eq('organization_id', orgId)
     .order('last_scan_at', { ascending: false })
   return data ?? []

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench, DownloadSimple } from '@phosphor-icons/react'
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
@@ -11,9 +12,11 @@ interface AuditActionsProps {
   reviewType?: string | null
   criticalCount?: number
   scanProjectId?: string | null
+  initialLighthouseUrl?: string | null
 }
 
-export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId }: AuditActionsProps) {
+export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl }: AuditActionsProps) {
+  const t = useTranslations('audit')
   const router = useRouter()
   const [auditState, setAuditState] = useState<TriggerState>('idle')
   const [reviewState, setReviewState] = useState<TriggerState>('idle')
@@ -23,7 +26,23 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const [batchState, setBatchState] = useState<TriggerState>('idle')
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
-  const [lighthouseUrl, setLighthouseUrl] = useState('')
+  const [lighthouseUrl, setLighthouseUrl] = useState(initialLighthouseUrl ?? '')
+
+  // Restore from localStorage on mount (fallback when no server-side URL)
+  useEffect(() => {
+    if (!initialLighthouseUrl) {
+      const key = `lh_url_${scanProjectId ?? 'default'}`
+      const saved = localStorage.getItem(key)
+      if (saved) setLighthouseUrl(saved)
+    }
+  }, [initialLighthouseUrl, scanProjectId])
+
+  function handleUrlChange(val: string) {
+    setLighthouseUrl(val)
+    const key = `lh_url_${scanProjectId ?? 'default'}`
+    if (val.trim()) localStorage.setItem(key, val.trim())
+    else localStorage.removeItem(key)
+  }
 
   async function handleTrigger() {
     setAuditState('running')
@@ -127,14 +146,14 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         <input
           type="url"
           value={lighthouseUrl}
-          onChange={(e) => setLighthouseUrl(e.target.value)}
-          placeholder="https://meine-app.vercel.app"
+          onChange={(e) => handleUrlChange(e.target.value)}
+          placeholder={t('lighthousePlaceholder')}
           disabled={isAuditRunning}
-          aria-label="Lighthouse URL (optional)"
+          aria-label={t('lighthousePlaceholder')}
           style={{
             height: 36, padding: '0 12px', borderRadius: 8, fontSize: 13,
             border: '1px solid var(--border)', background: 'var(--bg-surface-solid)',
-            color: 'var(--text-primary)', outline: 'none', width: 240,
+            color: 'var(--text-primary)', outline: 'none', width: 300,
             opacity: isAuditRunning ? 0.5 : 1,
           }}
         />

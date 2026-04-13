@@ -105,9 +105,16 @@ export default async function AuditPage({
   const isFirstRun = runList.length === 1
   const hasRuns = runList.length > 0
 
-  const activeProjectName = activeScanProjectId
-    ? (scanProjects.find((p) => p.id === activeScanProjectId)?.name ?? 'Projekt')
-    : 'Tropen OS'
+  const activeProject = activeScanProjectId
+    ? scanProjects.find((p) => p.id === activeScanProjectId) ?? null
+    : null
+  const activeProjectName = activeProject?.name ?? 'Tropen OS'
+  const initialLighthouseUrl = (activeProject as { live_url?: string | null } | null)?.live_url ?? null
+
+  // Detect if the latest run has Lighthouse data (any finding with lighthouse-* agent_source)
+  const hasLighthouseData = (findings as { agent_source?: string }[]).some(
+    (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
+  )
 
   return (
     <div className="content-max">
@@ -137,6 +144,7 @@ export default async function AuditPage({
             reviewType={runDetail ? (runDetail.review_type as string | null) : null}
             criticalCount={runDetail ? (runDetail.critical_findings as number ?? 0) : 0}
             scanProjectId={activeScanProjectId}
+            initialLighthouseUrl={initialLighthouseUrl}
           />
         </div>
       </div>
@@ -171,6 +179,13 @@ export default async function AuditPage({
             criticalOpenFindings={criticalOpenFindings}
             isFirstRun={isFirstRun}
           />
+
+          {/* Lighthouse hint — shown when last run has no Lighthouse data */}
+          {!hasLighthouseData && (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, marginTop: -8 }}>
+              {t('noLighthouseHint')}
+            </p>
+          )}
 
           {/* ── Separator ── */}
           <div style={{ borderTop: '1px solid var(--border)', margin: '0 0 32px' }} />

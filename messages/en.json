@@ -96,7 +96,9 @@
     "startFirstAudit": "Start audit",
     "reconnectProject": "Reconnect the project via the scan page.",
     "runNotFound": "Run not found.",
-    "backToDashboard": "Dashboard"
+    "backToDashboard": "Dashboard",
+    "lighthousePlaceholder": "URL for Lighthouse (optional)",
+    "noLighthouseHint": "Lighthouse not included. Add a URL above for Performance + Accessibility checks."
   },
   "auditScan": {
     "title": "Connect external project",
