@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import ChatListClient from './ChatPageClient'
 
 export default async function ChatPage() {
+  const locale = await getLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: membership } = await supabase
     .from('department_members')
@@ -14,7 +16,7 @@ export default async function ChatPage() {
     .limit(1)
     .single()
 
-  if (!membership?.workspace_id) redirect('/dashboard')
+  if (!membership?.workspace_id) redirect(`/${locale}/dashboard`)
 
   return <ChatListClient workspaceId={membership.workspace_id} />
 }

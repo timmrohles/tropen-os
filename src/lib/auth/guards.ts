@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 
 /**
@@ -7,10 +8,10 @@ import { createClient } from '@/utils/supabase/server'
  * Returns the authenticated user on success.
  */
 export async function requireSuperadmin() {
-  const supabase = await createClient()
+  const [supabase, locale] = await Promise.all([createClient(), getLocale()])
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: profile } = await supabase
     .from('users')
@@ -18,7 +19,7 @@ export async function requireSuperadmin() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'superadmin') redirect('/workspaces')
+  if (profile?.role !== 'superadmin') redirect(`/${locale}/workspaces`)
 
   return user
 }
@@ -28,10 +29,10 @@ export async function requireSuperadmin() {
  * Returns the authenticated user on success.
  */
 export async function requireOrgAdmin() {
-  const supabase = await createClient()
+  const [supabase, locale] = await Promise.all([createClient(), getLocale()])
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: profile } = await supabase
     .from('users')
@@ -40,7 +41,7 @@ export async function requireOrgAdmin() {
     .single()
 
   if (!['superadmin', 'admin'].includes(profile?.role ?? '')) {
-    redirect('/workspaces')
+    redirect(`/${locale}/workspaces`)
   }
 
   return user

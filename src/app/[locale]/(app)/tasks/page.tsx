@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { TasksClient } from './_components/TasksClient'
@@ -28,10 +28,11 @@ export interface ScanProject {
 }
 
 export default async function TasksPage() {
+  const locale = await getLocale()
   const t = await getTranslations('tasks')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: profile } = await supabaseAdmin
     .from('users')
@@ -39,7 +40,7 @@ export default async function TasksPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.organization_id) redirect('/login')
+  if (!profile?.organization_id) redirect(`/${locale}/login`)
 
   const [{ data: tasks }, { data: scanProjects }] = await Promise.all([
     supabaseAdmin

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import { Link } from '@/i18n/navigation'
 
@@ -75,11 +76,12 @@ export default async function WorkspaceLayout({
   children: React.ReactNode
   params: Promise<{ workspaceId: string }>
 }) {
+  const locale = await getLocale()
   const { workspaceId } = await params
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: workspace } = await supabase
     .from('workspaces')
@@ -88,7 +90,7 @@ export default async function WorkspaceLayout({
     .is('deleted_at', null)
     .maybeSingle()
 
-  if (!workspace) redirect('/workspaces')
+  if (!workspace) redirect(`/${locale}/workspaces`)
 
   return (
     <div style={s.root}>

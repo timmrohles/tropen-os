@@ -23,16 +23,21 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const [batchState, setBatchState] = useState<TriggerState>('idle')
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
+  const [lighthouseUrl, setLighthouseUrl] = useState('')
 
   async function handleTrigger() {
     setAuditState('running')
     setAuditResult(null)
     setErrorMsg(null)
+    const url = lighthouseUrl.trim()
+    const body = url
+      ? { skipCli: false, withTools: true, lighthouseUrl: url }
+      : { skipCli: false }
     try {
       const res = await fetch('/api/audit/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skipCli: false }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string }
@@ -119,6 +124,20 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <input
+          type="url"
+          value={lighthouseUrl}
+          onChange={(e) => setLighthouseUrl(e.target.value)}
+          placeholder="https://meine-app.vercel.app"
+          disabled={isAuditRunning}
+          aria-label="Lighthouse URL (optional)"
+          style={{
+            height: 36, padding: '0 12px', borderRadius: 8, fontSize: 13,
+            border: '1px solid var(--border)', background: 'var(--bg-surface-solid)',
+            color: 'var(--text-primary)', outline: 'none', width: 240,
+            opacity: isAuditRunning ? 0.5 : 1,
+          }}
+        />
         <button
           className="btn btn-primary"
           onClick={handleTrigger}

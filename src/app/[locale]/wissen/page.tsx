@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 
-export default function WissenPage() {
-  redirect('/settings#ki-kontext')
+export default async function WissenPage() {
+  const locale = await getLocale()
+  redirect(`/${locale}/settings#ki-kontext`)
 }

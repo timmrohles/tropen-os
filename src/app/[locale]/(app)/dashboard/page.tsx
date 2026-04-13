@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { House, ArrowUp, ArrowDown, Minus, Plus, FolderOpen, Lightning, Target } from '@phosphor-icons/react/dist/ssr'
 import { Link } from '@/i18n/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import { fetchUserOrgId, fetchScanProjects, fetchAuditRuns } from '@/lib/audit/page-data'
 
@@ -66,10 +66,11 @@ function stackLabel(raw: unknown): string | null {
 }
 
 export default async function DashboardPage() {
+  const locale = await getLocale()
   const t = await getTranslations('dashboard')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const orgId = await fetchUserOrgId(user.id)
 

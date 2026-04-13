@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import AnnouncementsFeed from '@/components/home/AnnouncementsFeed'
 import ChatCTA from '@/components/home/ChatCTA'
 import FeatureGrid from '@/components/home/FeatureGrid'
@@ -9,10 +9,11 @@ import { OrgHealthSection } from '@/components/home/OrgHealthSection'
 import { OrgOnboardingProgress } from '@/components/home/OrgOnboardingProgress'
 
 export default async function HomePage() {
+  const locale = await getLocale()
   const t = await getTranslations('home')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   // Profile must be fetched first to get orgId
   const { data: profile } = await supabase

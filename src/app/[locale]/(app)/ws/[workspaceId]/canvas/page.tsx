@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import { listCards } from '@/actions/cards'
 import { listConnections } from '@/actions/connections'
@@ -10,11 +11,12 @@ export default async function CanvasPage({
 }: {
   params: Promise<{ workspaceId: string }>
 }) {
+  const locale = await getLocale()
   const { workspaceId } = await params
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const [cards, connectionsWithCards, wsRow, participantRows] = await Promise.all([
     listCards(workspaceId),
@@ -31,7 +33,7 @@ export default async function CanvasPage({
       .eq('workspace_id', workspaceId),
   ])
 
-  if (!wsRow.data) redirect('/workspaces')
+  if (!wsRow.data) redirect(`/${locale}/workspaces`)
 
   const ws = wsRow.data
   const connections = connectionsWithCards.map(({ fromCard: _f, toCard: _t, ...conn }) => conn)

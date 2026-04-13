@@ -2,7 +2,7 @@
 import { redirect } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { FolderOpen } from '@phosphor-icons/react/dist/ssr'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
 import { fetchUserOrgId, fetchScanProjects } from '@/lib/audit/page-data'
 import ConnectProjectCard from './_components/ConnectProjectCard'
@@ -11,13 +11,14 @@ import ProjectList from './_components/ProjectList'
 export const metadata = { title: 'Externes Projekt verbinden — Tropen OS' }
 
 export default async function AuditScanPage() {
+  const locale = await getLocale()
   const t = await getTranslations('auditScan')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const orgId = await fetchUserOrgId(user.id)
-  if (!orgId) redirect('/login')
+  if (!orgId) redirect(`/${locale}/login`)
 
   const projects = await fetchScanProjects(orgId)
 

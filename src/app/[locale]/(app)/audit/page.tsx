@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { ShieldCheck, ArrowLeft } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/utils/supabase/server'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import {
   fetchUserOrgId,
   fetchAuditRuns,
@@ -29,14 +29,16 @@ interface PageProps {
   searchParams: Promise<{ runId?: string; status?: string; severity?: string; agent?: string; project?: string }>
 }
 
-export default async function AuditPage({ searchParams }: PageProps) {
+export default async function AuditPage({
+  searchParams }: PageProps) {
+  const locale = await getLocale()
   const { runId: requestedRunId, status: statusParam, severity, agent, project: projectParam } = await searchParams
   const status = statusParam ?? 'open'
 
   const t = await getTranslations('audit')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const orgId = await fetchUserOrgId(user.id)
 

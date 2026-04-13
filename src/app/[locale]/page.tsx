@@ -50,7 +50,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const c = getLpContent(locale)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
+  if (user) redirect(`/${locale}/dashboard`)
 
   return (
     <>
