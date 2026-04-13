@@ -10,8 +10,8 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@tremor/react'
-import CostChart from '@/app/[locale]/dashboard/CostChart'
-import Co2Card from '@/app/[locale]/dashboard/Co2Card'
+import CostChart from '@/app/[locale]/(app)/dashboard/CostChart'
+import Co2Card from '@/app/[locale]/(app)/dashboard/Co2Card'
 
 type Period = 'today' | 'week' | 'month'
 
