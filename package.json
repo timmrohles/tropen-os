@@ -46,7 +46,7 @@
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "ignore": "^7.0.5",
-    "langsmith": "^0.5.14",
+    "langsmith": "^0.5.18",
     "next": "^15.5.15",
     "next-intl": "^4.9.1",
     "nodemailer": "^8.0.4",
