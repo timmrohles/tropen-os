@@ -178,7 +178,11 @@ const AGENT_BADGE: Record<AgentSource, { label: string; bg: string; color: strin
   'security-scan':    { label: 'SecScan', bg: '#fef2f2', color: '#C42020' },
   dsgvo:              _neutral('DSGVO'),
   bfsg:               _neutral('BFSG'),
-  'ai-act':           _neutral('AI Act'),
+  'ai-act':                   _neutral('AI Act'),
+  'lighthouse-performance':   _neutral('LH Perf'),
+  'lighthouse-accessibility': _neutral('LH A11y'),
+  'lighthouse-best-practices':_neutral('LH Best'),
+  'lighthouse-seo':           _neutral('LH SEO'),
 }
 
 const STATUS_OPTIONS: Array<{ value: DbFinding['status']; label: string }> = [

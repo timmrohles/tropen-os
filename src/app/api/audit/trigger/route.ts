@@ -176,7 +176,7 @@ export async function POST(request: Request) {
           line: f.line ?? null,
           suggestion: f.suggestion ?? null,
           agent_source: f.agentSource ?? rule?.agentSource ?? 'core',
-          agent_rule_id: rule?.agentRuleId ?? null,
+          agent_rule_id: f.agentRuleId ?? rule?.agentRuleId ?? null,
           enforcement: f.enforcement ?? rule?.enforcement ?? null,
           affected_files: f.affectedFiles ?? null,
           fix_hint: f.fixHint ?? null,

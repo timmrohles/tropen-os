@@ -78,6 +78,15 @@ export async function checkDepCruiserCycles(ctx: AuditContext): Promise<RuleResu
 
   const n = cycles.length
   const score = n === 0 ? 5 : n <= 2 ? 3 : n <= 5 ? 2 : 1
+  const total = findings.length
+
+  if (total > 0) {
+    findings.unshift({
+      severity: n > 0 ? 'high' : 'medium',
+      message: `dependency-cruiser: ${n} circular dep(s), ${forbidden.length} forbidden import(s) (${total} issues found)`,
+      agentSource: 'architecture' as AgentSource,
+    })
+  }
 
   return {
     ruleId: 'cat-1-rule-3',
@@ -88,14 +97,17 @@ export async function checkDepCruiserCycles(ctx: AuditContext): Promise<RuleResu
   }
 }
 
-// ── 2. Lighthouse (perf + a11y) ──────────────────────────────────────────────
+// ── 2. Lighthouse (perf + a11y + best-practices + seo) ──────────────────────
 
-interface LighthouseCategory { score: number | null; title: string }
+interface LighthouseAuditRef { id: string; weight?: number; group?: string }
+interface LighthouseCategory { score: number | null; title: string; auditRefs?: LighthouseAuditRef[] }
 interface LighthouseAuditResult { score: number | null; title: string; description?: string }
 interface LighthouseReport {
   categories: Record<string, LighthouseCategory>
   audits: Record<string, LighthouseAuditResult>
 }
+
+type LhCategoryKey = 'performance' | 'accessibility' | 'best-practices' | 'seo'
 
 function lhScoreToAudit(lhScore: number): number {
   const pct = lhScore * 100
@@ -104,6 +116,30 @@ function lhScoreToAudit(lhScore: number): number {
   if (pct >= 50) return 3
   if (pct >= 30) return 2
   return 1
+}
+
+/** Extracts one Finding per failing audit ref in a Lighthouse category. */
+function extractLighthouseFindings(
+  report: LighthouseReport,
+  categoryKey: LhCategoryKey,
+  agentSrc: AgentSource,
+): Finding[] {
+  const category = report.categories[categoryKey]
+  if (!category?.auditRefs) return []
+
+  const findings: Finding[] = []
+  for (const ref of category.auditRefs) {
+    const audit = report.audits[ref.id]
+    if (!audit || audit.score === null || audit.score >= 1) continue
+    findings.push({
+      severity: audit.score === 0 ? 'high' : 'medium',
+      message: audit.title,
+      suggestion: audit.description,
+      agentSource: agentSrc,
+      agentRuleId: `lighthouse-${categoryKey}-${ref.id}`,
+    })
+  }
+  return findings
 }
 
 async function runLighthouse(ctx: AuditContext): Promise<LighthouseReport | null> {
@@ -142,12 +178,16 @@ export async function checkLighthousePerf(ctx: AuditContext): Promise<RuleResult
   const lhScore = report.categories?.performance?.score ?? null
   if (lhScore === null) return nullResult('cat-7-rule-1', 'Lighthouse: no performance score in report')
 
-  const score = lhScoreToAudit(lhScore)
+  const agentSrc: AgentSource = 'lighthouse-performance'
+  const granular = extractLighthouseFindings(report, 'performance', agentSrc)
   const findings: Finding[] = lhScore < 0.9
-    ? [{ severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100 (target: 90+)`, agentSource: 'performance' as AgentSource }]
+    ? [
+        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
+        ...granular,
+      ]
     : []
 
-  return { ruleId: 'cat-7-rule-1', score, reason: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
+  return { ruleId: 'cat-7-rule-1', score: lhScoreToAudit(lhScore), reason: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }
 
 export async function checkLighthouseA11y(ctx: AuditContext): Promise<RuleResult> {
@@ -160,12 +200,61 @@ export async function checkLighthouseA11y(ctx: AuditContext): Promise<RuleResult
   const lhScore = report.categories?.accessibility?.score ?? null
   if (lhScore === null) return nullResult('cat-16-rule-1', 'Lighthouse: no accessibility score in report')
 
+  const agentSrc: AgentSource = 'lighthouse-accessibility'
+  const granular = extractLighthouseFindings(report, 'accessibility', agentSrc)
   const score = lhScore >= 0.9 ? 5 : lhScore >= 0.7 ? 4 : lhScore >= 0.5 ? 3 : 1
   const findings: Finding[] = lhScore < 0.9
-    ? [{ severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Accessibility: ${Math.round(lhScore * 100)}/100 (target: 90+)`, agentSource: 'accessibility' as AgentSource }]
+    ? [
+        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Accessibility: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
+        ...granular,
+      ]
     : []
 
   return { ruleId: 'cat-16-rule-1', score, reason: `Lighthouse Accessibility: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
+}
+
+export async function checkLighthouseBestPractices(ctx: AuditContext): Promise<RuleResult> {
+  if (!ctx.externalTools?.lighthouseUrl) {
+    return nullResult('cat-2-rule-11', 'Lighthouse skipped — no --lighthouse-url provided')
+  }
+  const report = await getLighthouseReport(ctx)
+  if (!report) return nullResult('cat-2-rule-11', 'Lighthouse failed to run or returned no data')
+
+  const lhScore = report.categories?.['best-practices']?.score ?? null
+  if (lhScore === null) return nullResult('cat-2-rule-11', 'Lighthouse: no best-practices score in report')
+
+  const agentSrc: AgentSource = 'lighthouse-best-practices'
+  const granular = extractLighthouseFindings(report, 'best-practices', agentSrc)
+  const findings: Finding[] = lhScore < 0.9
+    ? [
+        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Best Practices: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
+        ...granular,
+      ]
+    : []
+
+  return { ruleId: 'cat-2-rule-11', score: lhScoreToAudit(lhScore), reason: `Lighthouse Best Practices: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
+}
+
+export async function checkLighthouseSeo(ctx: AuditContext): Promise<RuleResult> {
+  if (!ctx.externalTools?.lighthouseUrl) {
+    return nullResult('cat-18-rule-5', 'Lighthouse skipped — no --lighthouse-url provided')
+  }
+  const report = await getLighthouseReport(ctx)
+  if (!report) return nullResult('cat-18-rule-5', 'Lighthouse failed to run or returned no data')
+
+  const lhScore = report.categories?.seo?.score ?? null
+  if (lhScore === null) return nullResult('cat-18-rule-5', 'Lighthouse: no SEO score in report')
+
+  const agentSrc: AgentSource = 'lighthouse-seo'
+  const granular = extractLighthouseFindings(report, 'seo', agentSrc)
+  const findings: Finding[] = lhScore < 0.9
+    ? [
+        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse SEO: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
+        ...granular,
+      ]
+    : []
+
+  return { ruleId: 'cat-18-rule-5', score: lhScoreToAudit(lhScore), reason: `Lighthouse SEO: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }
 
 // ── 3. Bundle size from .next/static/chunks/ ────────────────────────────────
@@ -244,11 +333,21 @@ export async function checkEslintDetailed(ctx: AuditContext): Promise<RuleResult
     : errorCount === 0 ? 3
     : errorCount <= 5 ? 2 : 1
 
+  const capped = findings.slice(0, 50) // cap individual findings at 50
+  const total = errorCount + warnCount
+  if (total > 0) {
+    capped.unshift({
+      severity: errorCount > 0 ? 'high' : 'low',
+      message: `ESLint: ${errorCount} error(s), ${warnCount} warning(s) (${total} issues found)`,
+      agentSource: 'code-style' as AgentSource,
+    })
+  }
+
   return {
     ruleId: 'cat-2-rule-9',
     score,
     reason: `ESLint: ${errorCount} errors, ${warnCount} warnings`,
-    findings: findings.slice(0, 50), // cap at 50 to avoid huge reports
+    findings: capped,
     automated: true,
   }
 }

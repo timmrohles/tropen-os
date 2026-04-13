@@ -142,6 +142,12 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
 
       const n = leaks.length
       const score = n === 0 ? 5 : n <= 2 ? 3 : n <= 5 ? 1 : 0
+      if (n > 0) {
+        findings.unshift({
+          severity: 'critical' as const,
+          message: `gitleaks: ${n} potential secret(s) found in repository — rotate immediately`,
+        })
+      }
       return {
         ruleId: 'cat-3-rule-3',
         score,

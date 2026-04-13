@@ -72,7 +72,11 @@ const AGENT_PILL: Record<AgentSource, { label: string; color: string }> = {
   'security-scan':  { label: 'SecScan', color: '#C42020' },
   dsgvo:            { label: 'DSGVO',   color: 'var(--text-secondary)' },
   bfsg:             { label: 'BFSG',    color: 'var(--text-secondary)' },
-  'ai-act':         { label: 'AI Act',  color: 'var(--accent)' },
+  'ai-act':                  { label: 'AI Act',    color: 'var(--accent)' },
+  'lighthouse-performance':  { label: 'LH Perf',   color: 'var(--text-secondary)' },
+  'lighthouse-accessibility':{ label: 'LH A11y',   color: 'var(--text-secondary)' },
+  'lighthouse-best-practices':{ label: 'LH Best',  color: 'var(--text-secondary)' },
+  'lighthouse-seo':          { label: 'LH SEO',    color: 'var(--text-secondary)' },
 }
 
 function SortBtn({ label, sortKey, active, dir, onClick }: {

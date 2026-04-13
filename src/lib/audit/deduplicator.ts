@@ -30,6 +30,8 @@ export interface EnrichedFinding {
   enforcement?: EnforcementLevel
   affectedFiles?: string[]
   fixHint?: string
+  /** Per-finding rule ID — overrides rule-level agentRuleId for granular findings */
+  agentRuleId?: string
   /** Set to 'acknowledged' when status is inherited from previous run. */
   inheritedStatus?: string
 }

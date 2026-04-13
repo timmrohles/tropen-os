@@ -15,6 +15,9 @@ export type AgentSource =
   | 'security-scan'
   // Regulatory Deep Agents (Sprint 8)
   | 'dsgvo' | 'bfsg' | 'ai-act'
+  // Lighthouse per-category (Sprint 9)
+  | 'lighthouse-performance' | 'lighthouse-accessibility'
+  | 'lighthouse-best-practices' | 'lighthouse-seo'
 
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
@@ -32,6 +35,8 @@ export interface Finding {
   affectedFiles?: string[]
   /** Concise hint for what to fix across affected files */
   fixHint?: string
+  /** Per-finding rule ID (e.g. 'lighthouse-performance-first-contentful-paint') */
+  agentRuleId?: string
 }
 
 export interface RuleResult {

@@ -25,6 +25,7 @@ import {
 import { cliChecks } from './checkers/cli-checker'
 import {
   checkDepCruiserCycles, checkLighthousePerf, checkLighthouseA11y,
+  checkLighthouseBestPractices, checkLighthouseSeo,
   checkBundleSizes, checkEslintDetailed,
 } from './checkers/external-tools-checker'
 import {
@@ -103,6 +104,7 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-2-rule-7', categoryId: 2, name: 'Keine leeren catch-Bloecke', weight: 2, checkMode: 'repo-map', automatable: true, check: checkEmptyCatchBlocks, agentSource: 'code-style', agentRuleId: 'R2', enforcement: 'blocked' },
   { id: 'cat-2-rule-8', categoryId: 2, name: 'Kein auskommentierter Code-Block > 2 Zeilen', weight: 1, checkMode: 'repo-map', automatable: true, check: checkCommentedOutCode, agentSource: 'code-style', agentRuleId: 'R9', enforcement: 'reviewed' },
   { id: 'cat-2-rule-10', categoryId: 2, name: 'Strikte Gleichheitsoperatoren (=== statt ==)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkStrictEquality, agentSource: 'code-style', agentRuleId: 'R10', enforcement: 'blocked' },
+  { id: 'cat-2-rule-11', categoryId: 2, name: 'Lighthouse Best Practices', weight: 2, checkMode: 'external-tool', automatable: true, check: checkLighthouseBestPractices, agentSource: 'lighthouse-best-practices' },
 
   // ── Category 3: Sicherheit (weights: 3,3,3,2,2,3,2,3,2,2,2,3,2,3) ────────
   manual('cat-3-rule-1',  3, 'OWASP Top 10 beruecksichtigt', 3),
@@ -294,6 +296,7 @@ export const AUDIT_RULES: AuditRule[] = [
   },
   manual('cat-18-rule-3', 18, 'API-Dokumentation generiert', 2),
   manual('cat-18-rule-4', 18, 'Onboarding < 30 Minuten erreichbar', 1),
+  { id: 'cat-18-rule-5', categoryId: 18, name: 'Lighthouse SEO', weight: 1, checkMode: 'external-tool', automatable: true, check: checkLighthouseSeo, agentSource: 'lighthouse-seo' },
 
   // ── Category 19: Git Governance (weights: 3,1,2) ──────────────────────────
   manual('cat-19-rule-1', 19, 'Branch-Schutz fuer main aktiv', 3),
