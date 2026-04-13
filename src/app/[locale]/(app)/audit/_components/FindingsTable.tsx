@@ -183,6 +183,7 @@ const AGENT_BADGE: Record<AgentSource, { label: string; bg: string; color: strin
   'lighthouse-accessibility': _neutral('LH A11y'),
   'lighthouse-best-practices':_neutral('LH Best'),
   'lighthouse-seo':           _neutral('LH SEO'),
+  'npm-audit': { label: 'npm audit', bg: 'color-mix(in srgb, var(--error) 15%, transparent)', color: 'var(--error-dark)' },
 }
 
 const STATUS_OPTIONS: Array<{ value: DbFinding['status']; label: string }> = [

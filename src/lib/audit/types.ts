@@ -18,6 +18,8 @@ export type AgentSource =
   // Lighthouse per-category (Sprint 9)
   | 'lighthouse-performance' | 'lighthouse-accessibility'
   | 'lighthouse-best-practices' | 'lighthouse-seo'
+  // Package vulnerability scanner (Sprint 10)
+  | 'npm-audit'
 
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'

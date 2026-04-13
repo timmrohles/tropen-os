@@ -26,7 +26,7 @@ import { cliChecks } from './checkers/cli-checker'
 import {
   checkDepCruiserCycles, checkLighthousePerf, checkLighthouseA11y,
   checkLighthouseBestPractices, checkLighthouseSeo,
-  checkBundleSizes, checkEslintDetailed,
+  checkBundleSizes, checkEslintDetailed, checkNpmAudit,
 } from './checkers/external-tools-checker'
 import {
   checkDependencyModel, checkForbiddenFolderNames, checkUnexpectedNamespaces,
@@ -113,7 +113,7 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('cat-3-rule-4',  3, 'HTTP Sicherheitsheader gesetzt', 2),
   manual('cat-3-rule-5',  3, 'Rate Limiting implementiert', 2),
   manual('cat-3-rule-6',  3, 'Auth und Authz klar getrennt', 3),
-  { id: 'cat-3-rule-7',  categoryId: 3, name: 'Dependency-Vulnerabilities geprueft', weight: 2, checkMode: 'cli', automatable: true, check: cliChecks.checkDependencyVulnerabilities },
+  { id: 'cat-3-rule-7',  categoryId: 3, name: 'Dependency-Vulnerabilities geprueft', weight: 2, checkMode: 'external-tool', automatable: true, check: checkNpmAudit, agentSource: 'npm-audit' },
   manual('cat-3-rule-8',  3, 'Auth-Haertung (Token-Expiry, Rotation, Logout)', 3),
   manual('cat-3-rule-9',  3, 'Boilerplate-Hygiene (keine Default-Credentials)', 2),
   manual('cat-3-rule-10', 3, 'E-Mail-Sicherheit (SPF, DKIM, DMARC)', 2),

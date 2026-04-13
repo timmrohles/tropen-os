@@ -61,13 +61,18 @@ export async function checkDepCruiserCycles(ctx: AuditContext): Promise<RuleResu
   const cycles = violations.filter((v) => v.rule?.name === 'no-circular' || v.cycle?.length)
   const forbidden = violations.filter((v) => v.rule?.severity === 'error' && !v.cycle?.length)
 
-  const findings: Finding[] = cycles.map((v) => ({
-    severity: 'high' as const,
-    message: `Circular dependency: ${relative(ctx.rootPath, v.from)} ↔ ${relative(ctx.rootPath, v.to)}`,
-    filePath: relative(ctx.rootPath, v.from),
-    suggestion: 'Refactor to break the cycle — extract shared types or invert the dependency',
-    agentSource: 'architecture' as AgentSource,
-  }))
+  const findings: Finding[] = cycles.map((v) => {
+    const cyclePath = v.cycle?.length
+      ? v.cycle.map((p) => relative(ctx.rootPath, p)).join(' → ')
+      : `${relative(ctx.rootPath, v.from)} → ${relative(ctx.rootPath, v.to)}`
+    return {
+      severity: 'high' as const,
+      message: `Circular: ${cyclePath}`,
+      filePath: relative(ctx.rootPath, v.from),
+      suggestion: 'Refactor to break the cycle — extract shared types or invert the dependency',
+      agentSource: 'architecture' as AgentSource,
+    }
+  })
 
   findings.push(...forbidden.map((v) => ({
     severity: 'medium' as const,
@@ -348,6 +353,89 @@ export async function checkEslintDetailed(ctx: AuditContext): Promise<RuleResult
     score,
     reason: `ESLint: ${errorCount} errors, ${warnCount} warnings`,
     findings: capped,
+    automated: true,
+  }
+}
+
+// ── 5. npm / pnpm audit (granular per-advisory findings) ─────────────────────
+
+interface PnpmAdvisory {
+  id?: number
+  module_name?: string
+  severity?: string
+  title?: string
+  url?: string
+  recommendation?: string
+  cves?: string[]
+  findings?: { version?: string; paths?: string[] }[]
+}
+
+interface PnpmAuditOutput {
+  advisories?: Record<string, PnpmAdvisory>
+  metadata?: {
+    vulnerabilities?: { critical?: number; high?: number; moderate?: number; low?: number; total?: number }
+  }
+}
+
+export async function checkNpmAudit(ctx: AuditContext): Promise<RuleResult> {
+  const raw = run('pnpm', ['audit', '--json'], ctx.rootPath, 90_000)
+  if (!raw) return nullResult('cat-3-rule-7', 'pnpm audit failed to run or produced no output')
+
+  let parsed: PnpmAuditOutput
+  try { parsed = JSON.parse(raw) } catch {
+    return nullResult('cat-3-rule-7', 'Could not parse pnpm audit JSON output')
+  }
+
+  const vulns = parsed?.metadata?.vulnerabilities ?? {}
+  const critical = vulns.critical ?? 0
+  const high = vulns.high ?? 0
+  const moderate = vulns.moderate ?? 0
+  const low = vulns.low ?? 0
+  const total = vulns.total ?? 0
+
+  const advisories = Object.values(parsed?.advisories ?? {}) as PnpmAdvisory[]
+
+  const findings: Finding[] = advisories
+    .filter((a) => a.severity === 'critical' || a.severity === 'high' || a.severity === 'moderate' || a.severity === 'low')
+    .map((a) => {
+      const version = a.findings?.[0]?.version ?? 'unknown'
+      const cveStr = a.cves?.length ? `CVE: ${a.cves.join(', ')}. ` : ''
+      const fixCmd = a.module_name ? `Run: pnpm update ${a.module_name}` : ''
+      return {
+        severity: (
+          a.severity === 'critical' ? 'critical'
+          : a.severity === 'high' ? 'high'
+          : a.severity === 'moderate' ? 'medium'
+          : 'low'
+        ) as Finding['severity'],
+        message: `${a.module_name ?? 'unknown'} ${version} — ${a.title ?? 'Vulnerability'}`,
+        filePath: 'package.json',
+        suggestion: `${cveStr}${a.recommendation ?? ''}. ${fixCmd}`.trim().replace(/^\./, '').trim(),
+        agentSource: 'npm-audit' as AgentSource,
+        agentRuleId: `npm-audit-${a.id ?? a.module_name}`,
+      }
+    })
+
+  const score = critical === 0 && high === 0 && total === 0 ? 5
+    : critical === 0 && high === 0 ? 4
+    : critical === 0 && high <= 3 ? 3
+    : critical === 0 ? 2
+    : 1
+
+  if (total > 0) {
+    findings.unshift({
+      severity: critical > 0 ? 'critical' : high > 0 ? 'high' : 'medium',
+      message: `npm audit: ${total} vulnerability(s) (${critical} critical, ${high} high, ${moderate} moderate, ${low} low)`,
+      filePath: 'package.json',
+      agentSource: 'npm-audit' as AgentSource,
+    })
+  }
+
+  return {
+    ruleId: 'cat-3-rule-7',
+    score,
+    reason: `pnpm audit: ${critical} critical, ${high} high, ${moderate} moderate, ${total} total`,
+    findings,
     automated: true,
   }
 }
