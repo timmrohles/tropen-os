@@ -279,6 +279,8 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 | Komitee-Review (einzeln) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/committee-review.ts --config reviews/<name>.ts` | Generisches 4-Modell-Komitee (Sonnet + GPT-4o + Gemini 2.5 Flash + Grok 4) + Opus-Judge; ~€0.35–0.50 pro Review; Ergebnis in `docs/committee-reviews/<name>-review.md` |
 | Komitee-Review (alle) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/committee-review.ts --all` | Führt alle registrierten Reviews nacheinander aus (5s Pause dazwischen) |
 | Benchmark (Testbench) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/benchmark.ts --topic lovable-dev --max 10` | Scannt öffentliche GitHub-Repos per Tarball-API; Ergebnisse in DB (is_benchmark=true) + `docs/benchmark-results/`; braucht GITHUB_TOKEN |
+| Benchmark Mixed | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/benchmark-mixed.ts` | Scannt spezifische Repos (Bolt/Cursor/Manual) per Tarball-API; Ergebnisse in DB + `docs/audit-reports/` |
+| Benchmark v7 Final | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/benchmark-v7-final.ts` | Scannt alle 49 Repos (41 Lovable + 8 Mixed) in einem Run |
 
 ### API-Key Management
 
@@ -846,6 +848,7 @@ Letzte relevante Migrationen:
 | 20260409000106_project_profile.sql | scan_projects: profile JSONB, is_public, live_url, is_live, audience, compliance_requirements, not_applicable_categories |
 | 20260410000107_audit_agent_source_regulatory.sql | audit_findings: agent_source CHECK erweitert um 'dsgvo', 'bfsg', 'ai-act' |
 | 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
+| 20260415000112_audit_findings_not_relevant_reason.sql | audit_findings: not_relevant_reason TEXT Spalte fuer "Nicht relevant"-Begruendungen |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
@@ -1086,6 +1089,112 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 
 **Automatisierung:** Erst ab 10 Beta-Usern. Dann: "Finding falsch?"-Button im Produkt + Supabase-Tabelle.
 
+### Audit Checker-Stack (Stand 2026-04-15)
+
+233 Regeln (169 automatisiert, 64 manuell), 25 Kategorien, 27 Agenten.
+Vollstaendige Coverage-Tabelle: `docs/audit-reports/checker-coverage-2026-04-15.md`
+
+**Checker-Dateien:**
+| Datei | Regeln | Kategorien |
+|-------|--------|-----------|
+| `repo-map-checker.ts` | ~10 | cat-1,2,3,5,6,12,15,22,25 |
+| `file-system-checker.ts` | ~15 | cat-2,5,7,10,11,14,17,21,23 |
+| `ast-analyzer.ts` | — | Zentraler AST-Parser mit SHA-256 LRU-Cache (800 Eintraege) |
+| `ast-quality-checker.ts` | 8 | cat-1,2,3,5 (CC, God Components, Error Handling, Secrets, Circular Imports, any, N+1, Error Boundary) |
+| `compliance-checker.ts` | 6 | cat-4,5,22 (AGB, Widerruf, Button-Text, Affiliate, AI Transparency, AI Content) |
+| `gap-checkers.ts` | 4 | cat-6,9,14,18 (.env.example, TODO, Promises, Loading States) |
+| `category-gap-checkers.ts` | 5 | cat-7,11,20 (Performance, CI/CD, Cost Awareness) |
+| `state-deps-obs-checkers.ts` | 5 | cat-9,12,14 (fetch-in-effect, Prop Drilling, Store, Major Versions, Error Monitoring) |
+| `final-category-checkers.ts` | 9 | cat-8,13,18,21,23 (Backup, Timeout, README, PWA, Deployment) |
+| `thin-category-checkers.ts` | 5 | cat-10,15,17,19,23 (Test Framework, Icons, Strings, .gitignore, Deploy Config) |
+| `security-scan-checker.ts` | ~10 | cat-3,22,24 |
+| `agent-committee-checker.ts` | ~15 | cat-2,4,5,6,8,11,12,14,15,16,19,20 |
+| `agent-regulatory-checker.ts` | ~15 | cat-4,16,22 |
+
+**Tier-System:**
+| Tier | Regeln | Fuer wen |
+|------|--------|---------|
+| starter (default) | ~220 | Alle Projekte |
+| production | 3 | Teams mit CI/CD |
+| enterprise | 6 | Grosse Orgs (SBOM, OpenTelemetry, Vendor-Abstraktion) |
+
+**Profil-gated Compliance-Regeln (ohne Profil = nicht im Score):**
+`cat-4-rule-7` (Impressum), `cat-4-rule-11` (Datenschutz), `cat-4-rule-17` (Datenexport), `cat-4-rule-18` (Account-Loeschung), `cat-4-rule-20` (AGB), `cat-4-rule-21` (Widerruf), `cat-16-rule-5` (BFSG Erklaerung), `cat-16-rule-6` (BFSG Feedback)
+
+**Complexity-Factor Scoring:**
+Kleine Projekte (<50 Dateien) bekommen Score-Penalty: `log10(fileCount) / log10(100)`. 10 Dateien = Faktor 0.5, 100 Dateien = 1.0.
+
+**fixType-System:**
+- `getFixType()` aus `src/lib/audit/checkers/rule-registry.ts` — Node.js only, nie in Client-Komponenten importieren
+- `AuditContext.fileContents` Map ermoeglicht In-Memory-Scanning fuer Benchmarks (kein Disk-Zugriff)
+- `AuditOptions.excludeRuleIds` fuer Profil-basiertes Compliance-Filtering
+- `AuditOptions.tier` fuer Maturity-Level-Filtering (starter/production/enterprise)
+
+### Benchmark-System (Stand 2026-04-15)
+
+Automatisierter Scanner fuer oeffentliche GitHub-Repos per Tarball-API.
+
+**Architektur:**
+- `src/lib/benchmark/tarball-extractor.ts` — GitHub Tarball → In-Memory FileMap
+- `src/lib/benchmark/repo-discovery.ts` — GitHub Search API mit Filtern
+- `src/lib/benchmark/runner.ts` — Orchestrator: discover → download → scan → persist
+- `src/lib/benchmark/stats.ts` — Aggregierte Statistiken
+
+**v7-Benchmark (49 Repos):**
+| Gruppe | Repos | Avg Score | Verteilung |
+|--------|-------|-----------|------------|
+| Manual (CI) | 2 | 87.8% | Stable |
+| Cursor | 3 | 83.2% | Stable |
+| Lovable | 41 | 79.7% | 26 Stable, 14 Risky, 1 Prototype |
+| Bolt | 3 | 70.9% | Risky |
+
+**Ergebnisse:** `docs/audit-reports/benchmark-2026-04-15-v7-final.json`
+**DB:** `audit_runs` mit `is_benchmark=true`, `source_repo_url` pro Repo
+
+### Quick-Wins + UX-Schicht (Stand 2026-04-15)
+
+**Quick-Wins Algorithmus:** `src/lib/audit/quick-wins.ts`
+- Top 5 Findings nach Impact/Aufwand-Score (Severity x Suggestion x fixType)
+- Max 1 pro Kategorie, mit estimatedScoreGain
+- Gruppierung: today (high+code-fix) / thisWeek (medium+refactoring) / someday (low+manual)
+
+**Score-Percentile:** `src/lib/audit/score-percentile.ts`
+- Hardcoded v7-Benchmark-Daten (49 Repos, nach Topic aufgeteilt)
+- Anzeige: "Top X% aller gescannten Projekte"
+
+**Self-Assessment:** `src/lib/audit/self-assessment.ts`
+- 5 Ja/Nein-Fragen fuer manuelle Checks (Backups, Monitoring, Rate Limiting, RTO/RPO, Legal)
+- Antworten in `scan_projects.profile` JSONB (Feld `selfAssessment`)
+- Anti-Gaming: `suspicious=true` wenn <10s + alle true
+- API: `POST /api/audit/self-assessment`
+
+**UI-Komponenten:**
+- `QuickWinsCard.tsx` — Prominente Card mit Copy-to-Clipboard Cursor-Prompts
+- `FindingsGroupTabs.tsx` — Chip-Tabs "Heute fixbar / Diese Woche / Irgendwann"
+- `AuditTabs.tsx` — Tab-Navigation (Findings / Kategorien / Verlauf)
+- `CompliancePanel.tsx` — Domaenen-Uebersicht mit Ampel
+- `ProfileOnboarding.tsx` — 3-Schritt-Profil-Formular
+
+**Finding-Aktionen (vereinfacht):**
+- "Erledigt" → status=fixed, Undo-Link 5 Sekunden
+- "Nicht relevant" → Inline-Dropdown mit 4 Gruenden, status=dismissed + not_relevant_reason
+- Fix-Prompt bleibt als primaerer CTA
+- "Aufgabenliste" entfernt, "Als bekannt" entfernt
+- Filter: Offen (open+acknowledged) / Erledigt (fixed) / Nicht relevant (dismissed)
+
+### Compliance-Domaenen (Stand 2026-04-15)
+
+6 Domaenen mit Profil-basierter Relevanz: `src/lib/audit/compliance-domains.ts`
+
+| Domaene | ID | Emoji | Bussgeld | Relevant wenn |
+|---------|-----|-------|----------|---------------|
+| Impressum & Recht | impressum | Abmahnrisiko | immer |
+| Datenschutz | dsgvo | bis 20 Mio EUR | Login + nicht intern |
+| Online-Handel | ecommerce | bis 50.000 EUR | Payment |
+| KI-Transparenz | ai-act | bis 35 Mio EUR | AI Features |
+| Barrierefreiheit | bfsg | bis 100.000 EUR | DE + B2C |
+| Werbekennzeichnung | affiliate | bis 500.000 EUR | Affiliate Links |
+
 ### CI-Pipeline (Stand 2026-03-18)
 
 Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step und blockiert bei Errors.
@@ -1231,6 +1340,13 @@ eslint src/           # keine Fehler
 | `docs/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
 | `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
 | `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
+| `docs/audit-reports/` | Benchmark-Ergebnisse (v1-v7), Checker-Coverage, Committee-Results, Checker-Gaps |
+| `docs/manual-checks.md` | 64 manuelle Checks die statisch nicht pruefbar sind |
+| `src/lib/audit/quick-wins.ts` | Quick-Wins-Algorithmus (Top 5 nach Impact/Aufwand) |
+| `src/lib/audit/score-percentile.ts` | Percentile-Rank gegen v7-Benchmark |
+| `src/lib/audit/self-assessment.ts` | 5 Self-Assessment-Fragen |
+| `src/lib/audit/compliance-domains.ts` | 6 Compliance-Domaenen mit Relevanz-Funktionen |
+| `src/lib/benchmark/` | Automatisierte Benchmark-Testbench (Tarball + Discovery + Runner + Stats) |
 
 ---
 
