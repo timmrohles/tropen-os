@@ -53,12 +53,43 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
     : ctx
 
   const skipModes = new Set(options.skipModes ?? [])
+  // Merge explicit exclusions with profile-gated rules (if no profile set)
+  const baseExclusions = options.excludeRuleIds ?? new Set<string>()
+  let excludeRuleIds = baseExclusions
+  if (!options.complianceProfile) {
+    // No profile → exclude profile-gated compliance rules from scoring
+    const { PROFILE_GATED_RULE_IDS } = await import('./compliance-domains')
+    excludeRuleIds = new Set([...baseExclusions, ...PROFILE_GATED_RULE_IDS])
+  }
+  const TIER_ORDER: Record<string, number> = { starter: 0, production: 1, enterprise: 2 }
+  const userTier = TIER_ORDER[options.tier ?? 'starter'] ?? 0
   const categoryScores = []
 
   for (const catDef of CATEGORIES) {
     const rules = getRulesForCategory(catDef.id)
     const results = await Promise.all(
       rules.map(async (rule) => {
+        // Profile-based exclusion: rule not relevant for this project
+        if (excludeRuleIds.has(rule.id)) {
+          return {
+            ruleId: rule.id,
+            score: null as null,
+            reason: 'Not applicable for project profile',
+            findings: [] as never[],
+            automated: false,
+          }
+        }
+        // Tier filtering: skip rules above user's maturity level
+        const ruleTierLevel = TIER_ORDER[rule.tier ?? 'starter'] ?? 0
+        if (ruleTierLevel > userTier) {
+          return {
+            ruleId: rule.id,
+            score: null as null,
+            reason: 'Rule tier exceeds project maturity level',
+            findings: [] as never[],
+            automated: false,
+          }
+        }
         if (!rule.automatable || !rule.check || skipModes.has(rule.checkMode)) {
           return {
             ruleId: rule.id,
@@ -89,7 +120,8 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
     )
   }
 
-  const overall = calculateOverallScore(categoryScores)
+  const fileCount = ctx.repoMap?.stats?.totalFiles ?? ctx.filePaths?.length ?? 0
+  const overall = calculateOverallScore(categoryScores, { fileCount })
 
   return {
     project: (ctx.packageJson as { name?: string }).name ?? 'unknown',
@@ -129,6 +161,10 @@ export async function buildAuditContextFromFiles(
     try { tsConfig = JSON.parse(tsFile.content) as TsConfig } catch {}
   }
 
+  // Build in-memory file contents map for AST-based checks (no disk access)
+  const fileContents = new Map<string, string>()
+  for (const f of files) fileContents.set(f.path, f.content)
+
   return {
     rootPath: '',
     repoMap,
@@ -136,5 +172,6 @@ export async function buildAuditContextFromFiles(
     tsConfig,
     filePaths: files.map((f) => f.path),
     gitInfo: { hasGitDir: false, recentCommits: [] },
+    fileContents,
   }
 }

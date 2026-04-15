@@ -69,9 +69,24 @@ export function calculateCategoryScore(
   return { categoryId, name, weight, ruleResults, weightedScore, weightedMax, automatedPercentage, automatedRuleCount, manualRuleCount }
 }
 
+// ─── Complexity Factor ──────────────────────────────────────────────────────
+// Small projects (< 50 files) get a score penalty because they have fewer
+// opportunities to fail checks — their high scores are structural, not earned.
+// log10(10)=1, log10(50)=1.7, log10(100)=2, log10(500)=2.7
+// Normalized so 100 files = factor 1.0:
+//   10 files → 0.5, 50 files → 0.85, 100 files → 1.0, 500 files → 1.35
+
+function getComplexityFactor(fileCount: number): number {
+  const clamped = Math.max(10, fileCount)
+  return Math.log10(clamped) / Math.log10(100)
+}
+
 // ─── Overall Score ────────────────────────────────────────────────────────────
 
-export function calculateOverallScore(categories: CategoryScore[]): Pick<AuditReport, 'automatedPercentage' | 'status' | 'criticalFindings' | 'automatedRuleCount' | 'manualRuleCount'> {
+export function calculateOverallScore(
+  categories: CategoryScore[],
+  options?: { fileCount?: number },
+): Pick<AuditReport, 'automatedPercentage' | 'status' | 'criticalFindings' | 'automatedRuleCount' | 'manualRuleCount'> {
   let totalWeightedScore = 0
   let totalWeightedMax = 0
   let automatedRuleCount = 0
@@ -91,9 +106,20 @@ export function calculateOverallScore(categories: CategoryScore[]): Pick<AuditRe
     }
   }
 
-  const automatedPercentage = totalWeightedMax > 0
-    ? Math.round((totalWeightedScore / totalWeightedMax) * 1000) / 10
+  let automatedPercentage = totalWeightedMax > 0
+    ? (totalWeightedScore / totalWeightedMax) * 100
     : 0
+
+  // Apply complexity factor: small projects get a penalty
+  if (options?.fileCount != null) {
+    const factor = getComplexityFactor(options.fileCount)
+    if (factor < 1.0) {
+      // Scale the score down for small projects (factor < 1.0)
+      automatedPercentage = automatedPercentage * factor
+    }
+  }
+
+  automatedPercentage = Math.round(automatedPercentage * 10) / 10
 
   // Base status from score
   let status: AuditStatus = getStatus(automatedPercentage)

@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { generateRepoMap } from '@/lib/repo-map'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -48,8 +49,7 @@ export async function POST(request: NextRequest) {
       })),
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
-    log.error('generateRepoMap failed', { error: msg })
-    return NextResponse.json({ error: 'Repo-Map-Generierung fehlgeschlagen', details: msg }, { status: 500 })
+    log.error('generateRepoMap failed', { error: err })
+    return apiError(err)
   }
 }

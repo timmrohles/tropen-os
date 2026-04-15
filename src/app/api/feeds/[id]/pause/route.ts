@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { pauseFeed } from '@/lib/feeds/feed-pause'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -18,7 +19,7 @@ export async function POST(
   const reason = typeof body.reason === 'string' ? body.reason : undefined
 
   const result = await pauseFeed(id, user.id, reason)
-  if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+  if (result.error) return apiError(result.error)
 
   return NextResponse.json({ ok: true })
 }

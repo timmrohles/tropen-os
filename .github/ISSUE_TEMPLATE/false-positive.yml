@@ -1,0 +1,53 @@
+name: "False Positive Report"
+description: "Eine Regel hat ein Finding erzeugt das kein echtes Problem ist"
+labels: ["checker-quality", "false-positive"]
+body:
+  - type: input
+    id: rule-id
+    attributes:
+      label: Regel-ID
+      description: "z.B. cat-3-rule-22"
+      placeholder: "cat-X-rule-Y"
+    validations:
+      required: true
+  - type: dropdown
+    id: fix-type
+    attributes:
+      label: Fix-Typ der Regel
+      options:
+        - code-fix
+        - code-gen
+        - refactoring
+        - manual
+    validations:
+      required: true
+  - type: textarea
+    id: code-snippet
+    attributes:
+      label: Code der faelschlich geflagt wurde
+      description: "Der Code der das False Positive ausgeloest hat"
+      render: typescript
+    validations:
+      required: true
+  - type: textarea
+    id: why-false
+    attributes:
+      label: Warum ist es ein False Positive?
+      description: "Kurze Erklaerung warum der Code korrekt ist"
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Vorgeschlagener Checker-Fix
+      description: "Optional: wie sollte die Regel angepasst werden?"
+    validations:
+      required: false
+  - type: input
+    id: project-stack
+    attributes:
+      label: Projekt-Stack
+      description: "z.B. Next.js + Supabase + Drizzle"
+      placeholder: "Next.js + Supabase"
+    validations:
+      required: false

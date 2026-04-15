@@ -32,6 +32,8 @@ interface CategoryBreakdownProps {
   onCategoryClick?: (categoryId: number) => void
   highlightedCategoryId?: number | null
   isExternalProject?: boolean
+  /** When true, shows ⚠ live-check hint on DB and Security category rows */
+  showLiveCheckHint?: boolean
 }
 
 /** Primary agent(s) for each audit category */
@@ -101,6 +103,7 @@ export default function CategoryBreakdown({
   onCategoryClick,
   highlightedCategoryId,
   isExternalProject = false,
+  showLiveCheckHint = false,
 }: CategoryBreakdownProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -163,7 +166,7 @@ export default function CategoryBreakdown({
           Kategorien
         </span>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginRight: 2 }}>Sort:</span>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginRight: 2 }}>Sortierung:</span>
           <SortBtn label="Score"   sortKey="score"  active={sortKey==='score'}  dir={sortDir} onClick={handleSort} />
           <SortBtn label="Name"    sortKey="name"   active={sortKey==='name'}   dir={sortDir} onClick={handleSort} />
           <SortBtn label="Gewicht" sortKey="weight" active={sortKey==='weight'} dir={sortDir} onClick={handleSort} />
@@ -192,6 +195,7 @@ export default function CategoryBreakdown({
               onToggleExpand={() => toggleExpand(cat.category_id)}
               onCategoryClick={() => handleCategoryClick(cat)}
               hasFindings={findings.length > 0}
+              showLiveCheckHint={showLiveCheckHint}
             />
           )
         })}

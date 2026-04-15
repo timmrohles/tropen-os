@@ -237,7 +237,7 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <Wrench size={15} weight="bold" aria-hidden="true" />
-            {batchState === 'running' ? 'Fixes werden generiert…' : `${criticalCount} Critical fixen`}
+            {batchState === 'running' ? 'Fixes werden generiert…' : `${criticalCount} Kritische fixen`}
           </button>
         )}
 

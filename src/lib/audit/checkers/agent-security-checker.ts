@@ -197,8 +197,6 @@ export async function checkErrorLeakage(ctx: AuditContext): Promise<RuleResult> 
     (f) => f.path.startsWith('src/app/api/') && f.path.endsWith('route.ts')
   )
   const leakPatterns = ['error.stack', 'err.stack', 'e.stack']
-  // Flag when internal details (stack or message) are returned directly in a response
-  const responseLeakPattern = /(?:message|error|detail|stack)\s*:\s*(?:error|err|e)\.(?:message|stack)/
 
   const violations: Finding[] = []
   for (const route of apiRoutes) {
@@ -206,10 +204,15 @@ export async function checkErrorLeakage(ctx: AuditContext): Promise<RuleResult> 
     try { content = fs.readFileSync(join(ctx.rootPath, route.path), 'utf-8') } catch { continue }
 
     const hasStackLeak = leakPatterns.some((p) => content.includes(p))
-    const hasResponseLeak = responseLeakPattern.test(content)
-    // Catch NextResponse.json({ error: <var>.message }) — but only for DB/error vars,
-    // not intermediary helper objects like access.message (which contain safe static strings)
-    const hasMessageLeak = /NextResponse\.json\(\{[^}]*:\s*(?:error|err|e|[a-z]+Error|[a-z]+Err)\.message/.test(content)
+
+    // Only flag error.message when it's inside a NextResponse.json() call — not in log.error()
+    // Strip log lines first to avoid false positives from server-side logging
+    const withoutLogs = content.replace(/log(?:ger)?\.(?:error|warn|info|debug)\([^)]*\)/g, '')
+    const hasMessageLeak = /NextResponse\.json\([^)]*(?:error|err|e|[a-z]+Error|[a-z]+Err)\.(?:message|stack)/
+      .test(withoutLogs)
+    // Also check for error details passed via variables: NextResponse.json({ error: someVar })
+    // where someVar was assigned from error.message
+    const hasResponseLeak = /new Response\(.*(?:error|err)\.(?:message|stack)/.test(withoutLogs)
 
     if (hasStackLeak || hasResponseLeak || hasMessageLeak) {
       violations.push({

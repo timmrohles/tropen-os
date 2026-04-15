@@ -1,31 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { fetchUserOrgId, fetchTasksAndProjects } from '@/lib/audit/tasks-data'
 import { TasksClient } from './_components/TasksClient'
-
-export interface AuditTask {
-  id: string
-  finding_id: string | null
-  audit_run_id: string | null
-  scan_project_id: string | null
-  title: string
-  agent_source: string | null
-  rule_id: string | null
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info' | null
-  file_path: string | null
-  description: string | null
-  suggestion: string | null
-  completed: boolean
-  completed_at: string | null
-  dismissed_at: string | null
-  created_at: string
-}
-
-export interface ScanProject {
-  id: string
-  name: string
-}
 
 export default async function TasksPage() {
   const locale = await getLocale()
@@ -34,30 +11,15 @@ export default async function TasksPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/${locale}/login`)
 
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
+  const orgId = await fetchUserOrgId(user.id)
+  if (!orgId) redirect(`/${locale}/login`)
 
-  if (!profile?.organization_id) redirect(`/${locale}/login`)
-
-  const [{ data: tasks }, { data: scanProjects }] = await Promise.all([
-    supabaseAdmin
-      .from('audit_tasks')
-      .select('id, finding_id, audit_run_id, scan_project_id, title, agent_source, rule_id, severity, file_path, description, suggestion, completed, completed_at, dismissed_at, created_at')
-      .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false }),
-    supabaseAdmin
-      .from('scan_projects')
-      .select('id, name')
-      .eq('org_id', profile.organization_id),
-  ])
+  const { tasks, scanProjects } = await fetchTasksAndProjects(orgId)
 
   return (
     <TasksClient
-      initialTasks={(tasks ?? []) as AuditTask[]}
-      scanProjects={(scanProjects ?? []) as ScanProject[]}
+      initialTasks={tasks}
+      scanProjects={scanProjects}
       strings={{
         title: t('title'),
         subtitle: t('subtitle', { open: 0, completed: 0, dismissed: 0 }),

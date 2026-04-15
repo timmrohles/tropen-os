@@ -5,6 +5,7 @@ import { createHmac, timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { runAgent } from '@/lib/agent-engine'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -80,9 +81,8 @@ export async function POST(
       const runId = await runAgent(agent_id, 'webhook', payload)
       return NextResponse.json({ run_id: runId })
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown'
-      log.error('Webhook runAgent failed', { agent_id, error: msg })
-      return NextResponse.json({ error: msg }, { status: 500 })
+      log.error('Webhook runAgent failed', { agent_id, error: err })
+      return apiError(err)
     }
   }
 

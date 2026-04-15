@@ -267,7 +267,7 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 
 | Script | Befehl | Beschreibung |
 |--------|--------|-------------|
-| Repo Map Generator | `npx tsx src/scripts/generate-repo-map.ts [--budget 4096]` | Scannt Tropen OS Repo selbst, schreibt Ergebnis in `docs/repo-map/` |
+| Repo Map Generator | `npx tsx src/scripts/generate-repo-map.ts [--budget 4096]` | Scannt Tropen OS Repo selbst, schreibt Ergebnis in `docs/repo-map/` — Stufe 1 (2026-04-13): additives Ranking, Re-Export-Tracking, AST-Cache |
 | Audit Runner | `pnpm exec tsx src/scripts/run-audit.ts [--skip-cli] [--budget N]` | Standard audit (fast) — external-tool checks skipped by default |
 | Audit mit externen Tools | `pnpm exec tsx src/scripts/run-audit.ts --with-tools [--lighthouse-url URL] [--deep-secrets]` | Aktiviert depcruise, ESLint-detailed, gitleaks, Bundle-Analyse, optionales Lighthouse |
 | Audit Dashboard | `/audit` (App-Route, requireOrgAdmin) | Interaktives Dashboard: Score-Hero, Kategorie-Breakdown, Findings-Table, Score-Trend (Tremor), Run-Historie; POST /api/audit/trigger startet neuen Run und persistiert in DB |
@@ -276,6 +276,9 @@ AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `
 | Meta-Review Agenten | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/meta-review-agents.ts` | Fachliche Vollständigkeitsprüfung aller Agenten via Opus; ~€0.40; Ergebnis in `docs/agents/_reviews/meta-review-YYYY-MM-DD.md` |
 | Deep Agents Generator | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/generate-deep-agents.ts [dsgvo\|bfsg\|ai-act]` | Erstellt regulatorische Deep Agents (DSGVO/BFSG/AI Act) via Komitee; ~€1.50; Ergebnisse in `docs/agents/` |
 | Schwache Agenten vertiefen | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/deepen-weak-agents.ts [AGENT_ID]` | Vertieft Top-N schwache Agenten aus Meta-Review; ~€0.25/Agent; ohne Argument: Top-4 aus letztem Meta-Review |
+| Komitee-Review (einzeln) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/committee-review.ts --config reviews/<name>.ts` | Generisches 4-Modell-Komitee (Sonnet + GPT-4o + Gemini 2.5 Flash + Grok 4) + Opus-Judge; ~€0.35–0.50 pro Review; Ergebnis in `docs/committee-reviews/<name>-review.md` |
+| Komitee-Review (alle) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/committee-review.ts --all` | Führt alle registrierten Reviews nacheinander aus (5s Pause dazwischen) |
+| Benchmark (Testbench) | `env $(grep -v '^#' .env.local | grep -v ':' | xargs) pnpm exec tsx src/scripts/benchmark.ts --topic lovable-dev --max 10` | Scannt öffentliche GitHub-Repos per Tarball-API; Ergebnisse in DB (is_benchmark=true) + `docs/benchmark-results/`; braucht GITHUB_TOKEN |
 
 ### API-Key Management
 
@@ -664,6 +667,14 @@ Klick [···]:  Umbenennen / Bearbeiten
   /webapp-manifest      # Engineering Standards & Audit System
   /repo-map             # Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts)
 /src/lib/audit
+  /prompt-export        # Regelbasierte Fix-Prompt-Engine (kein LLM — deterministisch, kostenlos)
+    types.ts            # PromptFinding, ToolTarget, GeneratedPrompt, RepoContextSnippet
+    template-engine.ts  # buildFixPrompt(finding, tool, repoMap?) — 5 Sections (Problem/Wo/Warum/Fix/Validierung)
+    repo-context.ts     # extractRepoContext() — Symbols+Deps aus RepoMap, max 2000 Token
+    index.ts            # Re-Exports
+  schema-drift-check.ts # detectDbProvider() + checkSchemaDrift() — always score 5, info finding when DB detected
+/src/app/[locale]/(app)/audit/_components
+  FixPromptDrawer.tsx   # Portal-Drawer (right-side) — Tool-Chips (Cursor/Claude Code/Generic), formatted prompt, copy; mode:'single'|'group'; Escape+Backdrop close; 200ms slideInRight
   /checkers             # Automatisierte Prüffunktionen pro Themenbereich
     file-system-checker.ts       # Datei-Existenz-Checks
     repo-map-checker.ts          # Symbol- und Struktur-Checks via RepoMap
@@ -855,10 +866,17 @@ Dashboard (`/dashboard`):
 - Hat Projekte → Card-Grid: Score (groß), Status-Badge, Trend-Pfeil, "Noch X% bis [Status]"
 - Routing: /audit?project=[id] für externe Projekte, /audit für internes Tropen OS
 
-Audit Top-5-Findings (`src/app/audit/_components/Top5FindingsCards.tsx`):
-- Zeigt oben die 5 kritischsten offenen Findings als Cards (statt direkt volle Tabelle)
-- Aktionen: "Als Aufgabe" (POST /api/audit/tasks), "Als Prompt kopieren" (Clipboard), "Ignorieren" (PATCH status:dismissed)
-- "Alle [N] Findings anzeigen" scrollt zu #findings-table
+Audit Top-5-Findings (`src/app/[locale]/(app)/audit/_components/Top5FindingsCards.tsx`):
+- Zeigt die 5 kritischsten offenen **Gruppen** (Rule-ID gruppiert; Impact-Score: Severity → uniqueFileCount)
+- Aktionen: Task (POST /api/audit/tasks, group-level), Fix-Prompt (FixPromptDrawer mode="group"), × Dismiss (PATCH alle Findings der Gruppe)
+- Klick auf Zeile scrollt zu `[data-rule-id="..."]` in FindingsTable, Fallback #findings-table
+
+Audit Findings-Liste (`src/app/[locale]/(app)/audit/_components/FindingsTable.tsx`):
+- **Ein Pattern für alles:** Alle Findings als `RecommendationCard` — keine Tabelle mehr
+- Grouped mode: `groupFindings()` aus `src/lib/audit/group-findings.ts` → RecommendationCards; jede Gruppe in `<div data-rule-id="...">`
+- Flat mode: jedes Finding als group-of-1 (`singleFindingAsGroup`) → gleicher RecommendationCard-Stil
+- Entfernt: Tabelle, Fix-Generierung, Bulk-Select/Export, UPPERCASE-Header, Status-Dropdowns inline
+- Geteilte Gruppenlogik: `src/lib/audit/group-findings.ts` — einzige Quelle für beide Komponenten
 
 **Cockpit Widget System (Stand 2026-03-25):**
 Route `/cockpit` (war `/dashboard`), Sidebar-Icon: Speedometer.
@@ -1051,6 +1069,23 @@ Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Tra
 - Agenten: Max 1 gleichzeitiger Run pro Agent, agent_runs ist APPEND ONLY
 - Scope-Hierarchie (alle Entitäten): system → package → org → user → public
 
+### Checker-Feedback-Prozess (Stand 2026-04-14)
+
+Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidung aus Committee Review (einstimmig, 4 Modelle).
+
+**Prozess bei False Positives:**
+1. Finding faellt beim Dogfooding auf
+2. Kategorisierung: Echtes Problem / False Positive / Bewusste Ausnahme
+3. Bei False Positive: GitHub Issue erstellen (Template `.github/ISSUE_TEMPLATE/false-positive.yml`)
+4. Checker-Fix implementieren
+5. Eintrag in `docs/checker-feedback.md`
+
+**Ziel-FP-Rate:** <10% pro Regel (MVP), <5% nach Year 1.
+
+**Test-Repos:** Jeder Checker-Fix wird gegen 5 Open-Source-Benchmark-Repos getestet (siehe `docs/checker-test-repos.md`).
+
+**Automatisierung:** Erst ab 10 Beta-Usern. Dann: "Finding falsch?"-Button im Produkt + Supabase-Tabelle.
+
 ### CI-Pipeline (Stand 2026-03-18)
 
 Design System Lint (`node scripts/ci/lint-design-system.mjs`) läuft als CI-Step und blockiert bei Errors.
@@ -1189,6 +1224,13 @@ eslint src/           # keine Fehler
 | `src/lib/audit/checkers/agent-committee-checker.ts` | Sprint 5b: 30+ automatisierte Checks der 18 Komitee-Agenten (Legal, Database, API, Testing, etc.) |
 | `src/app/superadmin/agents/` | Superadmin-Seite für Agent Rule Packs: Übersicht, Search, Filter, Detail-Drawer mit Markdown-Preview |
 | `src/app/api/superadmin/agents/route.ts` | API: liefert AGENT_CATALOG angereichert mit findingsCount + lastCheckAt aus audit_findings |
+| `src/scripts/committee-review.ts` | Generisches Komitee-Review-Framework: 4 Reviewer (Sonnet, GPT-4o, Gemini 2.5 Flash, Grok 4) + Opus-Judge; Config-basiert; ~€0.35–0.50/Review |
+| `src/scripts/reviews/*.ts` | Review-Configs: `claude-md.ts`, `audit-scoring.ts`, `fix-engine.ts`, `agent-checker-alignment.ts`, `repo-map.ts`, `dogfooding-feedback.ts` — jede Config definiert contextFiles, systemPrompt, userPrompt, judgePrompt |
+| `docs/committee-reviews/` | Komitee-Review-Ergebnisse: `*-review.md` mit Konsens-Levels (EINIG/MEHRHEIT/GESPALTEN), Empfehlungen, Kosten-Tabelle |
+| `docs/checker-feedback.md` | Checker Feedback Log: FP-Tracking, bekannte FP-Regeln, Prozess-Beschreibung |
+| `docs/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
+| `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
+| `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
 
 ---
 

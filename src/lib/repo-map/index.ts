@@ -6,6 +6,7 @@ import { extractSymbols } from './symbol-extractor'
 import { analyzeReferences } from './reference-analyzer'
 import { rankSymbols } from './graph-ranker'
 import { compressToTokenBudget, resolveTokenBudget } from './map-compressor'
+import { hashContent, getCached, setCached } from './ast-cache'
 import type { RepoMap, RepoFile, RepoMapOptions } from './types'
 
 export { generateRepoMap, getCompressedRepoMap, generateRepoMapFromFiles }
@@ -37,9 +38,14 @@ async function generateRepoMap(options: RepoMapOptions): Promise<RepoMap> {
       continue
     }
 
-    const parsed = parseSource(absPath, content)
-    const symbols = extractSymbols(parsed, filePath, content)
     const lineCount = content.split('\n').length
+    const contentHash = hashContent(content)
+    let symbols = getCached(contentHash)
+    if (!symbols) {
+      const parsed = parseSource(absPath, content)
+      symbols = extractSymbols(parsed, filePath, content)
+      setCached(contentHash, symbols)
+    }
     const language = filePath.endsWith('.js') || filePath.endsWith('.jsx') ? 'javascript' : 'typescript'
 
     repoFiles.push({

@@ -1,0 +1,612 @@
+{
+  "date": "2026-04-15T09:26:14.011Z",
+  "topic": "lovable-dev",
+  "totalRepos": 42,
+  "stats": {
+    "totalRepos": 42,
+    "successfulScans": 41,
+    "failedScans": 1,
+    "avgScore": 80.4,
+    "medianScore": 82.1,
+    "scoreDistribution": {
+      "prototype": 1,
+      "risky": 9,
+      "stable": 31,
+      "production": 0
+    },
+    "topFindings": [
+      {
+        "ruleId": "cat-4-rule-17",
+        "message": "Recht auf Datenübertragbarkeit (Art. 20) erfordert einen Export-Endpoint",
+        "count": 41,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-4-rule-18",
+        "message": "Recht auf Löschung (Art. 17) erfordert Konto-Löschfunktion",
+        "count": 41,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-10-rule-3",
+        "message": "No *.spec.ts files found — E2E tests not written",
+        "count": 41,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-16-rule-8",
+        "message": "Tastaturnutzer können Navigation nicht überspringen — WCAG 2.1 SC 2.4.1 verletzt",
+        "count": 41,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-2-rule-11",
+        "message": "No error.tsx or react-error-boundary — unhandled errors show blank page",
+        "count": 80,
+        "percentage": 98
+      },
+      {
+        "ruleId": "cat-17-rule-1",
+        "message": "All UI strings are hardcoded — no i18n framework",
+        "count": 40,
+        "percentage": 98
+      },
+      {
+        "ruleId": "cat-19-rule-3",
+        "message": "package.json version is 0.1.0 — no stable release",
+        "count": 40,
+        "percentage": 98
+      },
+      {
+        "ruleId": "cat-4-rule-12",
+        "message": "DSGVO/ePrivacy Art. 5(3): Cookie-Consent vor nicht-essentiellen Cookies erforder",
+        "count": 38,
+        "percentage": 93
+      },
+      {
+        "ruleId": "cat-16-rule-9",
+        "message": "1 dynamische Komponente(n) ohne aria-live (WCAG 2.1 SC 4.1.3)",
+        "count": 38,
+        "percentage": 93
+      },
+      {
+        "ruleId": "cat-25-rule-2",
+        "message": "File size violation (> 500 lines): canvas/src/canvases/document/components/markd",
+        "count": 186,
+        "percentage": 90
+      },
+      {
+        "ruleId": "cat-4-rule-9",
+        "message": "Cookie consent required by DSGVO/ePrivacy — none detected",
+        "count": 37,
+        "percentage": 90
+      },
+      {
+        "ruleId": "cat-2-rule-1",
+        "message": "strict: true missing in tsconfig.json compilerOptions",
+        "count": 36,
+        "percentage": 88
+      },
+      {
+        "ruleId": "cat-1-rule-4",
+        "message": "File size violation (> 500 lines): canvas/src/canvases/calendar.tsx (586 lines)",
+        "count": 556,
+        "percentage": 56
+      },
+      {
+        "ruleId": "cat-2-rule-12",
+        "message": "Function \"DayColumn\" has CC=45 (max 15)",
+        "count": 481,
+        "percentage": 54
+      },
+      {
+        "ruleId": "cat-2-rule-10",
+        "message": "Catch block only has console.log — use structured logger",
+        "count": 270,
+        "percentage": 49
+      },
+      {
+        "ruleId": "cat-1-rule-10",
+        "message": "Large component: 586 lines, 8 hooks",
+        "count": 128,
+        "percentage": 41
+      },
+      {
+        "ruleId": "cat-5-schema-drift",
+        "message": "Schema Drift Check empfohlen (Supabase)",
+        "count": 17,
+        "percentage": 41
+      },
+      {
+        "ruleId": "cat-2-rule-13",
+        "message": "4 `any` usages",
+        "count": 40,
+        "percentage": 22
+      },
+      {
+        "ruleId": "cat-25-rule-1",
+        "message": "Component file not PascalCase: apps/web/src/components/ai/ai.integration.test.ts",
+        "count": 106,
+        "percentage": 17
+      },
+      {
+        "ruleId": "cat-5-rule-15",
+        "message": "Potential N+1 query: DB/API call inside loop",
+        "count": 13,
+        "percentage": 15
+      }
+    ],
+    "findingsByFixType": {
+      "refactoring": 1366,
+      "code-fix": 664,
+      "code-gen": 327,
+      "manual": 17
+    },
+    "totalFindings": 2374,
+    "avgFindingsPerRepo": 58
+  },
+  "repos": [
+    {
+      "name": "All-zzz/claude-canvas",
+      "url": "https://github.com/All-zzz/claude-canvas",
+      "score": 71.8,
+      "status": "risky",
+      "findings": 45,
+      "critical": 8,
+      "files": 56,
+      "durationMs": 1459,
+      "error": null
+    },
+    {
+      "name": "tsylvester/paynless-framework",
+      "url": "https://github.com/tsylvester/paynless-framework",
+      "score": 81.5,
+      "status": "stable",
+      "findings": 852,
+      "critical": 79,
+      "files": 1861,
+      "durationMs": 5232,
+      "error": null
+    },
+    {
+      "name": "AHBRIJESH/Portfolio",
+      "url": "https://github.com/AHBRIJESH/Portfolio",
+      "score": 81.8,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 82,
+      "durationMs": 944,
+      "error": null
+    },
+    {
+      "name": "Gowtham3424/fin-bloom-dash",
+      "url": "https://github.com/Gowtham3424/fin-bloom-dash",
+      "score": 83.7,
+      "status": "stable",
+      "findings": 20,
+      "critical": 1,
+      "files": 99,
+      "durationMs": 680,
+      "error": null
+    },
+    {
+      "name": "chihebnabil/lovable-boilerplate",
+      "url": "https://github.com/chihebnabil/lovable-boilerplate",
+      "score": 85.4,
+      "status": "stable",
+      "findings": 17,
+      "critical": 1,
+      "files": 95,
+      "durationMs": 1081,
+      "error": null
+    },
+    {
+      "name": "SudarshanaSRao/sports-on-the-go-4c575e84",
+      "url": "https://github.com/SudarshanaSRao/sports-on-the-go-4c575e84",
+      "score": 84.9,
+      "status": "stable",
+      "findings": 99,
+      "critical": 7,
+      "files": 175,
+      "durationMs": 949,
+      "error": null
+    },
+    {
+      "name": "redmonkin/core-hr-hub",
+      "url": "https://github.com/redmonkin/core-hr-hub",
+      "score": 83.7,
+      "status": "stable",
+      "findings": 187,
+      "critical": 16,
+      "files": 269,
+      "durationMs": 1358,
+      "error": null
+    },
+    {
+      "name": "at-vaishnavi/vaishnavi-portfolio",
+      "url": "https://github.com/at-vaishnavi/vaishnavi-portfolio",
+      "score": 82.4,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 85,
+      "durationMs": 1077,
+      "error": null
+    },
+    {
+      "name": "LeonardoSouzaBento/Pet-ShopLandingPage",
+      "url": "https://github.com/LeonardoSouzaBento/Pet-ShopLandingPage",
+      "score": 77.5,
+      "status": "risky",
+      "findings": 40,
+      "critical": 1,
+      "files": 67,
+      "durationMs": 3290,
+      "error": null
+    },
+    {
+      "name": "zilmanalex-pm/tarbut-on",
+      "url": "https://github.com/zilmanalex-pm/tarbut-on",
+      "score": 83.5,
+      "status": "stable",
+      "findings": 55,
+      "critical": 4,
+      "files": 174,
+      "durationMs": 949,
+      "error": null
+    },
+    {
+      "name": "vedantxn/nextly",
+      "url": "https://github.com/vedantxn/nextly",
+      "score": 81.3,
+      "status": "stable",
+      "findings": 54,
+      "critical": 1,
+      "files": 109,
+      "durationMs": 919,
+      "error": null
+    },
+    {
+      "name": "whitfieldnia880-maker/whisperbrook",
+      "url": "https://github.com/whitfieldnia880-maker/whisperbrook",
+      "score": 83.1,
+      "status": "stable",
+      "findings": 43,
+      "critical": 4,
+      "files": 108,
+      "durationMs": 1666,
+      "error": null
+    },
+    {
+      "name": "Nigismo/lnikita",
+      "url": "https://github.com/Nigismo/lnikita",
+      "score": 85.1,
+      "status": "stable",
+      "findings": 19,
+      "critical": 1,
+      "files": 120,
+      "durationMs": 760,
+      "error": null
+    },
+    {
+      "name": "ankushkhakale/BiteRush",
+      "url": "https://github.com/ankushkhakale/BiteRush",
+      "score": 82.2,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 84,
+      "durationMs": 827,
+      "error": null
+    },
+    {
+      "name": "Prarabda/samanata",
+      "url": "https://github.com/Prarabda/samanata",
+      "score": 82.6,
+      "status": "stable",
+      "findings": 25,
+      "critical": 2,
+      "files": 96,
+      "durationMs": 1212,
+      "error": null
+    },
+    {
+      "name": "itsa4ankush/butterr_chicken",
+      "url": "https://github.com/itsa4ankush/butterr_chicken",
+      "score": 82.7,
+      "status": "stable",
+      "findings": 15,
+      "critical": 1,
+      "files": 88,
+      "durationMs": 752,
+      "error": null
+    },
+    {
+      "name": "rophilekhan/Luxury-Living-Redefined-Website-With-Backend",
+      "url": "https://github.com/rophilekhan/Luxury-Living-Redefined-Website-With-Backend",
+      "score": 84,
+      "status": "stable",
+      "findings": 17,
+      "critical": 1,
+      "files": 94,
+      "durationMs": 755,
+      "error": null
+    },
+    {
+      "name": "rophilekhan/Codesphinx-FreshLaundry--withAdmin-and-monthlyplan-SAAS",
+      "url": "https://github.com/rophilekhan/Codesphinx-FreshLaundry--withAdmin-and-monthlyplan-SAAS",
+      "score": 82.3,
+      "status": "stable",
+      "findings": 36,
+      "critical": 2,
+      "files": 93,
+      "durationMs": 864,
+      "error": null
+    },
+    {
+      "name": "NickiMash17/interview-ace",
+      "url": "https://github.com/NickiMash17/interview-ace",
+      "score": 83.3,
+      "status": "stable",
+      "findings": 31,
+      "critical": 1,
+      "files": 101,
+      "durationMs": 714,
+      "error": null
+    },
+    {
+      "name": "beeweed/vibecoder",
+      "url": "https://github.com/beeweed/vibecoder",
+      "score": 73.2,
+      "status": "risky",
+      "findings": 109,
+      "critical": 10,
+      "files": 69,
+      "durationMs": 2619,
+      "error": null
+    },
+    {
+      "name": "Yashig-1912/ask-yashi-pro",
+      "url": "https://github.com/Yashig-1912/ask-yashi-pro",
+      "score": 82.2,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 84,
+      "durationMs": 638,
+      "error": null
+    },
+    {
+      "name": "Gerome-Elassaad/CodingIT",
+      "url": "https://github.com/Gerome-Elassaad/CodingIT",
+      "score": 81.7,
+      "status": "stable",
+      "findings": 129,
+      "critical": 5,
+      "files": 182,
+      "durationMs": 1149,
+      "error": null
+    },
+    {
+      "name": "Ma2903/Gerenciador-Tarefas-Academicas",
+      "url": "https://github.com/Ma2903/Gerenciador-Tarefas-Academicas",
+      "score": 81.8,
+      "status": "stable",
+      "findings": 17,
+      "critical": 1,
+      "files": 84,
+      "durationMs": 692,
+      "error": null
+    },
+    {
+      "name": "Shivshanker869/mindtrack-personalwellness",
+      "url": "https://github.com/Shivshanker869/mindtrack-personalwellness",
+      "score": 83.6,
+      "status": "stable",
+      "findings": 37,
+      "critical": 4,
+      "files": 109,
+      "durationMs": 727,
+      "error": null
+    },
+    {
+      "name": "dexoryn/lovable-AI-Agent-gpt",
+      "url": "https://github.com/dexoryn/lovable-AI-Agent-gpt",
+      "score": 48.7,
+      "status": "prototype",
+      "findings": 34,
+      "critical": 3,
+      "files": 16,
+      "durationMs": 681,
+      "error": null
+    },
+    {
+      "name": "nightmare5831/AI-Agent",
+      "url": "https://github.com/nightmare5831/AI-Agent",
+      "score": 76.7,
+      "status": "risky",
+      "findings": 165,
+      "critical": 5,
+      "files": 182,
+      "durationMs": 4175,
+      "error": null
+    },
+    {
+      "name": "owen9256/rv1-demo-for-mop",
+      "url": "https://github.com/owen9256/rv1-demo-for-mop",
+      "score": 82.1,
+      "status": "stable",
+      "findings": 24,
+      "critical": 2,
+      "files": 94,
+      "durationMs": 817,
+      "error": null
+    },
+    {
+      "name": "AryanKaji/MOVIESVERSE",
+      "url": "https://github.com/AryanKaji/MOVIESVERSE",
+      "score": 79.7,
+      "status": "risky",
+      "findings": 15,
+      "critical": 1,
+      "files": 74,
+      "durationMs": 870,
+      "error": null
+    },
+    {
+      "name": "ash-norsidi/honey-waffle-stack",
+      "url": "https://github.com/ash-norsidi/honey-waffle-stack",
+      "score": 80.6,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 77,
+      "durationMs": 616,
+      "error": null
+    },
+    {
+      "name": "prachip1/parrottext",
+      "url": "https://github.com/prachip1/parrottext",
+      "score": 79.1,
+      "status": "risky",
+      "findings": 16,
+      "critical": 1,
+      "files": 74,
+      "durationMs": 703,
+      "error": null
+    },
+    {
+      "name": "eversonfilipe/Flowlink-EmpoweringCommunities",
+      "url": "https://github.com/eversonfilipe/Flowlink-EmpoweringCommunities",
+      "score": 0,
+      "status": "error",
+      "findings": 0,
+      "critical": 0,
+      "files": 0,
+      "durationMs": 990,
+      "error": "Too few code files (1)"
+    },
+    {
+      "name": "SatChittAnand/aura-academic-assistant",
+      "url": "https://github.com/SatChittAnand/aura-academic-assistant",
+      "score": 80.1,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 75,
+      "durationMs": 987,
+      "error": null
+    },
+    {
+      "name": "HuzziBoss/scrollscape-immersive-worlds",
+      "url": "https://github.com/HuzziBoss/scrollscape-immersive-worlds",
+      "score": 79.4,
+      "status": "risky",
+      "findings": 16,
+      "critical": 1,
+      "files": 74,
+      "durationMs": 676,
+      "error": null
+    },
+    {
+      "name": "salahaKA/mind-bloom-webinar-landing",
+      "url": "https://github.com/salahaKA/mind-bloom-webinar-landing",
+      "score": 78.9,
+      "status": "risky",
+      "findings": 15,
+      "critical": 1,
+      "files": 71,
+      "durationMs": 662,
+      "error": null
+    },
+    {
+      "name": "WPTK/yarniverse-explorer",
+      "url": "https://github.com/WPTK/yarniverse-explorer",
+      "score": 82.9,
+      "status": "stable",
+      "findings": 54,
+      "critical": 4,
+      "files": 102,
+      "durationMs": 742,
+      "error": null
+    },
+    {
+      "name": "AniruddhaAdak/FoodieFlow",
+      "url": "https://github.com/AniruddhaAdak/FoodieFlow",
+      "score": 83.4,
+      "status": "stable",
+      "findings": 15,
+      "critical": 1,
+      "files": 90,
+      "durationMs": 852,
+      "error": null
+    },
+    {
+      "name": "76jankihere/Janki-portfolio-website",
+      "url": "https://github.com/76jankihere/Janki-portfolio-website",
+      "score": 81.5,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 81,
+      "durationMs": 687,
+      "error": null
+    },
+    {
+      "name": "beyagency/shelfly-creator-hub",
+      "url": "https://github.com/beyagency/shelfly-creator-hub",
+      "score": 83,
+      "status": "stable",
+      "findings": 20,
+      "critical": 1,
+      "files": 92,
+      "durationMs": 653,
+      "error": null
+    },
+    {
+      "name": "wizzynoise/7Jardins_version2",
+      "url": "https://github.com/wizzynoise/7Jardins_version2",
+      "score": 70.1,
+      "status": "risky",
+      "findings": 11,
+      "critical": 1,
+      "files": 43,
+      "durationMs": 609,
+      "error": null
+    },
+    {
+      "name": "wizzynoise/7jardins_version1",
+      "url": "https://github.com/wizzynoise/7jardins_version1",
+      "score": 84.8,
+      "status": "stable",
+      "findings": 16,
+      "critical": 1,
+      "files": 98,
+      "durationMs": 686,
+      "error": null
+    },
+    {
+      "name": "najzdev/al-jiwar-luxury-map",
+      "url": "https://github.com/najzdev/al-jiwar-luxury-map",
+      "score": 80.6,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 77,
+      "durationMs": 646,
+      "error": null
+    },
+    {
+      "name": "zoraizmohammad/ciphertext-landing",
+      "url": "https://github.com/zoraizmohammad/ciphertext-landing",
+      "score": 80.1,
+      "status": "stable",
+      "findings": 14,
+      "critical": 1,
+      "files": 75,
+      "durationMs": 633,
+      "error": null
+    }
+  ]
+}

@@ -22,6 +22,88 @@ Jeder Eintrag folgt diesem Schema:
 
 ---
 
+## 2026-04-13 — Findings-Liste vereinheitlichen: Ein Pattern für alles
+
+**Ampel:** 🟢
+**Prompt:** Top Findings auf Gruppen-Ebene + Findings-Liste vereinheitlichen
+
+**Entscheidungen:**
+- **Shared grouping logic:** Private `groupFindings`/`FindingGroup`/`extractBaseMessage`/`getHighestSeverity` aus `FindingsTable.tsx` extrahiert nach `src/lib/audit/group-findings.ts`. Einzige Quelle der Wahrheit für beide Komponenten. `AuditFinding`-Interface ist Schnittmenge beider Finding-Typen (top5 + DB).
+- **Top5FindingsCards auf Gruppen-Ebene:** War: 5 individuelle Findings (Duplikate wenn gleiche Regel). Neu: 5 eindeutige Gruppen nach `rule_id`, sortiert nach Impact-Score (Severity → uniqueFileCount). Dismiss schreibt PATCH auf alle Findings der Gruppe.
+- **FindingsTable: Nur noch RecommendationCard-Pattern:** Tabelle (SEV/AGENT/REGEL/MELDUNG/DATEI/STATUS-Spalten), UPPERCASE-Group-Header, Fix-Generierung, Bulk-Select/Export, Status-Dropdowns entfernt. Jede Gruppe (auch Gruppen mit 1 Finding in flat mode) wird via `RecommendationCard` gerendert.
+- **`singleFindingAsGroup()`:** Flat-Mode wickelt einzelne Findings als `FindingGroup` mit count=1 — gleicher Component-Pfad, kein Sonder-Rendering.
+- **`data-rule-id` auf Wrapper-Div:** Ermöglicht `scrollToGroup()` in Top5FindingsCards via `document.querySelector('[data-rule-id="..."]')`.
+- **API-Stack-Traces migriert:** Alle Route-Handler die `err.message`/`String(err)` in Response-Bodies leakten wurden auf zentrales `apiError()` aus `src/lib/api-error.ts` umgestellt. SSE-Route (`perspectives/query`) nutzt hardkodierte deutsche Strings statt `String(err)` in SSE-Payloads.
+
+**Anpassungen:** keine
+
+**Offene Punkte:** keine
+
+**Neue Lernmuster:**
+- Wenn zwei Komponenten die gleiche Gruppenlogik brauchen: sofort extrahieren, nie duplizieren. Die private Version in FindingsTable hatte leicht unterschiedliches Verhalten (einzelne Findings wurden nicht als Gruppe zurückgegeben) — die neue shared Version ist konsequenter.
+- SSE-Routes können nicht `NextResponse` aus catch zurückgeben — Error-Strings müssen direkt in den SSE-Payload-Objekten auf generische Strings gesetzt werden; Details gehen nur in `logger.error()`.
+
+---
+
+## 2026-04-13 — Prompt-Export UX Overhaul: i18n + FixPromptDrawer + Permanent Actions
+
+**Ampel:** 🟢
+**Prompt:** Prompt-Export UX Overhaul — Sichtbarkeit, Konsistenz, Mobile
+
+**Entscheidungen:**
+- **FixPromptDrawer als Portal:** Drawer nutzt `createPortal(content, document.body)` — liegt immer auf oberster z-Ebene, kein Clipping durch Scroll-Container. Animation via bestehende `slideInRight` Keyframe-Definition in globals.css.
+- **Permanent sichtbare Actions in Top5FindingsCards:** Hover-only Pattern entfernt. Task + Fix-Prompt Buttons immer sichtbar — keine opacity/pointer-events Toggle mehr. Entspricht WCAG 1.3.1 (keine hover-only Funktionalität).
+- **Tool-Preference bleibt localStorage:** Einheitliche Persistence über alle Drawer/Copy-Instanzen via `STORAGE_KEY = 'audit-prompt-tool-preference'`.
+- **FixPromptDrawer akzeptiert beide Modi:** `mode: 'single'` (einzelnes Finding) und `mode: 'group'` (Recommendation-Card). RecommendationCard trägt den Drawer jetzt selbst — kein Lifting in FindingsTable nötig.
+- **i18n vollständig:** 31 neue Strings unter `audit.*` in de.json + en.json. Alle audit UI-Komponenten nutzen `useTranslations('audit')`.
+
+**Was gebaut wurde:**
+- `messages/de.json` + `messages/en.json` — 31 neue audit-Strings (topFindings, task, prompt, fixPrompt, viewFixPrompt, grouped, flat, allAgents, strategy, firstStep, etc.)
+- `src/app/[locale]/(app)/audit/_components/FixPromptDrawer.tsx` — Drawer (right) + Escape + Backdrop, Tool-Chips, pre-formatted Prompt, Copy-Button; mobile-ready (min(520px, 100vw))
+- `src/app/[locale]/(app)/audit/_components/Top5FindingsCards.tsx` — hover-only entfernt, FixPromptDrawer integriert, `useTranslations`, `ClipboardText`-Icon
+- `src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx` — "Fix-Prompt anzeigen" Button (ClipboardText), FixPromptDrawer, `useTranslations`, alle hardcoded strings durch t()
+- `src/app/[locale]/(app)/audit/_components/PromptCopyButton.tsx` — `useTranslations` für 'Kopiert'/'Prompt'
+- `src/app/[locale]/(app)/audit/_components/FindingsTable.tsx` — `useTranslations` für 'Alle Agents', 'Grouped', 'Flat', 'Alle ignorieren'
+
+**Tests:** tsc --noEmit grün
+**Offene Punkte:** keine
+
+---
+
+## 2026-04-13 — Prompt-Export + Schema Drift Check + Runtime Gap Badge
+
+**Ampel:** 🟢
+**Prompt:** Build-Prompt: Prompt-Export per Finding + Schema Drift Check + Runtime Gap Badge
+
+**Entscheidungen:**
+- **Prompt-Export ist regelbasiert (kein LLM):** Template-Engine in `src/lib/audit/prompt-export/` baut strukturierte Prompts aus `FindingRecommendation` + Finding-Feldern. Deterministisch, sofort, kostenlos.
+- **3 Tool-Varianten:** Cursor (`@file` Referenzen), Claude Code (CLAUDE.md + Read-Tool Hinweise), Generic (self-contained). Letzte Auswahl in localStorage gespeichert.
+- **Schema Drift Check immer score: 5:** Das Finding ist ein Transparenz-Hinweis, keine Fehlfunktion. Kein Score-Penalty — verhindert dass Nutzer bestraft werden für etwas das sie nicht ändern können.
+- **Provider-Erkennung vor SQL-Generierung:** 8 Provider erkannt (Supabase, Neon, Prisma, Drizzle, Firebase, PlanetScale, MongoDB, Postgres). Firebase und PlanetScale bekommen textuelle Dashboard-Anleitung statt SQL.
+- **Runtime Gap Badge dezent, nicht alarmierend:** `Code-Only Mode ⓘ` neben dem Score — Tooltip erklärt, Link zum Schema Drift Finding. Kein roter Alert.
+- **⚠ nur bei Kategorien 3 + 5:** Live-Check-Hinweis nur bei Sicherheit und Datenbank, nicht bei allen 25 Kategorien.
+
+**Was gebaut wurde:**
+- `src/lib/audit/prompt-export/types.ts` — PromptFinding, ToolTarget, GeneratedPrompt, RepoContextSnippet
+- `src/lib/audit/prompt-export/template-engine.ts` — `buildFixPrompt()`, `buildGroupFixPrompt()`, 5 Sections (Problem/Wo/Warum/Fix/Validierung)
+- `src/lib/audit/prompt-export/repo-context.ts` — `extractRepoContext()` — Symbols + Deps aus RepoMap, max 2000 Token
+- `src/lib/audit/prompt-export/index.ts` — Re-Exports
+- `src/lib/audit/prompt-export/__tests__/template-engine.unit.test.ts` — 13 Tests
+- `src/app/[locale]/(app)/audit/_components/PromptCopyButton.tsx` — Copy + Dropdown für Tool-Auswahl + localStorage
+- `src/app/[locale]/(app)/audit/_components/Top5FindingsCards.tsx` — naive `buildCopyPrompt` ersetzt durch `PromptCopyButton`
+- `src/lib/audit/schema-drift-check.ts` — `detectDbProvider()` + `checkSchemaDrift()` + SQL-Queries pro Provider
+- `src/lib/audit/rule-registry.ts` — Regel `cat-5-schema-drift` (weight 1, score always 5, info finding)
+- `src/lib/audit/finding-recommendations.ts` — Eintrag `schema-drift`
+- `src/app/[locale]/(app)/audit/_components/ScoreHero.tsx` — `RuntimeGapBadge` Komponente + `codeOnlyMode` Prop
+- `src/app/[locale]/(app)/audit/_components/CategoryBreakdown.tsx` — `showLiveCheckHint` Prop weitergegeben
+- `src/app/[locale]/(app)/audit/_components/CategoryRowItem.tsx` — ⚠ Badge für Kategorien 3 + 5
+- `src/lib/audit/__tests__/schema-drift-check.unit.test.ts` — 15 Tests
+
+**Tests:** 360/360 grün (war 332 vor diesem Build)
+**Offene Punkte:** ScoreHero und CategoryBreakdown brauchen `codeOnlyMode`/`showLiveCheckHint` Props vom Audit-Page (Server-Komponent) — diese Props haben Default-Werte, sodass bestehende Nutzung nicht bricht.
+
+---
+
 ## 2026-04-09 — Sprint 6b: Projekt-Onboarding — Auto-Detect + Interview
 
 **Ampel:** 🟢
@@ -1028,3 +1110,173 @@ Zwei System-Prompt-Ebenen angepasst:
 - `docs/agents/` — 18 neue .md Dateien
 **Offene Punkte:** Katalog-Status für 18 Agenten noch auf 'draft' (ruleCount=0) — wird in Sprint 5b durch Rule-Registry-Integration aktualisiert
 **Neue Lernmuster:** Script-Splitting bei 500-Zeilen-Grenze ist sauberer als Kommentar-Override. Format-Template im System-Prompt statt Datei-Inject — spart Tokens und die Modelle kennen das Format aus dem Kontext.
+
+### 2026-04-13 — Repo Map Stufe 1 — Quick Wins
+
+**Ampel:** 🟢
+**Prompt:** Repo Map Generator — Stufe 1: Quick Wins (additives Ranking, Re-Export-Tracking, AST-Cache)
+**Kontext:** Committee Review (4 Modelle + Opus Judge) identifizierte 3 Quick Wins die zusammen ~30-40% besseres Ranking liefern sollen. Diese Änderungen sind der Context-Builder-Grundstein für Ansatz B (Prompt-Export) aus dem Fix-Engine-Review.
+**Entscheidungen:**
+- Additive statt multiplikative Formel: fileRank*0.4 + exportBonus*0.3 + kindBonus*0.2 + log1p(refCount)*0.1 + entryBonus*0.2. Min-Max-Normalisierung statt Division durch Maximum. Begründung: multiplikative Formel klumpt Scores nahe 0 — unlöslich für LLM-Kontext-Ranking.
+- Re-Export-Tracking: single-hop Propagierung via AST-basiertem ExportDeclaration-Parser. TypeScript Language Service (findAllReferences) bewusst nicht gebaut — das ist Stufe 2. Begründung: 90% der Barrel-Files sind single-hop, höherer ROI bei deutlich geringerem Aufwand.
+- AST-Cache: module-level LruMap<hash, CachedSymbol[]> (Default 500 Einträge). Mutable fields (referenceCount, rankScore) werden beim Lesen auf 0 zurückgesetzt. Begründung: Cache muss scan-isoliert sein — jeder Scan bekommt frische Symbols-Kopien.
+**Anpassungen:** Keine — alle 3 Änderungen wie geplant implementiert.
+**Ergebnis:** 54 Tests grün, tsc --noEmit sauber.
+**Neue Dateien:**
+- `src/lib/repo-map/ast-cache.ts` — LruMap + hashContent/getCached/setCached
+- `src/lib/repo-map/ast-cache.unit.test.ts`
+- `src/lib/repo-map/fixtures/barrel.ts`, `barrel-wildcard.ts`, `barrel-consumer.ts`, `barrel-wildcard-consumer.ts`
+**Geänderte Dateien:**
+- `src/lib/repo-map/graph-ranker.ts` — additives Ranking + Min-Max
+- `src/lib/repo-map/reference-analyzer.ts` — Re-Export-Erkennung + Propagierung
+- `src/lib/repo-map/index.ts` — AST-Cache-Integration
+**Offene Punkte (Stufe 2):** TypeScript Language Service API (findAllReferences), In-Memory Browser Cross-File-Analysis, Knapsack Token-Budget, Benchmark-Suite.
+
+### 2026-04-13 — Findings-Liste: Pattern B entfernt
+**Ampel:** 🟢
+**Entscheidung:** DeepReviewFindings.tsx komplett entfernt. Alle Findings (inkl. Deep Review mit models_flagged/consensus_level) werden jetzt einheitlich über FindingsTable → RecommendationCard gerendert.
+**Problem:** Zwei verschiedene Darstellungsformen für Findings — Pattern A (kompakte Einzeiler mit Chevron, expandierbar, via RecommendationCard) und Pattern B (Tabellen-Layout mit Status-Dropdown, Fix-Button, vertikal gestapelte Buttons, via DeepReviewFindings).
+**Lösung:**
+- `page.tsx`: Deep/Static-Split entfernt. Keine `isDeepReviewFinding()` Funktion mehr. Alle Findings gehen an `FindingsTable`.
+- `DeepReviewFindings.tsx`: Datei gelöscht (war einziger Pattern-B-Renderer).
+- `RecommendationCard.tsx`: Agent-Badge als inline Chip hinzugefügt (z.B. "DSGVO", "Sec", "BFSG", "AI") — ersetzt die alte AGENT-Spalte.
+**Geänderte Dateien:** `page.tsx`, `RecommendationCard.tsx`
+**Gelöschte Dateien:** `DeepReviewFindings.tsx`
+**Neue Lernmuster:** Wenn ein Feature "vereinheitlicht" wird, nicht nur die Gruppen-Header ändern sondern auch den Rendering-Pfad für Einzel-Findings prüfen.
+
+### 2026-04-14 — Finding-Kategorisierung: fixType-System
+**Ampel:** 🟢
+**Entscheidung:** Jedes Audit-Finding bekommt einen fixType der bestimmt wie es behoben werden kann.
+**4 Typen:**
+- `code-fix` (62): KI kann direkt fixen — bestehenden Code ändern
+- `code-gen` (52): KI muss neue Dateien/Komponenten erstellen
+- `refactoring` (9): Schrittweise, riskant — mit Warnung im Prompt
+- `manual` (43): Menschliche Aktion nötig — Checkliste statt Prompt
+**Umsetzung:**
+- `FixType` Type in `src/lib/audit/types.ts`
+- `fixType` Feld in `AuditRule` + `Finding` Interfaces
+- Alle 188 Regeln in `rule-registry.ts` kategorisiert (0 ohne fixType)
+- `PromptFinding` um `fixType` erweitert
+- `template-engine.ts`: `manual` → Checkliste, `refactoring` → Warnhinweis, `code-fix`/`code-gen` → Standard-Prompt
+- `getFixType(ruleId)` Helper für Runtime-Auflösung
+**Geänderte Dateien:** `types.ts`, `rule-registry.ts`, `prompt-export/types.ts`, `prompt-export/template-engine.ts`
+**Keine DB-Änderung:** fixType wird zur Laufzeit aus der Rule-Registry aufgelöst.
+
+### 2026-04-14 — Audit-Seite: fixType-Navigation
+**Ampel:** 🟢
+**Entscheidung:** fixType als primäre Filter-Navigation auf der Audit-Seite. User sieht sofort: "Das kann meine KI fixen" vs. "Das muss ich selbst machen".
+**Umsetzung:**
+- fixType-Tabs (Chip-Leiste) oberhalb der Severity-Filter: Alle, Code-Fixes, Generieren, Refactoring, Manuelle Aufgaben
+- fixType-Badge pro Finding (farbcodiert: grün=code-fix, hellgrün=code-gen, neutral=refactoring, grau=manual)
+- Manuelle Findings zeigen "Anleitung" statt "Fix-Prompt" (BookOpen-Icon)
+- Statistik-Zeile unter ScoreHero: "X Code-Fixes · Y zu generieren · Z Refactoring · W manuelle Aufgaben"
+- `FindingGroup` um `fixType` erweitert (aus Rule-Registry aufgelöst)
+- Filter-Kombination: fixType × severity × status × agent (AND-Logik)
+- Severity-Zahlen aktualisieren sich je nach aktivem fixType-Tab
+- i18n: alle Strings EN + DE
+**Geänderte Dateien:** `FindingsTable.tsx`, `RecommendationCard.tsx`, `group-findings.ts`, `page.tsx`, `messages/en.json`, `messages/de.json`
+**Dateien > 300 Zeilen:** FindingsTable (415), RecommendationCard (363) — Refactoring-Kandidaten für Split
+
+### 2026-04-14 — Dogfooding-Feedback-System eingerichtet
+**Ampel:** 🟢
+**Entscheidung:** GitHub Issues + Markdown-Log fuer Checker-Qualitaets-Tracking. Entscheidung aus Committee Review (einstimmig, 4 Modelle + Opus-Judge, €0.33).
+**Umsetzung:**
+- GitHub Issue Templates: `false-positive.yml` + `checker-improvement.yml` in `.github/ISSUE_TEMPLATE/`
+- 6 GitHub Labels erstellt (checker-quality, false-positive, improvement, security, performance, compliance)
+- `docs/checker-feedback.md` — Feedback-Log mit 2 bestehenden FP-Eintraegen (cat-3-rule-22, cat-3-rule-19)
+- `docs/checker-test-repos.md` — Benchmark-Repos (5 Slots, noch auszufuellen)
+- Prozess in CLAUDE.md dokumentiert
+**Nicht gebaut (bewusst):** DB-Tabelle, "Finding falsch?"-Button, automatisierte FP-Rate — kommt erst ab 10 Beta-Usern
+**Neue Lernmuster:** Checker-Fixes immer gegen Benchmark-Repos testen bevor mergen. FP-Rate pro Regel tracken.
+
+### 2026-04-14 — Kontextuelles Hilfe-System auf Audit-Seite
+**Ampel:** 🟢
+**Entscheidung:** Keine separate Docs/FAQ-Seite. Stattdessen kontextuelle Erklaerungen direkt im UI.
+**Umsetzung:**
+- Onboarding-Banner: Beim ersten Scan — Score-Kontext, 3 Schritte, dismissable (localStorage `audit-onboarding-dismissed`)
+- Score-Popover: Info-Icon neben Score zeigt 4 Stufen mit Farben + Gewichtungs-Erklaerung
+- fixType-Erklaerung: Dismissable Hint-Box erklaert die 4 Fix-Typen (localStorage `audit-fixtypes-dismissed`)
+- Manuell-Tab Hinweis: Kontext-Text wenn "Manuelle Aufgaben" Filter aktiv
+- Leerer Zustand: Ermutigende Nachricht statt "0 Ergebnisse" 
+- Drawer-Hint: Permanenter Hinweis im Fix-Prompt-Drawer ("Kopiere in dein Coding-Tool")
+- Feedback-Link: "Finding nicht korrekt?" mailto-Link in jedem expandierten Finding
+**Ton:** Ermutigend, Vibe-Coder-Sprache ("Deine KI kann das loesen" statt "Automatisierbar")
+**localStorage-Keys:** `audit-onboarding-dismissed`, `audit-fixtypes-dismissed`
+**Geaenderte Dateien:** ScoreHero.tsx, FindingsTable.tsx, RecommendationCard.tsx, FixPromptDrawer.tsx, messages/en.json, messages/de.json
+
+### 2026-04-14 — Checker-Fix: cat-16-rule-7 html lang-Attribut
+**Ampel:** 🟢
+**Entscheidung:** False Positive gefixt. Regel pruefte auf `lang="de"` statt auf Existenz des lang-Attributs. Englische Projekte wurden faelschlich geflagt.
+**Fix:** Regex akzeptiert jetzt jeden 2-5-Buchstaben lang-Code UND dynamisches `lang={locale}`. Message und Suggestion enthalten keine Referenz auf "de" mehr.
+**Entdeckt:** Dogfooding gegen next.js-canary Template.
+**Geaenderte Dateien:** `agent-regulatory-checker.ts`, `docs/checker-feedback.md`
+
+### 2026-04-14 — Automated Checker Testbench MVP
+**Ampel:** 🟢
+**Entscheidung:** Automatisierte Testbench die oeffentliche GitHub-Repos scannt. Committee Review (einstimmig): Tarball-API + In-Memory-Scan. Kein git-clone, keine GitHub Actions.
+**Architektur:**
+- `src/lib/benchmark/tarball-extractor.ts` — GitHub Tarball → In-Memory FileMap (tar-stream)
+- `src/lib/benchmark/repo-discovery.ts` — GitHub Search API mit Filtern (topic, language, pushed)
+- `src/lib/benchmark/runner.ts` — Orchestrator: discover → download → scan → persist
+- `src/lib/benchmark/stats.ts` — Aggregierte Statistiken (Score-Verteilung, Top-Findings, fixType)
+- `src/scripts/benchmark.ts` — CLI-Einstiegspunkt
+**Flow:** `discoverRepos()` → fuer jedes Repo: `extractRepoFromGitHub()` → `buildAuditContextFromFiles()` → `runAudit()` → Supabase persist (is_benchmark=true)
+**DB:** Migration 109: `audit_runs.is_benchmark` + `audit_runs.source_repo_url`
+**Neue Dateien:** 5 in `src/lib/benchmark/`, 1 CLI-Script
+**Alle Dateien < 200 Zeilen**
+
+### 2026-04-14 — Compliance-Profil + Domaenen-System
+**Ampel:** 🟢
+**Entscheidung:** 6 Compliance-Domaenen mit Profil-basierter Relevanz-Filterung. Committee Review (einstimmig auf 4/6 Fragen). MVP: Top 3 (Impressum, DSGVO, E-Commerce) + Affiliate + AI Act Transparency.
+**Umsetzung:**
+- `src/lib/audit/compliance-domains.ts` — 6 Domaenen-Registry mit `isRelevant(profile)` Funktionen
+- `src/lib/audit/checkers/compliance-checker.ts` — 6 neue Regeln: AGB, Widerruf, Button-Text, Affiliate-URLs, AI-Transparenz, AI-Content-Labeling
+- `AuditOptions.excludeRuleIds` — Profil-basiertes Regel-Skipping in `runAudit()`
+- `CompliancePanel.tsx` — Domaenen-Uebersicht mit Ampel (103 Zeilen)
+- `ProfileOnboarding.tsx` — 3-Schritt-Chip-Formular (138 Zeilen)
+- 26 i18n-Keys (EN + DE)
+**Neue Regeln:** cat-4-rule-20 (AGB), cat-4-rule-21 (Widerruf), cat-4-rule-22 (Button-Text), cat-5-rule-20 (Affiliate), cat-22-rule-14 (AI Transparency), cat-22-rule-15 (AI Content Labeling)
+**Profil-Schema:** `{ app_type, user_location, features[] }` in `scan_projects.profile` JSONB
+**Nicht gebaut:** EU-Erweiterung, App-Store-Regeln, E-Commerce-Flow-Checks, Disclaimer-UI
+
+### 2026-04-14 — Noise-Bereinigung + AST Code-Quality Checker (Stufe 2)
+**Ampel:** 🟢
+**Problem:** Benchmark zeigte 62% Noise-Findings, Score-StdDev 0.82. PascalCase allein bis 147 FP/Repo.
+**Teil A — Noise-Bereinigung:**
+- A1: shadcn/ui PascalCase-Whitelist (`components/ui/` + kebab-case Hooks)
+- A2: Erlaubte Verzeichnisse von 12 auf 27 erweitert
+- A3: Typosquatting-Severity von `low` auf `info`
+**Teil B — Tier-System:**
+- `RuleTier` Type: starter | production | enterprise
+- 6 Regeln → enterprise, 3 → production
+- `runAudit()` filtert nach User-Tier (Default: starter)
+**Teil C — AST Code-Quality Checks (8 neue Regeln):**
+- `ast-analyzer.ts` (269 Zeilen): Zentraler Parser mit SHA-256-Cache (LRU 800)
+- `ast-quality-checker.ts` (268 Zeilen): 8 Checks
+- B1: Cognitive Complexity (CC > 15/25/40)
+- B2: God Components (>300 Zeilen + >5 Hooks)
+- B3: Error Handling (leere catch, fehlende try-catch in API)
+- B4: Hardcoded Secrets (Stripe, OpenAI, AWS, GitHub etc.)
+- B5: Circular Imports (DFS-Zykluserkennung)
+- B6: any-Type-Usage (>3/10 pro Datei)
+- B7: N+1 Queries (DB-Call in Schleife)
+- B8: Missing Error Boundary (error.tsx)
+**Neue Regeln:** cat-2-rule-10/11/12/13, cat-1-rule-10/11, cat-3-rule-30, cat-5-rule-15
+**Gesamte Regelanzahl:** ~204 (von 188)
+
+### 2026-04-15 — UX-Schicht: Quick Wins + Priorisierung + Score-Kontext
+**Ampel:** 🟢
+**Entscheidung:** Komitee-Review (4 Modelle, MEHRHEIT): UX sofort starten, Quick-Wins-Button als Aha-Moment.
+**Umsetzung:**
+- `quick-wins.ts`: Algorithmus der Top 5 Quick Wins berechnet (Severity × Suggestion × fixType, max 1/Kategorie)
+- `score-percentile.ts`: Hardcoded v7-Benchmark-Percentile (49 Repos)
+- `self-assessment.ts`: 5 Ja/Nein-Fragen fuer manuelle Checks (Backups, Monitoring, Rate Limiting, RTO/RPO, Legal)
+- `QuickWinsCard.tsx`: Prominente Card ueber Findings-Liste mit Copy-to-Clipboard Cursor-Prompts + Score-Gain-Badge
+- `FindingsGroupTabs.tsx`: Chip-Tabs "Heute fixbar / Diese Woche / Irgendwann"
+- Score-Kontext "Top X% aller gescannten Projekte" in ScoreHero-Bereich
+- i18n: 8 neue Keys (EN + DE)
+**Komitee-Entscheidungen (committee-results-2026-04-15.md):**
+- Frage 1 (Plattform): B — generisch, Plattform nur anzeigen
+- Frage 2 (Score): C — einheitlich + Kontext-UI
+- Frage 3 (UX): A — sofort starten
+- Frage 4 (Manual): C — Self-Assessment (5 Fragen)

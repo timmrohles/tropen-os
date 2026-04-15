@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { executeTransformationSchema } from '@/lib/validators/transformations'
+import { apiError } from '@/lib/api-error'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -127,7 +128,6 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(updated)
   } catch (err) {
     await supabaseAdmin.from('transformations').update({ status: 'failed' }).eq('id', id)
-    const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return apiError(err)
   }
 }

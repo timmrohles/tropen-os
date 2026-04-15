@@ -4,6 +4,7 @@ import { validateBody } from '@/lib/validators'
 import { getOpenAI } from '@/lib/llm/openai'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { z } from 'zod'
+import { apiError } from '@/lib/api-error'
 
 const schema = z.object({
   prompt: z.string().min(1).max(1000),
@@ -36,7 +37,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ imageUrl, revisedPrompt })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return apiError(err)
   }
 }

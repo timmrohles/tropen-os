@@ -11,7 +11,7 @@ import type { ProjectFile } from '@/lib/file-access/types'
 
 interface SecurityPattern {
   id: string
-  severity: 'critical' | 'high' | 'medium' | 'low'
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
   pattern: RegExp
   fileGlob: string[]        // file extensions to scan
   excludePattern?: RegExp   // paths to skip
@@ -40,6 +40,20 @@ function scanPatterns(
     if (p.excludePattern?.test(filePath)) continue
     for (let i = 0; i < lines.length; i++) {
       if (p.pattern.test(lines[i])) {
+        if (p.id === 'typosquatting-risk') {
+          // Extract the package name from the matching line
+          const pkgMatch = lines[i].match(/"([^"]+)"\s*:/)
+          const pkgName = pkgMatch?.[1] ?? 'unknown'
+          findings.push({
+            severity: p.severity,
+            message: `Potential typosquatting: package "${pkgName}" may be misspelled — verify on npmjs.com`,
+            filePath,
+            line: i + 1,
+            suggestion: `Run 'npm info ${pkgName}' to verify this package exists and has expected download counts`,
+            agentSource: 'security-scan',
+          })
+          break
+        }
         findings.push({
           severity: p.severity,
           message: `[${p.id}] ${p.message}`,
@@ -255,7 +269,9 @@ const DATA_EXPOSURE_PATTERNS: SecurityPattern[] = [
   {
     id: 'stack-trace-response',
     severity: 'high',
-    pattern: /(?:message|error|detail|stack)\s*:\s*(?:error|err|e|ex)\.(?:stack|message)\s*[,}]/,
+    // Only match error.message/stack when NOT inside a log.error/warn/info/debug call
+    // Lines containing log.error(..., { error: error.message }) are server-side only — safe
+    pattern: /^(?!.*log(?:ger)?\.(?:error|warn|info|debug)\().*(?:message|error|detail|stack)\s*:\s*(?:error|err|e|ex)\.(?:stack|message)\s*[,}]/,
     fileGlob: ['.ts', '.js'],
     excludePattern: /\.(?:test|spec)\./,
     message: 'Stack trace or error internals sent in API response',
@@ -481,8 +497,8 @@ const SUPPLY_CHAIN_PATTERNS: SecurityPattern[] = [
   },
   {
     id: 'typosquatting-risk',
-    severity: 'low',
-    pattern: /"(?:lod[a-z]sh|lod4sh|react-d[o0]m|nextjs|express-|express\.js|reqwest|axois|c[o0]rs)"\s*:/i,
+    severity: 'info',
+    pattern: /"(?:lod4sh|lodahs|reaact-dom|react-d0m|nextjs|expresss|express\.js|reqwest|axois|c0rs|coers)"\s*:/i,
     fileGlob: ['.json'],
     excludePattern: /node_modules/,
     message: 'Potential typosquatted package name detected',

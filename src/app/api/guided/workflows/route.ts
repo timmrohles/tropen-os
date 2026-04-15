@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createWorkflowSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/workflows')
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const parsed = createWorkflowSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   const { data, error } = await supabaseAdmin

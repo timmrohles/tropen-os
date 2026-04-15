@@ -72,13 +72,15 @@ async function streamAvatar(
       }),
     })
   } catch (err) {
-    send({ avatarId: avatar.id, error: String(err) })
+    logger.error('streamAvatar fetch failed', { avatarId: avatar.id, error: err })
+    send({ avatarId: avatar.id, error: 'Verbindungsfehler' })
     return 0
   }
 
   if (!response.ok) {
     const errText = await response.text().catch(() => '')
-    send({ avatarId: avatar.id, error: `HTTP ${response.status}: ${errText.slice(0, 200)}` })
+    logger.error('streamAvatar response error', { avatarId: avatar.id, status: response.status, errText: errText.slice(0, 200) })
+    send({ avatarId: avatar.id, error: 'Fehler bei Avatar-Antwort' })
     return 0
   }
 
@@ -210,8 +212,8 @@ export async function POST(req: NextRequest) {
           })
         )
       } catch (err) {
-        logger.error('perspectives stream error', { error: String(err) })
-        send({ error: 'Stream-Fehler', details: String(err) })
+        logger.error('perspectives stream error', { error: err })
+        send({ error: 'Stream-Fehler' })
       } finally {
         send({ done: true })
         controller.close()

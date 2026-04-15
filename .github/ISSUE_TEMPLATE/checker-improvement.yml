@@ -1,0 +1,39 @@
+name: "Checker Improvement"
+description: "Eine Regel sollte verbessert oder erweitert werden"
+labels: ["checker-quality", "improvement"]
+body:
+  - type: input
+    id: rule-id
+    attributes:
+      label: Regel-ID
+      description: "z.B. cat-3-rule-22, oder 'neue Regel' fuer Vorschlaege"
+      placeholder: "cat-X-rule-Y"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Art der Verbesserung
+      options:
+        - False-Positive reduzieren
+        - Neue Pattern erkennen
+        - Beschreibung/Empfehlung verbessern
+        - Severity anpassen
+        - Neue Regel vorschlagen
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Beschreibung
+      description: "Was soll verbessert werden und warum?"
+    validations:
+      required: true
+  - type: textarea
+    id: test-cases
+    attributes:
+      label: Test-Cases
+      description: "Code-Beispiele die korrekt erkannt / nicht geflagt werden sollten"
+      render: typescript
+    validations:
+      required: false

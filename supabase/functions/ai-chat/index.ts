@@ -670,7 +670,7 @@ serve(async (req) => {
     const { data: models, error: modelError } = await supabase
       .from("model_catalog").select("*").eq("model_class", effectiveClass).eq("is_active", true)
       .order("cost_per_1k_input", { ascending: true }).limit(1);
-    if (modelError || !models?.length) return errorResponse(`Kein aktives Modell für Klasse "${effectiveClass}"`, 400);
+    if (modelError || !models?.length) return errorResponse("Kein aktives Modell verfügbar", 400);
     const modelData = models[0];
     let provider   = (modelData.provider  as Provider) ?? "anthropic";
     let apiModelId = (modelData.api_model_id as string) ?? (modelData.name as string);
@@ -832,7 +832,8 @@ serve(async (req) => {
     if (!llmResponse.ok) {
       const errText = await llmResponse.text();
       console.error(`${provider} Fehler ${llmResponse.status}:`, errText.slice(0, 300));
-      return errorResponse(`LLM-Fehler (${provider} HTTP ${llmResponse.status}): ${errText.slice(0, 200)}`, 502);
+      console.error(`LLM-Fehler (${provider} HTTP ${llmResponse.status}): ${errText.slice(0, 200)}`);
+      return errorResponse("LLM-Anfrage fehlgeschlagen", 502);
     }
 
     // 15. SSE-Stream aufbauen
@@ -894,7 +895,7 @@ serve(async (req) => {
 
         } catch (err) {
           console.error("Stream-Fehler:", err);
-          send({ type: "error", message: String(err) });
+          send({ type: "error", message: "Ein Fehler ist aufgetreten" });
         } finally {
           controller.close();
         }

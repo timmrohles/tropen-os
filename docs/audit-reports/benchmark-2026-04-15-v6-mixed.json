@@ -1,0 +1,236 @@
+{
+  "date": "2026-04-15T09:32:41.407Z",
+  "stats": {
+    "totalRepos": 8,
+    "successfulScans": 8,
+    "failedScans": 0,
+    "avgScore": 79,
+    "medianScore": 81.8,
+    "scoreDistribution": {
+      "prototype": 0,
+      "risky": 3,
+      "stable": 5,
+      "production": 0
+    },
+    "topFindings": [
+      {
+        "ruleId": "cat-2-rule-12",
+        "message": "Function \"ControlPanel\" has CC=37 (max 15)",
+        "count": 285,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-1-rule-4",
+        "message": "File size violation (> 500 lines): app/lib/.server/llm/output-parser.ts (597 lin",
+        "count": 155,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-2-rule-1",
+        "message": "strict: true missing in tsconfig.json compilerOptions",
+        "count": 8,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-4-rule-17",
+        "message": "Recht auf Datenübertragbarkeit (Art. 20) erfordert einen Export-Endpoint",
+        "count": 8,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-4-rule-18",
+        "message": "Recht auf Löschung (Art. 17) erfordert Konto-Löschfunktion",
+        "count": 8,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-16-rule-8",
+        "message": "Tastaturnutzer können Navigation nicht überspringen — WCAG 2.1 SC 2.4.1 verletzt",
+        "count": 8,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-17-rule-1",
+        "message": "All UI strings are hardcoded — no i18n framework",
+        "count": 8,
+        "percentage": 100
+      },
+      {
+        "ruleId": "cat-1-rule-10",
+        "message": "Large component: 376 lines, 13 hooks",
+        "count": 73,
+        "percentage": 88
+      },
+      {
+        "ruleId": "cat-4-rule-12",
+        "message": "DSGVO/ePrivacy Art. 5(3): Cookie-Consent vor nicht-essentiellen Cookies erforder",
+        "count": 7,
+        "percentage": 88
+      },
+      {
+        "ruleId": "cat-2-rule-10",
+        "message": "Empty catch block — errors silently swallowed",
+        "count": 320,
+        "percentage": 75
+      },
+      {
+        "ruleId": "cat-10-rule-3",
+        "message": "No *.spec.ts files found — E2E tests not written",
+        "count": 6,
+        "percentage": 75
+      },
+      {
+        "ruleId": "cat-16-rule-9",
+        "message": "42 dynamische Komponente(n) ohne aria-live (WCAG 2.1 SC 4.1.3)",
+        "count": 6,
+        "percentage": 75
+      },
+      {
+        "ruleId": "cat-2-rule-11",
+        "message": "No error.tsx or react-error-boundary — unhandled errors show blank page",
+        "count": 10,
+        "percentage": 63
+      },
+      {
+        "ruleId": "cat-4-rule-9",
+        "message": "Cookie consent required by DSGVO/ePrivacy — none detected",
+        "count": 5,
+        "percentage": 63
+      },
+      {
+        "ruleId": "cat-25-rule-2",
+        "message": "File size violation (> 500 lines): app/components/@settings/tabs/data/DataTab.ts",
+        "count": 59,
+        "percentage": 50
+      },
+      {
+        "ruleId": "cat-2-rule-13",
+        "message": "4 `any` usages",
+        "count": 12,
+        "percentage": 50
+      },
+      {
+        "ruleId": "cat-4-rule-14",
+        "message": "Kein Passwort-Hashing gefunden — Plaintext-Speicherung wäre DSGVO-Verletzung",
+        "count": 3,
+        "percentage": 38
+      },
+      {
+        "ruleId": "cat-22-rule-10",
+        "message": "EU AI Act Art. 50: User muss wissen, dass er mit KI interagiert",
+        "count": 3,
+        "percentage": 38
+      },
+      {
+        "ruleId": "cat-22-rule-11",
+        "message": "EU AI Act Art. 12: KI-Entscheidungen müssen protokolliert werden (Timestamp, Use",
+        "count": 3,
+        "percentage": 38
+      },
+      {
+        "ruleId": "cat-22-rule-14",
+        "message": "AI Act Art. 50: Users must be informed when interacting with AI systems",
+        "count": 3,
+        "percentage": 38
+      }
+    ],
+    "findingsByFixType": {
+      "refactoring": 578,
+      "code-fix": 384,
+      "code-gen": 58,
+      "manual": 2
+    },
+    "totalFindings": 1022,
+    "avgFindingsPerRepo": 128
+  },
+  "repos": [
+    {
+      "name": "zebbern/Devonz",
+      "topic": "bolt",
+      "url": "https://github.com/zebbern/Devonz",
+      "score": 78.8,
+      "status": "risky",
+      "findings": 594,
+      "files": 618,
+      "durationMs": 4389,
+      "error": null
+    },
+    {
+      "name": "hkirat/bolt.newer",
+      "topic": "bolt",
+      "url": "https://github.com/hkirat/bolt.newer",
+      "score": 65.2,
+      "status": "risky",
+      "findings": 17,
+      "files": 38,
+      "durationMs": 911,
+      "error": null
+    },
+    {
+      "name": "ntegrals/december",
+      "topic": "bolt",
+      "url": "https://github.com/ntegrals/december",
+      "score": 69.4,
+      "status": "risky",
+      "findings": 75,
+      "files": 56,
+      "durationMs": 1427,
+      "error": null
+    },
+    {
+      "name": "thedaviddias/llms-txt-hub",
+      "topic": "cursor",
+      "url": "https://github.com/thedaviddias/llms-txt-hub",
+      "score": 84,
+      "status": "stable",
+      "findings": 155,
+      "files": 616,
+      "durationMs": 2219,
+      "error": null
+    },
+    {
+      "name": "PageAI-Pro/vibe-coding-starter",
+      "topic": "cursor",
+      "url": "https://github.com/PageAI-Pro/vibe-coding-starter",
+      "score": 83.9,
+      "status": "stable",
+      "findings": 59,
+      "files": 322,
+      "durationMs": 3132,
+      "error": null
+    },
+    {
+      "name": "FutureExcited/vibe-rules",
+      "topic": "cursor",
+      "url": "https://github.com/FutureExcited/vibe-rules",
+      "score": 82,
+      "status": "stable",
+      "findings": 53,
+      "files": 90,
+      "durationMs": 957,
+      "error": null
+    },
+    {
+      "name": "nemanjam/nextjs-prisma-boilerplate",
+      "topic": "manual",
+      "url": "https://github.com/nemanjam/nextjs-prisma-boilerplate",
+      "score": 87.1,
+      "status": "stable",
+      "findings": 19,
+      "files": 315,
+      "durationMs": 2179,
+      "error": null
+    },
+    {
+      "name": "vercel/next-forge",
+      "topic": "manual",
+      "url": "https://github.com/vercel/next-forge",
+      "score": 81.5,
+      "status": "stable",
+      "findings": 50,
+      "files": 504,
+      "durationMs": 1894,
+      "error": null
+    }
+  ]
+}

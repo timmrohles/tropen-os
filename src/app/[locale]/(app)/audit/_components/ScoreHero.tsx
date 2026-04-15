@@ -1,6 +1,8 @@
 'use client'
 
-import { TrendUp, TrendDown, Minus } from '@phosphor-icons/react'
+import { useState, useRef, useEffect } from 'react'
+import { TrendUp, TrendDown, Info, X } from '@phosphor-icons/react'
+import { useTranslations } from 'next-intl'
 
 type Status = 'production_grade' | 'stable' | 'risky' | 'prototype'
 
@@ -16,6 +18,74 @@ interface ScoreHeroProps {
   highOpenFindings?: number
   criticalOpenFindings?: number
   isFirstRun?: boolean
+  /** True when the scan is code-only and has no live DB access */
+  codeOnlyMode?: boolean
+  /** Whether a Schema Drift Check finding is present in the report */
+  hasSchemaDriftFinding?: boolean
+}
+
+function RuntimeGapBadge({ hasSchemaDriftFinding }: { hasSchemaDriftFinding: boolean }) {
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <span style={{
+        fontSize: 11, fontWeight: 500,
+        color: 'var(--text-tertiary)',
+        letterSpacing: '0.01em',
+      }}>
+        Nur Code-Analyse
+      </span>
+      <button
+        onMouseEnter={() => setTooltipVisible(true)}
+        onMouseLeave={() => setTooltipVisible(false)}
+        onFocus={() => setTooltipVisible(true)}
+        onBlur={() => setTooltipVisible(false)}
+        aria-label="Erklärung: Nur Code-Analyse"
+        style={{
+          background: 'none', border: 'none', cursor: 'help', padding: 0,
+          color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <Info size={13} weight="bold" aria-hidden="true" />
+      </button>
+
+      {tooltipVisible && (
+        <div role="tooltip" style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          zIndex: 30,
+          width: 280,
+          padding: '10px 12px',
+          background: 'var(--bg-tooltip)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          boxShadow: '0 4px 12px rgba(26,23,20,0.10)',
+          fontSize: 12,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.5,
+          pointerEvents: 'none',
+        }}>
+          <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Code-Only Scan aktiv
+          </p>
+          <p style={{ margin: 0 }}>
+            Dieser Score basiert auf der Analyse deines Quellcodes. Änderungen die direkt
+            in deinem Datenbank-Dashboard gemacht wurden (RLS-Policies, Indexes, Permissions)
+            sind nicht erfasst.
+          </p>
+          {hasSchemaDriftFinding && (
+            <p style={{ margin: '6px 0 0', color: 'var(--accent)' }}>
+              <a href="#findings-table" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
+                → Schema Drift Check ausführen
+              </a>
+            </p>
+          )}
+        </div>
+      )}
+    </span>
+  )
 }
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -52,47 +122,52 @@ function formatDate(iso: string) {
   })
 }
 
-function getStatusExplanation(
-  percentage: number,
-  status: Status,
-  open: number,
-  high: number,
-  critical: number,
-): { text: string; nextStep: string; nextHref: string } {
-  if (status === 'production_grade') {
-    return {
-      text: 'Dein Projekt erfüllt Industriestandards. Regelmäßige Audits halten das Niveau.',
-      nextStep: open > 0 ? `${open} offene Findings — prüfe ob sie noch relevant sind.` : 'Keine offenen Findings. Weiter so!',
-      nextHref: '#findings-table',
+function ScoreExplainPopover({ t }: { t: ReturnType<typeof useTranslations<'audit'>> }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-  }
-  if (status === 'stable') {
-    const gap = (90 - percentage).toFixed(1)
-    return {
-      text: `Solide und produktionsfähig. Noch ${gap}% bis Production Grade.`,
-      nextStep: open > 0 ? `${open} offene Findings prüfen.` : 'Keine offenen Findings — starte einen Deep Review.',
-      nextHref: '#findings-table',
-    }
-  }
-  if (status === 'risky') {
-    const target = percentage < 80 ? 80 : 90
-    const targetLabel = percentage < 80 ? 'Stable' : 'Production Grade'
-    const gap = (target - percentage).toFixed(1)
-    return {
-      text: `Noch ${gap}% bis ${targetLabel}. Offene Punkte in kritischen Bereichen bremsen den Score.`,
-      nextStep: critical > 0
-        ? `${critical} kritische Findings zuerst beheben.`
-        : high > 0
-          ? `${high} High-Findings angehen — sie haben den größten Score-Impact.`
-          : `${open} offene Findings prüfen.`,
-      nextHref: '#findings-table',
-    }
-  }
-  return {
-    text: 'Dein Projekt braucht grundlegende Verbesserungen bevor es produktionsreif ist.',
-    nextStep: critical > 0 ? `Mit ${critical} kritischen Findings starten.` : 'Mit den rot markierten Kategorien starten.',
-    nextHref: '#findings-table',
-  }
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleKey) }
+  }, [open])
+
+  return (
+    <span ref={ref} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 4px',
+        color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center',
+      }} aria-label={t('scoreExplainTitle')}>
+        <Info size={16} weight="bold" />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 30,
+          width: 300, padding: '14px 16px', background: 'var(--bg-surface-solid)',
+          border: '1px solid var(--border)', borderRadius: 8,
+          boxShadow: '0 4px 12px rgba(26,23,20,0.10)', fontSize: 13, lineHeight: 1.6,
+        }}>
+          <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+            {t('scoreExplainTitle')}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+            <span style={{ color: 'var(--status-prototype)' }}>{t('scoreExplainPrototype')}</span>
+            <span style={{ color: 'var(--status-risky)' }}>{t('scoreExplainRisky')}</span>
+            <span style={{ color: 'var(--status-stable)' }}>{t('scoreExplainStable')}</span>
+            <span style={{ color: 'var(--status-production)' }}>{t('scoreExplainProduction')}</span>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+            {t('scoreExplainBody')}
+          </p>
+        </div>
+      )}
+    </span>
+  )
 }
 
 export default function ScoreHero({
@@ -100,36 +175,60 @@ export default function ScoreHero({
   reviewType, reviewCostEur,
   openFindings = 0, highOpenFindings = 0, criticalOpenFindings = 0,
   isFirstRun = false,
+  codeOnlyMode = true,
+  hasSchemaDriftFinding = false,
 }: ScoreHeroProps) {
+  const t = useTranslations('audit')
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try { return localStorage.getItem('audit-onboarding-dismissed') === 'true' } catch { return false }
+  })
+
+  function dismissOnboarding() {
+    setOnboardingDismissed(true)
+    try { localStorage.setItem('audit-onboarding-dismissed', 'true') } catch {}
+  }
+
   const color = STATUS_COLOR[status]
-  const bg = STATUS_BG[status]
   const hasDelta = delta !== null && delta !== 0
-  const explanation = getStatusExplanation(percentage, status, openFindings, highOpenFindings, criticalOpenFindings)
 
   return (
     <>
-      {isFirstRun && (
+      {isFirstRun && !onboardingDismissed && (
         <div style={{
-          padding: '12px 16px', marginBottom: 16,
-          borderRadius: 6, background: 'var(--accent-light)',
-          borderLeft: '3px solid var(--accent)',
+          padding: '16px 20px', marginBottom: 16, borderRadius: 8,
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          position: 'relative',
         }}>
-          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, color: 'var(--text-primary)' }}>
-            Dein erster Audit ist fertig!
+          <button onClick={dismissOnboarding} style={{
+            position: 'absolute', top: 8, right: 8, background: 'none', border: 'none',
+            cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4,
+          }} aria-label="Close">
+            <X size={14} weight="bold" />
+          </button>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+            {t('onboardingTitle')}
           </p>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-            Der Score basiert auf automatischen Checks. Für eine tiefere Analyse klicke auf &bdquo;Deep Review&ldquo; —
-            4 KI-Modelle prüfen deinen Code unabhängig.
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>
+            {t('onboardingScore', { score: Math.round(percentage) })}
           </p>
+          <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+            <li>{t('onboardingStep1')}</li>
+            <li>{t('onboardingStep2')}</li>
+            <li>{t('onboardingStep3')}</li>
+          </ol>
+          <button className="btn btn-ghost btn-sm" onClick={dismissOnboarding} style={{ marginTop: 12, fontSize: 12 }}>
+            {t('onboardingDismiss')}
+          </button>
         </div>
       )}
 
-      <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
+      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
         {/* Row 1: score + status inline + delta + meta */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
           <span style={{ fontSize: 42, fontWeight: 800, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {percentage.toFixed(1)}%
           </span>
+          <ScoreExplainPopover t={t} />
 
           <span style={{ fontSize: 15, fontWeight: 600, color }}>
             {STATUS_LABEL[status]}
@@ -153,7 +252,7 @@ export default function ScoreHero({
             </span>
           )}
 
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)' }}>
+          <span suppressHydrationWarning style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)' }}>
             {projectName} · {formatDate(lastRunAt)}
           </span>
 
@@ -166,6 +265,11 @@ export default function ScoreHero({
               Deep{reviewCostEur != null ? ` · €${reviewCostEur.toFixed(3)}` : ''}
             </span>
           )}
+        </div>
+
+        {/* Runtime Gap Badge */}
+        <div style={{ marginBottom: 8 }}>
+          <RuntimeGapBadge hasSchemaDriftFinding={hasSchemaDriftFinding} />
         </div>
 
         {/* Progress bar — thin (4px) */}
@@ -192,18 +296,6 @@ export default function ScoreHero({
           ))}
         </div>
 
-        {/* Explanation + next step */}
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-          {explanation.text}
-        </p>
-        {openFindings > 0 && (
-          <p style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, margin: '3px 0 0' }}>
-            Nächster Schritt:{' '}
-            <a href={explanation.nextHref} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-              {explanation.nextStep} →
-            </a>
-          </p>
-        )}
       </div>
     </>
   )

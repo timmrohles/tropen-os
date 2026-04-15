@@ -1,0 +1,104 @@
+// src/lib/audit/group-findings.ts
+// Shared grouping logic — single source of truth for FindingsTable.
+// No LLM calls. No duplication.
+
+import type { FixType } from './types'
+
+const SEV_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
+
+/**
+ * Minimal finding fields required for grouping.
+ * Both the Top5 Finding interface and DbFinding satisfy this structurally.
+ */
+export interface AuditFinding {
+  id: string
+  rule_id: string
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
+  message: string
+  file_path: string | null
+  line?: number | null
+  suggestion?: string | null
+  status: 'open' | 'acknowledged' | 'fixed' | 'dismissed'
+  agent_source?: string | null
+  /** Resolved server-side from the rule registry */
+  fix_type?: FixType | null
+}
+
+export interface FindingGroup {
+  ruleId: string
+  baseMessage: string
+  agentSource: string
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
+  findings: AuditFinding[]
+  count: number
+  /** Number of unique affected file paths — used as impact tiebreaker */
+  uniqueFileCount: number
+  /** How this finding should be fixed — resolved from rule registry */
+  fixType: FixType
+}
+
+/** Strips the ::agentSource suffix from composite group keys for display / API calls */
+export function cleanRuleId(compositeRuleId: string): string {
+  return compositeRuleId.split('::')[0]
+}
+
+function extractBaseMessage(message: string): string {
+  const colonIdx = message.lastIndexOf(': src/')
+  if (colonIdx > 0) return message.substring(0, colonIdx)
+  const colonIdx2 = message.lastIndexOf(': ')
+  if (colonIdx2 > message.length * 0.5) return message.substring(0, colonIdx2)
+  return message
+}
+
+function getHighestSeverity(findings: AuditFinding[]): FindingGroup['severity'] {
+  return findings.reduce<FindingGroup['severity']>((best, f) => {
+    return SEV_ORDER[f.severity] < SEV_ORDER[best] ? f.severity : best
+  }, 'info')
+}
+
+/**
+ * Groups findings by rule_id and sorts by impact score:
+ * 1. Severity (critical first)
+ * 2. Unique file count as tiebreaker (more files = higher impact)
+ *
+ * Every finding belongs to a group — single findings become groups of 1.
+ * This guarantees no duplicate rule IDs in the result.
+ */
+export function groupFindings(findings: AuditFinding[]): FindingGroup[] {
+  const map = new Map<string, AuditFinding[]>()
+  for (const f of findings) {
+    // Group by rule_id + agent_source to prevent key collisions
+    // when the same rule is flagged by different agents (e.g. core vs deep-review)
+    const agent = f.agent_source ?? 'core'
+    const key = `${f.rule_id || 'unknown'}::${agent}`
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(f)
+  }
+
+  const groups: FindingGroup[] = []
+  for (const [compositeKey, items] of map) {
+    const ruleId = compositeKey.split('::')[0]
+    const uniqueFileCount = new Set(
+      items.map((f) => f.file_path).filter(Boolean)
+    ).size
+    groups.push({
+      ruleId: compositeKey,
+      baseMessage: extractBaseMessage(items[0].message),
+      agentSource: items[0].agent_source ?? 'core',
+      severity: getHighestSeverity(items),
+      findings: items,
+      count: items.length,
+      uniqueFileCount,
+      fixType: (items[0].fix_type as FixType) ?? 'manual',
+    })
+  }
+
+  return groups.sort((a, b) => {
+    const sevDiff = SEV_ORDER[a.severity] - SEV_ORDER[b.severity]
+    if (sevDiff !== 0) return sevDiff
+    const fileDiff = b.uniqueFileCount - a.uniqueFileCount
+    if (fileDiff !== 0) return fileDiff
+    // Stable tiebreaker: ruleId ensures deterministic order across server/client renders
+    return a.ruleId.localeCompare(b.ruleId)
+  })
+}

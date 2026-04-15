@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { patchWorkflowSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/workflows/[id]')
 
@@ -20,7 +21,7 @@ export async function PATCH(
   const body = await req.json().catch(() => null)
   const parsed = patchWorkflowSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   const { data: wf } = await supabaseAdmin

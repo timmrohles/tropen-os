@@ -84,54 +84,36 @@ function isExemptFile(filePath: string): boolean {
     || /\.d\.ts$/.test(filePath)
 }
 
-function fileSizeSeverity(lineCount: number, exempt: boolean): Finding['severity'] {
-  if (exempt) {
-    if (lineCount > 800) return 'high'
-    if (lineCount > 600) return 'medium'
-    return 'low'
-  }
-  if (lineCount > 500) return 'high'
-  if (lineCount > 400) return 'medium'
-  return 'low'
-}
-
 export async function checkFileSizes(ctx: AuditContext): Promise<RuleResult> {
-  const over300 = ctx.repoMap.files.filter((f) => f.lineCount > 300)
+  // Only flag files >800 lines as findings (Lovable/Bolt routinely generates 500-700 line files)
+  const THRESHOLD = 800
+  const WARNING_THRESHOLD = 500
 
-  // For non-exempt files: >500 is a violation; for exempt files: >600 threshold applies
-  const violations = ctx.repoMap.files.filter((f) => {
-    if (isExemptFile(f.path)) return f.lineCount > 600
-    return f.lineCount > 500
-  })
+  const over = ctx.repoMap.files.filter((f) =>
+    !isExemptFile(f.path) && f.lineCount > WARNING_THRESHOLD
+  )
 
-  const findings: Finding[] = over300.map((f) => {
-    const exempt = isExemptFile(f.path)
-    const severity = fileSizeSeverity(f.lineCount, exempt)
-    const thresholdLabel = exempt ? '> 600 lines (exempt file)' : '> 500 lines'
-    const isViolation = exempt ? f.lineCount > 600 : f.lineCount > 500
-    return {
-      severity,
-      message: isViolation
-        ? `File size violation (${thresholdLabel}): ${f.path} (${f.lineCount} lines)`
-        : `File size warning (> 300 lines): ${f.path} (${f.lineCount} lines)`,
-      filePath: f.path,
-      suggestion: 'Split into focused sub-modules (< 300 lines each)',
-    }
-  })
+  const findings: Finding[] = over.map((f) => ({
+    severity: (f.lineCount > THRESHOLD ? 'medium' : 'info') as Finding['severity'],
+    message: f.lineCount > THRESHOLD
+      ? `${f.path} has ${f.lineCount} lines — consider splitting at the next change`
+      : `${f.path} has ${f.lineCount} lines — large but not critical`,
+    filePath: f.path,
+    suggestion: `Cursor-Prompt: 'Split ${f.path.split('/').pop()} into smaller modules, each under 300 lines'`,
+  }))
 
-  // Sort by severity (high first)
-  findings.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity])
+  const violations = over.filter((f) => f.lineCount > THRESHOLD)
 
   let score: number
-  if (over300.length === 0) score = 5
-  else if (over300.length <= 3 && violations.length === 0) score = 4
-  else if (over300.length <= 10 && violations.length <= 2) score = 3
-  else if (over300.length <= 20) score = 2
+  if (over.length === 0) score = 5
+  else if (violations.length === 0) score = 4
+  else if (violations.length <= 5) score = 3
+  else if (violations.length <= 15) score = 2
   else score = 1
 
-  const reason = over300.length === 0
-    ? 'All files are under 300 lines'
-    : `${over300.length} file(s) over 300 lines (${violations.length} violation(s))`
+  const reason = over.length === 0
+    ? 'All files under 500 lines'
+    : `${over.length} large file(s) (${violations.length} over ${THRESHOLD} lines)`
 
   return { ruleId: 'cat-1-rule-4', score, reason, findings, automated: true }
 }
@@ -298,7 +280,16 @@ export async function checkNamingConventions(ctx: AuditContext): Promise<RuleRes
     const fileName = filePath.split('/').pop() ?? ''
     const nameWithoutExt = fileName.replace(/\.(tsx?|jsx?)$/, '')
 
+    // Skip PascalCase check for component library directories (shadcn/ui convention)
+    const COMPONENT_LIB_PATHS = [
+      /(?:^|\/)components\/ui\//,
+      /(?:^|\/)ui\/(?!.*\/)/,  // root-level ui/ folder
+    ]
     if (filePath.includes('src/components/') && /\.(tsx|jsx)$/.test(fileName)) {
+      if (COMPONENT_LIB_PATHS.some((p) => p.test(filePath))) {
+        // shadcn/ui uses kebab-case by convention — not a violation
+        continue
+      }
       if (!/^[A-Z]/.test(nameWithoutExt) && !['page', 'layout', 'error', 'loading', 'not-found', 'global-error'].includes(nameWithoutExt)) {
         findings.push({
           severity: 'medium',
@@ -310,7 +301,8 @@ export async function checkNamingConventions(ctx: AuditContext): Promise<RuleRes
     }
 
     if (filePath.includes('src/hooks/') && /\.ts$/.test(fileName)) {
-      if (!/^use[A-Z]/.test(nameWithoutExt)) {
+      // Accept both useToast.ts (camelCase) and use-toast.ts (kebab-case)
+      if (!/^use[A-Z]/.test(nameWithoutExt) && !/^use-[a-z]/.test(nameWithoutExt)) {
         findings.push({
           severity: 'medium',
           message: `Hook file missing 'use' prefix: ${filePath}`,

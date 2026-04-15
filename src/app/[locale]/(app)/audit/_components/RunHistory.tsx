@@ -119,7 +119,7 @@ export default function RunHistory({ runs, reviewRuns = [], selectedRunId }: Run
                   borderBottom: filter === f ? '1px solid var(--text-primary)' : '1px solid transparent',
                 }}
               >
-                {f === 'all' ? 'All' : f === 'auto' ? 'Auto' : 'Deep'}
+                {f === 'all' ? 'Alle' : f === 'auto' ? 'Auto' : 'Deep'}
               </button>
             ))}
           </div>

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import path from 'node:path'
 import { requireSuperadmin } from '@/lib/auth/guards'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 import { buildAuditContext, runAudit, formatReportMarkdown } from '@/lib/audit'
 import type { CheckMode } from '@/lib/audit/types'
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const rawBody = await request.json().catch(() => ({}))
     const validation = requestSchema.safeParse(rawBody)
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid request body', details: validation.error.flatten() }, { status: 400 })
+      return apiValidationError(validation.error)
     }
     body = validation.data
   } catch {

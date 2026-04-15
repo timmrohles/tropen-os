@@ -286,7 +286,7 @@ export async function checkDsgvoDataExportEndpoint(ctx: AuditContext): Promise<R
   return fail('cat-4-rule-17', 0, 'Kein Daten-Export-Endpoint gefunden (DSGVO Art. 15, 20)', [{
     severity: 'high',
     message: 'Recht auf Datenübertragbarkeit (Art. 20) erfordert einen Export-Endpoint',
-    suggestion: 'Erstelle /api/user/export Route die alle Nutzerdaten als JSON/CSV liefert',
+    suggestion: "Add GET /api/user/export that returns all user data as JSON download. Prompt: 'Create a data export API endpoint at /api/user/export'",
   }])
 }
 
@@ -320,7 +320,7 @@ export async function checkDsgvoAccountDeletion(ctx: AuditContext): Promise<Rule
   return fail('cat-4-rule-18', 0, 'Kein Konto-Löschungs-Endpoint/UI gefunden (DSGVO Art. 17)', [{
     severity: 'high',
     message: 'Recht auf Löschung (Art. 17) erfordert Konto-Löschfunktion',
-    suggestion: 'Settings-Seite: "Konto löschen" Button + /api/user/delete Route mit Soft-Delete/Anonymisierung',
+    suggestion: "Add account deletion with confirmation dialog in user settings. Prompt: 'Add account deletion button in settings with confirmation modal'",
   }])
 }
 
@@ -400,14 +400,16 @@ export async function checkBfsgHtmlLang(ctx: AuditContext): Promise<RuleResult> 
   for (const p of layoutPaths) {
     const content = readAt(ctx.rootPath, p)
     if (!content) continue
-    if (/<html[^>]+lang\s*=\s*["'][a-z]{2}/i.test(content)) {
-      return pass('cat-16-rule-7', 5, `HTML lang-Attribut in ${p} gesetzt (WCAG 2.1 SC 3.1.1)`)
+    // Check for lang attribute — static (lang="en") or dynamic (lang={locale})
+    if (/<html[^>]+lang\s*=\s*(?:["'][a-z]{2,5}|[{])/i.test(content)) {
+      return pass('cat-16-rule-7', 5, `HTML lang attribute set in ${p} (WCAG 2.1 SC 3.1.1)`)
     }
     if (content.includes('<html') || content.includes('DocumentType')) {
-      return fail('cat-16-rule-7', 0, `HTML lang-Attribut fehlt in ${p}`, [{
+      return fail('cat-16-rule-7', 0, `HTML lang attribute missing in ${p}`, [{
         severity: 'high',
-        message: 'WCAG 2.1 SC 3.1.1: <html lang="de"> fehlt — Screen Reader können Sprache nicht erkennen',
-        suggestion: "In src/app/layout.tsx: <html lang=\"de\"> (oder die primäre Sprache der App)",
+        message: 'WCAG 2.1 SC 3.1.1: <html> element is missing the lang attribute — screen readers cannot determine the page language',
+        filePath: p,
+        suggestion: "Set a lang attribute on the <html> element matching your page's primary language, e.g. lang=\"en\" or lang=\"de\"",
       }])
     }
   }

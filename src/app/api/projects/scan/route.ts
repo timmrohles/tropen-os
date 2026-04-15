@@ -8,6 +8,8 @@ import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
+import { apiError } from '@/lib/api-error'
 import { buildAuditContextFromFiles, runAudit } from '@/lib/audit'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
 import { deduplicateFindings } from '@/lib/audit/deduplicator'
@@ -106,7 +108,7 @@ export async function POST(request: Request) {
   const raw = await request.json().catch(() => null)
   const parsed = requestSchema.safeParse(raw)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request', details: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   const { projectName, files, profile } = parsed.data
@@ -292,7 +294,7 @@ export async function POST(request: Request) {
       findingsCount: newFindings.length,
     })
   } catch (err) {
-    log.error('Scan failed', { error: String(err) })
-    return NextResponse.json({ error: 'Scan failed', details: String(err) }, { status: 500 })
+    log.error('Scan failed', { error: err })
+    return apiError(err)
   }
 }

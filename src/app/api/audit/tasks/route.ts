@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api:audit:tasks')
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const parsed = createSchema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
+  if (!parsed.success) return apiValidationError(parsed.error)
 
   const d = parsed.data
 

@@ -124,8 +124,8 @@ export async function POST(request: Request) {
 
       results.push({ findingId: finding.id, fixId: fixRow?.id, success: true })
     } catch (err) {
-      log.error('Batch: fix failed for finding', { findingId: finding.id, error: String(err) })
-      results.push({ findingId: finding.id, success: false, error: String(err) })
+      log.error('Batch: fix failed for finding', { findingId: finding.id, error: err })
+      results.push({ findingId: finding.id, success: false, error: 'Generierung fehlgeschlagen' })
     }
   }
 

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkScheduledTriggers } from '@/lib/agent-engine'
 import { createLogger } from '@/lib/logger'
+import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
@@ -27,8 +28,7 @@ export async function GET(request: NextRequest) {
       ...result,
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error'
-    log.error('Agent cron check failed', { error: msg })
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+    log.error('Agent cron check failed', { error: err })
+    return apiError(err)
   }
 }

@@ -24,6 +24,12 @@ export type AgentSource =
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
 
+/** How this finding should be fixed */
+export type FixType = 'code-fix' | 'code-gen' | 'refactoring' | 'manual'
+
+/** Which maturity tier this rule belongs to */
+export type RuleTier = 'starter' | 'production' | 'enterprise'
+
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
   message: string
@@ -39,6 +45,8 @@ export interface Finding {
   fixHint?: string
   /** Per-finding rule ID (e.g. 'lighthouse-performance-first-contentful-paint') */
   agentRuleId?: string
+  /** How this finding should be fixed (inherited from the rule) */
+  fixType?: FixType
 }
 
 export interface RuleResult {
@@ -64,6 +72,10 @@ export interface AuditRule {
   /** Original rule ID in the agent document (e.g. 'R1', 'R3') */
   agentRuleId?: string
   enforcement?: EnforcementLevel
+  /** How findings from this rule should be fixed */
+  fixType?: FixType
+  /** Maturity tier — rules only apply if user tier >= rule tier. Default: starter */
+  tier?: RuleTier
 }
 
 export interface PackageJson {
@@ -100,6 +112,8 @@ export interface AuditContext {
   gitInfo: GitInfo
   /** Options for external tool checks — attached by runAudit when --with-tools is active */
   externalTools?: ExternalToolsOptions
+  /** In-memory file contents for external project scans (no disk access) */
+  fileContents?: Map<string, string>
 }
 
 export interface CategoryDefinition {
@@ -160,6 +174,12 @@ export interface AuditOptions {
   outputDir?: string
   /** Options for external tool checks (depcruise, lighthouse, bundle, eslint-detailed) */
   externalTools?: ExternalToolsOptions
+  /** Rule IDs to exclude from scoring (profile-based compliance filtering) */
+  excludeRuleIds?: Set<string>
+  /** User maturity tier — rules above this tier are excluded. Default: 'starter' */
+  tier?: RuleTier
+  /** If set, compliance rules use this profile. If absent, profile-gated rules are excluded. */
+  complianceProfile?: { app_type: string; user_location: string; features: string[] }
 }
 
 /** Category metadata — weights match the manual audit report */

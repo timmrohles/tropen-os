@@ -6,7 +6,7 @@ import {
   CheckCircle, Circle, DownloadSimple, ListChecks,
   FunnelSimple, ArrowCounterClockwise,
 } from '@phosphor-icons/react'
-import type { AuditTask, ScanProject } from '../page'
+import type { AuditTask, ScanProject } from '@/lib/audit/tasks-data'
 
 type StatusFilter = 'all' | 'open' | 'completed' | 'dismissed'
 type SeverityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low' | 'info'

@@ -17,6 +17,7 @@ function detectEntryPoint(sym: RepoSymbol, filePath: string): boolean {
   return ENTRY_POINT_NAMES.has(sym.name) && sym.exported
 }
 
+// Relative importance per symbol kind (0–1 scale)
 const KIND_WEIGHT: Record<RepoSymbol['kind'], number> = {
   class:     1.0,
   interface: 1.0,
@@ -32,31 +33,50 @@ const KIND_WEIGHT: Record<RepoSymbol['kind'], number> = {
 /**
  * Ranks all symbols using PageRank on file dependencies combined with
  * symbol-level signals (referenceCount, exported, kind).
- * Returns all symbols sorted by rankScore descending, scores normalized 0–1.
+ *
+ * Uses an additive scoring formula so each signal contributes a bounded
+ * slice of the total score — prevents the multiplicative clustering
+ * that bunches scores near 0.
+ *
+ * Min-Max normalization for a clean 0–1 output range.
  */
 export function rankSymbols(files: RepoFile[], dependencies: FileDependency[]): RepoSymbol[] {
   const fileRanks = computeFilePageRank(files, dependencies)
+
+  // Normalize file ranks to 0–1 before using them as a component
+  const rankValues = fileRanks.size > 0 ? [...fileRanks.values()] : [1]
+  const maxFileRank = Math.max(...rankValues, 1e-9)
 
   const allSymbols: RepoSymbol[] = []
 
   for (const file of files) {
     const fileRank = fileRanks.get(file.path) ?? (1 / Math.max(files.length, 1))
+    const normalizedFileRank = fileRank / maxFileRank  // 0–1
 
     for (const sym of file.symbols) {
-      const exportBonus = sym.exported ? 2.0 : 1.0
-      const kindWeight = KIND_WEIGHT[sym.kind] ?? 0.5
-      const entryPointBonus = detectEntryPoint(sym, file.path) ? 2.0 : 1.0
-      // sqrt dampens extreme reference counts — prevents a single hub from dominating
-      const refBonus = 1 + (Math.sqrt(sym.referenceCount) * 0.5)
-      sym.rankScore = fileRank * exportBonus * kindWeight * refBonus * entryPointBonus
+      // Additive formula — each component is bounded, no single signal dominates
+      const baseScore   = normalizedFileRank * 0.4
+      const exportBonus = sym.exported ? 0.3 : 0
+      const kindBonus   = (KIND_WEIGHT[sym.kind] ?? 0.5) * 0.2
+      // log1p dampens outliers: log1p(0)=0, log1p(1)≈0.69, log1p(10)≈2.4
+      const refBonus    = Math.log1p(sym.referenceCount) * 0.1
+      const entryBonus  = detectEntryPoint(sym, file.path) ? 0.2 : 0
+
+      sym.rankScore = baseScore + exportBonus + kindBonus + refBonus + entryBonus
       allSymbols.push(sym)
     }
   }
 
-  // Normalize to 0–1
-  const maxScore = Math.max(...allSymbols.map((s) => s.rankScore), 1)
-  for (const sym of allSymbols) {
-    sym.rankScore = sym.rankScore / maxScore
+  // Min-Max normalization: spreads scores across full 0–1 range
+  if (allSymbols.length > 0) {
+    const scores = allSymbols.map((s) => s.rankScore)
+    const min = Math.min(...scores)
+    const max = Math.max(...scores)
+    const range = Math.max(max - min, 0.001)  // guard against all-equal edge case
+
+    for (const sym of allSymbols) {
+      sym.rankScore = (sym.rankScore - min) / range
+    }
   }
 
   allSymbols.sort((a, b) => b.rankScore - a.rankScore)

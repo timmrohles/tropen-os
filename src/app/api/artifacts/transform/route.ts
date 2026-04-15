@@ -1,5 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { transform } from 'sucrase'
+import { apiError } from '@/lib/api-error'
 
 export async function POST(req: NextRequest) {
   const { code } = await req.json() as { code: string }
@@ -14,6 +15,6 @@ export async function POST(req: NextRequest) {
     })
     return Response.json({ code: result.code })
   } catch (err) {
-    return Response.json({ error: String(err) }, { status: 422 })
+    return apiError(err, 'TRANSFORM_ERROR', 422)
   }
 }

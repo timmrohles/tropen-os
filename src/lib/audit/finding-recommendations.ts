@@ -344,6 +344,29 @@ export const FINDING_RECOMMENDATIONS: FindingRecommendation[] = [
       '`orgId` aus `getAuthUser()` beziehen.',
     fixApproach: 'per-file',
   },
+  {
+    id: 'schema-drift',
+    matchRuleIds: ['cat-5-schema-drift'],
+    matchMessagePatterns: [/schema.drift|live.check|live-check|drift.check/i],
+    title: 'Schema Drift Check — Live-DB mit Code vergleichen',
+    problem:
+      'Dieser Scan analysiert deinen Quellcode — nicht deine Live-Datenbank. ' +
+      'Änderungen die direkt über Provider-Dashboards gemacht wurden (Supabase Studio, Neon Console etc.) ' +
+      'sind im Code nicht sichtbar. Besonders kritisch: RLS-Policies, Indexes, Permissions ' +
+      'und manuell erstellte oder gelöschte Tabellen.',
+    impact:
+      'Der Audit-Score kann "Stable" anzeigen während deine Live-DB kritische Sicherheitslücken hat — ' +
+      'z.B. fehlende RLS-Policies oder falsch konfigurierte Permissions, die nur im Dashboard gesetzt wurden.',
+    strategy:
+      'Führe den Schema Drift Check regelmäßig aus (vor jedem Release) um Live-DB und Code synchron zu halten. ' +
+      'Mittel- bis langfristig: alle DB-Änderungen ausschließlich über Migrations-Dateien durchführen — ' +
+      'nie direkt über das Dashboard.',
+    firstStep:
+      'SQL-Queries aus dem Finding in deinem Datenbank-Dashboard ausführen. ' +
+      'Ergebnisse mit deinen Migrations-Dateien vergleichen. ' +
+      'Jede Abweichung ist ein potenziales Sicherheitsproblem.',
+    fixApproach: 'config-change',
+  },
 ]
 
 /**

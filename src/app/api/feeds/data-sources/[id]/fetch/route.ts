@@ -102,7 +102,7 @@ export async function POST(
     }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    fetchError = msg.includes('aborted') ? 'Timeout nach 15 Sekunden' : msg
+    fetchError = msg.includes('aborted') ? 'Timeout nach 15 Sekunden' : 'Abruf fehlgeschlagen'
     log.warn('data source fetch error', { id, error: fetchError })
   }
 
@@ -136,7 +136,7 @@ export async function POST(
   }).eq('id', id)
 
   if (fetchError) {
-    return NextResponse.json({ error: fetchError, httpStatus, durationMs })
+    return NextResponse.json({ error: 'Abruf fehlgeschlagen', httpStatus, durationMs })
   }
 
   const preview = Array.isArray(rawData) ? rawData.slice(0, 3) : (rawData ? [rawData] : [])

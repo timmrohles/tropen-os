@@ -83,6 +83,10 @@ export async function checkUnexpectedNamespaces(ctx: AuditContext): Promise<Rule
   const expected = new Set([
     'app', 'components', 'hooks', 'lib', 'types', 'utils', 'db',
     'actions', 'core', 'modules', 'scripts', 'middleware.ts', 'middleware.js',
+    'services', 'store', 'stores', 'config', 'features', 'styles',
+    'pages', 'integrations', 'contexts', 'data', 'constants',
+    'providers', 'layouts', 'test', 'tests', '__tests__',
+    'i18n', 'messages', 'assets', 'public',
   ])
 
   const topLevelDirs = new Set<string>()

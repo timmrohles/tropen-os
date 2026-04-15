@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api:audit:findings:id')
 
@@ -39,7 +40,7 @@ export async function PATCH(
     const raw = await request.json()
     const parsed = patchSchema.safeParse(raw)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid status', details: parsed.error.flatten() }, { status: 400 })
+      return apiValidationError(parsed.error)
     }
     body = parsed.data
   } catch {

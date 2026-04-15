@@ -13,15 +13,18 @@ import {
   fetchAuditTasks,
 } from '@/lib/audit/page-data'
 import { Link } from '@/i18n/navigation'
+import { getFixType } from '@/lib/audit/rule-registry'
+import { computeQuickWins } from '@/lib/audit/quick-wins'
+import { getPercentileRank } from '@/lib/audit/score-percentile'
+import QuickWinsCard from './_components/QuickWinsCard'
 import ScoreHero from './_components/ScoreHero'
 import CategoryBreakdown from './_components/CategoryBreakdown'
 import ScoreTrend from './_components/ScoreTrend'
 import FindingsTable from './_components/FindingsTable'
 import TaskList from './_components/TaskList'
-import DeepReviewFindings from './_components/DeepReviewFindings'
 import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
-import Top5FindingsCards from './_components/Top5FindingsCards'
+import AuditTabs from './_components/AuditTabs'
 
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
@@ -90,18 +93,15 @@ export default async function AuditPage({
     if (t.finding_id) initialTaskMap[t.finding_id] = t.id
   })
 
-  type RawFinding = Record<string, unknown>
-  function isDeepReviewFinding(f: RawFinding): boolean {
-    const mf = f.models_flagged as string[] | null | undefined
-    return (mf != null && mf.length > 0) || f.consensus_level != null
-  }
-  const allFindings = findings as RawFinding[]
-  const deepFindings = allFindings.filter(isDeepReviewFinding)
-  const staticFindings = allFindings.filter((f) => !isDeepReviewFinding(f))
+  // Enrich findings with fixType from rule registry (server-side only — rule-registry uses Node.js)
+  const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
+    (f as Record<string, unknown>).fix_type = getFixType(f.rule_id as string)
+    return f
+  })
 
-  const openFindings = staticFindings.filter((f) => f.status === 'open').length
-  const criticalOpenFindings = staticFindings.filter((f) => f.status === 'open' && f.severity === 'critical').length
-  const highOpenFindings = staticFindings.filter((f) => f.status === 'open' && f.severity === 'high').length
+  const openFindings = allFindings.filter((f) => f.status === 'open').length
+  const criticalOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'critical').length
+  const highOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'high').length
   const isFirstRun = runList.length === 1
   const hasRuns = runList.length > 0
 
@@ -115,6 +115,17 @@ export default async function AuditPage({
   const hasLighthouseData = (findings as { agent_source?: string }[]).some(
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
+
+  // fixType stats for display
+  const fixTypeStats = { 'code-fix': 0, 'code-gen': 0, refactoring: 0, manual: 0 }
+  for (const f of allFindings) {
+    const ft = getFixType(f.rule_id as string)
+    fixTypeStats[ft]++
+  }
+
+  // Quick wins + percentile (server-side computation)
+  const { quickWins } = computeQuickWins(allFindings as unknown as Parameters<typeof computeQuickWins>[0])
+  const percentileRank = runDetail ? getPercentileRank(runDetail.percentage as number) : null
 
   return (
     <div className="content-max">
@@ -180,81 +191,58 @@ export default async function AuditPage({
             isFirstRun={isFirstRun}
           />
 
-          {/* Lighthouse hint — shown when last run has no Lighthouse data */}
-          {!hasLighthouseData && (
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, marginTop: -8 }}>
-              {t('noLighthouseHint')}
+          {/* fixType stats + percentile */}
+          {allFindings.length > 0 && (
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 0, marginTop: -8 }}>
+              {t('fixTypeStats', {
+                codeFix: fixTypeStats['code-fix'],
+                codeGen: fixTypeStats['code-gen'],
+                refactoring: fixTypeStats.refactoring,
+                manual: fixTypeStats.manual,
+              })}
+              {percentileRank !== null && (
+                <span style={{ marginLeft: 12 }}>
+                  · {t('scorePercentile', { rank: percentileRank })}
+                </span>
+              )}
             </p>
           )}
 
-          {/* ── Separator ── */}
-          <div style={{ borderTop: '1px solid var(--border)', margin: '0 0 32px' }} />
-
-          {/* 2. Categories + Score-Verlauf/Runs nebeneinander */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-            gap: 0,
-          }}>
-            {/* Left column — Categories */}
-            <div style={{
-              borderRight: '1px solid var(--border)',
-              paddingRight: 24,
-              marginRight: 0,
-            }}>
+          {/* Tab-based layout */}
+          <AuditTabs
+            findingsCount={allFindings.length}
+            categoryCount={(categories as unknown[]).length}
+            runCount={runList.length}
+            findingsContent={
+              <div>
+                {quickWins.length > 0 && (
+                  <QuickWinsCard quickWins={quickWins} />
+                )}
+                <FindingsTable
+                  key={selectedRunId ?? 'none'}
+                  findings={allFindings as unknown as Parameters<typeof FindingsTable>[0]['findings']}
+                  runId={selectedRunId ?? undefined}
+                  statusFilter={status}
+                  severityFilter={severity}
+                  agentFilter={agent}
+                  initialTaskMap={initialTaskMap}
+                  isExternalProject={activeScanProjectId !== null}
+                />
+              </div>
+            }
+            categoriesContent={
               <CategoryBreakdown
                 categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
-                findings={staticFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
+                findings={allFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
                 isExternalProject={activeScanProjectId !== null}
               />
-            </div>
-            {/* Right column — Trend + History */}
-            <div style={{ paddingLeft: 24, display: 'flex', flexDirection: 'column' }}>
-              <ScoreTrend runs={runList} />
-              <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
-            </div>
-          </div>
-
-          {/* ── Separator ── */}
-          <div style={{ borderTop: '1px solid var(--border)', margin: '0 0 32px' }} />
-
-          {/* 3. Top-5-Findings (Default-Ansicht) */}
-          {staticFindings.filter((f) => f.status === 'open').length > 0 && (
-            <Top5FindingsCards
-              findings={staticFindings as unknown as Parameters<typeof Top5FindingsCards>[0]['findings']}
-              runId={selectedRunId ?? ''}
-              scanProjectId={activeScanProjectId}
-              initialTaskMap={initialTaskMap}
-              totalCount={staticFindings.filter((f) => f.status === 'open').length}
-            />
-          )}
-
-          {/* 4. Deep Review Findings */}
-          <DeepReviewFindings
-            findings={deepFindings as unknown as Parameters<typeof DeepReviewFindings>[0]['findings']}
-            runId={selectedRunId ?? ''}
-          />
-
-          {/* ── Separator ── */}
-          <div style={{ borderTop: '1px solid var(--border)', margin: '0 0 32px' }} />
-
-          {/* 5. Static Findings (expandiert) */}
-          <div id="findings-table">
-            <FindingsTable
-              key={selectedRunId ?? 'none'}
-              findings={staticFindings as unknown as Parameters<typeof FindingsTable>[0]['findings']}
-              runId={selectedRunId ?? undefined}
-              statusFilter={status}
-              severityFilter={severity}
-              agentFilter={agent}
-              initialTaskMap={initialTaskMap}
-              isExternalProject={activeScanProjectId !== null}
-            />
-          </div>
-
-          {/* 6. Task List */}
-          <TaskList
-            initialTasks={auditTasks as unknown as Parameters<typeof TaskList>[0]['initialTasks']}
+            }
+            historyContent={
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <ScoreTrend runs={runList} />
+                <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
+              </div>
+            }
           />
         </>
       )}

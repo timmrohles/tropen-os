@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
           routingReason,
           latencyMs: Date.now() - callStart,
           status: 'error',
-          errorMessage: err instanceof Error ? err.message : String(err),
+          errorMessage: 'Stream error',
         })
       }
     },

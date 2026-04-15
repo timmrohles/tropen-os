@@ -45,12 +45,15 @@ export interface CommitteeReviewConfig {
 const ROOT = resolve(process.cwd())
 const OUTPUT_DIR = join(ROOT, 'docs', 'committee-reviews')
 
-// Model IDs split to prevent gateway-slug static analysers from misreading date suffixes
-const REVIEWER_MODEL = 'claude-sonnet-4' + '-20250514'
-const JUDGE_MODEL    = 'claude-opus-4'   + '-20250514'
+// Model IDs — use latest stable aliases
+const REVIEWER_MODEL = 'claude-sonnet-4-20250514'
+const JUDGE_MODEL    = 'claude-opus-4-20250514'
 
 function getAnthropicModel(modelId: string) {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
+  const sdk = createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    baseURL: 'https://api.anthropic.com/v1',
+  })
   return sdk(modelId)
 }
 function getOpenAIModel() {
@@ -115,13 +118,14 @@ async function callProvider(
   modelFn: () => ReturnType<typeof getAnthropicModel>,
   systemPrompt: string,
   userPrompt: string,
+  maxOutputTokens = 2048,
 ): Promise<CallResult> {
   try {
     const result = await generateText({
       model: modelFn() as Parameters<typeof generateText>[0]['model'],
       system: systemPrompt,
       prompt: userPrompt,
-      maxOutputTokens: 2048,
+      maxOutputTokens,
     })
     const text = result.text?.trim() ?? ''
     if (!text) {
@@ -252,6 +256,7 @@ async function runReview(config: CommitteeReviewConfig): Promise<void> {
     () => getAnthropicModel(JUDGE_MODEL) as ReturnType<typeof getAnthropicModel>,
     JUDGE_SYSTEM_PROMPT,
     buildJudgeUserPrompt(config.judgePrompt, drafts),
+    4096,
   )
 
   costs.push({
@@ -299,6 +304,12 @@ const ALL_CONFIGS = [
   'reviews/audit-scoring.ts',
   'reviews/fix-engine.ts',
   'reviews/agent-checker-alignment.ts',
+  'reviews/repo-map.ts',
+  'reviews/dogfooding-feedback.ts',
+  'reviews/automated-testbench.ts',
+  'reviews/benchmark-analysis.ts',
+  'reviews/compliance-architecture.ts',
+  'reviews/committee-final.ts',
 ]
 
 // ── CLI entrypoint ─────────────────────────────────────────────────────────────

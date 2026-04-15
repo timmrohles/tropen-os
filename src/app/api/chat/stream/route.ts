@@ -8,6 +8,7 @@ import { resolveWorkflow } from '@/lib/capability-resolver'
 import { logRoutingDecision } from '@/lib/qa/routing-logger'
 import { selectModel } from '@/lib/model-selector'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
+import { apiError } from '@/lib/api-error'
 
 const { modelId: DEFAULT_MODEL } = selectModel('chat')
 
@@ -184,7 +185,7 @@ export async function POST(req: NextRequest) {
               card_id: cardId ?? null,
               scope: scope as 'workspace' | 'card',
               role: 'system',
-              content: 'Fehler beim Generieren der Antwort: ' + errorMessage,
+              content: 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.',
               context_snapshot: contextSnapshot,
               user_id: userId,
             })
@@ -206,7 +207,6 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Interner Fehler'
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    return apiError(err)
   }
 }

@@ -48,7 +48,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const access = await checkAccess(id)
   if (!access.allowed) {
-    return NextResponse.json({ error: access.message }, { status: access.status })
+    return NextResponse.json({ error: 'Ein Fehler ist aufgetreten' }, { status: access.status })
   }
 
   const body = await request.json()
@@ -75,7 +75,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const access = await checkAccess(id)
   if (!access.allowed) {
-    return NextResponse.json({ error: access.message }, { status: access.status })
+    return NextResponse.json({ error: 'Ein Fehler ist aufgetreten' }, { status: access.status })
   }
 
   const { error: deleteError } = await supabaseAdmin

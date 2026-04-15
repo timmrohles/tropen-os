@@ -22,13 +22,12 @@ export async function POST(
     const runId = await runAgent(id, 'manual', { initiated_by: me.id, ...body })
     return NextResponse.json({ run_id: runId })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error'
+    const msg = err instanceof Error ? err.message : ''
     log.error('POST /api/agents/[id]/run failed', { id, error: msg })
-    const status = msg.includes('not found') ? 404
-                 : msg.includes('inactive') ? 422
-                 : msg.includes('already running') ? 409
-                 : msg.includes('Budget') ? 402
-                 : 500
-    return NextResponse.json({ error: msg }, { status })
+    if (msg.includes('not found'))      return NextResponse.json({ error: 'Agent nicht gefunden' }, { status: 404 })
+    if (msg.includes('inactive'))       return NextResponse.json({ error: 'Agent ist inaktiv' }, { status: 422 })
+    if (msg.includes('already running'))return NextResponse.json({ error: 'Agent läuft bereits' }, { status: 409 })
+    if (msg.includes('Budget'))         return NextResponse.json({ error: 'Budget erschöpft', code: 'BUDGET_EXHAUSTED' }, { status: 402 })
+    return NextResponse.json({ error: 'Ein Fehler ist aufgetreten', code: 'INTERNAL_ERROR' }, { status: 500 })
   }
 }

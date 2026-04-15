@@ -16,6 +16,9 @@ interface DbCategoryScore {
   manual_rule_count: number
 }
 
+/** Category IDs where live DB checks would improve coverage */
+const LIVE_CHECK_CATEGORIES = new Set([3, 5])
+
 export interface CategoryRowItemProps {
   cat: DbCategoryScore
   openCount: number
@@ -26,6 +29,8 @@ export interface CategoryRowItemProps {
   onToggleExpand: () => void
   onCategoryClick: () => void
   hasFindings: boolean
+  /** When true, shows a "Live-Check fehlt" hint on DB + Security categories */
+  showLiveCheckHint?: boolean
 }
 
 function scoreColor(score: number): string {
@@ -92,6 +97,7 @@ export default function CategoryRowItem({
   cat, openCount, isHighlighted, isExpanded,
   agentSource, agentInfo,
   onToggleExpand, onCategoryClick, hasFindings,
+  showLiveCheckHint = false,
 }: CategoryRowItemProps) {
   const pct = (cat.score / (cat.max_score || 5)) * 100
   const color = scoreColor(cat.score)
@@ -169,6 +175,19 @@ export default function CategoryRowItem({
                 description={CATEGORY_DESCRIPTIONS[cat.category_name]}
                 isManualOnly={isManualOnly}
               />
+            )}
+            {showLiveCheckHint && LIVE_CHECK_CATEGORIES.has(cat.category_id) && (
+              <span
+                title="Live-DB-Check fehlt — Score basiert nur auf Code-Analyse"
+                style={{
+                  fontSize: 9, marginLeft: 4, flexShrink: 0,
+                  color: 'var(--status-risky)',
+                  cursor: 'help',
+                }}
+                aria-label="Live-Check fehlt"
+              >
+                ⚠
+              </span>
             )}
           </div>
 

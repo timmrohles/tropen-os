@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { patchGuidedSettingsSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/settings')
 
@@ -16,7 +17,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const parsed = patchGuidedSettingsSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   const { data, error } = await supabaseAdmin

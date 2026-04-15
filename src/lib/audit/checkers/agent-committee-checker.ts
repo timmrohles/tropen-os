@@ -24,6 +24,8 @@ function readFile(rootPath: string, ...parts: string[]): string {
   try { return fs.readFileSync(join(rootPath, ...parts), 'utf-8') } catch { return '' }
 }
 function readMigrations(rootPath: string): string[] {
+  // In-memory scans (rootPath === '') must not read from local disk
+  if (!rootPath) return []
   const dir = join(rootPath, 'supabase', 'migrations')
   if (!fs.existsSync(dir)) return []
   try {
@@ -259,24 +261,33 @@ export async function checkSoftDeletePattern(ctx: AuditContext): Promise<RuleRes
   const hasSoftDeleteColumn = /deleted_at/.test(allContent)
   const hasDeletedAtDefault = /deleted_at.*DEFAULT NULL/.test(allContent) ||
     /deleted_at.*TIMESTAMP/.test(allContent)
-  const hasHardDelete = /DELETE FROM/i.test(allContent)
+  const deleteMatches = allContent.match(/DELETE FROM/gi) || []
+  const deleteCount = deleteMatches.length
+  const hasHardDelete = deleteCount > 0
 
   if (hasSoftDeleteColumn && !hasHardDelete) {
     return pass('cat-5-rule-7', 5, 'Soft-delete pattern via deleted_at column found — no hard DELETEs in migrations')
   }
   if (hasSoftDeleteColumn && hasHardDelete) {
+    // Threshold: only flag if >= 3 DELETE statements — occasional seed/cleanup DELETEs are acceptable
+    if (deleteCount < 3) {
+      return pass('cat-5-rule-7', 4, `deleted_at column exists with only ${deleteCount} DELETE statement(s) — below threshold`)
+    }
     return fail('cat-5-rule-7', 3, 'deleted_at column exists but some migrations use hard DELETE', [{
       severity: 'medium',
-      message: 'Inconsistent: deleted_at column exists but some migrations contain DELETE FROM',
+      message: `Inconsistent: deleted_at column exists but ${deleteCount} migrations contain DELETE FROM`,
       suggestion: 'Standardize on soft-delete — replace DELETE FROM with UPDATE SET deleted_at = NOW()',
     }])
   }
-  if (!hasSoftDeleteColumn) {
+  if (!hasSoftDeleteColumn && deleteCount >= 3) {
     return fail('cat-5-rule-7', 0, 'No soft-delete pattern (deleted_at column) found in migrations', [{
       severity: 'medium',
-      message: 'Tables lack deleted_at column for soft-delete support',
+      message: `Tables lack deleted_at column for soft-delete support (${deleteCount} DELETE statements found)`,
       suggestion: 'Add deleted_at TIMESTAMPTZ DEFAULT NULL to all user-data tables',
     }])
+  }
+  if (!hasSoftDeleteColumn && deleteCount < 3) {
+    return pass('cat-5-rule-7', 3, `No deleted_at column but only ${deleteCount} DELETE statement(s) — below threshold`)
   }
   return pass('cat-5-rule-7', 4, 'deleted_at pattern present in migrations')
 }

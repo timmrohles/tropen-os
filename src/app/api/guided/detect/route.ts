@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { detectWorkflow } from '@/lib/guided-workflow-engine'
 import { detectInputSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/detect')
 
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const parsed = detectInputSchema.safeParse({ ...body, userId: me.id })
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   try {

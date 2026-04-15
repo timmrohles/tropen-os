@@ -64,6 +64,8 @@ export async function fetchAuditFindings(runId: string) {
     .select('id, rule_id, category_id, severity, message, file_path, line, suggestion, status, resolved_at, agent_source, agent_rule_id, enforcement, consensus_level, models_flagged, avg_confidence, affected_files, fix_hint')
     .eq('run_id', runId)
     .order('severity', { ascending: true })
+    .order('rule_id', { ascending: true })
+    .order('id', { ascending: true })
   return data ?? []
 }
 

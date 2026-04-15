@@ -114,4 +114,78 @@ describe('rankSymbols', () => {
     expect(Math.max(...ranked.map((s) => s.rankScore))).toBeLessThanOrEqual(1)
     expect(Math.min(...ranked.map((s) => s.rankScore))).toBeGreaterThanOrEqual(0)
   })
+
+  // ── New tests for additive formula + min-max distribution ────────────────
+
+  it('score distribution is not clustered at extremes', () => {
+    // With the additive formula + min-max normalization, scores should be
+    // spread across the range — not bunched at 0 or 1
+    const symbols = Array.from({ length: 20 }, (_, i) =>
+      makeSymbol({
+        id: `a.ts::sym${i}`,
+        name: `sym${i}`,
+        filePath: 'a.ts',
+        exported: i % 2 === 0,
+        referenceCount: i * 3,
+        kind: i % 3 === 0 ? 'class' : i % 3 === 1 ? 'function' : 'variable',
+      })
+    )
+
+    const files: RepoFile[] = [makeFile({ path: 'a.ts', symbols })]
+    const ranked = rankSymbols(files, [])
+
+    // At least one symbol should be in the mid-range (not just 0 and 1)
+    const midRange = ranked.filter((s) => s.rankScore > 0.1 && s.rankScore < 0.9)
+    expect(midRange.length).toBeGreaterThan(0)
+  })
+
+  it('min-max normalization: lowest score is 0 and highest is 1', () => {
+    const files: RepoFile[] = [
+      makeFile({
+        path: 'a.ts',
+        symbols: [
+          makeSymbol({ id: 'a.ts::s1', exported: true,  referenceCount: 50, kind: 'class' }),
+          makeSymbol({ id: 'a.ts::s2', exported: true,  referenceCount: 5,  kind: 'function' }),
+          makeSymbol({ id: 'a.ts::s3', exported: false, referenceCount: 0,  kind: 'variable' }),
+        ],
+      }),
+    ]
+
+    const ranked = rankSymbols(files, [])
+    expect(Math.max(...ranked.map((s) => s.rankScore))).toBeCloseTo(1.0, 5)
+    expect(Math.min(...ranked.map((s) => s.rankScore))).toBeCloseTo(0.0, 5)
+  })
+
+  it('handles single symbol (no division by zero)', () => {
+    const files: RepoFile[] = [
+      makeFile({ path: 'a.ts', symbols: [makeSymbol({ id: 'a.ts::only' })] }),
+    ]
+    const ranked = rankSymbols(files, [])
+    expect(ranked).toHaveLength(1)
+    expect(ranked[0].rankScore).toBeGreaterThanOrEqual(0)
+    expect(ranked[0].rankScore).toBeLessThanOrEqual(1)
+  })
+
+  it('log1p dampens extreme reference counts — high refs do not dominate infinitely', () => {
+    // With three symbols, min-max normalization is anchored by the base symbol.
+    // The gap between 1000-refs and 10-refs should be < 0.5 (bounded by log1p).
+    const files: RepoFile[] = [
+      makeFile({
+        path: 'a.ts',
+        symbols: [
+          makeSymbol({ id: 'a.ts::many', exported: true,  kind: 'function', referenceCount: 1000 }),
+          makeSymbol({ id: 'a.ts::few',  exported: true,  kind: 'function', referenceCount: 10 }),
+          // anchor: low-signal symbol keeps min-max from collapsing to a 2-point range
+          makeSymbol({ id: 'a.ts::base', exported: false, kind: 'variable', referenceCount: 0 }),
+        ],
+      }),
+    ]
+    const ranked = rankSymbols(files, [])
+    const many = ranked.find((s) => s.id === 'a.ts::many')!
+    const few  = ranked.find((s) => s.id === 'a.ts::few')!
+
+    expect(many.rankScore).toBeGreaterThan(few.rankScore)
+    // The gap should be < 0.5 (not a massive cliff), since log1p dampens
+    expect(many.rankScore - few.rankScore).toBeLessThan(0.5)
+  })
 })

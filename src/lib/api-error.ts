@@ -12,10 +12,22 @@ const log = createLogger('api:error')
  * Logs the full error server-side and returns a generic 500 JSON response.
  * Safe for both JS Error objects and Supabase PostgREST errors.
  */
-export function apiError(err: unknown, code = 'INTERNAL_ERROR'): NextResponse {
+export function apiError(err: unknown, code = 'INTERNAL_ERROR', status = 500): NextResponse {
   log.error('API error', { err })
   return NextResponse.json(
     { error: 'Ein Fehler ist aufgetreten', code },
-    { status: 500 }
+    { status }
+  )
+}
+
+/**
+ * Returns a generic 400 for validation errors.
+ * Logs Zod details server-side but never sends them to the client.
+ */
+export function apiValidationError(zodError: unknown): NextResponse {
+  log.warn('Validation error', { err: zodError })
+  return NextResponse.json(
+    { error: 'Ungültige Eingabe', code: 'VALIDATION_ERROR' },
+    { status: 400 }
   )
 }

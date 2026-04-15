@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/api/projects'
 import { resolveOption } from '@/lib/guided-workflow-engine'
 import { resolveInputSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
+import { apiValidationError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/resolve')
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const parsed = resolveInputSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    return apiValidationError(parsed.error)
   }
 
   try {
