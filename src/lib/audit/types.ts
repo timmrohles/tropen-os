@@ -22,6 +22,8 @@ export type AgentSource =
   | 'npm-audit'
   // Slop Detection Agent (Sprint 11)
   | 'slop'
+  // Spec Agent (Sprint 11)
+  | 'spec'
 
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'

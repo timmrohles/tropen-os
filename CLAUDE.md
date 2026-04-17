@@ -684,6 +684,7 @@ Klick [···]:  Umbenennen / Bearbeiten
     cli-checker.ts               # Shell-basierte Checks
     agent-committee-checker.ts   # Sprint 5b: 30+ Checks der 18 Komitee-Agenten
     slop-detection-checker.ts   # Sprint 11: cat-26 KI-Code-Hygiene (5 Regeln: Placeholder, Fingerprints, Overcommenting, Placeholder-Credentials, Mixed Language)
+    spec-checker.ts             # Sprint 11: cat-18 SPEC_AGENT (4 Regeln: AI-Kontext-Datei, PRD, README-Drift, .cursorrules-Stack)
   rule-registry.ts              # Alle ~70 AuditRule-Einträge mit agentSource + check-Funktion
   index.ts                      # buildAuditContext (Disk) + buildAuditContextFromFiles (in-memory)
   page-data.ts                  # fetchAuditRuns, fetchScanProjects, fetchAuditFindings etc.
@@ -1092,9 +1093,9 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 
 ### Audit Checker-Stack (Stand 2026-04-17)
 
-238 Regeln (174 automatisiert, 64 manuell), 26 Kategorien, 28 Agenten.
+242 Regeln (178 automatisiert, 64 manuell), 26 Kategorien, 29 Agenten.
 Vollstaendige Coverage-Tabelle: `docs/audit-reports/checker-coverage-2026-04-15.md`
-Sprint 11: +5 Regeln cat-26 (KI-Code-Hygiene via SLOP_DETECTION_AGENT)
+Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGENT)
 
 **Checker-Dateien:**
 | Datei | Regeln | Kategorien |
