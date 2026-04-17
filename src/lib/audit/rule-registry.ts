@@ -108,6 +108,10 @@ import {
   checkGitignoreCompleteness, checkDeploymentConfig,
   checkTestFrameworkInstalled,
 } from './checkers/thin-category-checkers'
+import {
+  checkPlaceholderComments, checkAiToolFingerprints, checkOvercommenting,
+  checkPlaceholderCredentials, checkMixedCommentLanguage,
+} from './checkers/slop-detection-checker'
 
 function manual(id: string, categoryId: number, name: string, weight: 1 | 2 | 3, fixType: FixType = 'manual', tier?: RuleTier): AuditRule {
   return { id, categoryId, name, weight, checkMode: 'manual', automatable: false, fixType, ...(tier ? { tier } : {}) }
@@ -487,6 +491,14 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-19-rule-5', categoryId: 19, name: '.gitignore vollstaendig', weight: 2, checkMode: 'repo-map', automatable: true, check: checkGitignoreCompleteness, agentSource: 'git-governance', fixType: 'code-gen' },
   { id: 'cat-23-rule-5', categoryId: 23, name: 'Deployment-Konfiguration vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkDeploymentConfig, fixType: 'code-gen' },
   { id: 'cat-10-rule-7', categoryId: 10, name: 'Test-Framework installiert', weight: 2, checkMode: 'repo-map', automatable: true, check: checkTestFrameworkInstalled, agentSource: 'testing', fixType: 'code-gen' },
+
+  // ── Category 26: KI-Code-Hygiene (SLOP_DETECTION_AGENT, Sprint 11) ─────────
+  // Detects patterns common in unreviewed AI-generated code. Non-judgmental: awareness only.
+  { id: 'cat-26-rule-1', categoryId: 26, name: 'Keine AI-Placeholder-Kommentare', weight: 2, checkMode: 'repo-map', automatable: true, check: checkPlaceholderComments, agentSource: 'slop', enforcement: 'reviewed', fixType: 'code-fix' },
+  { id: 'cat-26-rule-2', categoryId: 26, name: 'Keine AI-Tool-Fingerprints im Repo', weight: 1, checkMode: 'repo-map', automatable: true, check: checkAiToolFingerprints, agentSource: 'slop', enforcement: 'advisory', fixType: 'code-fix' },
+  { id: 'cat-26-rule-3', categoryId: 26, name: 'Keine Überkommentierung (Kommentar-Ratio <40%)', weight: 1, checkMode: 'repo-map', automatable: true, check: checkOvercommenting, agentSource: 'slop', enforcement: 'advisory', fixType: 'code-fix' },
+  { id: 'cat-26-rule-4', categoryId: 26, name: 'Keine Placeholder-Credentials im Sourcecode', weight: 3, checkMode: 'repo-map', automatable: true, check: checkPlaceholderCredentials, agentSource: 'slop', enforcement: 'reviewed', fixType: 'code-fix' },
+  { id: 'cat-26-rule-5', categoryId: 26, name: 'Konsistente Kommentar-Sprache', weight: 1, checkMode: 'repo-map', automatable: true, check: checkMixedCommentLanguage, agentSource: 'slop', enforcement: 'advisory', fixType: 'code-fix' },
 ]
 
 export function getRulesForCategory(categoryId: number): AuditRule[] {

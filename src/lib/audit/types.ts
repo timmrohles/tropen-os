@@ -20,6 +20,8 @@ export type AgentSource =
   | 'lighthouse-best-practices' | 'lighthouse-seo'
   // Package vulnerability scanner (Sprint 10)
   | 'npm-audit'
+  // Slop Detection Agent (Sprint 11)
+  | 'slop'
 
 /** Enforcement level from agent documents */
 export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
@@ -209,4 +211,5 @@ export const CATEGORIES: CategoryDefinition[] = [
   { id: 23, name: 'Infrastructure',                 weight: 2 },
   { id: 24, name: 'Supply Chain Security',          weight: 2 },
   { id: 25, name: 'Namenskonventionen & Dateihygiene', weight: 1 },
+  { id: 26, name: 'KI-Code-Hygiene',                  weight: 1 },
 ]

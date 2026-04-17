@@ -80,6 +80,7 @@ const AGENT_PILL: Record<AgentSource, { label: string; color: string }> = {
   'lighthouse-best-practices':{ label: 'LH Best',  color: 'var(--text-secondary)' },
   'lighthouse-seo':          { label: 'LH SEO',    color: 'var(--text-secondary)' },
   'npm-audit':               { label: 'npm audit', color: 'var(--error-dark)' },
+  'slop':                    { label: 'Slop',      color: 'var(--text-tertiary)' },
 }
 
 function SortBtn({ label, sortKey, active, dir, onClick }: {
