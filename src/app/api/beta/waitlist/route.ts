@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const schema = z.object({
@@ -9,7 +11,30 @@ const schema = z.object({
   source:   z.string().max(80).optional(),
 })
 
+// 5 submissions per IP per hour — fail-open if Upstash not configured
+const limiter = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? new Ratelimit({
+      redis: new Redis({
+        url:   process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      }),
+      limiter: Ratelimit.slidingWindow(5, '1 h'),
+      prefix: 'rl:beta-waitlist',
+    })
+  : null
+
 export async function POST(req: NextRequest) {
+  // Rate limit by IP
+  if (limiter) {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+              ?? req.headers.get('x-real-ip')
+              ?? '127.0.0.1'
+    const { success } = await limiter.limit(ip)
+    if (!success) {
+      return NextResponse.json({ error: 'Zu viele Anfragen. Bitte warte eine Stunde.' }, { status: 429 })
+    }
+  }
+
   let body: unknown
   try {
     body = await req.json()

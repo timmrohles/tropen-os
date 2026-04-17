@@ -267,7 +267,6 @@ export default async function AuditPage({
       {/* ── Beta feedback button ─────────────────────────────────────────── */}
       {isBetaUser && (
         <BetaFeedbackButton
-          userId={user.id}
           runId={selectedRunId ?? undefined}
         />
       )}

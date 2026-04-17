@@ -29,8 +29,6 @@ interface BetaUser {
   user_id: string
   beta_onboarding_done: boolean
   is_beta_user: boolean
-  scan_count?: number
-  email?: string
 }
 
 export default async function SuperadminBetaPage() {
@@ -54,24 +52,6 @@ export default async function SuperadminBetaPage() {
   const waitlist = (waitlistRes.data ?? []) as WaitlistEntry[]
   const feedback = (feedbackRes.data ?? []) as FeedbackEntry[]
   const betaPrefs = (betaPrefsRes.data ?? []) as BetaUser[]
-
-  // Get scan counts for beta users
-  const betaUserIds = betaPrefs.map(p => p.user_id)
-  let betaUsers: BetaUser[] = betaPrefs
-
-  if (betaUserIds.length > 0) {
-    // Get audit run counts per org — approximate via organization membership
-    const { data: scanCounts } = await supabaseAdmin
-      .from('audit_runs')
-      .select('organization_id')
-      .neq('is_benchmark', true)
-
-    // Map user emails from auth.users via admin API
-    for (const bu of betaUsers) {
-      const runs = (scanCounts ?? []) as { organization_id: string }[]
-      bu.scan_count = runs.length > 0 ? Math.floor(Math.random() * 5) : 0 // placeholder — see note
-    }
-  }
 
   const RATING_LABELS: Record<string, string> = {
     findings_helpful:  'Findings hilfreich',

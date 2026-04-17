@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { ChatCircle, X } from '@phosphor-icons/react'
 
@@ -21,7 +21,6 @@ const PLATFORMS: { value: Platform; label: string }[] = [
 ]
 
 interface Props {
-  userId: string
   runId?: string
 }
 
@@ -32,6 +31,13 @@ export default function BetaFeedbackButton({ runId }: Props) {
   const [platform, setPlatform] = useState<Platform | ''>('')
   const [loading,  setLoading]  = useState(false)
   const [sent,     setSent]     = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   function toggleRating(key: string) {
     setRatings(prev => ({ ...prev, [key]: !prev[key] }))
