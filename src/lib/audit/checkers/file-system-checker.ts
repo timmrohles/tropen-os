@@ -110,6 +110,9 @@ function hasPublicApi(rootPath: string): boolean {
   return false
 }
 
+// Route prefixes that are always exempt from versioning requirements.
+const INTERNAL_API_PREFIXES = ['/api/internal/', '/api/admin/', '/api/health', '/api/webhooks/']
+
 export async function checkApiVersioning(ctx: AuditContext): Promise<RuleResult> {
   // R1 only applies to projects with a public/external API.
   // Internal Next.js App Router routes serving only the own frontend are exempt.
@@ -118,6 +121,21 @@ export async function checkApiVersioning(ctx: AuditContext): Promise<RuleResult>
       ruleId: 'cat-6-rule-1',
       score: null,
       reason: 'No public API detected — internal Next.js routes are exempt from versioning',
+      findings: [],
+      automated: true,
+    }
+  }
+
+  // FP-Fix: if all discovered API routes are internal/admin/health/webhook paths, skip versioning check.
+  const apiPaths = ctx.filePaths.filter((p) => p.includes('/api/'))
+  const allInternal = apiPaths.length > 0 && apiPaths.every((p) =>
+    INTERNAL_API_PREFIXES.some((prefix) => p.includes(prefix))
+  )
+  if (allInternal) {
+    return {
+      ruleId: 'cat-6-rule-1',
+      score: null,
+      reason: 'All API routes are internal/admin/health/webhook paths — versioning not required',
       findings: [],
       automated: true,
     }
@@ -354,10 +372,12 @@ export async function checkI18nFramework(ctx: AuditContext): Promise<RuleResult>
   if (found) {
     return pass('cat-17-rule-1', 5, `i18n framework found: ${found}`)
   }
-  return fail('cat-17-rule-1', 0, 'No i18n framework installed', [{
-    severity: 'low',
-    message: 'All UI strings are hardcoded — no i18n framework',
-    suggestion: 'Install next-intl for Next.js-native i18n support',
+  // FP-Fix: DE-only or single-language apps are common — downgrade to info (advisory only).
+  // Projects targeting multiple locales should still install an i18n framework.
+  return fail('cat-17-rule-1', 3, 'No i18n framework installed — advisory for multi-language projects', [{
+    severity: 'info',
+    message: 'No i18n framework found — if targeting multiple languages, consider next-intl',
+    suggestion: 'If your app is intentionally single-language, you can ignore this. For multi-locale support: install next-intl',
   }])
 }
 
@@ -382,10 +402,10 @@ export async function checkSemanticVersioning(ctx: AuditContext): Promise<RuleRe
   if (parseInt(major, 10) >= 1) {
     return pass('cat-19-rule-3', 5, `Semantic versioning active: v${version}`)
   }
-  return fail('cat-19-rule-3', 0, `Version ${version} is pre-1.0 — no stable release tag`, [{
-    severity: 'low',
-    message: `package.json version is ${version} — no stable release`,
-    suggestion: 'Tag first stable release as v1.0.0',
+  return fail('cat-19-rule-3', 3, `Version ${version} is pre-1.0 — informational only`, [{
+    severity: 'info',
+    message: `package.json version is ${version} — consider tagging a stable release`,
+    suggestion: 'Tag first stable release as v1.0.0 once core features are complete',
   }])
 }
 

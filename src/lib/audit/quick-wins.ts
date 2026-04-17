@@ -48,18 +48,24 @@ const SEVERITY_WEIGHT: Record<string, number> = {
   info: 0,
 }
 
+// Quick-Win-Trio: cat-2 (Code-Qualität/Error Handling), cat-12 (Observability), cat-19 (Git Governance)
+// These three have the highest fix-rate and Aha-Moment potential — boost their score.
+const QUICK_WIN_TRIO_CATEGORIES = new Set([2, 12, 19])
+
 /**
  * Scores a finding by how quickly it can be fixed relative to its impact.
  * Higher = better quick-win candidate.
  */
-function quickWinScore(f: { severity: string; suggestion: string | null; fixType: FixType }): number {
+function quickWinScore(f: { severity: string; suggestion: string | null; fixType: FixType; categoryId?: number }): number {
   const sev = SEVERITY_WEIGHT[f.severity] ?? 0
   const hasSuggestion = f.suggestion ? 2 : 0
   const typeBonus =
     f.fixType === 'code-gen' ? 3 :
     f.fixType === 'code-fix' ? 2 :
     f.fixType === 'refactoring' ? -1 : -2
-  return sev + hasSuggestion + typeBonus
+  // Prefer findings from the Quick-Win-Trio categories (Error Handling, Observability, Git Governance)
+  const trioBonus = (f.categoryId !== undefined && QUICK_WIN_TRIO_CATEGORIES.has(f.categoryId)) ? 2 : 0
+  return sev + hasSuggestion + typeBonus + trioBonus
 }
 
 function estimateScoreGain(severity: string): number {
@@ -91,7 +97,7 @@ export function computeQuickWins(findings: RawFinding[]): QuickWinsResult {
   // Use pre-computed fix_type from server (no rule-registry import — avoids Node.js in client)
   const enriched = open.map((f) => {
     const fixType: FixType = (f.fix_type as FixType) ?? 'manual'
-    return { raw: f, fixType, score: quickWinScore({ severity: f.severity, suggestion: f.suggestion, fixType }) }
+    return { raw: f, fixType, score: quickWinScore({ severity: f.severity, suggestion: f.suggestion, fixType, categoryId: f.category_id }) }
   })
 
   // Sort by quick-win score DESC

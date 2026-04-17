@@ -31,8 +31,13 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
   const deps = { ...ctx.packageJson.dependencies, ...ctx.packageJson.devDependencies }
   const hasNextJs = 'next' in deps
 
+  // FP-Fix: admin/dashboard/settings/internal pages are low-traffic — skip lazy-load check.
+  const ADMIN_PATH_SEGMENTS = ['admin', 'dashboard', 'settings', 'internal']
+
   for (const file of ctx.repoMap.files) {
     if (!file.path.endsWith('.tsx') && !file.path.endsWith('.jsx')) continue
+    const pathLower = file.path.toLowerCase()
+    if (ADMIN_PATH_SEGMENTS.some((seg) => pathLower.includes(`/${seg}/`) || pathLower.includes(`/${seg}.`))) continue
     const content = readContent(ctx, file.path)
     if (!content) continue
 

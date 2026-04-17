@@ -701,9 +701,9 @@ export async function checkCodeownersForGitGovernance(ctx: AuditContext): Promis
     return pass('cat-19-rule-4', 5, `CODEOWNERS found at ${found}`)
   }
   return fail('cat-19-rule-4', 0, 'CODEOWNERS file not found', [{
-    severity: 'medium',
+    severity: 'high',
     message: 'No CODEOWNERS — PRs touching critical files have no automatic reviewer assignment',
-    suggestion: 'Create .github/CODEOWNERS to enforce review ownership per directory',
+    suggestion: "Cursor-Prompt: 'Create .github/CODEOWNERS — add /* @your-username for root ownership and /src/ @your-username for source. Enables automatic PR review assignment.'",
   }])
 }
 
