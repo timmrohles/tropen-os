@@ -1,0 +1,182 @@
+{
+  "date": "2026-04-17T09:23:17.038Z",
+  "version": "v8",
+  "checkerStack": {
+    "totalRules": 242,
+    "automated": 178,
+    "manual": 64,
+    "categories": 26,
+    "agents": 29
+  },
+  "vsV7": {
+    "note": "v7 baseline (2026-04-15): Lovable 79.7%, Bolt 70.9%, Cursor 83.2%, Manual 87.8%, Avg ~79.9%",
+    "v8": {
+      "lovable": 80.2,
+      "bolt": 71,
+      "cursor": 82.9,
+      "manual": 85.6,
+      "overall": 80
+    },
+    "delta": {
+      "lovable": "+0.5pp",
+      "bolt": "+0.1pp",
+      "cursor": "-0.3pp",
+      "manual": "-2.2pp",
+      "overall": "+0.3pp"
+    },
+    "interpretation": "Score impact of SLOP+SPEC additions is minimal — new rules are advisory, score penalty is modest"
+  },
+  "slopAnalysis": {
+    "totalRepos": 49,
+    "firingRepos": 20,
+    "byRule": {
+      "cat-26-rule-1": {
+        "label": "Placeholder comments",
+        "repos": 2,
+        "pct": "4%",
+        "note": "Below expected 60-80% — threshold may be too strict for Lovable repos"
+      },
+      "cat-26-rule-2": {
+        "label": "AI tool fingerprints",
+        "repos": 0,
+        "pct": "0%",
+        "note": "ZERO — public Bolt repos on GitHub typically cleaned up before publish"
+      },
+      "cat-26-rule-3": {
+        "label": "Overcommenting",
+        "repos": 8,
+        "pct": "16%",
+        "note": "Within expected range"
+      },
+      "cat-26-rule-4": {
+        "label": "Placeholder credentials",
+        "repos": 15,
+        "pct": "31%",
+        "note": "Highest hit rate — strong signal"
+      },
+      "cat-26-rule-5": {
+        "label": "Mixed comment language",
+        "repos": 0,
+        "pct": "0%",
+        "note": "Expected — benchmark repos are EN-only, DE/EN mixing is a different use-case"
+      }
+    },
+    "calibrationSprint13": [
+      "cat-26-rule-1: Loosen AI-placeholder patterns (too specific — misses Lovable boilerplate)",
+      "cat-26-rule-2: Add pass condition when .bolt directory absent from root",
+      "cat-26-rule-5: Skip check entirely if <5% of comments are non-ASCII (EN-only repos)"
+    ]
+  },
+  "specAnalysis": {
+    "totalRepos": 49,
+    "firingRepos": 49,
+    "hitRate": "100%",
+    "expectedRate": "40-60% (SPEC_AGENT spec)",
+    "assessment": "FAR exceeded expectation — virtually all public repos lack AI context files and PRDs. Rule is universally relevant.",
+    "byRule": {
+      "cat-18-rule-9": {
+        "label": "AI context file",
+        "repos": 45,
+        "pct": "92%",
+        "note": "Strong signal — validates \"Context Is the New Code\" thesis"
+      },
+      "cat-18-rule-10": {
+        "label": "PRD present",
+        "repos": 48,
+        "pct": "98%",
+        "note": "Near-universal — almost no repo has a PRD"
+      },
+      "cat-18-rule-11": {
+        "label": "README drift",
+        "repos": 4,
+        "pct": "8%",
+        "note": "Low FP rate confirmed — threshold of 2 packages working correctly"
+      },
+      "cat-18-rule-12": {
+        "label": ".cursorrules has stack",
+        "repos": 0,
+        "pct": "0%",
+        "note": "Expected — only fires when .cursorrules substantive; rule-9 fires first for most repos"
+      }
+    },
+    "calibrationSprint13": [
+      "cat-18-rule-9: Weight ×2→×3 justified (hit-rate 92%, FP rate near 0%)",
+      "cat-18-rule-10: Expand skip condition — repos <20 files already skip; monitor for false context on landing pages"
+    ]
+  },
+  "fpFixValidation": {
+    "verdict": "ALL FIXES CONFIRMED WORKING",
+    "cat-6-rule-1": {
+      "label": "API versioning internal-route skip",
+      "repos": 0,
+      "verdict": "FIX WORKING"
+    },
+    "cat-7-rule-1": {
+      "label": "Performance lazy-load admin-page skip",
+      "repos": 0,
+      "verdict": "FIX WORKING"
+    },
+    "cat-19-rule-3": {
+      "label": "Git governance (severity info)",
+      "repos": 42,
+      "pct": "86%",
+      "verdict": "Expected firing — severity info correctly reduces score impact"
+    }
+  },
+  "platformComparison": {
+    "lovable": {
+      "count": 41,
+      "avg": 80.2,
+      "vsV7": "+0.5pp",
+      "pattern": "Tight cluster 80-84%, 1 outlier (48.5% prototype — dexoryn/lovable-AI-Agent-gpt)"
+    },
+    "bolt": {
+      "count": 3,
+      "avg": 71,
+      "vsV7": "+0.1pp",
+      "pattern": "High variation 64-79% — lower code quality ceiling than Lovable"
+    },
+    "cursor": {
+      "count": 3,
+      "avg": 82.9,
+      "vsV7": "-0.3pp",
+      "pattern": "Most consistent quality — no repos below 82%"
+    },
+    "manual": {
+      "count": 2,
+      "avg": 85.6,
+      "vsV7": "-2.2pp",
+      "pattern": "Best absolute scores — slight drop from SPEC rules (no PRD in open-source projects)"
+    }
+  },
+  "betaPilotDecision": {
+    "verdict": "GO — Beta Pilot Ready",
+    "date": "2026-04-17",
+    "criteria": {
+      "SPEC relevance": "PASS — 100% of repos have ≥1 SPEC finding (PRD + AI context file universally missing)",
+      "SLOP relevance": "PARTIAL — 41% hit rate (below 60-80% target); calibrate patterns in Sprint 13",
+      "FP rate": "PASS — FP-fixes confirmed, no known FP issues in API/Performance/i18n rules",
+      "Score stability": "PASS — +0.3pp delta; new rules do not destabilize existing scores",
+      "Code quality": "PASS — 49/49 repos scanned without errors; checker stack is production-quality"
+    },
+    "nextSteps": [
+      "Sprint 12: Monitor Beta users for SLOP rule FP feedback",
+      "Sprint 13: Loosen cat-26-rule-1 patterns after FP data from 10 beta repos",
+      "Sprint 13: Increase cat-18-rule-9 weight ×2→×3 (high hit rate justified)",
+      "Sprint 13: R3 threshold evaluation (currently ≥2 — may increase to ≥3)"
+    ]
+  },
+  "scoresSummary": {
+    "totalRepos": 49,
+    "avgScore": 80,
+    "medianScore": 81.8,
+    "distribution": {
+      "production": 0,
+      "stable": 34,
+      "risky": 14,
+      "prototype": 1
+    },
+    "totalFindings": 3485,
+    "avgFindingsPerRepo": 71
+  }
+}

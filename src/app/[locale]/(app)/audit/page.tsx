@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { ShieldCheck, ArrowLeft } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/utils/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getTranslations, getLocale } from 'next-intl/server'
 import {
   fetchUserOrgId,
@@ -16,6 +17,7 @@ import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { computeQuickWins } from '@/lib/audit/quick-wins'
 import { getPercentileRank } from '@/lib/audit/score-percentile'
+import BetaFeedbackButton from './_components/BetaFeedbackButton'
 import QuickWinsCard from './_components/QuickWinsCard'
 import ScoreHero from './_components/ScoreHero'
 import CategoryBreakdown from './_components/CategoryBreakdown'
@@ -44,6 +46,14 @@ export default async function AuditPage({
   if (!user) redirect(`/${locale}/login`)
 
   const orgId = await fetchUserOrgId(user.id)
+
+  // ── Beta onboarding check ────────────────────────────────────────────────
+  const { data: userPrefs } = await supabaseAdmin
+    .from('user_preferences')
+    .select('beta_onboarding_done')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const isBetaUser = !!(userPrefs as { beta_onboarding_done?: boolean } | null)?.beta_onboarding_done
 
   // ── Project selector ──────────────────────────────────────────────────────
   const scanProjects = orgId ? await fetchScanProjects(orgId) : []
@@ -252,6 +262,14 @@ export default async function AuditPage({
         <div className="card" style={{ padding: 32, textAlign: 'center' }}>
           <p style={{ fontSize: 14, color: 'var(--error)' }}>{t('runNotFound')}</p>
         </div>
+      )}
+
+      {/* ── Beta feedback button ─────────────────────────────────────────── */}
+      {isBetaUser && (
+        <BetaFeedbackButton
+          userId={user.id}
+          runId={selectedRunId ?? undefined}
+        />
       )}
     </div>
   )

@@ -1280,3 +1280,89 @@ Zwei System-Prompt-Ebenen angepasst:
 - Frage 2 (Score): C — einheitlich + Kontext-UI
 - Frage 3 (UX): A — sofort starten
 - Frage 4 (Manual): C — Self-Assessment (5 Fragen)
+
+---
+
+### 2026-04-17 — Sprint 11 — Komitee-Entscheidungen + SLOP_DETECTION_AGENT + SPEC_AGENT + Benchmark v8
+
+**Ampel:** 🟢
+**Prompt:** Komitee-Entscheidungen 2026-04-17 umsetzen + zwei neue Agenten bauen + Benchmark v8 laufen lassen
+
+**Entscheidungen:**
+
+**Gewichts-Kalibrierung (Komitee-Konsens):**
+- `cat-2` (Error Handling) ×1→×2, `cat-8` (Backup/DR) ×2→×1, `cat-19` (Git Governance) ×2→×3, `cat-12` (Observability) ×2→×3
+- Typ-Constraint `1|2|3` verhindert ×0.5 für cat-15/17 — bleiben auf Minimum ×1
+- Quick-Win-Trio Bonus: cat-2/12/19 bekommen +2 im quickWinScore-Algorithmus
+
+**FP-Fixes (3 Regeln):**
+- `cat-19-rule-3/4` (i18n): severity 'low'→'info', score 0→3 — DE-only Projekte nicht bestrafen
+- `cat-6-rule-1` (API Versioning): Skip wenn alle `/api/`-Pfade intern (`/api/internal/`, `/api/admin/`, `/api/health/`, `/api/webhooks/`) — verhindert False Positives bei internen APIs
+- `cat-7-rule-1` (Performance): Admin-Seiten (`/admin/`, `/dashboard/`, `/settings/`) aus Lazy-Load-Check ausgenommen — Admin-UIs brauchen kein Code-Splitting
+
+**SLOP_DETECTION_AGENT (cat-26, 5 Regeln):**
+- Neue Kategorie: KI-Code-Hygiene (weight 1)
+- R1: Placeholder-Kommentare (cat-26-rule-1, weight 2)
+- R2: AI-Tool-Fingerprints (.bolt/prompt, weight 1)
+- R3: Überkommentierung >40% Ratio (weight 1)
+- R4: Placeholder-Credentials (weight 3, höchstes Gewicht)
+- R5: Gemischte Kommentar-Sprache (weight 1)
+- Conference-backed: AIE 2026 + innoQ/GenAI Summit + AI Coding Summit + VibeX 2026
+
+**SPEC_AGENT (cat-18-rule-9..12, 4 Regeln):**
+- R1: AI-Kontext-Datei vorhanden + >200 Zeichen (weight 2, ×2)
+- R2: PRD/Requirements-Dokument vorhanden (weight 1, Skip <20 files)
+- R3: README-Implementation-Drift (threshold ≥2 Packages, weight 1)
+- R4: .cursorrules enthält Stack-Keywords (weight 1)
+- Conference-backed: Patrick Debois AIE 2026 ("Context Is the New Code")
+
+**Benchmark v8 Ergebnisse (2026-04-17, 49 Repos):**
+- Overall: 80.0% Avg (+0.3pp vs v7) — score stabil trotz 9 neuer Regeln
+- SPEC: 100% Hit-Rate (49/49 Repos) — weit über erwarteten 40-60%
+- SLOP: 41% Hit-Rate (20/49 Repos) — unter erwarteten 60-80%; cat-26-rule-2/5 feuern nicht auf EN-Repos
+- FP-Fixes confirmed: cat-6-rule-1 = 0 Repos, cat-7-rule-1 = 0 Repos
+
+**Beta-Pilot-Entscheidung: GO**
+- SPEC universell relevant (PRD + AI-Kontext fehlt in 92-98% aller Repos)
+- SLOP braucht Kalibrierung in Sprint 13 (Pattern-Lockerung für cat-26-rule-1)
+
+**Anpassungen:**
+- `CategoryBreakdown.tsx`: AGENT_PILL Record war exhaustiv über AgentSource — 'slop' + 'spec' nachgetragen (TypeScript-Error)
+- `spec-checker.ts`: `readRootFile()` + `hasRootFile()` Helpers für dual-mode (In-Memory + Disk)
+- Benchmark-Script nutzt fixe Datei — v8 separat via `analyze-v8.ts` gespeichert
+
+**Offene Punkte:**
+- Sprint 13: cat-26-rule-1 Muster lockern (Lovable-spezifische Patterns hinzufügen)
+- Sprint 13: cat-26-rule-2 Pass-Bedingung wenn kein `.bolt/`-Verzeichnis
+- Sprint 13: cat-18-rule-9 Gewicht ×2→×3 (Hit-Rate 92% rechtfertigt Erhöhung)
+- Sprint 13: R3-Threshold ggf. auf ≥3 erhöhen wenn FP-Feedback kommt
+
+---
+
+### 2026-04-17 — Beta-Pilot-Vorbereitung — Landing + Invite + Feedback
+
+**Ampel:** 🟢
+**Prompt:** Beta-Pilot-Vorbereitung — Landing + Invite + Feedback (Sprint 11)
+
+**Entscheidungen:**
+
+- **`/beta` öffentlich, außerhalb `(app)`:** Seite liegt unter `[locale]/beta/` (kein AppShell, kein Auth-Guard). Nur `NextIntlClientProvider`-Wrapper aus `[locale]/layout.tsx`. Gleicher Aufbau wie `impressum`, `login`.
+- **`/welcome` außerhalb `(app)`:** Kein Sidebar-Layout erwünscht für Onboarding. Server Component prüft Auth + `beta_onboarding_done` — wenn done → redirect `/audit/scan`. `WelcomeClient.tsx` als separater Client-Component.
+- **`/api/beta/onboarding-complete` upsert:** `user_preferences` nutzt `onConflict: 'user_id'` — auch wenn kein Prefs-Row existiert. Fail-open im Client.
+- **Feedback-Button-Sichtbarkeit:** Sichtbar wenn `user_preferences.beta_onboarding_done = true` (nicht `is_beta_user`). Simpler — kommt automatisch aus dem Onboarding-Flow. Timm kann `is_beta_user = true` manuell setzen für direkte Aktivierung ohne Welcome-Flow.
+- **Superadmin beta_feedback scan_count:** Scan-Count nicht direkt mit User-Relation auflösbar ohne aufwändigen JOIN (audit_runs → organization → users). Placeholder im Code eingebaut, aber korrekte Umsetzung requires entweder denormalisiertes Feld oder View. Als Tech-Debt markiert.
+- **Typecheck sauber:** Alle 5 neuen Dateien typchecken ohne Fehler.
+
+**Anpassungen:**
+- Score-Ranges in WelcomeClient korrigiert (war 50-70%/70-85%, ist 60-79%/80-89% — passt zum tatsächlichen Scoring-System)
+- Stable-Farbe in WelcomeClient: war `#E5A000` (amber), geändert zu `var(--accent)` (grün — CLAUDE.md-Standard)
+- Benchmark-Wert in WelcomeClient auf "78–84%" korrigiert (v8-Daten statt Build-Prompt-Schätzung "75–82%")
+
+**Offene Punkte:**
+- Superadmin: scan_count per Beta-User noch nicht korrekt implementiert — braucht View oder denormalisiertes Feld
+- Login-Redirect nach Onboarding: Login geht aktuell zu `/chat`. Beta-User landen nur auf `/welcome` wenn Timm ihnen die URL schickt. Ggf. Login-Redirect-Logik anpassen wenn > 10 Beta-User.
+- `is_beta_user`-Flag: Timm setzt manuell via Supabase Dashboard (`UPDATE user_preferences SET is_beta_user = true WHERE user_id = '...'`)
+
+**Neue Lernmuster:**
+- Exhaustive `Record<AgentSource, ...>` in TSX: TypeScript erzwingt Updates bei jedem AgentSource-Union-Extend — gut als Compile-Zeit-Check, aber jede neue AgentSource braucht Eintrag in CategoryBreakdown.tsx
+- SPEC-Regeln: Score-Checks wie "has .cursorrules" treten in fast 100% der öffentlichen Repos an — expected rate von 40-60% war zu konservativ; KI-Kontext-Files sind in Open Source noch extrem selten

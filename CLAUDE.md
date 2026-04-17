@@ -851,6 +851,7 @@ Letzte relevante Migrationen:
 | 20260410000107_audit_agent_source_regulatory.sql | audit_findings: agent_source CHECK erweitert um 'dsgvo', 'bfsg', 'ai-act' |
 | 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
 | 20260415000112_audit_findings_not_relevant_reason.sql | audit_findings: not_relevant_reason TEXT Spalte fuer "Nicht relevant"-Begruendungen |
+| 20260417000113_beta_tables.sql | beta_waitlist (email/platform/message, RLS public insert + superadmin read) + beta_feedback (user_id/audit_run_id/ratings/message/platform) + user_preferences: beta_onboarding_done + is_beta_user |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
