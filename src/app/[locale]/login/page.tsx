@@ -35,7 +35,7 @@ export default function LoginPage() {
       .limit(1)
       .maybeSingle()
 
-    router.push('/chat')
+    router.push('/audit')
   }
 
   return (
