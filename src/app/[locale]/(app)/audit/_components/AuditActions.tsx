@@ -59,8 +59,12 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         body: JSON.stringify(body),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string }
-        setErrorMsg(data.error ?? 'Audit fehlgeschlagen')
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string; hint?: string }
+        if (data.code === 'LOCAL_ONLY') {
+          setErrorMsg('Audit nur lokal ausführen: pnpm exec tsx src/scripts/run-audit.ts --skip-cli')
+        } else {
+          setErrorMsg(data.error ?? 'Audit fehlgeschlagen')
+        }
         setAuditState('error')
         return
       }

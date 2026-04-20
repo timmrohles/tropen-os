@@ -18,6 +18,8 @@ import type { EnrichedFinding } from '@/lib/audit/deduplicator'
 
 const log = createLogger('api:audit:trigger')
 const REPO_ROOT = path.resolve(process.cwd())
+// Vercel serverless bundles don't include source files — audit must run locally
+const IS_VERCEL = !!process.env.VERCEL
 
 const requestSchema = z.object({
   projectName: z.string().min(1).max(100).optional(),
@@ -52,6 +54,14 @@ export async function POST(request: Request) {
   }
   if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? '')) {
     return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
+  }
+
+  if (IS_VERCEL) {
+    return NextResponse.json({
+      error: 'Audit muss lokal ausgeführt werden',
+      code: 'LOCAL_ONLY',
+      hint: 'pnpm exec tsx src/scripts/run-audit.ts --skip-cli',
+    }, { status: 422 })
   }
 
   let body: z.infer<typeof requestSchema>
