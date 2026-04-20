@@ -50,8 +50,8 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     setErrorMsg(null)
     const url = lighthouseUrl.trim()
     const body = url
-      ? { skipCli: false, withTools: true, lighthouseUrl: url }
-      : { skipCli: false }
+      ? { skipCli: true, withTools: true, lighthouseUrl: url }
+      : { skipCli: true }
     try {
       const res = await fetch('/api/audit/trigger', {
         method: 'POST',

@@ -103,20 +103,9 @@ export async function deduplicateFindings(
 
     switch (match.status) {
       case 'fixed': {
-        if (isSameIssue(finding, match)) {
-          // Same message → the checker still fires but the fix is real (false positive)
-          result.skipped.push({
-            finding,
-            reason: 'Bereits behoben im vorherigen Run — Fix noch aktiv',
-            previousId: match.id,
-          })
-        } else {
-          // Different message → the issue regressed or changed
-          result.newFindings.push({
-            ...finding,
-            message: `[Regression] ${finding.message}`,
-          })
-        }
+        // Checker is still firing → issue was not actually fixed; re-open it.
+        // We never skip a 'fixed' finding — that would hide real problems.
+        result.newFindings.push(finding)
         break
       }
 
