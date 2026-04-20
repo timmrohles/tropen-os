@@ -1,5 +1,5 @@
 {
-  "date": "2026-04-15T10:18:07.230Z",
+  "date": "2026-04-17T09:19:57.880Z",
   "version": "v7-final",
   "checkerStack": {
     "totalRules": 233,
@@ -11,22 +11,22 @@
     "totalRepos": 49,
     "successfulScans": 49,
     "failedScans": 0,
-    "avgScore": 79.7,
-    "medianScore": 82.2,
+    "avgScore": 80,
+    "medianScore": 81.8,
     "scoreDistribution": {
       "prototype": 1,
-      "risky": 16,
-      "stable": 32,
+      "risky": 14,
+      "stable": 34,
       "production": 0
     },
     "topFindings": [],
     "findingsByFixType": {},
-    "totalFindings": 3314,
-    "avgFindingsPerRepo": 68,
+    "totalFindings": 3485,
+    "avgFindingsPerRepo": 71,
     "distribution": {
       "prototype": 1,
-      "risky": 16,
-      "stable": 32,
+      "risky": 14,
+      "stable": 34,
       "production": 0
     }
   },
@@ -34,30 +34,30 @@
     {
       "topic": "lovable",
       "count": 41,
-      "avg": 79.7,
-      "min": 47.9,
-      "max": 85
+      "avg": 80.2,
+      "min": 48.5,
+      "max": 85.4
     },
     {
       "topic": "bolt",
       "count": 3,
-      "avg": 70.9,
-      "min": 63.9,
-      "max": 80.1
+      "avg": 71,
+      "min": 64.2,
+      "max": 79.1
     },
     {
       "topic": "cursor",
       "count": 3,
-      "avg": 83.2,
+      "avg": 82.9,
       "min": 82.7,
-      "max": 83.6
+      "max": 83
     },
     {
       "topic": "manual",
       "count": 2,
-      "avg": 85.8,
-      "min": 83.7,
-      "max": 87.8
+      "avg": 85.6,
+      "min": 84.5,
+      "max": 86.7
     }
   ],
   "repos": [
@@ -65,507 +65,507 @@
       "name": "All-zzz/claude-canvas",
       "topic": "lovable",
       "url": "https://github.com/All-zzz/claude-canvas",
-      "score": 71.1,
+      "score": 72.1,
       "status": "risky",
-      "findings": 51,
+      "findings": 52,
       "critical": 1,
       "files": 56,
-      "durationMs": 1841
+      "durationMs": 1945
     },
     {
       "name": "tsylvester/paynless-framework",
       "topic": "lovable",
       "url": "https://github.com/tsylvester/paynless-framework",
-      "score": 82.5,
+      "score": 81.4,
       "status": "stable",
-      "findings": 475,
+      "findings": 496,
       "critical": 1,
       "files": 1861,
-      "durationMs": 5441
+      "durationMs": 5496
     },
     {
       "name": "AHBRIJESH/Portfolio",
       "topic": "lovable",
       "url": "https://github.com/AHBRIJESH/Portfolio",
-      "score": 81,
+      "score": 81.7,
       "status": "stable",
-      "findings": 21,
+      "findings": 23,
       "critical": 1,
       "files": 82,
-      "durationMs": 881
+      "durationMs": 1103
     },
     {
       "name": "Gowtham3424/fin-bloom-dash",
       "topic": "lovable",
       "url": "https://github.com/Gowtham3424/fin-bloom-dash",
-      "score": 83.3,
+      "score": 84.1,
       "status": "stable",
-      "findings": 28,
+      "findings": 30,
       "critical": 1,
       "files": 99,
-      "durationMs": 1364
+      "durationMs": 1344
     },
     {
       "name": "chihebnabil/lovable-boilerplate",
       "topic": "lovable",
       "url": "https://github.com/chihebnabil/lovable-boilerplate",
-      "score": 85,
+      "score": 85.4,
       "status": "stable",
-      "findings": 22,
+      "findings": 24,
       "critical": 1,
       "files": 95,
-      "durationMs": 857
+      "durationMs": 758
     },
     {
       "name": "SudarshanaSRao/sports-on-the-go-4c575e84",
       "topic": "lovable",
       "url": "https://github.com/SudarshanaSRao/sports-on-the-go-4c575e84",
-      "score": 83,
+      "score": 83.8,
       "status": "stable",
-      "findings": 104,
+      "findings": 107,
       "critical": 0,
       "files": 175,
-      "durationMs": 1128
+      "durationMs": 1432
     },
     {
       "name": "redmonkin/core-hr-hub",
       "topic": "lovable",
       "url": "https://github.com/redmonkin/core-hr-hub",
-      "score": 83.8,
+      "score": 84.4,
       "status": "stable",
-      "findings": 179,
+      "findings": 182,
       "critical": 0,
       "files": 269,
-      "durationMs": 1374
+      "durationMs": 1788
     },
     {
       "name": "at-vaishnavi/vaishnavi-portfolio",
       "topic": "lovable",
       "url": "https://github.com/at-vaishnavi/vaishnavi-portfolio",
-      "score": 82.4,
+      "score": 82,
       "status": "stable",
-      "findings": 20,
+      "findings": 24,
       "critical": 1,
       "files": 85,
-      "durationMs": 1259
+      "durationMs": 1212
     },
     {
       "name": "LeonardoSouzaBento/Pet-ShopLandingPage",
       "topic": "lovable",
       "url": "https://github.com/LeonardoSouzaBento/Pet-ShopLandingPage",
-      "score": 76.8,
+      "score": 77.4,
       "status": "risky",
-      "findings": 48,
+      "findings": 50,
       "critical": 1,
       "files": 67,
-      "durationMs": 3381
+      "durationMs": 3402
     },
     {
       "name": "zilmanalex-pm/tarbut-on",
       "topic": "lovable",
       "url": "https://github.com/zilmanalex-pm/tarbut-on",
-      "score": 82.8,
+      "score": 82.5,
       "status": "stable",
-      "findings": 57,
+      "findings": 63,
       "critical": 1,
       "files": 174,
-      "durationMs": 1060
+      "durationMs": 1014
     },
     {
       "name": "vedantxn/nextly",
       "topic": "lovable",
       "url": "https://github.com/vedantxn/nextly",
-      "score": 80.4,
+      "score": 81.2,
       "status": "stable",
-      "findings": 62,
+      "findings": 65,
       "critical": 1,
       "files": 109,
-      "durationMs": 1123
+      "durationMs": 1000
     },
     {
       "name": "whitfieldnia880-maker/whisperbrook",
       "topic": "lovable",
       "url": "https://github.com/whitfieldnia880-maker/whisperbrook",
-      "score": 82.5,
+      "score": 83.3,
       "status": "stable",
-      "findings": 48,
+      "findings": 50,
       "critical": 1,
       "files": 108,
-      "durationMs": 1902
+      "durationMs": 1855
     },
     {
       "name": "Nigismo/lnikita",
       "topic": "lovable",
       "url": "https://github.com/Nigismo/lnikita",
-      "score": 84.2,
+      "score": 84.9,
       "status": "stable",
-      "findings": 26,
+      "findings": 28,
       "critical": 1,
       "files": 120,
-      "durationMs": 947
+      "durationMs": 905
     },
     {
       "name": "ankushkhakale/BiteRush",
       "topic": "lovable",
       "url": "https://github.com/ankushkhakale/BiteRush",
-      "score": 82.2,
+      "score": 82.8,
       "status": "stable",
-      "findings": 20,
+      "findings": 22,
       "critical": 1,
       "files": 84,
-      "durationMs": 789
+      "durationMs": 704
     },
     {
       "name": "Prarabda/samanata",
       "topic": "lovable",
       "url": "https://github.com/Prarabda/samanata",
-      "score": 82.4,
+      "score": 83.2,
       "status": "stable",
-      "findings": 31,
+      "findings": 33,
       "critical": 1,
       "files": 96,
-      "durationMs": 1631
+      "durationMs": 1815
     },
     {
       "name": "itsa4ankush/butterr_chicken",
       "topic": "lovable",
       "url": "https://github.com/itsa4ankush/butterr_chicken",
-      "score": 82.8,
+      "score": 83.4,
       "status": "stable",
-      "findings": 21,
+      "findings": 23,
       "critical": 1,
       "files": 88,
-      "durationMs": 805
+      "durationMs": 763
     },
     {
       "name": "rophilekhan/Luxury-Living-Redefined-Website-With-Backend",
       "topic": "lovable",
       "url": "https://github.com/rophilekhan/Luxury-Living-Redefined-Website-With-Backend",
-      "score": 83.2,
+      "score": 83.9,
       "status": "stable",
-      "findings": 25,
+      "findings": 27,
       "critical": 1,
       "files": 94,
-      "durationMs": 1102
+      "durationMs": 879
     },
     {
       "name": "rophilekhan/Codesphinx-FreshLaundry--withAdmin-and-monthlyplan-SAAS",
       "topic": "lovable",
       "url": "https://github.com/rophilekhan/Codesphinx-FreshLaundry--withAdmin-and-monthlyplan-SAAS",
-      "score": 81.9,
+      "score": 81.6,
       "status": "stable",
-      "findings": 42,
+      "findings": 45,
       "critical": 1,
       "files": 93,
-      "durationMs": 867
+      "durationMs": 783
     },
     {
       "name": "NickiMash17/interview-ace",
       "topic": "lovable",
       "url": "https://github.com/NickiMash17/interview-ace",
-      "score": 83,
+      "score": 82.8,
       "status": "stable",
-      "findings": 38,
+      "findings": 42,
       "critical": 1,
       "files": 101,
-      "durationMs": 855
+      "durationMs": 755
     },
     {
       "name": "beeweed/vibecoder",
       "topic": "lovable",
       "url": "https://github.com/beeweed/vibecoder",
-      "score": 73.3,
+      "score": 74.1,
       "status": "risky",
-      "findings": 125,
+      "findings": 127,
       "critical": 2,
       "files": 69,
-      "durationMs": 2711
+      "durationMs": 2811
     },
     {
       "name": "Yashig-1912/ask-yashi-pro",
       "topic": "lovable",
       "url": "https://github.com/Yashig-1912/ask-yashi-pro",
-      "score": 82.2,
+      "score": 81.8,
       "status": "stable",
-      "findings": 20,
+      "findings": 24,
       "critical": 1,
       "files": 84,
-      "durationMs": 808
+      "durationMs": 625
     },
     {
       "name": "Gerome-Elassaad/CodingIT",
       "topic": "lovable",
       "url": "https://github.com/Gerome-Elassaad/CodingIT",
-      "score": 79.5,
+      "score": 79.4,
       "status": "risky",
-      "findings": 147,
+      "findings": 151,
       "critical": 1,
       "files": 182,
-      "durationMs": 1170
+      "durationMs": 1141
     },
     {
       "name": "Ma2903/Gerenciador-Tarefas-Academicas",
       "topic": "lovable",
       "url": "https://github.com/Ma2903/Gerenciador-Tarefas-Academicas",
-      "score": 80.4,
+      "score": 81.1,
       "status": "stable",
-      "findings": 26,
+      "findings": 28,
       "critical": 1,
       "files": 84,
-      "durationMs": 768
+      "durationMs": 699
     },
     {
       "name": "Shivshanker869/mindtrack-personalwellness",
       "topic": "lovable",
       "url": "https://github.com/Shivshanker869/mindtrack-personalwellness",
-      "score": 82.2,
+      "score": 83,
       "status": "stable",
-      "findings": 51,
+      "findings": 53,
       "critical": 1,
       "files": 109,
-      "durationMs": 781
+      "durationMs": 737
     },
     {
       "name": "dexoryn/lovable-AI-Agent-gpt",
       "topic": "lovable",
       "url": "https://github.com/dexoryn/lovable-AI-Agent-gpt",
-      "score": 47.9,
+      "score": 48.5,
       "status": "prototype",
-      "findings": 46,
+      "findings": 47,
       "critical": 1,
       "files": 16,
-      "durationMs": 771
+      "durationMs": 733
     },
     {
       "name": "nightmare5831/AI-Agent",
       "topic": "lovable",
       "url": "https://github.com/nightmare5831/AI-Agent",
-      "score": 74.2,
+      "score": 75.4,
       "status": "risky",
-      "findings": 184,
+      "findings": 186,
       "critical": 1,
       "files": 182,
-      "durationMs": 4330
+      "durationMs": 4203
     },
     {
       "name": "owen9256/rv1-demo-for-mop",
       "topic": "lovable",
       "url": "https://github.com/owen9256/rv1-demo-for-mop",
-      "score": 81.1,
+      "score": 81.9,
       "status": "stable",
-      "findings": 31,
+      "findings": 33,
       "critical": 2,
       "files": 94,
-      "durationMs": 851
+      "durationMs": 798
     },
     {
       "name": "AryanKaji/MOVIESVERSE",
       "topic": "lovable",
       "url": "https://github.com/AryanKaji/MOVIESVERSE",
-      "score": 78.9,
+      "score": 79.6,
       "status": "risky",
-      "findings": 21,
+      "findings": 23,
       "critical": 1,
       "files": 74,
-      "durationMs": 802
+      "durationMs": 683
     },
     {
       "name": "ash-norsidi/honey-waffle-stack",
       "topic": "lovable",
       "url": "https://github.com/ash-norsidi/honey-waffle-stack",
-      "score": 79.9,
-      "status": "risky",
-      "findings": 21,
+      "score": 80.5,
+      "status": "stable",
+      "findings": 23,
       "critical": 1,
       "files": 77,
-      "durationMs": 735
+      "durationMs": 683
     },
     {
       "name": "prachip1/parrottext",
       "topic": "lovable",
       "url": "https://github.com/prachip1/parrottext",
-      "score": 78.5,
+      "score": 79.2,
       "status": "risky",
-      "findings": 22,
+      "findings": 24,
       "critical": 1,
       "files": 74,
-      "durationMs": 912
+      "durationMs": 824
     },
     {
       "name": "SatChittAnand/aura-academic-assistant",
       "topic": "lovable",
       "url": "https://github.com/SatChittAnand/aura-academic-assistant",
-      "score": 79.4,
-      "status": "risky",
-      "findings": 21,
+      "score": 80.1,
+      "status": "stable",
+      "findings": 23,
       "critical": 1,
       "files": 75,
-      "durationMs": 802
+      "durationMs": 692
     },
     {
       "name": "HuzziBoss/scrollscape-immersive-worlds",
       "topic": "lovable",
       "url": "https://github.com/HuzziBoss/scrollscape-immersive-worlds",
-      "score": 78.7,
+      "score": 79.4,
       "status": "risky",
-      "findings": 22,
+      "findings": 24,
       "critical": 1,
       "files": 74,
-      "durationMs": 720
+      "durationMs": 708
     },
     {
       "name": "salahaKA/mind-bloom-webinar-landing",
       "topic": "lovable",
       "url": "https://github.com/salahaKA/mind-bloom-webinar-landing",
-      "score": 78.3,
+      "score": 78,
       "status": "risky",
-      "findings": 21,
+      "findings": 27,
       "critical": 1,
       "files": 71,
-      "durationMs": 692
+      "durationMs": 725
     },
     {
       "name": "WPTK/yarniverse-explorer",
       "topic": "lovable",
       "url": "https://github.com/WPTK/yarniverse-explorer",
-      "score": 82.8,
+      "score": 83.5,
       "status": "stable",
-      "findings": 59,
+      "findings": 62,
       "critical": 1,
       "files": 102,
-      "durationMs": 865
+      "durationMs": 856
     },
     {
       "name": "AniruddhaAdak/FoodieFlow",
       "topic": "lovable",
       "url": "https://github.com/AniruddhaAdak/FoodieFlow",
-      "score": 82.7,
+      "score": 83.4,
       "status": "stable",
-      "findings": 21,
+      "findings": 23,
       "critical": 1,
       "files": 90,
-      "durationMs": 765
+      "durationMs": 714
     },
     {
       "name": "76jankihere/Janki-portfolio-website",
       "topic": "lovable",
       "url": "https://github.com/76jankihere/Janki-portfolio-website",
-      "score": 80.8,
+      "score": 80.5,
       "status": "stable",
-      "findings": 21,
+      "findings": 26,
       "critical": 1,
       "files": 81,
-      "durationMs": 771
+      "durationMs": 752
     },
     {
       "name": "beyagency/shelfly-creator-hub",
       "topic": "lovable",
       "url": "https://github.com/beyagency/shelfly-creator-hub",
-      "score": 82.5,
+      "score": 82.2,
       "status": "stable",
-      "findings": 26,
+      "findings": 31,
       "critical": 1,
       "files": 92,
-      "durationMs": 801
+      "durationMs": 740
     },
     {
       "name": "wizzynoise/7Jardins_version2",
       "topic": "lovable",
       "url": "https://github.com/wizzynoise/7Jardins_version2",
-      "score": 68.7,
+      "score": 69.3,
       "status": "risky",
-      "findings": 19,
+      "findings": 21,
       "critical": 1,
       "files": 43,
-      "durationMs": 657
+      "durationMs": 673
     },
     {
       "name": "wizzynoise/7jardins_version1",
       "topic": "lovable",
       "url": "https://github.com/wizzynoise/7jardins_version1",
-      "score": 84,
+      "score": 84.7,
       "status": "stable",
-      "findings": 23,
+      "findings": 25,
       "critical": 1,
       "files": 98,
-      "durationMs": 772
+      "durationMs": 681
     },
     {
       "name": "najzdev/al-jiwar-luxury-map",
       "topic": "lovable",
       "url": "https://github.com/najzdev/al-jiwar-luxury-map",
-      "score": 79.9,
+      "score": 79.5,
       "status": "risky",
-      "findings": 21,
+      "findings": 25,
       "critical": 1,
       "files": 77,
-      "durationMs": 797
+      "durationMs": 694
     },
     {
       "name": "zoraizmohammad/ciphertext-landing",
       "topic": "lovable",
       "url": "https://github.com/zoraizmohammad/ciphertext-landing",
-      "score": 79.4,
-      "status": "risky",
-      "findings": 21,
+      "score": 80.1,
+      "status": "stable",
+      "findings": 23,
       "critical": 1,
       "files": 75,
-      "durationMs": 762
+      "durationMs": 756
     },
     {
       "name": "zebbern/Devonz",
       "topic": "bolt",
       "url": "https://github.com/zebbern/Devonz",
-      "score": 80.1,
-      "status": "stable",
-      "findings": 568,
+      "score": 79.1,
+      "status": "risky",
+      "findings": 583,
       "critical": 2,
       "files": 618,
-      "durationMs": 3041
+      "durationMs": 3307
     },
     {
       "name": "hkirat/bolt.newer",
       "topic": "bolt",
       "url": "https://github.com/hkirat/bolt.newer",
-      "score": 63.9,
+      "score": 64.2,
       "status": "risky",
-      "findings": 25,
+      "findings": 28,
       "critical": 1,
       "files": 38,
-      "durationMs": 736
+      "durationMs": 719
     },
     {
       "name": "ntegrals/december",
       "topic": "bolt",
       "url": "https://github.com/ntegrals/december",
-      "score": 68.8,
+      "score": 69.6,
       "status": "risky",
-      "findings": 85,
+      "findings": 87,
       "critical": 1,
       "files": 56,
-      "durationMs": 1224
+      "durationMs": 1352
     },
     {
       "name": "thedaviddias/llms-txt-hub",
       "topic": "cursor",
       "url": "https://github.com/thedaviddias/llms-txt-hub",
-      "score": 83.6,
+      "score": 83,
       "status": "stable",
-      "findings": 152,
+      "findings": 162,
       "critical": 1,
       "files": 616,
-      "durationMs": 1899
+      "durationMs": 1958
     },
     {
       "name": "PageAI-Pro/vibe-coding-starter",
       "topic": "cursor",
       "url": "https://github.com/PageAI-Pro/vibe-coding-starter",
-      "score": 83.4,
+      "score": 83,
       "status": "stable",
-      "findings": 63,
+      "findings": 65,
       "critical": 1,
       "files": 322,
-      "durationMs": 2966
+      "durationMs": 3010
     },
     {
       "name": "FutureExcited/vibe-rules",
@@ -573,32 +573,32 @@
       "url": "https://github.com/FutureExcited/vibe-rules",
       "score": 82.7,
       "status": "stable",
-      "findings": 55,
+      "findings": 60,
       "critical": 1,
       "files": 90,
-      "durationMs": 775
+      "durationMs": 746
     },
     {
       "name": "nemanjam/nextjs-prisma-boilerplate",
       "topic": "manual",
       "url": "https://github.com/nemanjam/nextjs-prisma-boilerplate",
-      "score": 87.8,
+      "score": 86.7,
       "status": "stable",
-      "findings": 24,
+      "findings": 28,
       "critical": 1,
       "files": 315,
-      "durationMs": 1943
+      "durationMs": 1945
     },
     {
       "name": "vercel/next-forge",
       "topic": "manual",
       "url": "https://github.com/vercel/next-forge",
-      "score": 83.7,
+      "score": 84.5,
       "status": "stable",
-      "findings": 55,
+      "findings": 57,
       "critical": 2,
       "files": 504,
-      "durationMs": 2000
+      "durationMs": 1867
     }
   ]
 }

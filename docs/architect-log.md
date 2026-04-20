@@ -1366,3 +1366,26 @@ Zwei System-Prompt-Ebenen angepasst:
 **Neue Lernmuster:**
 - Exhaustive `Record<AgentSource, ...>` in TSX: TypeScript erzwingt Updates bei jedem AgentSource-Union-Extend — gut als Compile-Zeit-Check, aber jede neue AgentSource braucht Eintrag in CategoryBreakdown.tsx
 - SPEC-Regeln: Score-Checks wie "has .cursorrules" treten in fast 100% der öffentlichen Repos an — expected rate von 40-60% war zu konservativ; KI-Kontext-Files sind in Open Source noch extrem selten
+
+---
+
+### 2026-04-17 — SLOP + SPEC Agenten, Benchmark v8, Beta-Pilot-Infrastruktur
+
+**Ampel:** 🟢
+**Prompts:** Komitee-Entscheidungen umsetzen + SLOP_DETECTION_AGENT + SPEC_AGENT + Benchmark v8 + Beta-Pilot-Vorbereitung + /ultrareview-Vergleich
+
+**Entscheidungen:**
+- 5 neue Agenten priorisiert durch Komitee (SLOP → SPEC → EVAL → MCP → CRA)
+- Gewichts-Änderungen: cat-19/12 ×3, cat-2/10 ×2
+- FP-Fixes in CONTENT/API/PERFORMANCE
+- Beta-Pilot mit 10 Usern vorbereitet — aber User-Einladung verschoben bis Dogfooding-Sprint durch (Entscheidung: erst eigenen Score auf 85%+)
+- /ultrareview-Benchmark: komplementär, keine Integration, Blog-Post-Evidenz
+
+**Offene Punkte:**
+- Self-Scan-Ergebnis steht aus
+- Domain-Entscheidung steht aus (GuideVibe vs. VibeMate)
+- Sprint 13 Komitee wartet auf Beta-Feedback + eigene FP-Erfahrungen
+
+**Neue Lernmuster:**
+- Empirische Benchmarks > theoretische Diskussionen (/ultrareview-Vergleich hat die Positionierung in 1 Stunde geklärt)
+- Dogfooding vor User-Tests — eigener Score muss Production Grade sein

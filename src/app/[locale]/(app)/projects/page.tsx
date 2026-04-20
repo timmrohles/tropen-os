@@ -47,7 +47,7 @@ export default function ProjectsPage() {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { window.location.href = '/login'; return }
+        if (!user) { router.push('/login'); return }
         const { data: membership } = await supabase
           .from('department_members').select('workspace_id').eq('user_id', user.id).limit(1).single()
         const deptId = membership?.workspace_id ?? null

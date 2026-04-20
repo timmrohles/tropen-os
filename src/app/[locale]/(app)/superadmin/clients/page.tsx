@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Buildings } from '@phosphor-icons/react'
 import type { ImpModal, ImpForm, OrgRow, EditState } from './clients.types'
@@ -8,6 +9,7 @@ import { owner, onboardingDone, planStyle, s } from './clients.types'
 
 
 export default function ClientsPage() {
+  const locale = useLocale()
   const [orgs, setOrgs] = useState<OrgRow[]>([])
   const [loading, setLoading] = useState(true)
   const [editOrg, setEditOrg] = useState<OrgRow | null>(null)
@@ -54,7 +56,7 @@ export default function ClientsPage() {
       const data = await res.json()
       if (res.ok) {
         setImpModal(null)
-        window.open(`/workspaces?_imp=${data.sessionId}`, '_blank')
+        window.open(`/${locale}/workspaces?_imp=${data.sessionId}`, '_blank')
       }
     } finally {
       setImpLoading(false)

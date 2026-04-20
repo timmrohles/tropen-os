@@ -98,4 +98,35 @@ skaliert oder crasht. Handlungsempfehlung: **LOAD_TEST_AGENT** (Spec: `docs/agen
 
 ---
 
+---
+
+## Wettbewerbs-Monitoring
+
+### /ultrareview (Anthropic Claude Code, April 2026)
+
+**Status:** Empirisch validiert gegen 3 Benchmark-Repos (2026-04-17)
+
+**Was es findet:**
+- Tiefe Laufzeit-Bugs (Auth-Bypässe, unscoped DB-Queries, Crash-on-Init)
+- Primär cat-3 Sicherheit (50% aller Findings)
+- Call-Graph-Analyse über mehrere Dateien
+- Kosten: 3 kostenlose Reviews/Monat für Pro-User, dann kostenpflichtig
+
+**Was es NICHT findet (0 Findings über 3 Repos):**
+- DSGVO, Cookie-Consent, Impressum
+- Accessibility (WCAG, axe-core)
+- i18n-Lücken
+- Git Governance (CODEOWNERS)
+- Supply Chain (SBOM, Docker-Pins)
+- Testing-Coverage
+- SLOP-Muster
+
+**Verhältnis zu Tropen OS:** Komplementär, nicht konkurrent.
+1.136 Tropen-OS-Findings vs. 62 /ultrareview-Findings über 3 Repos (v8-Benchmark 2026-04-17) —
+<25% Überlappung. Zwei Tools, zwei Fragen.
+
+**Empfehlung:** Klare Positionierung nutzen. Keine Integration.
+
+---
+
 _Letztes Update: 2026-04-17_

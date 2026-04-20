@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ChatCircle, FolderSimple, Sparkle, ArrowRight } from '@phosphor-icons/react'
 import type { ElementType } from 'react'
+import { Link } from '@/i18n/navigation'
 import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
 
 interface ActivityItem {
@@ -47,7 +48,7 @@ export function RecentActivityWidget() {
         const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.conversation
         const Icon = config.icon
         return (
-          <a key={item.id} href={config.href} className="widget-list-item">
+          <Link key={item.id} href={config.href} className="widget-list-item">
             <Icon size={14} weight="bold" color="var(--text-tertiary)" aria-hidden="true" />
             <div className="widget-list-item-info">
               <span className="widget-list-item-title">
@@ -58,7 +59,7 @@ export function RecentActivityWidget() {
               </span>
             </div>
             <ArrowRight size={12} weight="bold" color="var(--text-tertiary)" aria-hidden="true" />
-          </a>
+          </Link>
         )
       })}
     </div>

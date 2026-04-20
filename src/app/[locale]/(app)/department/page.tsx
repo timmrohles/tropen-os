@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Buildings, Users, Gear } from '@phosphor-icons/react'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 
 interface DeptInfo {
@@ -13,6 +13,7 @@ interface DeptInfo {
 
 export default function DepartmentPage() {
   const t = useTranslations('department')
+  const router = useRouter()
 
   const [dept, setDept] = useState<DeptInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -22,7 +23,7 @@ export default function DepartmentPage() {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { window.location.href = '/login'; return }
+        if (!user) { router.push('/login'); return }
 
         const { data: membership } = await supabase
           .from('department_members')

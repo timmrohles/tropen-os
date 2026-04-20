@@ -1134,7 +1134,7 @@ Kleine Projekte (<50 Dateien) bekommen Score-Penalty: `log10(fileCount) / log10(
 - `AuditOptions.excludeRuleIds` fuer Profil-basiertes Compliance-Filtering
 - `AuditOptions.tier` fuer Maturity-Level-Filtering (starter/production/enterprise)
 
-### Benchmark-System (Stand 2026-04-15)
+### Benchmark-System (Stand 2026-04-17)
 
 Automatisierter Scanner fuer oeffentliche GitHub-Repos per Tarball-API.
 
@@ -1144,16 +1144,35 @@ Automatisierter Scanner fuer oeffentliche GitHub-Repos per Tarball-API.
 - `src/lib/benchmark/runner.ts` — Orchestrator: discover → download → scan → persist
 - `src/lib/benchmark/stats.ts` — Aggregierte Statistiken
 
-**v7-Benchmark (49 Repos):**
-| Gruppe | Repos | Avg Score | Verteilung |
-|--------|-------|-----------|------------|
-| Manual (CI) | 2 | 87.8% | Stable |
-| Cursor | 3 | 83.2% | Stable |
-| Lovable | 41 | 79.7% | 26 Stable, 14 Risky, 1 Prototype |
-| Bolt | 3 | 70.9% | Risky |
+**v8-Benchmark (49 Repos, Stand 2026-04-17):**
+| Gruppe | Repos | Avg Score | vs. v7 |
+|--------|-------|-----------|--------|
+| Manual | 2 | 85.6% | -2.2pp |
+| Cursor | 3 | 82.9% | -0.3pp |
+| Lovable | 41 | 80.2% | +0.5pp |
+| Bolt | 3 | 71.0% | +0.1pp |
 
-**Ergebnisse:** `docs/audit-reports/benchmark-2026-04-15-v7-final.json`
+**Ergebnisse:** `docs/audit-reports/benchmark-2026-04-17-v8-full.json`
 **DB:** `audit_runs` mit `is_benchmark=true`, `source_repo_url` pro Repo
+
+### Beta-Pilot (Stand 2026-04-17)
+
+**Status:** Infrastruktur fertig, User-Einladung verschoben bis eigener Score 85%+
+
+**Ziel:** 10 Beta-User, manuell eingeladen via `/beta` Landing + `/welcome` Onboarding
+
+**Tech-Stack:**
+- `src/app/[locale]/beta/page.tsx` — Öffentliche Landing (außerhalb AppShell, kein Auth)
+- `src/app/[locale]/welcome/page.tsx` — Onboarding nach Registrierung (Server: Auth-Check + redirect wenn done)
+- `src/app/api/beta/waitlist/route.ts` — POST, public, 5 req/IP/h (Upstash fail-open), 23505 = success
+- `src/app/api/beta/feedback/route.ts` — POST, auth-required, `z.record(z.string(), z.boolean())`
+- `src/app/api/beta/onboarding-complete/route.ts` — POST, upsert `user_preferences.beta_onboarding_done`
+- `src/app/[locale]/(app)/audit/_components/BetaFeedbackButton.tsx` — Sichtbar wenn `beta_onboarding_done = true`
+- `src/app/[locale]/(app)/superadmin/beta/page.tsx` — Waitlist + Feedback + Beta-User-Übersicht
+
+**DB:** Migration 20260417000113 — `beta_waitlist`, `beta_feedback`, `user_preferences.beta_onboarding_done + is_beta_user`
+
+**Manuell aktivieren:** `UPDATE user_preferences SET is_beta_user = true WHERE user_id = '...'` (Supabase Dashboard)
 
 ### Quick-Wins + UX-Schicht (Stand 2026-04-15)
 
@@ -1261,6 +1280,10 @@ Konkrete Risikostellen:
 Langdock hat zwei Jahre Chat und Wissen gebaut — dann erst Workflows. Tropen OS baut beides parallel. Das ist riskanter aber möglich — wenn die Basis (Chat, Projekte, Wissensbasis) stabil ist.
 Konsequenz: Plan F (Workspaces) und Plan J (Feeds/Agenten) erst deployen wenn die bestehenden Features stabil und bug-frei sind. Kein Feature-Race auf wackeliger Basis.
 
+**7. Empirische Benchmarks schlagen theoretische Diskussionen**
+Der /ultrareview-Vergleich (2026-04-17) hat die Positionierungsfrage in ~1 Stunde empirisch beantwortet: 1.136 vs. 62 Findings, <25% Überlappung — Komplementarität belegt, keine Integration nötig. Drei Monate Diskussion hätten das gleiche Ergebnis nicht schneller erreicht.
+Konsequenz: Positionierungsfragen immer mit echten Benchmark-Daten beantworten, bevor Committee-Zeit investiert wird. Eigener Score muss Production Grade (85%+) sein bevor erste Beta-User eingeladen werden — Dogfooding ist die härteste Benchmark.
+
 ---
 
 ## Pending UI/Chat Tasks (nicht in phase2-plans.md)
@@ -1344,7 +1367,10 @@ eslint src/           # keine Fehler
 | `docs/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
 | `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
 | `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
-| `docs/audit-reports/` | Benchmark-Ergebnisse (v1-v7), Checker-Coverage, Committee-Results, Checker-Gaps |
+| `docs/audit-reports/` | Benchmark-Ergebnisse (v1-v8), Checker-Coverage, Committee-Results, Checker-Gaps |
+| `docs/audit-reports/benchmark-2026-04-17-v8-full.json` | v8-Benchmark: 49 Repos, SLOP+SPEC aktiv, Ergebnisse nach Plattform |
+| `docs/audit-reports/committee-sprint13-prep.md` | Sprint 13 Komitee-Vorbereitung: F1–F5 inkl. /ultrareview-Benchmark-Evidenz + 3 Komitee-Fragen |
+| `docs/conference-intelligence-2026.md` | Strategische Entscheidungen + Wettbewerbs-Monitoring (inkl. /ultrareview-Vergleich 2026-04-17) |
 | `docs/manual-checks.md` | 64 manuelle Checks die statisch nicht pruefbar sind |
 | `src/lib/audit/quick-wins.ts` | Quick-Wins-Algorithmus (Top 5 nach Impact/Aufwand) |
 | `src/lib/audit/score-percentile.ts` | Percentile-Rank gegen v7-Benchmark |

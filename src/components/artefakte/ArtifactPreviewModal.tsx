@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { Link } from '@/i18n/navigation'
 import { X, ArrowSquareOut } from '@phosphor-icons/react'
 import ArtifactRenderer from '@/components/workspace/ArtifactRenderer'
 import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
@@ -59,7 +60,7 @@ export function ArtifactPreviewModal({ artifact, onClose }: ArtifactPreviewModal
           </div>
           <div className="artifact-preview-modal-actions">
             {artifact.conversation_id && (
-              <a
+              <Link
                 href={`/chat/${artifact.conversation_id}`}
                 className="btn btn-ghost btn-sm"
                 target="_blank"
@@ -67,7 +68,7 @@ export function ArtifactPreviewModal({ artifact, onClose }: ArtifactPreviewModal
               >
                 <ArrowSquareOut size={14} weight="bold" aria-hidden="true" />
                 Im Chat öffnen
-              </a>
+              </Link>
             )}
             <button className="btn-icon" onClick={onClose} aria-label="Schließen">
               <X size={16} weight="bold" />

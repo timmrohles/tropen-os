@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Bird } from '@phosphor-icons/react'
+import { Link } from '@/i18n/navigation'
 import { WidgetSkeleton } from './shared'
 
 interface Recommendation {
@@ -39,9 +40,9 @@ export function ToroRecommendationWidget() {
         <p className="widget-toro-text">{rec.text}</p>
       </div>
       {rec.actionHref && (
-        <a href={rec.actionHref} className="widget-action-link">
+        <Link href={rec.actionHref} className="widget-action-link">
           {rec.actionLabel} →
-        </a>
+        </Link>
       )}
     </div>
   )

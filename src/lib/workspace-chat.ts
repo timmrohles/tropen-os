@@ -387,14 +387,16 @@ export function createChatActions(ctx: ChatActionsCtx) {
 
   async function logout() {
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    const locale = window.location.pathname.split('/')[1] || 'de'
+    window.location.href = `/${locale}/login`
   }
 
   async function handleLogout() {
     await supabase.auth.signOut()
     document.cookie = 'onboarding_done=; max-age=0; path=/'
     document.cookie = 'is_superadmin=; max-age=0; path=/'
-    window.location.href = '/login'
+    const locale = window.location.pathname.split('/')[1] || 'de'
+    window.location.href = `/${locale}/login`
   }
 
   async function sendDirect(text: string) {

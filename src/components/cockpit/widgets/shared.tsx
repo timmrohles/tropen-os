@@ -1,5 +1,7 @@
 'use client'
 
+import { Link } from '@/i18n/navigation'
+
 interface SkeletonProps { rows?: number }
 
 export function WidgetSkeleton({ rows = 3 }: SkeletonProps) {
@@ -23,9 +25,9 @@ export function WidgetEmpty({ text, actionLabel, actionHref }: EmptyProps) {
     <div className="widget-empty">
       <p>{text}</p>
       {actionLabel && actionHref && (
-        <a href={actionHref} className="widget-action-link">
+        <Link href={actionHref} className="widget-action-link">
           {actionLabel} →
-        </a>
+        </Link>
       )}
     </div>
   )
