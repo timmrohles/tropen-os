@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { ShieldCheck, X } from '@phosphor-icons/react'
 
 const STORAGE_KEY = 'cookie_consent'
@@ -55,9 +56,9 @@ export default function CookieBanner() {
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
           Wir setzen technisch notwendige Cookies für die Authentifizierung sowie Sentry für Fehlerberichte.
           Weitere Tracking-Cookies werden nur mit deiner Zustimmung gesetzt.{' '}
-          <a href="/datenschutz" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          <Link href="/datenschutz" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
             Datenschutzerklärung
-          </a>
+          </Link>
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" style={{ fontSize: 13, padding: '6px 14px' }} onClick={accept}>
