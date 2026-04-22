@@ -7,6 +7,10 @@ import { existsSync, readdirSync, statSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { AuditContext, RuleResult, Finding, AgentSource } from '../types'
+import { createLogger } from '@/lib/logger'
+import { platformCommand } from '../utils/platform-utils'
+
+const log = createLogger('audit:external-tools')
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -15,11 +19,20 @@ function nullResult(ruleId: string, reason: string): RuleResult {
 }
 
 function run(cmd: string, args: string[], cwd: string, timeoutMs = 60_000): string | null {
+  // On Windows, .cmd files cannot be executed directly by CreateProcessW —
+  // cmd.exe /c is required. Use explicit cmd.exe invocation to avoid shell:true
+  // (which concatenates args unsafely and triggers a Node.js deprecation warning).
+  const [execCmd, execArgs] = process.platform === 'win32'
+    ? ['cmd.exe', ['/c', cmd, ...args]]
+    : [cmd, args]
   try {
-    return execFileSync(cmd, args, { cwd, timeout: timeoutMs, encoding: 'utf-8' })
+    return execFileSync(execCmd, execArgs, { cwd, timeout: timeoutMs, encoding: 'utf-8' })
   } catch (err: unknown) {
     // Many tools exit non-zero even with valid JSON output
-    const e = err as { stdout?: unknown }
+    const e = err as { stdout?: unknown; code?: unknown }
+    if (e?.code === 'ENOENT') {
+      log.warn(`Command '${cmd}' not found on PATH. On Windows, ensure pnpm/gitleaks are installed and accessible.`)
+    }
     if (e?.stdout && typeof e.stdout === 'string' && e.stdout.trim()) return e.stdout
     return null
   }
@@ -49,7 +62,7 @@ export async function checkDepCruiserCycles(ctx: AuditContext): Promise<RuleResu
     return nullResult('cat-1-rule-3', 'No .dependency-cruiser.cjs config found')
   }
 
-  const raw = run('pnpm', ['exec', 'depcruise', 'src', '--config', '.dependency-cruiser.cjs', '--output-type', 'json'], ctx.rootPath, 90_000)
+  const raw = run(platformCommand('pnpm'), ['exec', 'depcruise', 'src', '--config', '.dependency-cruiser.cjs', '--output-type', 'json'], ctx.rootPath, 90_000)
   if (!raw) return nullResult('cat-1-rule-3', 'dependency-cruiser failed to run')
 
   let parsed: DepCruiseOutput
@@ -152,7 +165,7 @@ async function runLighthouse(ctx: AuditContext): Promise<LighthouseReport | null
   if (!url) return null
 
   const outPath = join(tmpdir(), `lh-audit-${Date.now()}.json`)
-  const raw = run('pnpm', [
+  const raw = run(platformCommand('pnpm'), [
     'exec', 'lighthouse', url,
     '--output', 'json', `--output-path=${outPath}`,
     '--chrome-flags=--headless=new --no-sandbox --disable-gpu',
@@ -283,13 +296,26 @@ export async function checkBundleSizes(ctx: AuditContext): Promise<RuleResult> {
     return nullResult('cat-7-rule-2', 'No .next/static/chunks/ found — run next build first')
   }
 
-  const totalKb = sumDirSizeKb(chunksDir)
+  // Only measure chunks that are always loaded on first page visit.
+  // Route chunks, lazy-loaded splits, and server chunks are excluded —
+  // they inflate totals for large apps without affecting initial load time.
+  const INITIAL_CHUNK_PREFIXES = ['framework-', 'main-', 'polyfills-', 'webpack-']
+  let totalBytes = 0
+  for (const name of readdirSync(chunksDir)) {
+    if (!name.endsWith('.js')) continue
+    if (!INITIAL_CHUNK_PREFIXES.some((prefix) => name.startsWith(prefix))) continue
+    try {
+      totalBytes += statSync(join(chunksDir, name)).size
+    } catch { /* ignore */ }
+  }
+  const totalKb = Math.round(totalBytes / 1024)
+
   const score = totalKb < 200 ? 5 : totalKb < 400 ? 4 : totalKb < 600 ? 3 : totalKb < 1024 ? 2 : 1
   const findings: Finding[] = totalKb >= 400
-    ? [{ severity: totalKb >= 1024 ? 'high' : 'medium', message: `Total JS chunks: ${totalKb} KB (target: < 400 KB)`, suggestion: 'Use dynamic imports and tree-shaking to reduce bundle size', agentSource: 'performance' as AgentSource }]
+    ? [{ severity: totalKb >= 1024 ? 'high' : 'medium', message: `Initial client JS: ${totalKb} KB (target: < 400 KB)`, suggestion: 'Use dynamic imports and tree-shaking to reduce bundle size', agentSource: 'performance' as AgentSource }]
     : []
 
-  return { ruleId: 'cat-7-rule-2', score, reason: `Bundle size: ${totalKb} KB (JS chunks in .next/static/chunks/)`, findings, automated: true }
+  return { ruleId: 'cat-7-rule-2', score, reason: `Initial client JS: ${totalKb} KB (framework + main + polyfills + webpack)`, findings, automated: true }
 }
 
 // ── 4. ESLint detailed (per-violation findings) ───────────────────────────────
@@ -306,7 +332,7 @@ function eslintAgentSource(ruleId: string): AgentSource {
 }
 
 export async function checkEslintDetailed(ctx: AuditContext): Promise<RuleResult> {
-  const raw = run('pnpm', ['exec', 'eslint', 'src', '--format', 'json', '--max-warnings', '9999'], ctx.rootPath, 90_000)
+  const raw = run(platformCommand('pnpm'), ['exec', 'eslint', 'src', '--format', 'json', '--max-warnings', '9999'], ctx.rootPath, 90_000)
   if (!raw) return nullResult('cat-2-rule-9', 'ESLint failed to run or produced no output')
 
   let results: EslintFileResult[]
@@ -378,7 +404,7 @@ interface PnpmAuditOutput {
 }
 
 export async function checkNpmAudit(ctx: AuditContext): Promise<RuleResult> {
-  const raw = run('pnpm', ['audit', '--json'], ctx.rootPath, 90_000)
+  const raw = run(platformCommand('pnpm'), ['audit', '--json'], ctx.rootPath, 90_000)
   if (!raw) return nullResult('cat-3-rule-7', 'pnpm audit failed to run or produced no output')
 
   let parsed: PnpmAuditOutput
