@@ -64,6 +64,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.11.2",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
     "@next/bundle-analyzer": "^16.2.2",
@@ -91,6 +92,7 @@
     "eslint-plugin-sonarjs": "^4.0.2",
     "eslint-plugin-unicorn": "^63.0.0",
     "happy-dom": "^20.8.9",
+    "lighthouse": "^13.1.0",
     "msw": "^2.12.14",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
@@ -111,7 +113,8 @@
       "vite": ">=8.0.5",
       "picomatch": ">=4.0.4",
       "lodash": ">=4.18.1",
-      "esbuild": ">=0.25.0"
+      "esbuild": ">=0.25.0",
+      "balanced-match": ">=4.0.4"
     }
   }
 }
