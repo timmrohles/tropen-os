@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import {
-  CaretDown, CaretRight, Copy, CheckCircle, X, ClipboardText, Check, CaretUp, SealCheck,
+  CaretDown, CaretRight, Copy, CheckCircle, X, ClipboardText, Check, CaretUp, SealCheck, Brain,
 } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 import type { FindingRecommendation } from '@/lib/audit/finding-recommendations'
@@ -28,6 +28,7 @@ interface RecommendationCardProps {
   onAcknowledgeGroup?: (group: FindingGroup) => void
   onCopyGroupPrompt?: (group: FindingGroup) => void
   runId?: string
+  deepReview?: { level: string; count: number }
 }
 
 const NOT_RELEVANT_REASONS = [
@@ -70,10 +71,28 @@ const FIX_TYPE_STYLE: Record<string, React.CSSProperties> = {
   'manual':      { background: 'var(--bg-base)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' },
 }
 
+function DeepReviewBadge({ level, count }: { level?: string | null; count: number }) {
+  if (!level) return null
+  const isStrong = level === 'unanimous' || level === 'majority'
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontSize: 11, fontWeight: 500, padding: '1px 6px', borderRadius: 3,
+      flexShrink: 0, whiteSpace: 'nowrap',
+      background: isStrong ? 'var(--accent-light)' : 'var(--bg-base)',
+      color: isStrong ? 'var(--accent)' : 'var(--text-tertiary)',
+      border: `1px solid ${isStrong ? 'var(--accent-light)' : 'var(--border)'}`,
+    }}>
+      <Brain size={10} weight="fill" aria-hidden="true" />
+      {count > 0 ? `${count} Modelle` : 'Deep Review'}
+    </span>
+  )
+}
+
 export default function RecommendationCard({
   group, recommendation, isExternalProject,
   onMarkFixed, onMarkNotRelevant,
-  runId,
+  runId, deepReview,
 }: RecommendationCardProps) {
   const t = useTranslations('audit')
   const [filesExpanded, setFilesExpanded] = useState(false)
@@ -127,6 +146,8 @@ export default function RecommendationCard({
               {AGENT_LABEL[group.agentSource] ?? group.agentSource}
             </span>
           )}
+
+          <DeepReviewBadge level={deepReview?.level} count={deepReview?.count ?? 0} />
 
           {/* Title */}
           <span style={{
@@ -297,6 +318,32 @@ export default function RecommendationCard({
               </p>
             )}
 
+            {/* Cross-rule annotation — shows other rule groups that affect the same file(s) */}
+            {group.alsoAffectedByRules && group.alsoAffectedByRules.length > 0 && (
+              <div style={{
+                fontSize: 11,
+                color: 'var(--text-tertiary)',
+                marginBottom: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                flexWrap: 'wrap',
+              }}>
+                <span>betrifft auch:</span>
+                {group.alsoAffectedByRules.map((r) => (
+                  <span key={r.ruleId} style={{
+                    padding: '1px 6px',
+                    borderRadius: 3,
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    fontSize: 10,
+                  }}>
+                    {r.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Expandable file list */}
             {uniqueFiles.length > 0 && (
               <div style={{ marginBottom: 14 }}>
@@ -329,12 +376,12 @@ export default function RecommendationCard({
 
             {/* Actions: Fix-Prompt (primary) + Erledigt + Nicht relevant */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Fix-Prompt — only for non-manual findings; manual findings show steps inline */}
+              {/* Fix-Prompt — primary action for non-manual findings */}
               {!(group.fixType === 'manual' && recommendation?.manualSteps) && (
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => setDrawerOpen(true)}
-                  style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
+                  style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600 }}
                 >
                   <ClipboardText size={13} weight="bold" aria-hidden="true" /> {t('viewFixPrompt')}
                 </button>
@@ -378,8 +425,8 @@ export default function RecommendationCard({
               </button>
             </div>
 
-            {/* Deep Fix — consensus AI fix; rendered below action row so result card expands as full-width block */}
-            {runId && !(group.fixType === 'manual' && recommendation?.manualSteps) && (
+            {/* Deep Fix — only for committee-discovered findings (deepReview set) */}
+            {runId && deepReview && !(group.fixType === 'manual' && recommendation?.manualSteps) && (
               <DeepFixButton
                 findingId={group.findings[0].id}
                 runId={runId}
