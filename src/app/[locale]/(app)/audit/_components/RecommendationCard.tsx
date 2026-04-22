@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react'
 import {
-  CaretDown, CaretRight, Copy, CheckCircle, X, ClipboardText, BookOpen, Check, CaretUp,
+  CaretDown, CaretRight, Copy, CheckCircle, X, ClipboardText, Check, CaretUp, SealCheck,
 } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 import type { FindingRecommendation } from '@/lib/audit/finding-recommendations'
 import { FIX_APPROACH_LABEL } from '@/lib/audit/finding-recommendations'
 import FixPromptDrawer from './FixPromptDrawer'
+import DeepFixButton from './DeepFixButton'
 import { cleanRuleId, type FindingGroup } from '@/lib/audit/group-findings'
 
 /** @deprecated Import FindingGroup from '@/lib/audit/group-findings' instead */
@@ -26,6 +27,7 @@ interface RecommendationCardProps {
   onDismissGroup?: (group: FindingGroup) => void
   onAcknowledgeGroup?: (group: FindingGroup) => void
   onCopyGroupPrompt?: (group: FindingGroup) => void
+  runId?: string
 }
 
 const NOT_RELEVANT_REASONS = [
@@ -71,6 +73,7 @@ const FIX_TYPE_STYLE: Record<string, React.CSSProperties> = {
 export default function RecommendationCard({
   group, recommendation, isExternalProject,
   onMarkFixed, onMarkNotRelevant,
+  runId,
 }: RecommendationCardProps) {
   const t = useTranslations('audit')
   const [filesExpanded, setFilesExpanded] = useState(false)
@@ -201,22 +204,92 @@ export default function RecommendationCard({
                   </p>
                 </div>
 
-                {/* First step */}
-                <div style={{ paddingLeft: 16, borderLeft: '2px solid var(--border)', marginBottom: 12 }}>
-                  <p style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                    color: 'var(--text-tertiary)', margin: '0 0 3px',
-                  }}>
-                    {t('firstStep')}
-                  </p>
-                  <p style={{
-                    fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0,
-                    whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono, monospace)',
-                    background: 'var(--border)', padding: '6px 8px', borderRadius: 4,
-                  }}>
-                    {recommendation.firstStep}
-                  </p>
-                </div>
+                {/* Manual checklist layout — replaces firstStep monospace block for manual findings */}
+                {group.fixType === 'manual' && recommendation.manualSteps ? (
+                  <>
+                    <div style={{
+                      borderRadius: 6, border: '1px solid var(--border)',
+                      background: 'var(--bg-base)', marginBottom: 12, overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                        textTransform: 'uppercase', color: 'var(--text-tertiary)',
+                      }}>
+                        Was du tun musst
+                      </div>
+                      <ol style={{ margin: 0, padding: '10px 12px 10px 0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {recommendation.manualSteps.map((step, i) => (
+                          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '0 12px' }}>
+                            <span style={{
+                              fontFamily: 'var(--font-mono, monospace)', fontSize: 11,
+                              color: 'var(--text-tertiary)', fontWeight: 600,
+                              minWidth: 20, flexShrink: 0, paddingTop: 1,
+                            }}>
+                              {String(i + 1).padStart(2, '0')}
+                            </span>
+                            <span style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.55 }}>
+                              {step}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Inline code snippets */}
+                    {recommendation.codeSnippets?.map((snippet, i) => (
+                      <div key={i} style={{ marginBottom: 10 }}>
+                        <p style={{
+                          fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                          color: 'var(--text-tertiary)', margin: '0 0 4px',
+                        }}>
+                          Kopiere in: {snippet.tool}
+                        </p>
+                        <pre style={{
+                          fontSize: 11, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0,
+                          fontFamily: 'var(--font-mono, monospace)',
+                          background: 'rgba(26,23,20,0.06)', padding: '8px 10px', borderRadius: 4,
+                          overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                        }}>
+                          {snippet.code}
+                        </pre>
+                      </div>
+                    ))}
+
+                    {/* Verification criterion */}
+                    {recommendation.verification && (
+                      <div style={{
+                        display: 'flex', gap: 8, alignItems: 'flex-start',
+                        padding: '8px 10px', borderRadius: 5,
+                        background: 'rgba(45,122,80,0.06)', border: '1px solid rgba(45,122,80,0.2)',
+                        marginBottom: 12,
+                      }}>
+                        <SealCheck size={14} weight="fill" color="var(--accent)" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Wann du fertig bist: </span>
+                          {recommendation.verification}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Prompt-based first step — for code-fix, code-gen, refactoring */
+                  <div style={{ paddingLeft: 16, borderLeft: '2px solid var(--border)', marginBottom: 12 }}>
+                    <p style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                      color: 'var(--text-tertiary)', margin: '0 0 3px',
+                    }}>
+                      {t('firstStep')}
+                    </p>
+                    <p style={{
+                      fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0,
+                      whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono, monospace)',
+                      background: 'var(--border)', padding: '6px 8px', borderRadius: 4,
+                    }}>
+                      {recommendation.firstStep}
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 14 }}>
@@ -256,16 +329,16 @@ export default function RecommendationCard({
 
             {/* Actions: Fix-Prompt (primary) + Erledigt + Nicht relevant */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Fix-Prompt / Guide — primary CTA */}
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setDrawerOpen(true)}
-                style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
-              >
-                {group.fixType === 'manual'
-                  ? <><BookOpen size={13} weight="bold" aria-hidden="true" /> {t('showGuide')}</>
-                  : <><ClipboardText size={13} weight="bold" aria-hidden="true" /> {t('viewFixPrompt')}</>}
-              </button>
+              {/* Fix-Prompt — only for non-manual findings; manual findings show steps inline */}
+              {!(group.fixType === 'manual' && recommendation?.manualSteps) && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setDrawerOpen(true)}
+                  style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
+                >
+                  <ClipboardText size={13} weight="bold" aria-hidden="true" /> {t('viewFixPrompt')}
+                </button>
+              )}
 
               {/* Erledigt */}
               {justFixed ? (
@@ -304,6 +377,14 @@ export default function RecommendationCard({
                   : <CaretDown size={10} weight="bold" aria-hidden="true" />}
               </button>
             </div>
+
+            {/* Deep Fix — consensus AI fix; rendered below action row so result card expands as full-width block */}
+            {runId && !(group.fixType === 'manual' && recommendation?.manualSteps) && (
+              <DeepFixButton
+                findingId={group.findings[0].id}
+                runId={runId}
+              />
+            )}
 
             {/* Not-relevant reason dropdown (inline, no modal) */}
             {showNotRelevant && (

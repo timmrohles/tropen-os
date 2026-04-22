@@ -342,7 +342,7 @@ export default function FindingsTable({
             <p style={{ margin: '0 0 2px' }}>{t('fixTypeExplainRefactoring')}</p>
             <p style={{ margin: 0 }}>{t('fixTypeExplainManual')}</p>
           </div>
-          <button onClick={() => { setFixTypeHintDismissed(true); try { localStorage.setItem('audit-fixtypes-dismissed', 'true') } catch {} }}
+          <button onClick={() => { setFixTypeHintDismissed(true); try { localStorage.setItem('audit-fixtypes-dismissed', 'true') } catch { /* ignore — localStorage unavailable in private mode */ } }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 2, flexShrink: 0 }}
             aria-label="Close">
             <span style={{ fontSize: 14 }}>×</span>
@@ -375,6 +375,7 @@ export default function FindingsTable({
                 isExternalProject={isExternalProject}
                 onMarkFixed={handleMarkFixed}
                 onMarkNotRelevant={handleMarkNotRelevant}
+                runId={runId}
               />
             </div>
           ))}
