@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export interface ConsensusFixData {
   fixId: string
@@ -29,7 +29,9 @@ export function useDeepFix(findingId: string, runId: string) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
 
-  async function trigger() {
+  const trigger = useCallback(async () => {
+    if (!findingId || !runId) return
+
     // Toggle if already loaded
     if (state === 'ready') {
       setExpanded((e) => !e)
@@ -41,6 +43,7 @@ export function useDeepFix(findingId: string, runId: string) {
 
     setState('checking')
     setErrorMessage(null)
+    setData(null)
 
     try {
       // Cache lookup
@@ -82,7 +85,7 @@ export function useDeepFix(findingId: string, runId: string) {
       setErrorMessage(err instanceof Error ? err.message : 'Unbekannter Fehler')
       setState('error')
     }
-  }
+  }, [findingId, runId, state])
 
   return { state, data, errorMessage, expanded, trigger }
 }
