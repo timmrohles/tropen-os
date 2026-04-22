@@ -52,7 +52,7 @@ export default function ConsensusFixResult({ data }: Props) {
             }}
           >
             <CheckCircle size={10} weight="fill" aria-hidden="true" />
-            {d.providerId.split('/').pop()} ({d.confidence})
+            {d.providerId.split('/').pop() ?? d.providerId} ({d.confidence})
           </span>
         ))}
         {failedDrafts.map((d) => (
@@ -65,7 +65,7 @@ export default function ConsensusFixResult({ data }: Props) {
             }}
           >
             <WarningCircle size={10} weight="fill" aria-hidden="true" />
-            {d.providerId.split('/').pop()} fehlgeschlagen
+            {d.providerId.split('/').pop() ?? d.providerId} fehlgeschlagen
           </span>
         ))}
       </div>
