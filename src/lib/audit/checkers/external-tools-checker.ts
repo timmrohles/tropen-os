@@ -26,12 +26,17 @@ function run(cmd: string, args: string[], cwd: string, timeoutMs = 60_000): stri
     ? ['cmd.exe', ['/c', cmd, ...args]]
     : [cmd, args]
   try {
-    return execFileSync(execCmd, execArgs, { cwd, timeout: timeoutMs, encoding: 'utf-8' })
+    // stdio: pipe all streams — prevents stderr (e.g. chrome-launcher EPERM on Windows cleanup)
+    // from bleeding through to the terminal. Captured stderr is available on error.stderr if needed.
+    return execFileSync(execCmd, execArgs, { cwd, timeout: timeoutMs, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] })
   } catch (err: unknown) {
     // Many tools exit non-zero even with valid JSON output
-    const e = err as { stdout?: unknown; code?: unknown }
+    const e = err as { stdout?: unknown; code?: unknown; stderr?: unknown }
     if (e?.code === 'ENOENT') {
       log.warn(`Command '${cmd}' not found on PATH. On Windows, ensure pnpm is installed and accessible (scoped npm tools run via pnpm exec).`)
+    }
+    if (e?.stderr && typeof e.stderr === 'string' && e.stderr.trim()) {
+      log.debug(`stderr from '${cmd}'`, { stderr: e.stderr.slice(0, 500) })
     }
     if (e?.stdout && typeof e.stdout === 'string' && e.stdout.trim()) return e.stdout
     return null
@@ -119,7 +124,7 @@ export async function checkDepCruiserCycles(ctx: AuditContext): Promise<RuleResu
 
 interface LighthouseAuditRef { id: string; weight?: number; group?: string }
 interface LighthouseCategory { score: number | null; title: string; auditRefs?: LighthouseAuditRef[] }
-interface LighthouseAuditResult { score: number | null; title: string; description?: string }
+interface LighthouseAuditResult { score: number | null; title: string; description?: string; displayValue?: string }
 interface LighthouseReport {
   categories: Record<string, LighthouseCategory>
   audits: Record<string, LighthouseAuditResult>
@@ -149,10 +154,13 @@ function extractLighthouseFindings(
   for (const ref of category.auditRefs) {
     const audit = report.audits[ref.id]
     if (!audit || audit.score === null || audit.score >= 1) continue
+    const firstSentence = audit.description
+      ? audit.description.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').split(/\.\s/)[0].replace(/\.$/, '')
+      : undefined
     findings.push({
       severity: audit.score === 0 ? 'high' : 'medium',
-      message: audit.title,
-      suggestion: audit.description,
+      message: audit.displayValue ? `${audit.title} — ${audit.displayValue}` : audit.title,
+      suggestion: firstSentence,
       agentSource: agentSrc,
       agentRuleId: `lighthouse-${categoryKey}-${ref.id}`,
     })
@@ -198,12 +206,9 @@ export async function checkLighthousePerf(ctx: AuditContext): Promise<RuleResult
 
   const agentSrc: AgentSource = 'lighthouse-performance'
   const granular = extractLighthouseFindings(report, 'performance', agentSrc)
-  const findings: Finding[] = lhScore < 0.9
-    ? [
-        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
-        ...granular,
-      ]
-    : []
+  // Only include granular findings — the summary score lives in `reason` and surfaces in the
+  // category breakdown. A summary card duplicates the list and isn't actionable on its own.
+  const findings: Finding[] = lhScore < 0.9 ? granular : []
 
   return { ruleId: 'cat-7-rule-1', score: lhScoreToAudit(lhScore), reason: `Lighthouse Performance: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }
@@ -221,12 +226,7 @@ export async function checkLighthouseA11y(ctx: AuditContext): Promise<RuleResult
   const agentSrc: AgentSource = 'lighthouse-accessibility'
   const granular = extractLighthouseFindings(report, 'accessibility', agentSrc)
   const score = lhScore >= 0.9 ? 5 : lhScore >= 0.7 ? 4 : lhScore >= 0.5 ? 3 : 1
-  const findings: Finding[] = lhScore < 0.9
-    ? [
-        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Accessibility: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
-        ...granular,
-      ]
-    : []
+  const findings: Finding[] = lhScore < 0.9 ? granular : []
 
   return { ruleId: 'cat-16-rule-1', score, reason: `Lighthouse Accessibility: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }
@@ -243,12 +243,7 @@ export async function checkLighthouseBestPractices(ctx: AuditContext): Promise<R
 
   const agentSrc: AgentSource = 'lighthouse-best-practices'
   const granular = extractLighthouseFindings(report, 'best-practices', agentSrc)
-  const findings: Finding[] = lhScore < 0.9
-    ? [
-        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse Best Practices: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
-        ...granular,
-      ]
-    : []
+  const findings: Finding[] = lhScore < 0.9 ? granular : []
 
   return { ruleId: 'cat-2-rule-11', score: lhScoreToAudit(lhScore), reason: `Lighthouse Best Practices: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }
@@ -265,12 +260,7 @@ export async function checkLighthouseSeo(ctx: AuditContext): Promise<RuleResult>
 
   const agentSrc: AgentSource = 'lighthouse-seo'
   const granular = extractLighthouseFindings(report, 'seo', agentSrc)
-  const findings: Finding[] = lhScore < 0.9
-    ? [
-        { severity: lhScore < 0.5 ? 'high' : 'medium', message: `Lighthouse SEO: ${Math.round(lhScore * 100)}/100 (${granular.length} issues found)`, agentSource: agentSrc },
-        ...granular,
-      ]
-    : []
+  const findings: Finding[] = lhScore < 0.9 ? granular : []
 
   return { ruleId: 'cat-18-rule-5', score: lhScoreToAudit(lhScore), reason: `Lighthouse SEO: ${Math.round(lhScore * 100)}/100`, findings, automated: true }
 }

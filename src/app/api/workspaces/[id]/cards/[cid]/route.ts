@@ -7,6 +7,7 @@ import { updateCardSchema } from '@/lib/validators/workspace-plan-c'
 import { writeCardSnapshot } from '@/lib/card-history'
 import { markDirectDepsStale } from '@/lib/stale-propagation'
 import { apiError } from '@/lib/api-error'
+import { CARD_FIELDS } from '@/lib/db/fields'
 const log = createLogger('api:workspaces:cards:[cid]')
 type Params = { params: Promise<{ id: string; cid: string }> }
 
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, { params }: Params) {
   // 1. Load current card for snapshot
   const { data: current, error: fetchErr } = await supabaseAdmin
     .from('cards')
-    .select('*')
+    .select(CARD_FIELDS)
     .eq('id', cid)
     .eq('workspace_id', id)
     .is('deleted_at', null)
@@ -63,7 +64,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .update(updates)
     .eq('id', cid)
     .eq('workspace_id', id)
-    .select()
+    .select(CARD_FIELDS)
     .single()
 
   if (updateErr) {

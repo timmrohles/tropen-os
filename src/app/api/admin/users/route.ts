@@ -48,7 +48,9 @@ export async function POST(request: Request) {
   const me = await getAdminUser()
   if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
 
-  const { email, role } = await request.json()
+  let body: { email?: string; role?: string }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }) }
+  const { email, role } = body
   if (!email || !role)
     return NextResponse.json({ error: 'Email und Rolle erforderlich' }, { status: 400 })
 

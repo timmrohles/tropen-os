@@ -1,6 +1,6 @@
 'use client'
 
-// TODO(timm): Vollständige Implementierung kommt mit Artefakte-Feature (stash: mega-refactor-april-8)
+// Stub — full implementation in mega-refactor-april-8 stash
 interface ArtifactItem {
   id: string
   type: string

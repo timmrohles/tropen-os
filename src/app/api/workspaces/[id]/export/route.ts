@@ -59,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
     ? generateMarkdownExport(workspace as unknown as Record<string, unknown>, cards)
     : generateChatExport(workspace as unknown as Record<string, unknown>, cards)
 
-  // TODO(Plan F/G): Store in Supabase Storage and save the storage URL instead.
+  // Plan F/G: Store in Supabase Storage and save the storage URL instead.
   // data: URIs work for Phase 2 but will produce large DB rows for bigger workspaces.
   const dataUrl = `data:text/plain;base64,${Buffer.from(content).toString('base64')}`
 

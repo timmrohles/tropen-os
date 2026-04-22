@@ -113,9 +113,9 @@ export async function POST(request: Request) {
       consensusLevel: consensus.consensusLevel,
       winnerProviderId: consensus.winnerProviderId,
       judgeExplanation: consensus.judgeExplanation,
-      draftsCount: consensus.drafts.length,
+      drafts: consensus.drafts as Array<{ providerId: string; explanation: string; confidence: string; costEur: number; error?: string }>,
       riskLevel: riskAssessment.level,
-      riskAssessment,
+      riskReasons: ((riskAssessment as unknown as Record<string, unknown>).reasons as string[] | undefined) ?? [],
     })
   } catch (err) {
     log.error('Consensus fix generation failed', { error: String(err) })

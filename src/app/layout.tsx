@@ -7,9 +7,10 @@ import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
+  preload: true,
 })
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -17,6 +18,7 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ['700', '800'],
   variable: '--font-display',
   display: 'swap',
+  preload: true,
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -24,6 +26,7 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
   variable: '--font-mono',
   display: 'swap',
+  preload: true,
 })
 
 export const metadata: Metadata = {

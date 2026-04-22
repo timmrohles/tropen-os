@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
@@ -52,30 +53,34 @@ export async function GET() {
 // PATCH /api/admin/budget — Budget-Limit setzen
 // Body: { type: 'organization' | 'workspace', id: string, budget_limit: number | null }
 export async function PATCH(req: NextRequest) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
-  const { type, id, budget_limit } = await req.json()
-
-  if (!type || !id || !['organization', 'workspace'].includes(type)) {
-    return NextResponse.json(
-      { error: 'type muss "organization" oder "workspace" sein' },
-      { status: 400 }
-    )
+  try {  
+    const me = await getAdminUser()
+    if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+  
+    const { type, id, budget_limit } = await req.json()
+  
+    if (!type || !id || !['organization', 'workspace'].includes(type)) {
+      return NextResponse.json(
+        { error: 'type muss "organization" oder "workspace" sein' },
+        { status: 400 }
+      )
+    }
+  
+    const table = type === 'organization' ? 'organizations' : 'workspaces'
+  
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .update({ budget_limit: budget_limit ?? null })
+      .eq('id', id)
+      .select('id, name, budget_limit')
+      .single()
+  
+    if (error) {
+      log.error('DB Error:', error)
+      return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
+    }
+    return NextResponse.json(data)
+  } catch (err) {
+    return apiError(err)
   }
-
-  const table = type === 'organization' ? 'organizations' : 'workspaces'
-
-  const { data, error } = await supabaseAdmin
-    .from(table)
-    .update({ budget_limit: budget_limit ?? null })
-    .eq('id', id)
-    .select('id, name, budget_limit')
-    .single()
-
-  if (error) {
-    log.error('DB Error:', error)
-    return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
-  }
-  return NextResponse.json(data)
 }

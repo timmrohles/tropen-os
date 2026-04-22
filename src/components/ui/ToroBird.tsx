@@ -34,7 +34,7 @@ export function ToroBird({ size = 80, className, style }: ToroBirdProps) {
         .maybeSingle()
       if (settings?.ai_guide_name) setName(settings.ai_guide_name)
       if (settings?.ai_assistant_image_url) setImageUrl(settings.ai_assistant_image_url)
-    })
+    }).catch(() => {})
   }, [])
 
   if (imageUrl) {

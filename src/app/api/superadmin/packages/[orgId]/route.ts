@@ -28,24 +28,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orgId: 
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ orgId: string }> }) {
-  const { orgId } = await params
-  const { user, error } = await guardSuperadmin()
-  if (!user) return error!
-
-  const { package_id, is_active } = await req.json()
-
-  const { data, error: dbErr } = await supabaseAdmin
-    .from('org_packages')
-    .upsert({
-      organization_id: orgId,
-      package_id,
-      is_active,
-      activated_by: user.id,
-      activated_at: new Date().toISOString(),
-    }, { onConflict: 'organization_id,package_id' })
-    .select()
-    .single()
-
-  if (dbErr) return apiError(dbErr)
-  return NextResponse.json(data)
+  try {  
+    const { orgId } = await params
+    const { user, error } = await guardSuperadmin()
+    if (!user) return error!
+  
+    const { package_id, is_active } = await req.json()
+  
+    const { data, error: dbErr } = await supabaseAdmin
+      .from('org_packages')
+      .upsert({
+        organization_id: orgId,
+        package_id,
+        is_active,
+        activated_by: user.id,
+        activated_at: new Date().toISOString(),
+      }, { onConflict: 'organization_id,package_id' })
+      .select()
+      .single()
+  
+    if (dbErr) return apiError(dbErr)
+    return NextResponse.json(data)
+  } catch (err) {
+    return apiError(err)
+  }
 }

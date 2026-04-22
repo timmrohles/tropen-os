@@ -37,6 +37,7 @@ export function FromOrgSection() {
     fetch('/api/settings/org')
       .then(r => r.json())
       .then((d: OrgData) => { setData(d); setLoading(false) })
+      .catch(() => { setLoading(false) })
   }, [])
 
   if (loading) return (

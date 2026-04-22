@@ -31,7 +31,7 @@ export function PreferencesSection() {
         .eq('user_id', user.id)
         .maybeSingle()
       if (data) setPrefs(data)
-    })
+    }).catch(() => {})
   }, [])
 
   async function handleSave() {

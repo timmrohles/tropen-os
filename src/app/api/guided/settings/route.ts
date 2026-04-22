@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -11,25 +12,29 @@ const log = createLogger('api/guided/settings')
 // Upserts guided workflow preferences for the current user.
 // Allows toggling guided_enabled, auto_trigger, new_project_trigger.
 export async function PATCH(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const body = await req.json().catch(() => null)
-  const parsed = patchGuidedSettingsSchema.safeParse(body)
-  if (!parsed.success) {
-    return apiValidationError(parsed.error)
+  try {  
+    const me = await getAuthUser()
+    if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+    const body = await req.json().catch(() => null)
+    const parsed = patchGuidedSettingsSchema.safeParse(body)
+    if (!parsed.success) {
+      return apiValidationError(parsed.error)
+    }
+  
+    const { data, error } = await supabaseAdmin
+      .from('guided_workflow_settings')
+      .upsert({ user_id: me.id, ...parsed.data }, { onConflict: 'user_id' })
+      .select()
+      .single()
+  
+    if (error) {
+      log.error('upsert guided settings failed', { error })
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    }
+  
+    return NextResponse.json(data)
+  } catch (err) {
+    return apiError(err)
   }
-
-  const { data, error } = await supabaseAdmin
-    .from('guided_workflow_settings')
-    .upsert({ user_id: me.id, ...parsed.data }, { onConflict: 'user_id' })
-    .select()
-    .single()
-
-  if (error) {
-    log.error('upsert guided settings failed', { error })
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
-
-  return NextResponse.json(data)
 }

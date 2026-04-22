@@ -590,7 +590,7 @@ function logRouting(
     user_id:        entry.user_id_hashed,
   }).then(({ error }) => {
     if (error) console.warn("[qa_routing_log] insert fehlgeschlagen:", error.message);
-  });
+  }).catch(() => {});
 }
 
 // ─────────────────────────────────────────

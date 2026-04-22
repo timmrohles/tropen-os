@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
@@ -55,104 +56,108 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireSuperadmin()
-  if (!user) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  const body = await req.json()
-  const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
-
-  if (!org_name || !plan || !workspace_name || !owner_email) {
-    return NextResponse.json(
-      { error: 'Pflichtfelder fehlen: org_name, plan, workspace_name, owner_email' },
-      { status: 400 }
-    )
-  }
-
-  // Step 1: Insert organization
-  const { data: org, error: orgError } = await supabaseAdmin
-    .from('organizations')
-    .insert({
-      name: org_name,
-      slug: generateSlug(org_name),
-      plan,
-      budget_limit: org_budget_limit || null,
+  try {  
+    const user = await requireSuperadmin()
+    if (!user) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  
+    const body = await req.json()
+    const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
+  
+    if (!org_name || !plan || !workspace_name || !owner_email) {
+      return NextResponse.json(
+        { error: 'Pflichtfelder fehlen: org_name, plan, workspace_name, owner_email' },
+        { status: 400 }
+      )
+    }
+  
+    // Step 1: Insert organization
+    const { data: org, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .insert({
+        name: org_name,
+        slug: generateSlug(org_name),
+        plan,
+        budget_limit: org_budget_limit || null,
+      })
+      .select()
+      .single()
+  
+    if (orgError || !org) {
+      log.error('POST /api/superadmin/clients: org insert failed', { error: orgError?.message, code: orgError?.code })
+      return NextResponse.json(
+        { error: 'Organisation konnte nicht erstellt werden' },
+        { status: 500 }
+      )
+    }
+  
+    // Step 2: Insert workspace
+    const { data: workspace, error: workspaceError } = await supabaseAdmin
+      .from('departments')
+      .insert({
+        organization_id: org.id,
+        name: workspace_name,
+        budget_limit: workspace_budget_limit || null,
+      })
+      .select()
+      .single()
+  
+    if (workspaceError || !workspace) {
+      log.error('POST /api/superadmin/clients: workspace insert failed', { error: workspaceError?.message, code: workspaceError?.code })
+      // Cleanup: delete org
+      await supabaseAdmin.from('organizations').delete().eq('id', org.id)
+      return NextResponse.json(
+        { error: 'Workspace konnte nicht erstellt werden' },
+        { status: 500 }
+      )
+    }
+  
+    // Step 3: Insert organization_settings
+    const { error: settingsError } = await supabaseAdmin
+      .from('organization_settings')
+      .insert({
+        organization_id: org.id,
+        primary_color: 'var(--accent)',
+        ai_guide_name: 'Toro',
+        ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
+        onboarding_completed: false,
+      })
+  
+    if (settingsError) {
+      log.error('POST /api/superadmin/clients: settings insert failed', { error: settingsError.message, code: settingsError.code })
+      // Cleanup: delete workspace + org
+      await supabaseAdmin.from('departments').delete().eq('id', workspace.id)
+      await supabaseAdmin.from('organizations').delete().eq('id', org.id)
+      return NextResponse.json(
+        { error: 'Einstellungen konnten nicht gespeichert werden' },
+        { status: 500 }
+      )
+    }
+  
+    // Step 4: Invite owner via email
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(owner_email, {
+      data: {
+        organization_id: org.id,
+        role: 'owner',
+      },
+      redirectTo: process.env.NEXT_PUBLIC_SITE_URL + '/auth/callback',
     })
-    .select()
-    .single()
-
-  if (orgError || !org) {
-    log.error('POST /api/superadmin/clients: org insert failed', { error: orgError?.message, code: orgError?.code })
+  
+    if (inviteError) {
+      // Org + Workspace wurden angelegt, nur E-Mail fehlgeschlagen → trotzdem erfolgreich zurückgeben
+      log.error('POST /api/superadmin/clients: invite email failed', { error: inviteError.message })
+      return NextResponse.json(
+        { organization: org, workspace, invited: false },
+        { status: 201 }
+      )
+    }
+  
     return NextResponse.json(
-      { error: 'Organisation konnte nicht erstellt werden' },
-      { status: 500 }
-    )
-  }
-
-  // Step 2: Insert workspace
-  const { data: workspace, error: workspaceError } = await supabaseAdmin
-    .from('departments')
-    .insert({
-      organization_id: org.id,
-      name: workspace_name,
-      budget_limit: workspace_budget_limit || null,
-    })
-    .select()
-    .single()
-
-  if (workspaceError || !workspace) {
-    log.error('POST /api/superadmin/clients: workspace insert failed', { error: workspaceError?.message, code: workspaceError?.code })
-    // Cleanup: delete org
-    await supabaseAdmin.from('organizations').delete().eq('id', org.id)
-    return NextResponse.json(
-      { error: 'Workspace konnte nicht erstellt werden' },
-      { status: 500 }
-    )
-  }
-
-  // Step 3: Insert organization_settings
-  const { error: settingsError } = await supabaseAdmin
-    .from('organization_settings')
-    .insert({
-      organization_id: org.id,
-      primary_color: 'var(--accent)',
-      ai_guide_name: 'Toro',
-      ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
-      onboarding_completed: false,
-    })
-
-  if (settingsError) {
-    log.error('POST /api/superadmin/clients: settings insert failed', { error: settingsError.message, code: settingsError.code })
-    // Cleanup: delete workspace + org
-    await supabaseAdmin.from('departments').delete().eq('id', workspace.id)
-    await supabaseAdmin.from('organizations').delete().eq('id', org.id)
-    return NextResponse.json(
-      { error: 'Einstellungen konnten nicht gespeichert werden' },
-      { status: 500 }
-    )
-  }
-
-  // Step 4: Invite owner via email
-  const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(owner_email, {
-    data: {
-      organization_id: org.id,
-      role: 'owner',
-    },
-    redirectTo: process.env.NEXT_PUBLIC_SITE_URL + '/auth/callback',
-  })
-
-  if (inviteError) {
-    // Org + Workspace wurden angelegt, nur E-Mail fehlgeschlagen → trotzdem erfolgreich zurückgeben
-    log.error('POST /api/superadmin/clients: invite email failed', { error: inviteError.message })
-    return NextResponse.json(
-      { organization: org, workspace, invited: false },
+      { organization: org, workspace, invited: true },
       { status: 201 }
     )
+  } catch (err) {
+    return apiError(err)
   }
-
-  return NextResponse.json(
-    { organization: org, workspace, invited: true },
-    { status: 201 }
-  )
 }

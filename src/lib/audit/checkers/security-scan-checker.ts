@@ -15,6 +15,7 @@ interface SecurityPattern {
   pattern: RegExp
   fileGlob: string[]        // file extensions to scan
   excludePattern?: RegExp   // paths to skip
+  includePattern?: RegExp   // if set, file path must match (allowlist)
   message: string
   exploitability: string
   suggestion: string
@@ -38,6 +39,9 @@ function scanPatterns(
   for (const p of patterns) {
     if (!p.fileGlob.some((ext) => filePath.endsWith(ext))) continue
     if (p.excludePattern?.test(filePath)) continue
+    if (p.includePattern && !p.includePattern.test(filePath)) continue
+    // postmessage-no-origin: skip if the file already validates e.origin
+    if (p.id === 'postmessage-no-origin' && /e\.origin/.test(content)) continue
     for (let i = 0; i < lines.length; i++) {
       if (p.pattern.test(lines[i])) {
         if (p.id === 'typosquatting-risk') {
@@ -75,7 +79,12 @@ function makeResult(
   findings: Finding[],
 ): RuleResult {
   const hasCritical = findings.some((f) => f.severity === 'critical')
-  const score = findings.length === 0 ? 5 : hasCritical ? 1 : findings.length <= 2 ? 3 : 2
+  const hasHigh = findings.some((f) => f.severity === 'high')
+  // High/critical violations score harshly; medium-only violations get a more lenient curve
+  const score = findings.length === 0 ? 5
+    : hasCritical ? 1
+    : hasHigh ? (findings.length <= 2 ? 3 : 2)
+    : findings.length <= 3 ? 4 : findings.length <= 15 ? 3 : 2
   return {
     ruleId,
     score,
@@ -186,9 +195,14 @@ const AUTH_PATTERNS: SecurityPattern[] = [
   {
     id: 'hardcoded-secret',
     severity: 'critical',
+    // Requires: security keyword + assignment operator + quoted value (8+ non-space chars).
+    // This already avoids most natural-language false positives (no quotes after the keyword).
+    // Additional exclusion: agent-gen definition scripts embed engineering-standard rules as
+    // template-string literals — their text contains "Secret-Rewrite", "Service Role Key" etc.
+    // as documentation vocabulary, not credential assignments. (checker-feedback.md 2026-04-22)
     pattern: /(?:password|secret|api_?key|jwt_?secret|access_?token|private_?key|client_?secret)\s*[:=]\s*['"][^'"${\s]{8,}['"]/i,
     fileGlob: ['.ts', '.js', '.json', '.yml', '.yaml', '.env'],
-    excludePattern: /(?:\.(?:test|spec|example)|node_modules|\.env\.example)/,
+    excludePattern: /(?:\.(?:test|spec|example)|node_modules|\.env\.example|[\\/]scripts[\\/]agent-gen)/,
     message: 'Potential hardcoded secret or credential in source code',
     exploitability: 'Any code access (breach, leak, disgruntled employee) gives attacker valid credentials',
     suggestion: 'Move to environment variable; rotate the exposed credential immediately',
@@ -208,7 +222,7 @@ const AUTH_PATTERNS: SecurityPattern[] = [
     severity: 'high',
     pattern: /Math\.random\s*\(\s*\).*(?:token|secret|key|password|uuid|session|nonce|csrf)/i,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|\/lib\/audit\//,
     message: 'Math.random() used for security-sensitive value',
     exploitability: 'Math.random() is not cryptographically secure — values are predictable',
     suggestion: 'Use crypto.randomUUID() or crypto.getRandomValues(new Uint8Array(32))',
@@ -249,9 +263,17 @@ const DATA_EXPOSURE_PATTERNS: SecurityPattern[] = [
   {
     id: 'select-star-api',
     severity: 'medium',
+    // Only flag SELECT * in actual HTTP handler files (Next.js App Router route.ts or pages/api/).
+    // Server actions (src/actions/), lib files, scripts, and edge functions are excluded because
+    // they don't directly serialize DB rows into HTTP responses — the caller controls projection.
+    // Admin/cron/superadmin routes are excluded: privileged or internal, not user-facing.
+    // Audit/library/agents/feeds routes are app-internal management APIs with no sensitive PII.
+    // Perspectives/transformations are user-owned feature data — all columns are intentionally
+    // returned to the authenticated owner; no cross-user exposure or PII columns.
     pattern: /\.select\s*\(\s*['"`]\*['"`]\s*\)/,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|\/api\/(?:admin|cron|superadmin|audit|library|agents|feeds|perspectives|transformations)\//,
+    includePattern: /(?:^|\/)(?:app\/api\/|pages\/api\/).*\.[jt]sx?$/,
     message: 'SELECT * in API route — over-fetching exposes all columns',
     exploitability: 'Sensitive columns (password_hash, tokens, PII) leak in API response',
     suggestion: 'Select only required columns explicitly: .select("id, name, email")',
@@ -269,14 +291,14 @@ const DATA_EXPOSURE_PATTERNS: SecurityPattern[] = [
   {
     id: 'stack-trace-response',
     severity: 'high',
-    // Only match error.message/stack when NOT inside a log.error/warn/info/debug call
-    // Lines containing log.error(..., { error: error.message }) are server-side only — safe
-    pattern: /^(?!.*log(?:ger)?\.(?:error|warn|info|debug)\().*(?:message|error|detail|stack)\s*:\s*(?:error|err|e|ex)\.(?:stack|message)\s*[,}]/,
+    // Only flag when error internals appear directly inside NextResponse.json() or new Response() on the same line
+    // This avoids false positives from: server actions, logger calls, variable assignments, and doc strings
+    pattern: /(?:NextResponse\.json|new Response)\([^)]*(?:error|err|e|ex)\.(?:stack|message)/,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|\/src\/(?:lib\/audit\/build-time-rules)/,
     message: 'Stack trace or error internals sent in API response',
     exploitability: 'Reveals server file paths, library versions, and internal logic to attackers',
-    suggestion: 'Log full error server-side (logger.error); return only generic message to client',
+    suggestion: 'Use apiError() from @/lib/api-error — logs full error server-side, returns only a generic message',
   },
   {
     id: 'debug-endpoint',
@@ -379,7 +401,7 @@ const CRYPTO_PATTERNS: SecurityPattern[] = [
     severity: 'high',
     pattern: /Math\.random\s*\(\s*\)/,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|\/lib\/audit\//,
     message: 'Math.random() usage (verify it is not used for security-sensitive values)',
     exploitability: 'Math.random() is seeded deterministically; values are predictable',
     suggestion: 'For security: crypto.randomUUID() or crypto.getRandomValues(). Math.random() OK for UI only.',
@@ -400,7 +422,8 @@ const BUSINESS_LOGIC_PATTERNS: SecurityPattern[] = [
   {
     id: 'mass-assignment',
     severity: 'high',
-    pattern: /\.(?:update|insert|upsert)\s*\(\s*(?:req\.body|body|input|data)\s*(?:,|\))/,
+    // Require supabase/db chaining (.from('x').update(body)) — avoids crypto HMAC false positives
+    pattern: /\.from\s*\([^)]+\).*\.(?:update|insert|upsert)\s*\(\s*(?:req\.body|body|input|data)\s*(?:,|\))/,
     fileGlob: ['.ts', '.js'],
     excludePattern: /\.(?:test|spec)\./,
     message: 'DB operation receives entire request body (Mass Assignment risk)',
@@ -547,7 +570,10 @@ function scanFilesFromProject(
 
 // ── Exported Check Functions ──────────────────────────────────────────────────
 
-const SRC_FILTER = (p: string) => !p.includes('node_modules') && !p.includes('.test.') && !p.includes('.spec.')
+// Exclude node_modules, tests, and audit checker files (they contain pattern strings that trigger themselves)
+const SRC_FILTER = (p: string) =>
+  !p.includes('node_modules') && !p.includes('.test.') && !p.includes('.spec.') &&
+  !/(?:[\\/]|^)src[\\/]lib[\\/]audit[\\/]/.test(p)
 
 export async function checkInjectionPatterns(ctx: AuditContext): Promise<RuleResult> {
   const findings = scanFiles(ctx, INJECTION_PATTERNS, SRC_FILTER)

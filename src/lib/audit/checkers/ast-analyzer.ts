@@ -147,7 +147,11 @@ function parseFile(filePath: string, content: string): ASTAnalysis {
     if (ts.isCatchClause(node)) {
       const body = node.block
       const stmts = body.statements
-      const isEmpty = stmts.length === 0
+      // A catch with only an ignore comment (e.g. `catch { /* ignore */ }`) is intentional
+      const bodyText = content.slice(body.pos, body.end)
+      // Any comment in the catch body means the developer considered the empty catch intentional
+      const hasIgnoreComment = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/.test(bodyText)
+      const isEmpty = stmts.length === 0 && !hasIgnoreComment
       const hasOnlyConsoleLog = stmts.length === 1 && isConsoleCall(stmts[0])
       const hasRethrow = stmts.some((s) => ts.isThrowStatement(s))
       result.catchBlocks.push({ line, isEmpty, hasOnlyConsoleLog, hasRethrow })

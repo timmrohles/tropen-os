@@ -3,26 +3,27 @@ src/utils/supabase/server.ts:
 │export function createClient()
 ⋮...
 
-src/lib/supabase-admin.ts:
-⋮...
-│export supabaseAdmin
-│function getClient(): SupabaseClient
-│_client: SupabaseClient | null
-⋮...
-
 src/lib/logger.ts:
 ⋮...
 │export function createLogger(service: string)
 │export function redact(_value: unknown): string
-│type LogLevel = 'debug' | 'info' | 'warn' | 'error'
-│function write(level: LogLevel, service: string, message: string, ...args: unknown[])
-│isProd
+⋮...
+
+src/lib/supabase-admin.ts:
+⋮...
+│export supabaseAdmin
 ⋮...
 
 src/lib/api/projects.ts:
 ⋮...
 │export function getAuthUser()
 │export function verifyProjectAccess(projectId: string, me: { id: string; organization_id: string; role: string }): Promise<boolean>
+⋮...
+
+src/lib/api-error.ts:
+⋮...
+│export function apiError(err: unknown, code = 'INTERNAL_ERROR', status = 500): NextResponse
+│export function apiValidationError(zodError: unknown): NextResponse
 ⋮...
 
 src/utils/supabase/client.ts:
@@ -36,7 +37,36 @@ src/lib/api/workspaces.ts:
 │export function canWriteWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
 │export function requireWorkspaceAccess(workspaceId: string, me: AuthUser): Promise<WorkspacePlanC | null>
 │export function canReadWorkspace(workspaceId: string, me: AuthUser): Promise<boolean>
-│export export type AuthUser = { id: string; organization_id: string; role: OrgRole | 'superadmin' }
+⋮...
+
+src/lib/audit/types.ts:
+⋮...
+│export interface AuditContext
+│export interface RuleResult
+│export interface Finding
+│export interface AuditReport
+│export interface CategoryScore
+│export export type AgentSource =
+│export export type FixType = 'code-fix' | 'code-gen' | 'refactoring' | 'manual'
+│export interface AuditRule
+│export interface PackageJson
+│export export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'
+│export interface TsConfig
+│export interface GitInfo
+│export interface AuditOptions
+│export CATEGORIES: CategoryDefinition[]
+│export export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
+│export export type RuleTier = 'starter' | 'production' | 'enterprise'
+⋮...
+
+src/lib/api/pagination.ts:
+⋮...
+│export function parsePaginationParams(searchParams: URLSearchParams, defaultLimit = 100, maxLimit = 500): { limit: number; offset: number }
+⋮...
+
+src/lib/validators/index.ts:
+⋮...
+│export function validateBody(req: Request, schema: ZodSchema<T>): Promise<{ data: T; error: null } | { data: null; error: NextResponse }>
 ⋮...
 
 src/db/schema.ts:
@@ -51,117 +81,22 @@ src/db/schema.ts:
 │export export type WorkspaceMessage = typeof workspaceMessages.$inferSelect
 │export export type ConnectionType = typeof connectionTypeEnum.enumValues[number]
 │export export type ConnectionStrength = typeof connectionStrengthEnum.enumValues[number]
-│export export type Department = typeof departments.$inferSelect
-│export export type DepartmentInsert = typeof departments.$inferInsert
-│export export type WorkspaceTemplate = typeof workspaceTemplates.$inferSelect
-│export export type WorkspaceTemplateInsert = typeof workspaceTemplates.$inferInsert
-│export export type WorkspaceInsert = typeof workspaces.$inferInsert
-│export export type WorkspaceParticipantInsert = typeof workspaceParticipants.$inferInsert
-│export export type CardInsert = typeof cards.$inferInsert
-│export export type CardHistory = typeof cardHistory.$inferSelect
-│export export type CardHistoryInsert = typeof cardHistory.$inferInsert
-│export export type ConnectionInsert = typeof connections.$inferInsert
-│export export type KnowledgeEntry = typeof knowledgeEntries.$inferSelect
-│export export type KnowledgeEntryInsert = typeof knowledgeEntries.$inferInsert
-│export export type WorkspaceMessageInsert = typeof workspaceMessages.$inferInsert
-│export export type Operator = typeof operators.$inferSelect
-│export export type OperatorInsert = typeof operators.$inferInsert
-│export export type OperatorResult = typeof operatorResults.$inferSelect
-│export export type OperatorResultInsert = typeof operatorResults.$inferInsert
-│export export type WorkspaceOutcome = typeof workspaceOutcomes.$inferSelect
-│export export type WorkspaceOutcomeInsert = typeof workspaceOutcomes.$inferInsert
-│export export type SystemOutcome = typeof outcomes.$inferSelect
-│export export type SystemOutcomeInsert = typeof outcomes.$inferInsert
-│export export type MessageRole = typeof messageRoleEnum.enumValues[number]
-│export export type MessageScope = typeof messageScopeEnum.enumValues[number]
-│export export type OperatorType = typeof operatorTypeEnum.enumValues[number]
-│export export type OperatorStatus = typeof operatorStatusEnum.enumValues[number]
-│export export type OutcomeType = typeof outcomeTypeEnum.enumValues[number]
-│export export type KnowledgeEntryType = typeof knowledgeEntryTypeEnum.enumValues[number]
-│export export type ParticipantRole = typeof participantRoleEnum.enumValues[number]
-│export export type FeedSource = typeof feedSources.$inferSelect
-│export export type FeedSourceInsert = typeof feedSources.$inferInsert
-│export export type FeedSchema = typeof feedSchemas.$inferSelect
-│export export type FeedSchemaInsert = typeof feedSchemas.$inferInsert
-│export export type FeedSourceSchema = typeof feedSourceSchemas.$inferSelect
-│export export type FeedItem = typeof feedItems.$inferSelect
-│export export type FeedItemInsert = typeof feedItems.$inferInsert
-│export export type FeedProcessingLog = typeof feedProcessingLogs.$inferSelect
-│export export type FeedDistribution = typeof feedDistributions.$inferSelect
-│export export type FeedDistributionInsert = typeof feedDistributions.$inferInsert
-│export export type FeedSourceType = typeof feedSourceTypeEnum.enumValues[number]
-│export export type FeedImportance = typeof feedImportanceEnum.enumValues[number]
-│export export type FeedDistributionType = typeof feedDistributionTypeEnum.enumValues[number]
-│export export type FeedDigestMode = typeof feedDigestModeEnum.enumValues[number]
-│export export type FeedDigestFormat = typeof feedDigestFormatEnum.enumValues[number]
-│export workspaceDomainEnum
-│export cardTypeEnum
-│export cardStatusEnum
-│export connectionTypeEnum
-│export connectionStrengthEnum
-│export messageRoleEnum
-│export messageScopeEnum
-│export operatorTypeEnum
-│export operatorStatusEnum
-│export outcomeTypeEnum
-│export knowledgeEntryTypeEnum
-│export participantRoleEnum
-│export departments
-│export workspaceTemplates
-│export workspaces
-│export workspaceParticipants
-│export cards
-│export cardHistory
-│export connections
-│export knowledgeEntries
-│export workspaceMessages
-│export operators
-│export operatorResults
-│export workspaceOutcomes
-│export outcomes
-│export workspacesRelations
-│export workspaceParticipantsRelations
-│export cardsRelations
-│export cardHistoryRelations
-│export connectionsRelations
-│export knowledgeEntriesRelations
-│export workspaceMessagesRelations
-│export operatorsRelations
-│export operatorResultsRelations
-│export workspaceOutcomesRelations
-│export workspaceTemplatesRelations
-│export feedSourceTypeEnum
-│export feedImportanceEnum
-│export feedDistributionTypeEnum
-│export feedDigestModeEnum
-│export feedDigestFormatEnum
-│export feedSources
-│export feedSchemas
-│export feedSourceSchemas
-│export feedItems
-│export feedProcessingLogs
-│export feedDistributions
-│tsvector
 ⋮...
 
-src/lib/audit/types.ts:
+src/lib/audit/index.ts:
 ⋮...
-│export interface AuditContext
-│export interface Finding
-│export interface RuleResult
-│export interface AuditReport
-│export interface CategoryScore
-│export export type AgentSource =
-│export interface AuditRule
-│export export type CheckMode = 'file-system' | 'cli' | 'repo-map' | 'documentation' | 'manual' | 'external-tool'
-│export interface PackageJson
-│export interface TsConfig
-│export interface GitInfo
-│export interface AuditOptions
-│export export type EnforcementLevel = 'blocked' | 'prevented' | 'reviewed' | 'advisory'
-│export CATEGORIES: CategoryDefinition[]
-│export interface CategoryDefinition
-│export interface ExternalToolsOptions
+│export function runAudit(ctx: AuditContext, options: AuditOptions): Promise<AuditReport>
+│export function buildAuditContext(rootPath: string, existingRepoMap?: AuditContext['repoMap'], tokenBudget = 8192): Promise<AuditContext>
+│export function buildAuditContextFromFiles(files: Array<{ path: string; content: string }>, tokenBudget = 4096): Promise<AuditContext>
+⋮...
+
+src/lib/repo-map/types.ts:
+⋮...
+│export interface RepoSymbol
+│export interface RepoMap
+│export interface FileDependency
+│export interface RepoFile
+│export interface RepoMapOptions
 ⋮...
 
 src/lib/workspace-types.ts:
@@ -175,52 +110,30 @@ src/lib/workspace-types.ts:
 │export interface GuidedStep
 │export interface SearchSource
 │export interface JungleProject
-│export interface GuidedOption
-│export interface GuidedAnswer
-│export interface GuidedData
-│export interface WorkspaceState
-│export export type PeriodValue = (typeof PERIODS)[number]['value']
-│export export type TaskValue = (typeof TASK_TYPES)[number]['value']
-│export export type AttachmentMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf'
-│export function formatDate(dateStr: string): string
-│export function defaultConvTitle(): string
-│export function matchesPeriod(conv: Conversation, period: PeriodValue): boolean
-│export PERIODS
-│export TASK_TYPES
 ⋮...
 
-src/lib/repo-map/types.ts:
+src/i18n/routing.ts:
 ⋮...
-│export interface RepoSymbol
-│export interface RepoFile
-│export interface FileDependency
-│export interface RepoMap
-│export interface RepoMapOptions
+│export routing
+│export export type Locale = (typeof routing.locales)[number]
 ⋮...
 
-src/lib/types.ts:
+src/app/[locale]/(app)/admin/todos/todo.types.ts:
 ⋮...
-│export interface User
-│export interface Message
-│export interface ModelCatalog
-│export interface Database
-│export export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'
-│export interface Organization
-│export interface Department
-│export interface DepartmentMember
-│export interface Conversation
-│export interface UsageLog
-│export interface RoutingInfo
-│export export type Plan = 'free' | 'pro' | 'enterprise'
-│export export type DepartmentRole = 'admin' | 'member' | 'viewer'
-│export export type WorkspaceRole = DepartmentRole
-│export export type MessageRole = 'user' | 'assistant' | 'guided_picker' | 'guided_step' | 'guided_summary'
-│export export type Provider = 'openai' | 'anthropic' | 'mistral' | 'google'
-│export export type ModelClass = 'fast' | 'deep' | 'safe'
-│export export type TaskType = 'chat' | 'summarize' | 'extract' | 'research' | 'create'
-│export export type Agent = 'general' | 'knowledge' | 'content' | 'business'
-│export export type Workspace = Department
-│export export type WorkspaceMember = DepartmentMember
+│export interface Todo
+⋮...
+
+src/lib/llm/providers/types.ts:
+⋮...
+│export interface ReviewResponse
+│export interface ReviewProvider
+│export interface ProviderFinding
+⋮...
+
+src/app/api/chat/generate-chips/chips-prompt.ts:
+⋮...
+│export function buildChipsPrompt(lastResponse: string): string
+│export function parseChipsResponse(raw: string): ChipItem[]
 ⋮...
 
 src/types/feeds.ts:
@@ -234,25 +147,16 @@ src/types/feeds.ts:
 │export interface FeedRunResult
 │export interface FeedItem
 │export interface FeedDistribution
-│export export type FeedSourceType = 'rss' | 'email' | 'api' | 'url'
-│export interface FeedRunError
-│export interface Stage2Result
-│export interface FeedNotification
-│export interface FeedSchema
-│export export type FeedItemStatus = 'unread' | 'read' | 'saved' | 'archived' | 'deleted' | 'not_relevant'
-│export export type FeedSourceStatus = 'active' | 'paused' | 'error' | 'archived'
-│export export type FeedRunStatus = 'running' | 'success' | 'partial' | 'error'
 ⋮...
 
-src/lib/validators/index.ts:
+src/app/api/chat/project-intro/project-intro-prompt.ts:
 ⋮...
-│export function validateBody(req: Request, schema: ZodSchema<T>): Promise<{ data: T; error: null } | { data: null; error: NextResponse }>
+│export function buildProjectIntroPrompt(args: BuildPromptArgs): string
 ⋮...
 
-src/app/admin/todos/todo.types.ts:
+src/types/workspace.ts:
 ⋮...
-│export interface Todo
-│export export type Status = 'offen' | 'in_arbeit' | 'erledigt' | 'blockiert' | 'geplant' | 'teilweise'
+│export interface WorkspaceWithDetails extends Workspace
 ⋮...
 
 src/components/cockpit/widgets/shared.tsx:
@@ -262,132 +166,9 @@ src/components/cockpit/widgets/shared.tsx:
 │export function formatRelativeDate(dateStr: string | null | undefined): string
 ⋮...
 
-src/lib/llm/providers/types.ts:
-⋮...
-│export interface ReviewResponse
-│export interface ReviewProvider
-│export interface ProviderFinding
-│export export type ProviderId = 'anthropic' | 'openai' | 'google' | 'xai'
-⋮...
-
-src/types/qa.ts:
-⋮...
-│export interface OverviewResponse
-│export interface QualityResponse
-│export interface RoutingResponse
-│export interface PerformanceResponse
-│export interface ComplianceResponse
-│export export type QaRunType =
-│export export type QaComplianceStatus = 'pass' | 'warn' | 'fail'
-│export interface RunResponse
-│export interface ModelScore
-│export interface BiasScore
-│export interface RoutingLogEntry
-│export interface ComplianceItem
-│export interface QaErrorResponse
-│export export type QaRunStatus = 'running' | 'passed' | 'failed' | 'partial'
-│export export type QaTriggeredBy = 'ci_cd' | 'manual' | 'scheduled'
-│export export type QaMetricType =
-⋮...
-
 src/lib/chat/parse-artifacts.ts:
 ⋮...
 │export interface ArtifactSegment
-│export function parseArtifacts(content: string): ContentSegment[]
-│export interface TextSegment
-│export export type ArtifactType = 'react' | 'chart' | 'code' | 'document' | 'table' | 'list' | 'data' | 'image' | 'other' | 'presentation'
-│export export type ContentSegment = ArtifactSegment | TextSegment
-⋮...
-
-src/app/projects/_components/types.ts:
-⋮...
-│export export type Project = {
-│export function formatRelDate(iso: string): string
-│export function getProjectIcon(name: string | null): PhosphorIconType
-│export export type Chat = { id: string; title: string | null; updated_at: string }
-│export export type Doc  = { id: string; filename: string; file_size: number | null; mime_type: string | null; created_at: string }
-│export export type Mem  = { id: string; type: string; content: string; created_at: string; frozen?: boolean }
-│export export type ProjectTab = 'uebersicht' | 'chats' | 'dokumente' | 'gedaechtnis'
-│export function formatBytes(b: number | null): string
-│export ICON_OPTIONS: { name: string; Icon: PhosphorIconType }[]
-⋮...
-
-src/hooks/use-focus-trap.ts:
-⋮...
-│export function useFocusTrap(active: boolean)
-⋮...
-
-src/lib/fix-engine/types.ts:
-⋮...
-│export interface FixContext
-│export interface FileDiff
-│export interface GeneratedFix
-│export interface FixLlmResponse
-│export interface DiffHunk
-│export interface RiskAssessment
-│export interface ProviderFixDraft
-│export interface ConsensusFix
-│export export type FixStatus = 'pending' | 'applied' | 'rejected'
-⋮...
-
-src/lib/repo-map/index.ts:
-⋮...
-│function generateRepoMap(options: RepoMapOptions): Promise<RepoMap>
-│function generateRepoMapFromFiles(files: Array<{ path: string; content: string }>, options: { tokenBudget?: number | 'auto' | 'small' | 'medium' | 'large' } = {}): Promise<RepoMap>
-│function getCompressedRepoMap(rootPath: string, tokenBudget: RepoMapOptions['tokenBudget'] = 'auto'): Promise<string>
-│VERSION
-⋮...
-
-src/lib/llm/anthropic.ts:
-⋮...
-│export anthropic
-⋮...
-
-src/components/ParrotIcon.tsx:
-⋮...
-│export function ParrotIcon({ size = 24, className, style }: ParrotIconProps)
-⋮...
-
-src/types/workspace-plan-c.types.ts:
-⋮...
-│export interface CardHistoryEntry
-│export interface WorkspacePlanC
-│export interface CardPlanC
-⋮...
-
-src/types/workspace.ts:
-⋮...
-│export interface WorkspaceWithDetails extends Workspace
-│export interface WorkspaceMeta
-│export interface ParticipantWithUser extends WorkspaceParticipant
-⋮...
-
-src/lib/api/pagination.ts:
-⋮...
-│export function parsePaginationParams(searchParams: URLSearchParams, defaultLimit = 100, maxLimit = 500): { limit: number; offset: number }
-⋮...
-
-src/lib/repo-map/parser.ts:
-⋮...
-│export function parseSource(filePath: string, content: string): ParsedFile
-│export export type ParsedFile = {
-│export function getLineNumber(sourceFile: ts.SourceFile, pos: number): number
-│export function getFirstLine(text: string): string
-⋮...
-
-src/components/workspaces/CommentThread.tsx:
-⋮...
-│export export type Comment = {
-│export function CommentThread({ workspaceId, comments: initial, currentUserId, canAdmin, isGuest = false, itemId = null }: {
-  workspaceId: string
-  comments: Comment[]
-  currentUserId: string | null
-  c
-⋮...
-
-src/components/Parrot.tsx:
-⋮...
-│export function Parrot({ size = 24, style, className }: ParrotProps)
 ⋮...
 
 src/lib/supabase/server.ts:
@@ -395,52 +176,491 @@ src/lib/supabase/server.ts:
 │export function createServiceClient()
 ⋮...
 
-src/components/admin/qa/QaShared.tsx:
+src/lib/llm/anthropic.ts:
 ⋮...
-│export function Skeleton({ width, height }: { width?: string | number; height?: string | number })
-│export function SectionCard({
-  title,
-  action,
-  children,
-}: {
-  title: string
-  action?: React.ReactNode
-  children: React.ReactNode
-})
-│export function KpiCard({
-  label,
-  value,
-  sub,
-  valueColor = 'var(--accent)',
-  loading = false,
-}: {
-  label: string
-  value: string
-  sub: string
-  valueColor?: string
-  loading?: boolean
-
-│export s: Record<string, React.CSSProperties>
+│export anthropic
 ⋮...
 
-src/lib/cockpit/widgetCatalog.ts:
+src/types/qa.ts:
 ⋮...
-│export interface WidgetMeta
+│export export type QaRunType =
+│export interface OverviewResponse
+│export interface QualityResponse
+│export interface RoutingResponse
+│export interface PerformanceResponse
+│export interface ComplianceResponse
 ⋮...
 
-src/app/onboarding/onboarding.styles.ts:
+src/components/ParrotIcon.tsx:
 ⋮...
-│export s: Record<string, React.CSSProperties>
+│export function ParrotIcon({ size = 24, className, style }: ParrotIconProps)
 ⋮...
 
-src/types/agents.ts:
+src/lib/file-access/types.ts:
 ⋮...
-│export interface Skill
-│export interface AgentSkill
-│export interface AgentStep
-│export interface AgentTriggerConfig
-│export interface Agent
-│export interface AgentRun
-│export function mapSkill(row: Record<string, any>): Skill
-│export function mapAgent(row: Record<string, any>): Agent
+│export interface ProjectFile
+⋮...
+
+src/lib/fix-engine/types.ts:
+⋮...
+│export interface FixContext
+⋮...
+
+src/lib/errors.ts:
+⋮...
+│export class AppError extends Error
+⋮...
+
+src/lib/types.ts:
+⋮...
+│export interface User
+│export interface Message
+│export interface ModelCatalog
+│export interface Database
+⋮...
+
+src/lib/feeds/ssrf-guard.ts:
+⋮...
+│export function isSafeUrl(rawUrl: string): Promise<{ safe: boolean; reason?: string }>
+⋮...
+
+src/hooks/use-focus-trap.ts:
+⋮...
+│export function useFocusTrap(active: boolean)
+⋮...
+
+src/app/api/admin/branding/route.ts:
+⋮...
+│export function GET()
+│export function PATCH(request: Request)
+⋮...
+
+src/app/api/admin/budget/route.ts:
+⋮...
+│export function GET()
+│export function PATCH(req: NextRequest)
+⋮...
+
+src/app/api/admin/logs/route.ts:
+⋮...
+│export function GET(req: NextRequest)
+⋮...
+
+src/app/api/admin/models/[id]/route.ts:
+⋮...
+│export function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/admin/models/route.ts:
+⋮...
+│export function GET()
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/admin/qa/compliance/[id]/route.ts:
+⋮...
+│export function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/admin/qa/compliance/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/admin/qa/overview/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/admin/qa/performance/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/admin/qa/quality/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/admin/qa/routing/route.ts:
+⋮...
+│export function GET(request: NextRequest)
+⋮...
+
+src/app/api/admin/qa/runs/route.ts:
+⋮...
+│export function POST(request: NextRequest)
+⋮...
+
+src/app/api/admin/users/route.ts:
+⋮...
+│export function GET(request: NextRequest)
+│export function POST(request: Request)
+⋮...
+
+src/app/api/agents/[id]/copy/route.ts:
+⋮...
+│export function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/agents/[id]/route.ts:
+⋮...
+│export function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> })
+│export function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/agents/[id]/run/route.ts:
+⋮...
+│export function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/agents/[id]/runs/route.ts:
+⋮...
+│export function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/agents/route.ts:
+⋮...
+│export function GET(request: NextRequest)
+│export function POST(request: NextRequest)
+⋮...
+
+src/app/api/agents/runs/[run_id]/route.ts:
+⋮...
+│export function GET(_request: NextRequest, { params }: { params: Promise<{ run_id: string }> })
+⋮...
+
+src/app/api/agents/webhook/[agent_id]/route.ts:
+⋮...
+│export function POST(request: NextRequest, { params }: { params: Promise<{ agent_id: string }> })
+⋮...
+
+src/app/api/announcements/[id]/route.ts:
+⋮...
+│export function PATCH(request: Request, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/announcements/route.ts:
+⋮...
+│export function GET(_request: Request)
+│export function POST(request: Request)
+⋮...
+
+src/app/api/artifacts/[id]/route.ts:
+⋮...
+│export function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/artifacts/export-pptx/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/artifacts/route.ts:
+⋮...
+│export function GET(req: NextRequest)
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/artifacts/save/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/artifacts/transform/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/audit/export-rules/route.ts:
+⋮...
+│export function GET(req: NextRequest)
+⋮...
+
+src/app/api/audit/findings/[id]/route.ts:
+⋮...
+│export function PATCH(request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/audit/fix/apply/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/fix/batch-generate/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/fix/consensus/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/fix/generate/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/fix/reject/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/review/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/run/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/runs/[id]/route.ts:
+⋮...
+│export function GET(_request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/audit/runs/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/audit/self-assessment/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/tasks/[id]/route.ts:
+⋮...
+│export function PATCH(request: Request, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/audit/tasks/route.ts:
+⋮...
+│export function GET(request: Request)
+│export function POST(request: Request)
+⋮...
+
+src/app/api/audit/trigger/route.ts:
+⋮...
+│export function POST(request: Request)
+⋮...
+
+src/app/api/beta/feedback/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/beta/onboarding-complete/route.ts:
+⋮...
+│export function POST()
+⋮...
+
+src/app/api/beta/waitlist/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/bookmarks/route.ts:
+⋮...
+│export function GET(req: NextRequest)
+│export function POST(req: NextRequest)
+│export function DELETE(req: NextRequest)
+⋮...
+
+src/app/api/capabilities/[id]/outcomes/route.ts:
+⋮...
+│export function GET(_req: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/capabilities/org-settings/route.ts:
+⋮...
+│export function GET()
+│export function PATCH(req: NextRequest)
+⋮...
+
+src/app/api/capabilities/resolve/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/capabilities/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/capabilities/settings/route.ts:
+⋮...
+│export function PATCH(req: NextRequest)
+⋮...
+
+src/app/api/chat/generate-chips/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/chat/project-intro/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/chat/stream/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/cockpit/artifact-stats/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/budget/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/code-health/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/feed-highlights/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/projects/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/recent-activity/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/recommendation/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/setup/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/cockpit/team-activity/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cockpit/widgets/[id]/route.ts:
+⋮...
+│export function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/cockpit/widgets/route.ts:
+⋮...
+│export function GET()
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/conversations/[id]/extract-memory/route.ts:
+⋮...
+│export function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/conversations/[id]/set-intention/route.ts:
+⋮...
+│export function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/conversations/[id]/share/route.ts:
+⋮...
+│export function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> })
+│export function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/conversations/new-from-message/route.ts:
+⋮...
+│export function POST(req: Request)
+⋮...
+
+src/app/api/conversations/reply/route.ts:
+⋮...
+│export function POST(req: NextRequest)
+⋮...
+
+src/app/api/cron/agents/route.ts:
+⋮...
+│export function GET(request: NextRequest)
+⋮...
+
+src/app/api/cron/feed-cleanup/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cron/feed-digest/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cron/feed-fetch/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cron/feed-process/route.ts:
+⋮...
+│export function GET()
+⋮...
+
+src/app/api/cron/sync-feeds/route.ts:
+⋮...
+│export function GET(request: Request)
+⋮...
+
+src/app/api/debug/feeds/route.ts:
+⋮...
+│export function POST()
+│export function GET()
+⋮...
+
+src/app/api/feeds/[id]/distributions/[distId]/route.ts:
+⋮...
+│export function DELETE(_req: Request, { params }: { params: Promise<{ id: string; distId: string }> })
+⋮...
+
+src/app/api/feeds/[id]/distributions/route.ts:
+⋮...
+│export function GET(_req: Request, { params }: { params: Promise<{ id: string }> })
+│export function POST(req: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/feeds/[id]/pause/route.ts:
+⋮...
+│export function POST(request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/feeds/[id]/resume/route.ts:
+⋮...
+│export function POST(_request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/feeds/[id]/run/route.ts:
+⋮...
+│export function POST(_request: Request, { params }: { params: Promise<{ id: string }> })
+⋮...
+
+src/app/api/feeds/[id]/runs/route.ts:
+⋮...
+│export function GET(request: Request, { params }: { params: Promise<{ id: string }> })
 ⋮...

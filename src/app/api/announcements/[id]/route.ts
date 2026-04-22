@@ -51,7 +51,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Ein Fehler ist aufgetreten' }, { status: access.status })
   }
 
-  const body = await request.json()
+  let body: { is_active?: unknown }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }) }
   const { is_active } = body
 
   if (typeof is_active !== 'boolean') {

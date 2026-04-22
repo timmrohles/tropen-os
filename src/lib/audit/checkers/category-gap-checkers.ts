@@ -1,7 +1,7 @@
 // src/lib/audit/checkers/category-gap-checkers.ts
 // Fills category gaps: cat-7 (Performance), cat-11 (CI/CD), cat-20 (Cost Awareness).
 
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import type { AuditContext, RuleResult, Finding } from '../types'
 
@@ -54,8 +54,13 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
   }
 
   // Full lodash import instead of specific modules
+  // Only flag when lodash is in dependencies/devDependencies, not pnpm.overrides (security pins)
   const pkgContent = readContent(ctx, 'package.json')
-  if (pkgContent && /"lodash"\s*:/.test(pkgContent) && !/"lodash-es"\s*:/.test(pkgContent)) {
+  const pkgJson = pkgContent ? (() => { try { return JSON.parse(pkgContent) } catch { return null } })() : null
+  const lodashInDeps = pkgJson && (
+    pkgJson.dependencies?.lodash || pkgJson.devDependencies?.lodash
+  )
+  if (lodashInDeps && !/"lodash-es"\s*:/.test(pkgContent ?? '')) {
     violations.push({
       severity: 'info',
       message: 'Full lodash imported — adds ~70KB to bundle. Use lodash-es or specific imports',
@@ -95,9 +100,20 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
 // ── cat-11: CI/CD — Pipeline Existence ──────────────────────────────────────
 
 export async function checkCIPipelineExists(ctx: AuditContext): Promise<RuleResult> {
-  const ciPaths = ctx.filePaths.filter(p =>
+  // ctx.filePaths only covers src/ — check .github/workflows/ via disk when rootPath is available
+  let ciPaths = ctx.filePaths.filter(p =>
     p.includes('.github/workflows/') && (p.endsWith('.yml') || p.endsWith('.yaml'))
   )
+
+  if (ciPaths.length === 0 && ctx.rootPath) {
+    const { readdirSync, existsSync } = await import('fs')
+    const { join } = await import('path')
+    const workflowDir = join(ctx.rootPath, '.github', 'workflows')
+    if (existsSync(workflowDir)) {
+      ciPaths = readdirSync(workflowDir)
+        .filter(f => f.endsWith('.yml') || f.endsWith('.yaml'))
+    }
+  }
 
   if (ciPaths.length > 0) {
     return pass('cat-11-rule-7', 5, `CI pipeline found: ${ciPaths.length} workflow(s)`)
@@ -106,7 +122,9 @@ export async function checkCIPipelineExists(ctx: AuditContext): Promise<RuleResu
   // Check for other CI systems
   const hasGitlabCI = ctx.filePaths.some(p => p.endsWith('.gitlab-ci.yml'))
   const hasCircleCI = ctx.filePaths.some(p => p.includes('.circleci/config.yml'))
-  const hasVercelJson = ctx.filePaths.some(p => p.endsWith('vercel.json'))
+  const hasVercelJson = ctx.rootPath
+    ? existsSync(join(ctx.rootPath, 'vercel.json'))
+    : ctx.filePaths.some(p => p.endsWith('vercel.json'))
 
   if (hasGitlabCI || hasCircleCI) {
     return pass('cat-11-rule-7', 4, 'CI pipeline found (non-GitHub)')
@@ -124,9 +142,21 @@ export async function checkCIPipelineExists(ctx: AuditContext): Promise<RuleResu
 }
 
 export async function checkCIHasTypeCheck(ctx: AuditContext): Promise<RuleResult> {
-  const ciFiles = ctx.filePaths.filter(p =>
+  let ciFiles = ctx.filePaths.filter(p =>
     p.includes('.github/workflows/') && (p.endsWith('.yml') || p.endsWith('.yaml'))
   )
+
+  // Fallback: read from disk (same as checkCIPipelineExists)
+  if (ciFiles.length === 0 && ctx.rootPath) {
+    const { readdirSync, existsSync } = await import('fs')
+    const { join } = await import('path')
+    const workflowDir = join(ctx.rootPath, '.github', 'workflows')
+    if (existsSync(workflowDir)) {
+      ciFiles = readdirSync(workflowDir).filter(f => f.endsWith('.yml') || f.endsWith('.yaml'))
+        .map(f => join('.github', 'workflows', f))
+    }
+  }
+
   if (ciFiles.length === 0) {
     return pass('cat-11-rule-8', 3, 'No CI — type-check not applicable')
   }
@@ -159,11 +189,13 @@ export async function checkLLMTokenLimits(ctx: AuditContext): Promise<RuleResult
   const violations: Finding[] = []
   for (const file of ctx.repoMap.files) {
     if (!file.path.endsWith('.ts') && !file.path.endsWith('.tsx')) continue
+    // Skip audit infrastructure — checker code references LLM function names as strings, not actual calls
+    if (/(?:[\\/]|^)src[\\/]lib[\\/]audit[\\/]/.test(file.path)) continue
     const content = readContent(ctx, file.path)
     if (!content) continue
 
-    // Find LLM API calls
-    const hasLLMCall = /completions\.create|generateText|streamText|chat\.create/i.test(content)
+    // Find LLM API calls — require ( to avoid matching string references like Set(['generateText', ...])
+    const hasLLMCall = /completions\.create\s*\(|generateText\s*\(|streamText\s*\(|chat\.create\s*\(/i.test(content)
     if (!hasLLMCall) continue
 
     const hasTokenLimit = /max_tokens|maxTokens|maxOutputTokens|max_completion_tokens/i.test(content)
@@ -197,6 +229,16 @@ export async function checkAIRouteRateLimiting(ctx: AuditContext): Promise<RuleR
   })
 
   if (aiRoutes.length === 0) return pass('cat-20-rule-7', 5, 'No AI API routes found')
+
+  // Middleware-level rate limiting covers all routes centrally — check that first
+  const middlewareFiles = ['middleware.ts', 'src/middleware.ts', 'src/proxy.ts', 'proxy.ts']
+  const hasMiddlewareRateLimit = middlewareFiles.some(f => {
+    const content = readContent(ctx, f)
+    return content && /rateLimit|rateLimiter|upstash|Ratelimit/i.test(content)
+  })
+  if (hasMiddlewareRateLimit) {
+    return pass('cat-20-rule-7', 5, 'AI routes protected by middleware-level rate limiting')
+  }
 
   const violations: Finding[] = []
   for (const route of aiRoutes) {

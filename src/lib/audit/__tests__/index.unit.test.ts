@@ -55,7 +55,7 @@ describe('runAudit', () => {
     const ctx = await buildAuditContext('/repo')
     const report = await runAudit(ctx, { rootPath: '/repo' })
 
-    expect(report.categories).toHaveLength(25)
+    expect(report.categories).toHaveLength(26)
     expect(typeof report.automatedPercentage).toBe('number')
     expect(['production-grade', 'stable', 'risky', 'prototype']).toContain(report.status)
     expect(report.automatedRuleCount).toBeGreaterThan(0)

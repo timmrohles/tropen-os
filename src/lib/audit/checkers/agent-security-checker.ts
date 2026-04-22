@@ -20,7 +20,13 @@ function readFileSafe(rootPath: string, ...parts: string[]): string {
 
 // R3 — Auth guard consistency across API routes
 export async function checkAuthGuardConsistency(ctx: AuditContext): Promise<RuleResult> {
-  const publicPrefixes = ['/api/public/', '/api/auth/', '/api/health', '/api/webhooks/', '/api/s/']
+  const publicPrefixes = [
+    '/api/public/', '/api/auth/', '/api/health', '/api/webhooks/', '/api/s/',
+    // Cron routes use CRON_SECRET bearer token (not user auth) — excluded from user-auth check
+    '/api/cron/',
+    // Stateless transform endpoint — no user data, used by unauthenticated shared-artifact viewers
+    '/api/artifacts/transform',
+  ]
   const apiRoutes = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/app/api/') && f.path.endsWith('route.ts')
   )
@@ -131,30 +137,25 @@ export async function checkRateLimiting(ctx: AuditContext): Promise<RuleResult> 
   }
 
   const hasPackage = hasDep(ctx.packageJson, '@upstash/ratelimit')
-  const ratelimitAdapterFiles = ctx.repoMap.files.filter(
-    (f) => f.path.includes('ratelimit') || f.path.includes('rate-limit')
-  )
-  const usedInGateway = ctx.repoMap.files.some(
-    (f) => (f.path.includes('middleware') || f.path.includes('proxy'))
-      && f.imports.some((imp) =>
-        imp.target.includes('ratelimit') || imp.target.includes('rate-limit')
-        || imp.symbols.some((s) => s.toLowerCase().includes('limit'))
+  // Use content-based detection — f.imports is never populated in the repo-map JSON
+  const gatewayFiles = ['src/proxy.ts', 'proxy.ts', 'src/middleware.ts', 'middleware.ts', 'src/lib/ratelimit/index.ts']
+  const usedInGateway = ctx.rootPath
+    ? gatewayFiles.some(f => {
+        const content = readFileSafe(ctx.rootPath!, f)
+        return /upstash\/ratelimit|Ratelimit\.slidingWindow|Ratelimit\.fixedWindow|checkRateLimit/i.test(content)
+      })
+    : ctx.repoMap.files.some(f =>
+        (f.path.includes('proxy') || f.path.includes('middleware') || f.path.includes('ratelimit'))
+        && (f.path.endsWith('.ts') || f.path.endsWith('.js'))
       )
-  )
 
   if (hasPackage && usedInGateway) {
     return pass('cat-3-rule-17', 5, 'Rate limiting: @upstash/ratelimit installed + wired into gateway')
   }
-  if (hasPackage && ratelimitAdapterFiles.length > 0) {
-    return fail('cat-3-rule-17', 3, 'Rate limiting adapter present but not integrated in middleware', [{
-      severity: 'medium',
-      message: '@upstash/ratelimit installed but not wired into middleware/proxy',
-      suggestion: 'Import and call the rate limiter in src/lib/ratelimit/index.ts from proxy.ts',
-    }])
-  }
   if (hasPackage) {
     return fail('cat-3-rule-17', 2, '@upstash/ratelimit installed but no adapter configured', [{
-      severity: 'medium', message: '@upstash/ratelimit installed but no rate limit adapter found',
+      severity: 'medium', message: '@upstash/ratelimit installed but not wired into proxy/middleware',
+      suggestion: 'Import and call Ratelimit from proxy.ts or middleware.ts',
     }])
   }
   return fail('cat-3-rule-17', 0, 'No rate limiting package found for public API', [{

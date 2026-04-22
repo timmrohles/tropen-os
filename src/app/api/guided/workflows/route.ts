@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createWorkflowSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
 import { apiValidationError } from '@/lib/api-error'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api/guided/workflows')
 
@@ -29,6 +30,7 @@ export async function GET() {
     )
     .eq('is_active', true)
     .order('sort_order')
+      .limit(200)
 
   if (error) {
     log.error('workflows query failed', { error })
@@ -41,29 +43,33 @@ export async function GET() {
 // POST /api/guided/workflows
 // Creates a new user-scoped workflow.
 export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const me = await getAuthUser()
+    if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json().catch(() => null)
-  const parsed = createWorkflowSchema.safeParse(body)
-  if (!parsed.success) {
-    return apiValidationError(parsed.error)
+    const body = await req.json().catch(() => null)
+    const parsed = createWorkflowSchema.safeParse(body)
+    if (!parsed.success) {
+      return apiValidationError(parsed.error)
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('guided_workflows')
+      .insert({
+        ...parsed.data,
+        scope:   'user',
+        user_id: me.id,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      log.error('create workflow failed', { error })
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    }
+
+    return NextResponse.json(data, { status: 201 })
+  } catch (err) {
+    return apiError(err)
   }
-
-  const { data, error } = await supabaseAdmin
-    .from('guided_workflows')
-    .insert({
-      ...parsed.data,
-      scope:   'user',
-      user_id: me.id,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    log.error('create workflow failed', { error })
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
-
-  return NextResponse.json(data, { status: 201 })
 }

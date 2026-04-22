@@ -15,6 +15,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin.from('outcomes')
       .select('id, name, label, icon, description, output_type, card_type, sort_order')
       .eq('is_active', true).order('sort_order')
+      .limit(200)
 
     if (error) { log.error('fetch outcomes', { error }); throw error }
     return NextResponse.json({ outcomes: data ?? [] })

@@ -7,6 +7,7 @@ import FeatureGrid from '@/components/home/FeatureGrid'
 import RecentlyUsed from '@/components/home/RecentlyUsed'
 import { OrgHealthSection } from '@/components/home/OrgHealthSection'
 import { OrgOnboardingProgress } from '@/components/home/OrgOnboardingProgress'
+import { fetchOrgStats } from '@/lib/home/fetchOrgStats'
 
 export default async function HomePage() {
   const locale = await getLocale()
@@ -18,12 +19,13 @@ export default async function HomePage() {
   // Profile must be fetched first to get orgId
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name, organization_id')
+    .select('full_name, organization_id, role, ki_context')
     .eq('id', user.id)
     .maybeSingle()
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Team'
   const orgId = profile?.organization_id ?? null
+  const isAdmin = ['admin', 'owner', 'superadmin'].includes(profile?.role ?? '')
   const now = new Date().toISOString()
 
   // Parallelize all remaining queries; org-scoped ones are bundled conditionally
@@ -96,6 +98,10 @@ export default async function HomePage() {
 
   const announcements = [...tropenAnn, ...orgAnn].slice(0, 5)
 
+  const orgStats = (isAdmin && orgId)
+    ? await fetchOrgStats(orgId, profile?.ki_context ?? null)
+    : null
+
   return (
     <div className="content-max">
 
@@ -122,8 +128,8 @@ export default async function HomePage() {
 
       <ChatCTA workspaceId={workspaceId} />
       <FeatureGrid />
-      <OrgHealthSection />
-      <OrgOnboardingProgress />
+      {orgStats && <OrgHealthSection stats={orgStats} />}
+      {orgStats && <OrgOnboardingProgress stats={orgStats} />}
 
       {((recentChats.length > 0) || recentWorkspaces.length > 0) && (
         <RecentlyUsed

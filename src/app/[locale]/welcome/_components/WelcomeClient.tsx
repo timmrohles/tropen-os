@@ -99,7 +99,7 @@ function StepOne() {
       <div style={s.scoreGrid}>
         {[
           { color: 'var(--error)',  label: 'Prototype', range: '<60%',  desc: 'Nicht bereit für echte Nutzer' },
-          { color: '#E5A000',       label: 'Risky',     range: '60–79%', desc: 'Bereit, aber mit bekannten Risiken' },
+          { color: 'var(--status-risky)', label: 'Risky', range: '60–79%', desc: 'Bereit, aber mit bekannten Risiken' },
           { color: 'var(--accent)', label: 'Stable',    range: '80–89%', desc: 'Produktionsreif' },
           { color: 'var(--accent)', label: 'Production', range: '90%+',  desc: 'Industrie-Standard' },
         ].map(item => (

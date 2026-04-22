@@ -118,7 +118,7 @@ export default function SessionPanel({
           web_search_enabled: (raw.web_search_enabled as boolean) ?? false,
         })
       }
-    })
+    }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

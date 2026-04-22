@@ -31,7 +31,7 @@ export function SkillsSection() {
         .order('name')
       setSkills(data ?? [])
       setLoading(false)
-    })
+    }).catch(() => { setLoading(false) })
   }, [])
 
   if (loading) return (

@@ -18,6 +18,7 @@ export async function GET() {
       .eq('is_active', true)
       .in('scope', ['system', 'package'])
       .order('sort_order')
+      .limit(200)
 
     if (error) { log.error('fetch capabilities', { error }); throw error }
     return NextResponse.json({ capabilities: data ?? [] })

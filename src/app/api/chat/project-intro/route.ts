@@ -1,7 +1,9 @@
+export const maxDuration = 60
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { loadProjectContext } from '@/lib/project-context'
 import { modelFor } from '@/lib/model-selector'
@@ -13,6 +15,9 @@ const log = createLogger('project-intro')
 export async function POST(req: NextRequest) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+  if (!budget.allowed) return budgetExhaustedResponse()
 
   let conversationId: string
   try {

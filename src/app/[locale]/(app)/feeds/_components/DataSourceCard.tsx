@@ -8,11 +8,7 @@ import {
 import type { FeedDataSource } from '@/types/feeds'
 import { relativeTime, authLabel, intervalLabel } from './DataSourceHelpers'
 
-interface Props {
-  source: FeedDataSource
-  fetchingId: string | null
-  fetchMsg: Record<string, string>
-  menuOpen: string | null
+export interface DataSourceCardHandlers {
   onMenuOpen: (id: string | null) => void
   onFetch: (src: FeedDataSource) => void
   onToggleActive: (src: FeedDataSource) => void
@@ -22,10 +18,16 @@ interface Props {
   onShowToast: (msg: string) => void
 }
 
-export function DataSourceCard({
-  source: src, fetchingId, fetchMsg, menuOpen,
-  onMenuOpen, onFetch, onToggleActive, onDelete, onOpenHistory, onEdit, onShowToast,
-}: Props) {
+interface Props {
+  source: FeedDataSource
+  fetchingId: string | null
+  fetchMsg: Record<string, string>
+  menuOpen: string | null
+  handlers: DataSourceCardHandlers
+}
+
+export function DataSourceCard({ source: src, fetchingId, fetchMsg, menuOpen, handlers }: Props) {
+  const { onMenuOpen, onFetch, onToggleActive, onDelete, onOpenHistory, onEdit, onShowToast } = handlers
   return (
     <div
       className="card"

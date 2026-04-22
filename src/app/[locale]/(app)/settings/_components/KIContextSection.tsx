@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { FloppyDisk, ArrowSquareOut, FileText } from '@phosphor-icons/react'
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface KIData {
   ki_context?: string
@@ -26,6 +27,7 @@ function formatBytes(b: number): string {
 }
 
 export function KIContextSection() {
+  const t = useTranslations('settings')
   const [kiRole, setKiRole] = useState('')
   const [kiContext, setKiContext] = useState('')
   const [commStyle, setCommStyle] = useState('structured')
@@ -40,11 +42,12 @@ export function KIContextSection() {
         setKiRole(d.ki_role ?? '')
         setKiContext(d.ki_context ?? '')
         setCommStyle(d.communication_style ?? 'structured')
-      })
+      }).catch(() => {})
 
     fetch('/api/knowledge?scope=user')
       .then(r => r.ok ? r.json() : [])
       .then((d: DocRow[]) => setDocs(d.slice(0, 5)))
+      .catch(() => {})
   }, [])
 
   async function handleSave() {
@@ -64,15 +67,15 @@ export function KIContextSection() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="card">
         <div className="card-header">
-          <span className="card-header-label">Mein KI-Kontext</span>
+          <span className="card-header-label">{t('kiContext.title')}</span>
         </div>
         <div className="card-body" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-            Was soll Toro über dich wissen? Je mehr Kontext, desto bessere Antworten.
+            {t('kiContext.teaser')}
           </p>
 
           <div className="settings-field">
-            <label className="settings-label" htmlFor="ki-role">Meine Rolle</label>
+            <label className="settings-label" htmlFor="ki-role">{t('kiContext.roleLabel')}</label>
             <input
               id="ki-role"
               type="text"
@@ -84,17 +87,17 @@ export function KIContextSection() {
           </div>
 
           <div className="settings-field">
-            <label className="settings-label" htmlFor="comm-style">Kommunikationsstil</label>
+            <label className="settings-label" htmlFor="comm-style">{t('kiContext.commStyleLabel')}</label>
             <select id="comm-style" className="settings-select" value={commStyle} onChange={e => setCommStyle(e.target.value)}>
-              <option value="formal">Formell</option>
-              <option value="structured">Strukturiert</option>
-              <option value="casual">Locker / Du</option>
-              <option value="direct">Direkt und knapp</option>
+              <option value="formal">{t('kiContext.commStyleFormal')}</option>
+              <option value="structured">{t('kiContext.commStyleStructured')}</option>
+              <option value="casual">{t('kiContext.commStyleCasual')}</option>
+              <option value="direct">{t('kiContext.commStyleDirect')}</option>
             </select>
           </div>
 
           <div className="settings-field">
-            <label className="settings-label" htmlFor="ki-context">Über mich (für Toro)</label>
+            <label className="settings-label" htmlFor="ki-context">{t('kiContext.aboutLabel')}</label>
             <textarea
               id="ki-context"
               className="settings-textarea"
@@ -112,23 +115,23 @@ export function KIContextSection() {
             disabled={saving}
           >
             <FloppyDisk size={14} weight="bold" aria-hidden="true" />
-            {saved ? 'Gespeichert' : saving ? 'Speichern…' : 'Speichern'}
+            {saved ? t('kiContext.saved') : saving ? t('kiContext.saving') : t('kiContext.save')}
           </button>
         </div>
       </div>
 
       <div className="card">
         <div className="card-header">
-          <span className="card-header-label">Meine Dokumente</span>
+          <span className="card-header-label">{t('kiContext.docsTitle')}</span>
           <Link href="/knowledge" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
             <ArrowSquareOut size={12} weight="bold" aria-hidden="true" />
-            Alle verwalten
+            {t('kiContext.manageAll')}
           </Link>
         </div>
         <div className="card-body" style={{ padding: '12px 18px' }}>
           {docs.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-              Noch keine Dokumente. <Link href="/knowledge" style={{ color: 'var(--accent)' }}>Jetzt hochladen →</Link>
+              {t('kiContext.noDocs')} <Link href="/knowledge" style={{ color: 'var(--accent)' }}>{t('kiContext.uploadNow')}</Link>
             </p>
           ) : (
             docs.map(doc => (
@@ -143,7 +146,7 @@ export function KIContextSection() {
           )}
           {docs.length > 0 && (
             <Link href="/knowledge" style={{ fontSize: 12, color: 'var(--accent)', display: 'block', marginTop: 10 }}>
-              Alle Dokumente anzeigen →
+              {t('kiContext.showAll')}
             </Link>
           )}
         </div>

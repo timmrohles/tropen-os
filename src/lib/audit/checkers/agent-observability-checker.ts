@@ -18,6 +18,14 @@ export async function checkConsoleLogs(ctx: AuditContext): Promise<RuleResult> {
       || f.path.startsWith('src/components/') || f.path.startsWith('src/hooks/'))
       && !f.path.includes('.test.') && !f.path.includes('.spec.')
       && !f.path.includes('/scripts/')
+      // CLI tooling and audit checkers are infrastructure — not application code
+      && !f.path.startsWith('src/lib/benchmark/')
+      && !f.path.startsWith('src/lib/audit/checkers/')
+      // Exclude files that legitimately use console: the logger itself + Next.js error boundaries
+      && !f.path.endsWith('logger.ts') && !f.path.endsWith('logger.tsx')
+      && !f.path.endsWith('error.tsx') && !f.path.endsWith('global-error.tsx')
+      // build-time-rules.ts contains console.log() as instruction text (string literal, not a call)
+      && !f.path.endsWith('build-time-rules.ts')
   )
 
   const violations: Finding[] = []

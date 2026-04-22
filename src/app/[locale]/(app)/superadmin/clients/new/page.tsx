@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 export default function NewClientPage() {
   const router = useRouter()
+  const t = useTranslations('superadmin')
   const [form, setForm] = useState({
     org_name: '',
     plan: 'free' as 'free' | 'pro' | 'enterprise',
@@ -59,9 +61,9 @@ export default function NewClientPage() {
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <div style={s.successBox}>
           <div style={s.successIcon}>🦜</div>
-          <h2 style={s.successHeading}>Client angelegt!</h2>
+          <h2 style={s.successHeading}>{t('newClient.successTitle')}</h2>
           <p style={s.successText}>
-            Einladung wurde an {form.owner_email} gesendet. Weiterleitung…
+            {t('newClient.successText', { email: form.owner_email })}
           </p>
         </div>
       </div>
@@ -72,20 +74,20 @@ export default function NewClientPage() {
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Neuer Client</h1>
-          <p className="page-header-sub">Neue Organisation anlegen und ersten Admin einladen</p>
+          <h1 className="page-header-title">{t('newClient.title')}</h1>
+          <p className="page-header-sub">{t('newClient.subtitle')}</p>
         </div>
       </div>
 
-      <Link href="/superadmin/clients" className="btn btn-ghost btn-sm" style={{ marginBottom: 24, display: 'inline-flex' }}>← Alle Clients</Link>
+      <Link href="/superadmin/clients" className="btn btn-ghost btn-sm" style={{ marginBottom: 24, display: 'inline-flex' }}>{t('newClient.backBtn')}</Link>
 
       <form onSubmit={handleSubmit} style={s.form}>
         {/* Section 1 – Organisation */}
         <div className="card" style={{ marginBottom: 20 }}>
           <div style={{ padding: '20px 24px' }}>
-            <div style={s.sectionLabel}>Organisation</div>
+            <div style={s.sectionLabel}>{t('newClient.sectionOrg')}</div>
             <div style={s.field}>
-              <label style={s.label}>Firmenname</label>
+              <label style={s.label}>{t('newClient.firmenname')}</label>
               <input
                 style={s.input}
                 type="text"
@@ -98,7 +100,7 @@ export default function NewClientPage() {
             </div>
             <div style={s.row}>
               <div style={{ ...s.field, flex: 1 }}>
-                <label style={s.label}>Plan</label>
+                <label style={s.label}>{t('newClient.plan')}</label>
                 <select
                   style={s.input}
                   name="plan"
@@ -111,14 +113,14 @@ export default function NewClientPage() {
                 </select>
               </div>
               <div style={{ ...s.field, flex: 1 }}>
-                <label style={s.label}>Budget Limit Org</label>
+                <label style={s.label}>{t('newClient.budgetLimitOrg')}</label>
                 <input
                   style={s.input}
                   type="number"
                   name="org_budget_limit"
                   value={form.org_budget_limit}
                   onChange={handleChange}
-                  placeholder="Kein Limit"
+                  placeholder={t('newClient.noLimit')}
                   min="0"
                   step="0.01"
                 />
@@ -130,10 +132,10 @@ export default function NewClientPage() {
         {/* Section 2 – Department */}
         <div className="card" style={{ marginBottom: 20 }}>
           <div style={{ padding: '20px 24px' }}>
-            <div style={s.sectionLabel}>Department</div>
+            <div style={s.sectionLabel}>{t('newClient.sectionDept')}</div>
             <div style={s.row}>
               <div style={{ ...s.field, flex: 2 }}>
-                <label style={s.label}>Department-Name</label>
+                <label style={s.label}>{t('newClient.deptName')}</label>
                 <input
                   style={s.input}
                   type="text"
@@ -145,14 +147,14 @@ export default function NewClientPage() {
                 />
               </div>
               <div style={{ ...s.field, flex: 1 }}>
-                <label style={s.label}>Budget Limit Department</label>
+                <label style={s.label}>{t('newClient.budgetLimitDept')}</label>
                 <input
                   style={s.input}
                   type="number"
                   name="workspace_budget_limit"
                   value={form.workspace_budget_limit}
                   onChange={handleChange}
-                  placeholder="Kein Limit"
+                  placeholder={t('newClient.noLimit')}
                   min="0"
                   step="0.01"
                 />
@@ -164,9 +166,9 @@ export default function NewClientPage() {
         {/* Section 3 – Owner einladen */}
         <div className="card" style={{ marginBottom: 20 }}>
           <div style={{ padding: '20px 24px' }}>
-            <div style={s.sectionLabel}>Owner einladen</div>
+            <div style={s.sectionLabel}>{t('newClient.sectionOwner')}</div>
             <div style={s.field}>
-              <label style={s.label}>E-Mail</label>
+              <label style={s.label}>{t('newClient.emailLabel')}</label>
               <input
                 style={s.input}
                 type="email"
@@ -177,7 +179,7 @@ export default function NewClientPage() {
                 placeholder="owner@beispiel.de"
               />
               <p style={s.hint}>
-                Einladungsmail wird sofort versendet. Owner landet im Onboarding.
+                {t('newClient.inviteHint')}
               </p>
             </div>
           </div>
@@ -187,10 +189,10 @@ export default function NewClientPage() {
 
         <div style={s.buttonRow}>
           <button type="submit" className="btn btn-primary" style={{ marginTop: 8 }} disabled={saving}>
-            {saving ? 'Wird angelegt…' : 'Client anlegen & Einladung senden'}
+            {saving ? t('newClient.saving') : t('newClient.submit')}
           </button>
           <Link href="/superadmin/clients" className="btn btn-ghost">
-            Abbrechen
+            {t('newClient.cancel')}
           </Link>
         </div>
       </form>

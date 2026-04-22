@@ -13,31 +13,35 @@ async function requireSuperadmin() {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = await requireSuperadmin()
-  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const { targetUserId, targetEmail, targetOrgId, ticketRef, durationMinutes } = await req.json()
-  if (!targetUserId || !targetOrgId) {
-    return NextResponse.json({ error: 'targetUserId und targetOrgId erforderlich' }, { status: 400 })
+  try {  
+    const admin = await requireSuperadmin()
+    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  
+    const { targetUserId, targetEmail, targetOrgId, ticketRef, durationMinutes } = await req.json()
+    if (!targetUserId || !targetOrgId) {
+      return NextResponse.json({ error: 'targetUserId und targetOrgId erforderlich' }, { status: 400 })
+    }
+  
+    const dur = durationMinutes ?? 30
+    const expiresAt = new Date(Date.now() + dur * 60 * 1000).toISOString()
+  
+    const { data: session, error } = await supabaseAdmin
+      .from('impersonation_sessions')
+      .insert({
+        superadmin_id: admin.id,
+        target_user_id: targetUserId,
+        target_email: targetEmail,
+        target_org_id: targetOrgId,
+        ticket_ref: ticketRef || null,
+        duration_minutes: dur,
+      })
+      .select('id')
+      .single()
+  
+    if (error) return apiError(error)
+  
+    return NextResponse.json({ sessionId: session.id, targetEmail, ticketRef, expiresAt, durationMinutes: dur })
+  } catch (err) {
+    return apiError(err)
   }
-
-  const dur = durationMinutes ?? 30
-  const expiresAt = new Date(Date.now() + dur * 60 * 1000).toISOString()
-
-  const { data: session, error } = await supabaseAdmin
-    .from('impersonation_sessions')
-    .insert({
-      superadmin_id: admin.id,
-      target_user_id: targetUserId,
-      target_email: targetEmail,
-      target_org_id: targetOrgId,
-      ticket_ref: ticketRef || null,
-      duration_minutes: dur,
-    })
-    .select('id')
-    .single()
-
-  if (error) return apiError(error)
-
-  return NextResponse.json({ sessionId: session.id, targetEmail, ticketRef, expiresAt, durationMinutes: dur })
 }

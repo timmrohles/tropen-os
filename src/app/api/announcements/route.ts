@@ -57,8 +57,12 @@ export async function POST(request: Request) {
   const role = user.role ?? null
   const userOrgId = user.organization_id ?? null
 
-  const body = await request.json()
-  const { title, body: annBody, url, url_label, type, expires_at, organization_id } = body
+  let body: Record<string, unknown>
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }) }
+  const { title, body: annBody, url, url_label, type, expires_at, organization_id } = body as {
+    title?: string; body?: string; url?: string; url_label?: string; type?: string;
+    expires_at?: string; organization_id?: string | null
+  }
 
   if (!title?.trim()) return NextResponse.json({ error: 'Titel fehlt' }, { status: 400 })
 

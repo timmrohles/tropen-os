@@ -4,6 +4,7 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import type { AuditContext, RuleResult, Finding } from '../types'
+import { fileExists } from '../utils/file-utils'
 
 function readContent(ctx: AuditContext, relPath: string): string | null {
   if (ctx.fileContents) {
@@ -27,6 +28,7 @@ function fail(id: string, score: number, reason: string, findings: Finding[]): R
 function codeFiles(ctx: AuditContext) {
   return ctx.repoMap.files.filter((f) =>
     (f.path.endsWith('.ts') || f.path.endsWith('.tsx') || f.path.endsWith('.js') || f.path.endsWith('.jsx')) &&
+    !f.path.startsWith('public/') &&
     !f.path.includes('node_modules') && !f.path.includes('.next') &&
     !f.path.includes('.test.') && !f.path.includes('.spec.') &&
     !f.path.endsWith('.d.ts')
@@ -49,10 +51,10 @@ export async function checkEnvExample(ctx: AuditContext): Promise<RuleResult> {
     return pass('cat-14-rule-7', 5, 'No process.env usage found')
   }
 
-  // Check if .env.example exists
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
   const hasExample = ctx.filePaths.some((p) =>
     p.endsWith('.env.example') || p.endsWith('env.example')
-  )
+  ) || fileExists(ctx.rootPath, '.env.example')
 
   if (hasExample) {
     return pass('cat-14-rule-7', 5, `.env.example exists (${envVars.size} env vars used)`)
@@ -119,8 +121,9 @@ export async function checkUnhandledPromises(ctx: AuditContext): Promise<RuleRes
       const line = lines[i]
       // Pattern: .then( without .catch( in nearby lines
       if (/\.then\s*\(/.test(line) && !/\.catch\s*\(/.test(line)) {
-        // Check next 3 lines for .catch
-        const nearby = lines.slice(i, i + 4).join(' ')
+        // Check next 40 lines for .catch — 40 handles long async callbacks
+        // where the .catch() comes after the closing }) of the callback body.
+        const nearby = lines.slice(i, i + 41).join(' ')
         if (!/\.catch\s*\(/.test(nearby) && !/\.finally\s*\(/.test(nearby)) {
           violations.push({
             severity: 'medium',

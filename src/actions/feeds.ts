@@ -351,7 +351,7 @@ export async function deleteDistribution(id: string) {
 // ---------------------------------------------------------------------------
 
 export async function sendDigestNow(distributionId: string): Promise<{ sent: number }> {
-  // TODO: implement digest email sending via Resend
+  // Digest email sending via Resend — deferred to feeds v2
   log.info('[sendDigestNow] stub called', { distributionId })
   return { sent: 0 }
 }

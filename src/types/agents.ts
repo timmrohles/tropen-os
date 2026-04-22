@@ -130,8 +130,7 @@ export interface AgentRun {
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapSkill(row: Record<string, any>): Skill {
+export function mapSkill(row: Record<string, unknown>): Skill {
   return {
     id: row.id as string,
     name: row.name as string,
@@ -159,8 +158,7 @@ export function mapSkill(row: Record<string, any>): Skill {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapAgentSkill(row: Record<string, any>): AgentSkill {
+export function mapAgentSkill(row: Record<string, unknown>): AgentSkill {
   return {
     agentId: row.agent_id as string,
     skillId: row.skill_id as string,
@@ -169,8 +167,7 @@ export function mapAgentSkill(row: Record<string, any>): AgentSkill {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapAgent(row: Record<string, any>): Agent {
+export function mapAgent(row: Record<string, unknown>): Agent {
   return {
     id: row.id as string,
     name: row.name as string,
@@ -202,8 +199,7 @@ export function mapAgent(row: Record<string, any>): Agent {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapAgentRun(row: Record<string, any>): AgentRun {
+export function mapAgentRun(row: Record<string, unknown>): AgentRun {
   return {
     id: row.id as string,
     agentId: row.agent_id as string,

@@ -132,11 +132,11 @@ export default function StepOrgSetup({
             />
           ))}
           <button
-            style={{ ...s.colorSwatch, background: '#1e1e1e', border: '1px dashed #555' }}
+            style={{ ...s.colorSwatch, background: 'var(--active-bg)', border: '1px dashed var(--text-secondary)' }}
             onClick={() => setShowColorPicker((v) => !v)}
             title="Eigene Farbe"
           >
-            <span style={{ fontSize: 14, color: '#888' }}>+</span>
+            <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>+</span>
           </button>
           {showColorPicker && (
             <input

@@ -1,8 +1,10 @@
+export const maxDuration = 60
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { apiError } from '@/lib/api-error'
 
 // POST /api/projects/[id]/memory/summary
@@ -15,6 +17,9 @@ export async function POST(
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
   const { id } = await params
+
+  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+  if (!budget.allowed) return budgetExhaustedResponse()
 
   const allowed = await verifyProjectAccess(id, me)
   if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })

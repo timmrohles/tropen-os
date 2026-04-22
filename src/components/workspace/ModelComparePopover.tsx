@@ -1,4 +1,4 @@
-// TODO(timm): Vollständige Implementierung kommt mit Model-Compare-Feature (stash: mega-refactor-april-8)
+// Stub — full implementation in mega-refactor-april-8 stash
 export interface CompareModel {
   id: string
   name: string

@@ -232,13 +232,15 @@ export default function DataView() {
             fetchingId={fetchingId}
             fetchMsg={fetchMsg}
             menuOpen={menuOpen}
-            onMenuOpen={setMenuOpen}
-            onFetch={handleFetch}
-            onToggleActive={handleToggleActive}
-            onDelete={handleDelete}
-            onOpenHistory={openHistory}
-            onEdit={openEdit}
-            onShowToast={showToast}
+            handlers={{
+              onMenuOpen: setMenuOpen,
+              onFetch: handleFetch,
+              onToggleActive: handleToggleActive,
+              onDelete: handleDelete,
+              onOpenHistory: openHistory,
+              onEdit: openEdit,
+              onShowToast: showToast,
+            }}
           />
         ))}
       </div>

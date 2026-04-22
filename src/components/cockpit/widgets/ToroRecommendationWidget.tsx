@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Bird } from '@phosphor-icons/react'
 import { Link } from '@/i18n/navigation'
-import { WidgetSkeleton } from './shared'
+import { WidgetSkeleton } from './Shared'
 
 interface Recommendation {
   text: string

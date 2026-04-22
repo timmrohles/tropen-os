@@ -30,7 +30,7 @@ export default function ShareModal({ convId, convTitle, onClose }: ShareModalPro
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    })
+    }).catch(() => {})
   }
 
   async function handleRevoke() {

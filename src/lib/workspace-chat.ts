@@ -307,7 +307,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
             if (parsed.routing) ctx.setRouting(parsed.routing)
             ctx.setMessages(prev => prev.map(m => m.pending ? { ...m, pending: false, cost_eur: parsed.usage?.cost_eur ?? null, tokens_input: parsed.usage?.tokens_input ?? null, tokens_output: parsed.usage?.tokens_output ?? null, model_used: parsed.routing?.model ?? null } : m))
             const pendingId2 = pendingMsg.id
-            void supabase
+            void Promise.resolve(supabase
               .from('messages')
               .select('id')
               .eq('conversation_id', convId)
@@ -317,7 +317,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
               .maybeSingle()
               .then(({ data }) => {
                 if (data?.id) ctx.setMessages(prev => prev.map(m => m.id === pendingId2 ? { ...m, id: data.id } : m))
-              })
+              })).catch(() => {})
           }
         }
       }
@@ -435,7 +435,7 @@ export function createChatActions(ctx: ChatActionsCtx) {
 
     // Delete old assistant message from DB (best-effort)
     if (lastAssistant.id && !lastAssistant.id.startsWith('pending-')) {
-      supabase.from('messages').delete().eq('id', lastAssistant.id).then(() => {/*non-blocking*/})
+      void Promise.resolve(supabase.from('messages').delete().eq('id', lastAssistant.id).then(() => {/*non-blocking*/})).catch(() => {})
     }
 
     ctx.setMessages(prev => prev.filter(m => m.id !== lastAssistant.id))

@@ -28,6 +28,7 @@ export default function ModelsPage() {
     fetch('/api/admin/branding')
       .then(r => r.ok ? r.json() : {})
       .then((d: Record<string, unknown>) => setMembersCanSee(!!d.members_see_models))
+      .catch(() => {})
   }, [])
 
   async function toggleMembersAccess() {

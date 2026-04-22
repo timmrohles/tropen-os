@@ -10,7 +10,7 @@ interface Props {
 
 const RISK_COLOR: Record<string, string> = {
   safe:     'var(--accent)',
-  moderate: '#E5A000',
+  moderate: 'var(--status-risky)',
   critical: 'var(--error)',
 }
 

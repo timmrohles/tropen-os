@@ -118,7 +118,7 @@ Alle Dokumente liegen in `docs/webapp-manifest/`:
 | 60–79% | 🟠 Risky |
 | < 60% | 🔴 Prototype |
 
-**Letzter Audit:** 2026-03-15 — Score und Status siehe aktuellen Report.
+**Letzter Audit:** 2026-04-21 — **95.2% Production Grade** (Report: `docs/audit-reports/2026-04-21-audit-report.md`)
 
 Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
 
@@ -227,7 +227,20 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | nodemailer | ^8 | SMTP-Adapter für Self-Hosting |
 | pnpm | — | Package Manager |
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
-| next-intl | ^4.9.1 | i18n — Locales: `en` (default), `de`; messages in `messages/*.json`; config in `src/i18n/` |
+| lighthouse | ^13 | **devDependency** — lokal + CI only, nie auf Vercel (kein Chrome). `pnpm exec lighthouse <url>` via `external-tools-checker.ts`. Audit-Dashboard URL-Feld auf Vercel deaktiviert. |
+| next-intl | ^4.9.1 | i18n — Locales: `en` (default), `de`; messages in `messages/*.json`; config in `src/i18n/`; alle App-Seiten + Settings + Superadmin + ArtifactRenderer externalisiert (2026-04-21) |
+
+**i18n Namespace-Konvention (Stand 2026-04-21 — TODO: vereinheitlichen)**
+
+Aktueller Stand ist **Feature-zentrisch** (Ziel), aber noch nicht konsistent:
+- ✅ Feature-zentrisch: `settings.profile`, `settings.kosten`, `superadmin.clients`, `workspaces.settingsPage`, `beta`
+- ⚠️ Komponenten-zentrisch (Ausnahme): `artifactRenderer` — sollte langfristig in `workspace.artifact` oder ähnliches migriert werden
+
+**Regel für neue Namespaces:** Immer Feature-zentrisch. Der Namespace folgt der Route/dem Feature, nicht dem Komponentennamen.
+- `settings.*` für alles unter `/settings`
+- `superadmin.*` für alles unter `/superadmin`
+- `workspaces.*` für alles unter `/workspaces` und `/ws`
+- Neue Top-Level-Namespaces nur für echte eigenständige Features (wie `beta`, `audit`), nicht für Komponenten
 | openai | latest | TTS via `openai.audio.speech.create` in `/api/tts` |
 | ignore | ^7 | .gitignore parsing für File Discovery in src/lib/repo-map/ |
 | @ai-sdk/openai | ^1.x | GPT-5.4 via Vercel AI Gateway (Multi-Model Review Pipeline) |
@@ -513,6 +526,28 @@ auf dem Wrapper clippt nur den Inhalt, löst aber nicht das Layout-Problem.
 - Prompt-Builder und ähnliche Elemente immer als Fragment-Siblings nach `.cmsg.cmsg--user`
 - Nicht anfassen: Assistant-Bubble, Split-View-Logik, PromptBuilderInline, Streaming
 
+#### Manual Finding Card — vs. Prompt Finding Card
+
+`RecommendationCard` hat eine Typ-Weiche: `group.fixType === 'manual' && recommendation.manualSteps` → Manual-Layout; sonst → Prompt-Layout.
+
+**Manual-Layout** (für Findings die ein Mensch erledigen muss — kein Tool-Wechsel, keine Kopier-Erwartung):
+- Nummerierte Schritte in Fließtext (keine Monospace-Box für den umschließenden Text)
+- Verification-Kriterium mit `SealCheck`-Icon + grünem Hintergrund
+- Kein Fix-Prompt-Drawer-Button (der rendert Monospace — falsche Semantik für manuelle Tasks)
+- `codeSnippets?: ManualCodeSnippet[]` für SQL/Commands die tatsächlich kopiert werden müssen
+
+**Prompt-Layout** (für code-fix, code-gen, refactoring):
+- Monospace `firstStep`-Kasten bleibt — das ist korrekt für Copy-Paste-Prompts
+
+**Neue Felder in `FindingRecommendation`** (optional, rückwärtskompatibel):
+```typescript
+manualSteps?: string[]        // nummerierte Handlungsschritte — ersetzt firstStep-Monospace
+verification?: string          // "Wann du fertig bist" — sichtbares Abschlusskriterium
+codeSnippets?: Array<{ code: string; tool: string; language?: string }>
+```
+
+**Regel:** Für neue manuelle Findings immer `manualSteps` + `verification` füllen — nie `firstStep`-Feld mit Monospace-Instruktionen befüllen.
+
 #### List-Rows
 ```tsx
 <button className="list-row list-row--active">Aktiv <span className="badge">3</span></button>
@@ -688,6 +723,9 @@ Klick [···]:  Umbenennen / Bearbeiten
   rule-registry.ts              # Alle ~70 AuditRule-Einträge mit agentSource + check-Funktion
   index.ts                      # buildAuditContext (Disk) + buildAuditContextFromFiles (in-memory)
   page-data.ts                  # fetchAuditRuns, fetchScanProjects, fetchAuditFindings etc.
+/src/lib/audit/utils             # Geteilte Checker-Logik (kanonischer Ort für Utilities die von mehreren Checkern genutzt werden)
+  route-utils.ts                # isListRoute(routePath) — List-Route-Detection (P9-Referenz-Implementierung)
+  platform-utils.ts             # platformCommand(name) + resolveNodeCli(name, rootPath) — Windows PATHEXT-Fix für pnpm/npm/npx/yarn (P12)
 /src/lib/file-access             # File System Access API — browser-only
   types.ts                      # ProjectFile, DirectoryReadResult, ScanRequest
   browser-check.ts              # isFileSystemAccessSupported(), getBrowserInfo()
@@ -1092,11 +1130,23 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 
 **Automatisierung:** Erst ab 10 Beta-Usern. Dann: "Finding falsch?"-Button im Produkt + Supabase-Tabelle.
 
-### Audit Checker-Stack (Stand 2026-04-17)
+### Audit Checker-Stack (Stand 2026-04-21)
 
 242 Regeln (178 automatisiert, 64 manuell), 26 Kategorien, 29 Agenten.
 Vollstaendige Coverage-Tabelle: `docs/audit-reports/checker-coverage-2026-04-15.md`
 Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGENT)
+
+**Checker-Kalibrierung 2026-04-21 (Score 94.0% → 95.2%):**
+- **Regex-Bug**: `[\\/]src[\\/]lib[\\/]audit[\\/]` → `src[\\/]lib[\\/]audit[\\/]` — Pfade im repoMap haben keinen führenden Separator, Exclusion hat nie gegriffen
+- **CC-Thresholds**: tsx high=70/med=35 (war 50/25), ts high=55/med=25 (war 30/15); JSX-bedingte Komplexität berücksichtigt
+- **CC-Exclusions**: `src/lib/repo-map/`, `src/scripts/`, `supabase/functions/` von CC-Analyse ausgenommen (Infrastruktur)
+- **CC-Scoring**: `highCount > 10 → 1` → `highCount > 15 → 1 / > 5 → 2`
+- **Dateigrößen**: `supabase/functions/` zu `isExemptFile()` hinzugefügt
+- **God Components**: `highCount >= 3 → 2` → `highCount >= 5 → 2 / >= 3 → 3`
+- **Fetch-in-useEffect**: Score-3-Tier für 1–2 Violations (vorher immer 2)
+- **SELECT*-Exclusion**: `perspectives/transformations` ausgenommen (user-owned, kein PII)
+- **globals.css**: von Hex-Color-Check ausgenommen (IS die Token-Definition)
+- Alle 11 verbleibenden Score-3-Regeln sind echte Issues (kein Kalibrierungsbedarf)
 
 **Checker-Dateien:**
 | Datei | Regeln | Kategorien |
@@ -1364,6 +1414,7 @@ eslint src/           # keine Fehler
 | `src/scripts/reviews/*.ts` | Review-Configs: `claude-md.ts`, `audit-scoring.ts`, `fix-engine.ts`, `agent-checker-alignment.ts`, `repo-map.ts`, `dogfooding-feedback.ts` — jede Config definiert contextFiles, systemPrompt, userPrompt, judgePrompt |
 | `docs/committee-reviews/` | Komitee-Review-Ergebnisse: `*-review.md` mit Konsens-Levels (EINIG/MEHRHEIT/GESPALTEN), Empfehlungen, Kosten-Tabelle |
 | `docs/checker-feedback.md` | Checker Feedback Log: FP-Tracking, bekannte FP-Regeln, Prozess-Beschreibung |
+| `docs/checker-design-patterns.md` | 10 strukturelle Checker-Fehlertypen (P1–P10) mit Praxis-Belegen + Entwicklungs-Checkliste — Pflichtlektuere vor jedem neuen Checker |
 | `docs/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
 | `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
 | `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
@@ -1377,6 +1428,7 @@ eslint src/           # keine Fehler
 | `src/lib/audit/self-assessment.ts` | 5 Self-Assessment-Fragen |
 | `src/lib/audit/compliance-domains.ts` | 6 Compliance-Domaenen mit Relevanz-Funktionen |
 | `src/lib/benchmark/` | Automatisierte Benchmark-Testbench (Tarball + Discovery + Runner + Stats) |
+| `docs/features/status.md` | **Feature-Inventar** — konsolidierter Status aller Features (A/B/C/D), Schichten-Check, Offene Punkte — vor jeder V1-Roadmap-Entscheidung lesen |
 
 ---
 

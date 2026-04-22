@@ -1,12 +1,19 @@
 // src/lib/audit/checkers/final-category-checkers.ts
 // Fills the last 5 empty categories: cat-8, cat-13, cat-18, cat-21, cat-23.
 
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import type { AuditContext, RuleResult, Finding } from '../types'
+import { isListRoute } from '../utils/route-utils'
+import { fileExists, fileExistsInAnyOf } from '../utils/file-utils'
 
 function readContent(ctx: AuditContext, relPath: string): string | null {
   if (ctx.fileContents) {
     const c = ctx.fileContents.get(relPath)
     if (c !== undefined) return c
+  }
+  if (ctx.rootPath) {
+    try { return readFileSync(join(ctx.rootPath, relPath), 'utf-8') } catch { return null }
   }
   return null
 }
@@ -28,10 +35,11 @@ export async function checkBackupDocs(ctx: AuditContext): Promise<RuleResult> {
 
   if (!usesDB) return pass('cat-13-rule-8', 5, 'No database dependency — backup docs not applicable')
 
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
   const hasBackupDoc = ctx.filePaths.some(k =>
     k.toLowerCase().includes('backup') || k.toLowerCase().includes('runbook') ||
     k.toLowerCase().includes('disaster') || k.toLowerCase().includes('recovery')
-  )
+  ) || fileExistsInAnyOf(ctx.rootPath, ['docs/runbooks', 'docs/backup.md', 'RUNBOOK.md'])
 
   if (hasBackupDoc) return pass('cat-13-rule-8', 5, 'Backup/DR documentation found')
 
@@ -67,7 +75,8 @@ export async function checkAPITimeouts(ctx: AuditContext): Promise<RuleResult> {
   for (const file of apiFiles) {
     const content = readContent(ctx, file.path)
     if (!content) continue
-    const hasExternalCall = /fetch\s*\(|openai|anthropic|axios/i.test(content)
+    // Require actual call patterns — not string literals like 'openai' in enums
+    const hasExternalCall = /\bfetch\s*\(|from ['"]openai['"]|from ['"]@anthropic|from ['"]@ai-sdk|axios\.\w+\s*\(|generateText\s*\(|streamText\s*\(/i.test(content)
     const hasTimeout = /maxDuration|timeout|AbortController/i.test(content)
 
     if (hasExternalCall && !hasTimeout) {
@@ -89,16 +98,21 @@ export async function checkUnlimitedQueries(ctx: AuditContext): Promise<RuleResu
   const violations: Finding[] = []
   for (const file of ctx.repoMap.files) {
     if (!file.path.includes('/api/') || !file.path.endsWith('route.ts')) continue
+    if (!isListRoute(file.path)) continue // List-Route-Detection via shared utility
     const content = readContent(ctx, file.path)
     if (!content) continue
 
+    // Only flag GET handlers — POST/PATCH/DELETE rarely need pagination
+    const hasGetHandler = /export\s+(?:async\s+)?function\s+GET|export\s+const\s+GET\s*=/i.test(content)
+    if (!hasGetHandler) continue
+
     const hasUnlimited = (/\.select\s*\(|findMany\s*\(|\.from\s*\(/.test(content)) &&
-      !/\.limit\s*\(|\.take\s*\(|\.range\s*\(|pagination|paginate/i.test(content)
+      !/\.limit\s*\(|\.take\s*\(|\.range\s*\(|\.eq\s*\(|pagination|paginate/i.test(content)
 
     if (hasUnlimited) {
       violations.push({
         severity: 'medium',
-        message: 'Database query without limit — loads all records at once with many entries',
+        message: 'List endpoint fetches all records without limit — could load thousands of rows',
         filePath: file.path,
         suggestion: `Cursor-Prompt: 'Add .limit(50) to database queries in ${file.path.split('/').pop()} and add pagination'`,
       })
@@ -135,9 +149,10 @@ export async function checkReadmeQuality(ctx: AuditContext): Promise<RuleResult>
 }
 
 export async function checkChangelog(ctx: AuditContext): Promise<RuleResult> {
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
   const has = ctx.filePaths.some(p =>
     p.toLowerCase() === 'changelog.md' || p.toLowerCase() === 'changelog'
-  )
+  ) || fileExists(ctx.rootPath, 'CHANGELOG.md')
 
   if (has) return pass('cat-18-rule-8', 5, 'CHANGELOG found')
   return fail('cat-18-rule-8', 3, 'No CHANGELOG', [{
@@ -150,11 +165,13 @@ export async function checkChangelog(ctx: AuditContext): Promise<RuleResult> {
 // ── cat-21: PWA & Resilience ────────────────────────────────────────────────
 
 export async function checkWebManifest(ctx: AuditContext): Promise<RuleResult> {
-  const has = ctx.filePaths.some(p =>
+  const inRepoMap = ctx.filePaths.some(p =>
     p.endsWith('manifest.json') || p.endsWith('site.webmanifest')
   )
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
+  const onDisk = fileExistsInAnyOf(ctx.rootPath, ['public/manifest.json', 'public/site.webmanifest'])
 
-  if (has) return pass('cat-21-rule-5', 5, 'Web app manifest found')
+  if (inRepoMap || onDisk) return pass('cat-21-rule-5', 5, 'Web app manifest found')
   return fail('cat-21-rule-5', 3, 'No web manifest', [{
     severity: 'info',
     message: 'No manifest.json — app cannot be installed as PWA',
@@ -163,9 +180,10 @@ export async function checkWebManifest(ctx: AuditContext): Promise<RuleResult> {
 }
 
 export async function checkOfflineFallback(ctx: AuditContext): Promise<RuleResult> {
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
   const hasSW = ctx.filePaths.some(k =>
     k.includes('service-worker') || k.includes('sw.js') || k.includes('sw.ts')
-  )
+  ) || fileExistsInAnyOf(ctx.rootPath, ['public/sw.js', 'public/service-worker.js'])
   const deps = { ...ctx.packageJson.dependencies, ...ctx.packageJson.devDependencies }
   const hasPWAPlugin = 'next-pwa' in deps || '@ducanh2912/next-pwa' in deps
 
@@ -197,13 +215,17 @@ export async function checkDeploymentDocs(ctx: AuditContext): Promise<RuleResult
   const isNextJs = 'next' in deps
   if (!isNextJs) return pass('cat-23-rule-4', 5, 'Not a Next.js project — deployment docs not checked')
 
-  const hasVercelConfig = ctx.filePaths.some(p =>
-    p === 'vercel.json' || p === 'vercel.ts'
-  )
-  const readme = (readContent(ctx, 'README.md') ?? '').toLowerCase()
-  const hasDeployDocs = readme.includes('deploy') || readme.includes('vercel') || readme.includes('production')
+  // File existence check via shared utility (see docs/checker-design-patterns.md P1)
+  const rootVercel = fileExistsInAnyOf(ctx.rootPath, ['vercel.json', 'vercel.ts', 'Dockerfile', 'fly.toml'])
+    || ctx.filePaths.some(p => p === 'vercel.json' || p === 'vercel.ts')
 
-  if (hasVercelConfig || hasDeployDocs) {
+  const readme = (readContent(ctx, 'README.md') ?? readContent(ctx, 'docs/README.md') ?? '').toLowerCase()
+  const hasDeployDocs = readme.includes('deploy') || readme.includes('vercel') || readme.includes('production')
+  // Also accept CLAUDE.md with deployment section (project-specific docs)
+  const claudeMd = (readContent(ctx, 'CLAUDE.md') ?? '').toLowerCase()
+  const hasClaudeDeployDocs = claudeMd.includes('deploy') || claudeMd.includes('supabase db push') || claudeMd.includes('vercel')
+
+  if (rootVercel || hasDeployDocs || hasClaudeDeployDocs) {
     return pass('cat-23-rule-4', 5, 'Deployment setup documented')
   }
 

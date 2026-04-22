@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
+import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './Shared'
 
 interface CodeHealthData {
   hasAuditData: boolean

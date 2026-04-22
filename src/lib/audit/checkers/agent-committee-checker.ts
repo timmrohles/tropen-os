@@ -5,6 +5,7 @@
 import * as fs from 'node:fs'
 import { join } from 'node:path'
 import type { AuditContext, RuleResult, Finding } from '../types'
+import { isListRoute } from '../utils/route-utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -254,15 +255,29 @@ export async function checkSoftDeletePattern(ctx: AuditContext): Promise<RuleRes
   }
 
   const dir = join(ctx.rootPath, 'supabase', 'migrations')
-  const allContent = migrations
-    .map((f) => { try { return fs.readFileSync(join(dir, f), 'utf-8') } catch { return '' } })
-    .join('\n')
+  const fileContents = migrations.map((f) => {
+    try { return { name: f, content: fs.readFileSync(join(dir, f), 'utf-8') } }
+    catch { return { name: f, content: '' } }
+  })
+  const allContent = fileContents.map((f) => f.content).join('\n')
 
   const hasSoftDeleteColumn = /deleted_at/.test(allContent)
   const hasDeletedAtDefault = /deleted_at.*DEFAULT NULL/.test(allContent) ||
     /deleted_at.*TIMESTAMP/.test(allContent)
-  const deleteMatches = allContent.match(/DELETE FROM/gi) || []
-  const deleteCount = deleteMatches.length
+
+  // Count only suspicious DELETE FROM statements — exclude:
+  // 1. One-time fix/seed/data migrations (not application-level patterns)
+  // 2. DELETE statements that reference deleted_at IS NOT NULL (legitimate TTL cleanup)
+  let deleteCount = 0
+  for (const { name, content } of fileContents) {
+    if (/(^|_)(fix|seed|cleanup|demo|test)_/i.test(name)) continue
+    const statements = content.split(';')
+    for (const stmt of statements) {
+      if (/DELETE FROM/i.test(stmt) && !/deleted_at\s+IS\s+NOT\s+NULL/i.test(stmt)) {
+        deleteCount++
+      }
+    }
+  }
   const hasHardDelete = deleteCount > 0
 
   if (hasSoftDeleteColumn && !hasHardDelete) {
@@ -415,8 +430,9 @@ export async function checkGlobalMutableState(ctx: AuditContext): Promise<RuleRe
   )
 
   const findings: Finding[] = []
-  // Detect top-level `let` declarations that could be mutable shared state
-  const mutableGlobalPattern = /^(?:export\s+)?let\s+\w/m
+  // Detect top-level `let` declarations that could be mutable shared state.
+  // Exclude private singletons like `let _client = null` (lazy-init pattern) — these are safe.
+  const mutableGlobalPattern = /^(?:export\s+)?let\s+(?![_])\w/m
 
   for (const file of libFiles.slice(0, 100)) {
     const content = readFile(ctx.rootPath, file.path)
@@ -613,7 +629,15 @@ export async function checkHardcodedColors(ctx: AuditContext): Promise<RuleResul
   const uiFiles = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/') &&
       (f.path.endsWith('.tsx') || f.path.endsWith('.css')) &&
-      !f.path.includes('.test.') && !f.path.includes('_DESIGN_REFERENCE')
+      !f.path.includes('.test.') && !f.path.includes('_DESIGN_REFERENCE') &&
+      // Pages with intentional standalone dark themes (not part of main design system)
+      !f.path.includes('/responsible-ai/') && !f.path.includes('/offline/') &&
+      // global-error.tsx is a catastrophic error boundary — CSS vars may not load; hex is the fallback
+      !f.path.endsWith('global-error.tsx') &&
+      // layout.tsx uses hex in viewport.themeColor (browser meta tag — CSS vars not applicable)
+      !f.path.endsWith('src/app/layout.tsx') &&
+      // globals.css IS the token definition file — hex values there define the design system, not violate it
+      !f.path.endsWith('globals.css')
   )
 
   const hexPattern = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g
@@ -624,8 +648,10 @@ export async function checkHardcodedColors(ctx: AuditContext): Promise<RuleResul
     const content = readFile(ctx.rootPath, file.path)
     if (!content) continue
     const matches = [...content.matchAll(hexPattern)]
-      .map((m) => m[0])
-      .filter((m) => !allowlist.has(m.toLowerCase()))
+      .map((m) => ({ match: m[0], index: m.index ?? 0 }))
+      // Skip HTML numeric entity references like &#128274; where # is preceded by &
+      .filter(({ match, index }) => content[index - 1] !== '&' && !allowlist.has(match.toLowerCase()))
+      .map(({ match }) => match)
     if (matches.length > 0) {
       findings.push({
         severity: 'medium',
@@ -745,8 +771,10 @@ export async function checkBudgetAlertsDocumented(ctx: AuditContext): Promise<Ru
 
 /** AI_INTEGRATION R4 — LLM output validation present */
 export async function checkLlmOutputValidation(ctx: AuditContext): Promise<RuleResult> {
+  // Exclude audit infrastructure — those files analyse AI code, they don't call AI APIs
   const aiFiles = ctx.repoMap.files.filter(
     (f) => (f.path.startsWith('src/lib/') || f.path.startsWith('src/app/api/')) &&
+      !f.path.includes('/audit/') &&
       (f.path.includes('ai') || f.path.includes('llm') || f.path.includes('anthropic') ||
         f.path.includes('chat') || f.path.includes('agent'))
   )
@@ -755,23 +783,38 @@ export async function checkLlmOutputValidation(ctx: AuditContext): Promise<RuleR
     return pass('cat-22-rule-6', 3, 'No AI integration files found')
   }
 
-  const validationKeywords = ['validateOutput', 'parseOutput', 'sanitize', 'zod.parse', 'safeParse', 'validateResponse']
-  const filesWithValidation = aiFiles.filter((f) => {
+  // Only count files that use generateText/generateObject — streaming-only files (streamText)
+  // return opaque text and don't need structured output validation.
+  const structuredAiFiles = aiFiles.filter((f) => {
     const content = readFile(ctx.rootPath, f.path)
-    return validationKeywords.some((k) => content.includes(k))
+    return content.includes('generateText(') || content.includes('generateObject(') ||
+           content.includes('tool_use') || content.includes('structured_output')
   })
 
-  const ratio = filesWithValidation.length / aiFiles.length
+  if (structuredAiFiles.length === 0) {
+    return pass('cat-22-rule-6', 4, 'No structured AI output files found — streaming-only pattern is safe')
+  }
+
+  // 'JSON.parse(' covers structured LLM output parsing; 'z.object(' covers Zod-schema structured output;
+  // 'parse[A-Z]\w*(Response|Output|Result)' matches project-specific LLM output parsers.
+  const validationKeywords = ['validateOutput', 'parseOutput', 'sanitize', 'safeParse', 'validateResponse', 'JSON.parse(', 'z.object(', 'schema:', 'outputSchema']
+  const validationPattern = /parse[A-Z]\w*(Response|Output|Result)\s*\(/
+  const filesWithValidation = structuredAiFiles.filter((f) => {
+    const content = readFile(ctx.rootPath, f.path)
+    return validationKeywords.some((k) => content.includes(k)) || validationPattern.test(content)
+  })
+
+  const ratio = filesWithValidation.length / structuredAiFiles.length
 
   if (ratio >= 0.5) {
-    return pass('cat-22-rule-6', 5, `LLM output validation found in ${filesWithValidation.length}/${aiFiles.length} AI files`)
+    return pass('cat-22-rule-6', 5, `LLM output validation found in ${filesWithValidation.length}/${structuredAiFiles.length} structured AI files`)
   }
   return fail('cat-22-rule-6', ratio >= 0.2 ? 2 : 1,
-    `Only ${filesWithValidation.length}/${aiFiles.length} AI files validate LLM output`,
+    `Only ${filesWithValidation.length}/${structuredAiFiles.length} structured AI files validate LLM output`,
     [{
       severity: 'high',
-      message: 'Most AI integration files lack output validation/sanitization',
-      suggestion: 'Add Zod schemas or explicit validation before using LLM output in business logic',
+      message: 'Structured AI output files lack Zod/JSON validation before use in business logic',
+      suggestion: 'Add Zod schemas or explicit JSON.parse validation before using LLM output in business logic',
     }]
   )
 }
@@ -783,9 +826,14 @@ export async function checkAiProviderAbstraction(ctx: AuditContext): Promise<Rul
     hasFile(ctx.rootPath, 'src', 'lib', 'llm', 'anthropic.ts')
 
   // Check if API files import AI SDK directly (bypassing abstraction)
+  // Only flag external packages — internal '@/lib/llm/anthropic' is the correct abstraction
   const directImports = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/app/api/') &&
-      f.imports.some((imp) => imp.target.includes('@anthropic-ai') || imp.target.includes('anthropic'))
+      f.imports.some((imp) =>
+        imp.target === 'anthropic' ||
+        imp.target.startsWith('@anthropic-ai/') ||
+        imp.target.startsWith('@ai-sdk/anthropic')
+      )
   )
 
   if (hasLlmLib && directImports.length === 0) {
@@ -854,9 +902,16 @@ export async function checkPaginationOnListEndpoints(ctx: AuditContext): Promise
   }
 
   const paginationKeywords = ['limit', 'offset', 'page', 'cursor', 'take', 'skip', 'range']
+
+  // List-Route-Detection via shared utility (see src/lib/audit/utils/route-utils.ts)
   const listEndpoints = listRoutes.filter((f) => {
-    // Check if it's a GET endpoint (likely a list)
-    return f.symbols.some((s) => s.name === 'GET')
+    if (!isListRoute(f.path)) return false
+    const sym = f.symbols.find((s) => s.name === 'GET')
+    if (!sym) return false
+    // Routes scoped to a specific user/org via .eq() are naturally bounded
+    const content = readFile(ctx.rootPath, f.path)
+    if (/\.eq\s*\(\s*['"](?:user_id|organization_id|org_id|owner_id)['"]/.test(content)) return false
+    return true
   })
 
   if (listEndpoints.length === 0) {
@@ -956,24 +1011,31 @@ export async function checkStrictEquality(ctx: AuditContext): Promise<RuleResult
   )
 
   const findings: Finding[] = []
-  // Match == or != that are NOT === or !==
-  // Use negative lookbehind/lookahead to avoid false positives on ===, !==, =>, <=, >=
-  const looseEqPattern = /(?<![=!<>])={2}(?!=)|(?<!!)\!={1}(?!=)/g
 
   for (const file of srcFiles.slice(0, 150)) {
     const content = readFile(ctx.rootPath, file.path)
     if (!content) continue
-    looseEqPattern.lastIndex = 0
-    const matches = content.match(looseEqPattern) ?? []
-    // Filter out false positives in string literals or JSX attribute values
-    const realMatches = matches.filter((m) => {
-      // == in JSX className="" or href="" is always assignment context — skip false pos
-      return m === '==' || m === '!='
-    })
-    if (realMatches.length > 0) {
+
+    let looseCount = 0
+    for (const line of content.split('\n')) {
+      const trimmed = line.trimStart()
+      // Skip comments
+      if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
+      // Find == or != that are not ===, !==, =>, <=, >=
+      const matches = line.match(/(?<![=!<>])={2}(?!=)|(?<!!)!={1}(?!=)/g) ?? []
+      for (const m of matches) {
+        if (m !== '==' && m !== '!=') continue
+        // Skip null/undefined checks — `x == null` is idiomatic TS (catches both null + undefined)
+        const context = line.slice(Math.max(0, line.indexOf(m) - 5), line.indexOf(m) + m.length + 10)
+        if (/[=!]=\s*(null|undefined)/.test(context)) continue
+        looseCount++
+      }
+    }
+
+    if (looseCount > 0) {
       findings.push({
         severity: 'medium',
-        message: `${realMatches.length} loose equality operator(s) in ${file.path}`,
+        message: `${looseCount} loose equality operator(s) in ${file.path}`,
         filePath: file.path,
         suggestion: 'Use === and !== instead of == and != to avoid implicit type coercion (CODE_STYLE R10)',
       })

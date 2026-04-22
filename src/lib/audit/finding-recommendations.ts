@@ -4,6 +4,13 @@
 
 export type FixApproach = 'central-fix' | 'per-file' | 'config-change' | 'documentation'
 
+export interface ManualCodeSnippet {
+  code: string
+  /** Name of the tool where this should be executed, e.g. "Supabase SQL Editor" */
+  tool: string
+  language?: string
+}
+
 export interface FindingRecommendation {
   id: string
   /** Matched against ruleId (exact or prefix) OR message substring (case-insensitive) */
@@ -15,28 +22,116 @@ export interface FindingRecommendation {
   strategy: string
   firstStep: string
   fixApproach: FixApproach
+  /**
+   * For fixType='manual' findings only.
+   * When present, the UI renders a numbered step checklist instead of the firstStep monospace block.
+   */
+  manualSteps?: string[]
+  /** Criterion the user can check to know they are done. Shown below the steps. */
+  verification?: string
+  /** Optional code/SQL/command snippets to copy into a specific tool. */
+  codeSnippets?: ManualCodeSnippet[]
 }
 
 export const FINDING_RECOMMENDATIONS: FindingRecommendation[] = [
   {
+    id: 'architecture-agent-summary',
+    matchRuleIds: ['architecture'],
+    title: 'Architektur-Agent: God Components zusammengefasst — Details in den Einzelfindings',
+    problem:
+      'Der Architektur-Agent hat mehrere Dateien mit übermäßiger Komplexität identifiziert. ' +
+      'Diese Zusammenfassung ergänzt die konkreten Einzelfindings (cat-1-rule-10) weiter unten in der Liste — ' +
+      'dort sind alle betroffenen Dateien einzeln aufgeführt.',
+    impact:
+      'God Components sind der häufigste Auslöser für Regressions beim Refactoring — ' +
+      'zu viele Abhängigkeiten, zu viele Side Effects in einer Datei.',
+    strategy:
+      'Die konkreten Einzelfindings weiter unten bearbeiten. ' +
+      'Die schlimmsten Dateien zuerst: > 500 Zeilen oder > 10 Hooks sind Priorität 1.',
+    firstStep:
+      'Nach unten scrollen zu "God Components aufteilen" und mit der längsten gemeldeten Datei beginnen.',
+    fixApproach: 'per-file',
+  },
+  {
+    id: 'performance-agent-summary',
+    matchRuleIds: ['performance'],
+    title: 'Performance: Unnötige Re-Renders durch Komponenten-Vereinfachung reduzieren',
+    problem:
+      'Der Performance-Agent meldet, dass Komponenten mit vielen Hooks und State-Variablen ' +
+      'unnötige Re-Renders verursachen. Zu viel lokaler State ohne Memoization führt dazu, ' +
+      'dass Kindkomponenten bei jeder Eltern-Änderung neu rendern.',
+    impact:
+      'Sichtbare UI-Verzögerungen bei interaktiven Elementen, unnötige API-Calls durch ' +
+      'Effekte die zu oft feuern, schlechte Core Web Vitals.',
+    strategy:
+      'State konsolidieren: zusammengehörige useState-Calls zu einem useReducer zusammenfassen. ' +
+      'Teure Berechnungen mit useMemo absichern. Stabile Callback-Referenzen mit useCallback.',
+    firstStep:
+      'Die größte Komponente mit den meisten useState-Calls öffnen. ' +
+      'Alle zusammengehörigen Zustände (z.B. loading + error + data) zu einem useReducer zusammenfassen.',
+    fixApproach: 'per-file',
+  },
+  {
+    id: 'god-component',
+    matchRuleIds: ['cat-1-rule-10'],
+    matchMessagePatterns: [/god.component|large.component.*hook/i],
+    title: 'God Components aufteilen — Logik in Custom Hooks auslagern',
+    problem:
+      'Einzelne Komponenten übernehmen zu viele Verantwortlichkeiten: Datenladen, Geschäftslogik, ' +
+      'Darstellung und State-Management in einer Datei. Das macht Tests, Reviews und Refactorings ' +
+      'unverhältnismäßig aufwändig.',
+    impact:
+      'God Components sind der häufigste Auslöser für Regressions beim Refactoring — ' +
+      'zu viele Abhängigkeiten, zu viele Side Effects in einer Datei.',
+    strategy:
+      'Jede God Component nach Verantwortung aufteilen: Datenladen → Custom Hook, ' +
+      'Darstellung → Sub-Komponente, Geschäftslogik → Utility. ' +
+      'Ziel: < 300 Zeilen, < 5 Hooks pro Datei.',
+    firstStep:
+      'Die größte Komponente öffnen und alle `useEffect`/`useState`-Blöcke identifizieren. ' +
+      'Den ersten zusammenhängenden Block in einen Custom Hook (`use*.ts`) extrahieren.',
+    fixApproach: 'per-file',
+  },
+  {
+    id: 'component-size',
+    matchRuleIds: ['cat-25-rule-2'],
+    matchMessagePatterns: [/component.*has \d+ lines|component.*zu lang/i],
+    title: 'Komponenten zu lang — Custom Hooks und Sub-Komponenten extrahieren',
+    problem:
+      'Einzelne React-Komponenten überschreiten die Grenzwerte (>300 Zeilen Warnung, >500 Zeilen Verletzung). ' +
+      'Zu große Komponenten mischen Datenladen, State-Management und Darstellung in einer Datei — ' +
+      'das erzeugt enge Kopplung und erschwert isolierte Tests.',
+    impact:
+      'Große Komponenten sind der häufigste Auslöser für ungewollte Re-Renders und Regressions. ' +
+      'Jede Zeile mehr erhöht die kognitive Last bei Code-Reviews und macht Wiederverwendung schwieriger.',
+    strategy:
+      'Verantwortlichkeiten aufteilen: Datenladen und State → Custom Hook (`use*.ts`), ' +
+      'wiederverwendbare Abschnitte → Sub-Komponenten, komplexe Berechnungen → Utility-Funktionen. ' +
+      'Ziel: <300 Zeilen pro Datei, max. 5 Hooks pro Komponente.',
+    firstStep:
+      'Die längste Komponente öffnen und alle `useEffect`/`useState`-Blöcke auflisten. ' +
+      'Den ersten logisch zusammenhängenden Block in einen Custom Hook auslagern — ein Commit pro Extraktion.',
+    fixApproach: 'per-file',
+  },
+  {
     id: 'file-size',
     matchRuleIds: ['cat-1-rule-4'],
-    matchMessagePatterns: [/\d+\s*lines?/i, /zu (lang|viel|gross)/i],
+    matchMessagePatterns: [/file size (violation|warning)|has \d+ lines \(limit/i, /zu (lang|viel|gross)/i],
     title: 'Dateien zu lang — systematisch aufteilen',
     problem:
-      'Mehrere Dateien überschreiten die 300-Zeilen-Grenze. Große Dateien haben zu viele Verantwortlichkeiten, ' +
-      'sind schwerer zu testen und erhöhen die kognitive Last beim Lesen. Einzelfixes helfen nicht — ' +
-      'das Problem ist strukturell.',
+      'Mehrere Dateien überschreiten die Grenzwerte: >300 Zeilen ist eine Warnung, >500 Zeilen eine Verletzung. ' +
+      'Große Dateien haben zu viele Verantwortlichkeiten, sind schwerer zu testen und erhöhen die kognitive Last. ' +
+      'Einzelfixes helfen nicht — das Problem ist strukturell.',
     impact:
-      'Jede Datei über 500 Zeilen ist ein aktives Risiko für Merge-Konflikte und unbeabsichtigte Seiteneffekte ' +
-      'beim Refactoring.',
+      'Dateien über 500 Zeilen sind ein aktives Risiko für Merge-Konflikte und Regressions beim Refactoring. ' +
+      'Dateien zwischen 300 und 500 Zeilen sind Warnzeichen — sie wachsen, wenn nichts geändert wird.',
     strategy:
       'Einen Durchlauf planen: jede betroffene Datei nach Verantwortung aufteilen. ' +
       'Typische Splits: Hook/Logik extrahieren, Sub-Komponenten auslagern, ' +
       'Helper-Funktionen in eigene Utils verschieben. Commit pro Datei.',
     firstStep:
-      'Die größte Datei zuerst: Verantwortlichkeiten identifizieren, dann je eine Verantwortung ' +
-      'in eine neue Datei extrahieren. Ziel: < 300 Zeilen pro Datei.',
+      'Mit den >500-Zeilen-Dateien beginnen (Verletzungen). Verantwortlichkeiten identifizieren, ' +
+      'dann je eine Verantwortung in eine neue Datei extrahieren. Ziel: < 300 Zeilen pro Datei.',
     fixApproach: 'per-file',
   },
   {
@@ -358,14 +453,48 @@ export const FINDING_RECOMMENDATIONS: FindingRecommendation[] = [
       'Der Audit-Score kann "Stable" anzeigen während deine Live-DB kritische Sicherheitslücken hat — ' +
       'z.B. fehlende RLS-Policies oder falsch konfigurierte Permissions, die nur im Dashboard gesetzt wurden.',
     strategy:
-      'Führe den Schema Drift Check regelmäßig aus (vor jedem Release) um Live-DB und Code synchron zu halten. ' +
-      'Mittel- bis langfristig: alle DB-Änderungen ausschließlich über Migrations-Dateien durchführen — ' +
-      'nie direkt über das Dashboard.',
+      'Den Schema Drift Check regelmäßig ausführen (vor jedem Release) um Live-DB und Code synchron zu halten. ' +
+      'Langfristig: alle DB-Änderungen ausschließlich über Migrations-Dateien durchführen — nie direkt über das Dashboard.',
     firstStep:
-      'SQL-Queries aus dem Finding in deinem Datenbank-Dashboard ausführen. ' +
-      'Ergebnisse mit deinen Migrations-Dateien vergleichen. ' +
-      'Jede Abweichung ist ein potenziales Sicherheitsproblem.',
+      'SQL-Queries aus dem Finding in deinem Datenbank-Dashboard ausführen und Ergebnisse mit Migrations-Dateien vergleichen.',
     fixApproach: 'config-change',
+    manualSteps: [
+      'Supabase Dashboard öffnen → dein Projekt → SQL Editor',
+      'Die SQL-Queries aus dem Finding-Kasten unten in den Editor kopieren und ausführen',
+      'Ergebnisse mit deinen Migrations-Dateien in supabase/migrations/ vergleichen',
+      'Jede Abweichung als neue Migration erfassen: supabase/migrations/<timestamp>_fix_drift.sql',
+      'Migration deployen: supabase db push',
+    ],
+    verification: 'Alle SQL-Queries liefern leere Ergebnisse — kein Drift mehr vorhanden. Migrations-Dateien und Live-DB sind synchron.',
+  },
+  {
+    id: 'pitr-restore-test',
+    matchRuleIds: ['cat-13-rule-7'],
+    matchMessagePatterns: [/restore.test.*not.*document|backup.*not.*verif/i],
+    title: 'Restore-Test — Backup manuell verifizieren',
+    problem:
+      'Ein ungetestetes Backup ist kein Backup. Der Restore-Prozess muss mindestens einmal manuell durchgespielt ' +
+      'worden sein bevor du einem Kunden RTO < 4h zusicherst. Nur dann kannst du sicher sein, ' +
+      'dass im Ernstfall keine unerwarteten Hürden auftauchen.',
+    impact:
+      'Ohne Restore-Test gibt es keine Garantie, dass das Backup vollständig und korrekt ist. ' +
+      'Provider-Backups scheitern gelegentlich still — ein fehlgeschlagener Restore kostet Stunden ' +
+      'oder führt zu dauerhaftem Datenverlust.',
+    strategy:
+      'Einmaliger Restore-Test in ein separates Testprojekt. Ergebnis dokumentieren. ' +
+      'Danach jährlich wiederholen und Datum im Runbook aktualisieren.',
+    firstStep:
+      'Supabase Dashboard → Projekt → Database → Backups → Point in Time Recovery → Test-Restore in separates Projekt.',
+    fixApproach: 'documentation',
+    manualSteps: [
+      'supabase.com öffnen → dein Projekt → Database → Backups',
+      '"Point in Time Recovery" wählen',
+      'Zeitstempel ~1 Stunde in der Vergangenheit auswählen',
+      'In ein separates Testprojekt restoren — NICHT das Produktionsprojekt überschreiben',
+      'Im Testprojekt ausführen: SELECT COUNT(*) FROM users — Ergebnis mit Produktion vergleichen',
+      'Datum + Ergebnis in docs/runbooks/disaster-recovery.md eintragen (TODO-Zeile)',
+    ],
+    verification: 'Die TODO-Zeile in docs/runbooks/disaster-recovery.md ist ausgefüllt: Datum, Testergebnis, Anzahl Rows.',
   },
 ]
 

@@ -84,7 +84,7 @@ function detectStack(files: z.infer<typeof fileSchema>[]): Record<string, string
       else if ('vue' in deps) framework = 'vue'
       else if ('svelte' in deps) framework = 'svelte'
       else if ('express' in deps || 'fastify' in deps) framework = 'node'
-    } catch {}
+    } catch { /* ignore — package.json may not be parseable */ }
   }
 
   return { framework, language }

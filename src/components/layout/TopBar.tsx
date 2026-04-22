@@ -61,7 +61,7 @@ export default function TopBar() {
       const name: string = profile?.full_name || user.email || ''
       setUserName(name)
       setUserInitial((name[0] ?? '?').toUpperCase())
-    })
+    }).catch(() => {})
 
     fetch('/api/feeds/notifications?unread=true&limit=5')
       .then(r => r.ok ? r.json() : null)

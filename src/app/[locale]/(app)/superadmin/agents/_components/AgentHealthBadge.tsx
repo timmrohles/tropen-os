@@ -14,8 +14,8 @@ interface Props {
 
 const STATUS_CONFIG: Record<AgentStatus, { dot: string; label: string; color: string }> = {
   active:     { dot: '🟢', label: 'Aktiv',       color: 'var(--accent)' },
-  draft:      { dot: '🟡', label: 'Entwurf',     color: '#d97706' },
-  outdated:   { dot: '🔴', label: 'Veraltet',    color: '#dc2626' },
+  draft:      { dot: '🟡', label: 'Entwurf',     color: 'var(--warning)' },
+  outdated:   { dot: '🔴', label: 'Veraltet',    color: 'var(--error)' },
   deprecated: { dot: '⚪', label: 'Deaktiviert', color: 'var(--text-tertiary)' },
 }
 

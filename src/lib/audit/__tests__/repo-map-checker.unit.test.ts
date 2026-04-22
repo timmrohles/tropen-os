@@ -24,7 +24,7 @@ function makeDep(source: string, target: string): FileDependency {
   return { source, target, symbols: [] }
 }
 
-function makeCtx(files: RepoFile[], deps: FileDependency[] = []): AuditContext {
+function makeCtx(files: RepoFile[], deps: FileDependency[] = [], fileContents?: Map<string, string>): AuditContext {
   return {
     rootPath: '/repo',
     repoMap: {
@@ -36,6 +36,7 @@ function makeCtx(files: RepoFile[], deps: FileDependency[] = []): AuditContext {
     packageJson: {}, tsConfig: {},
     filePaths: files.map((f) => f.path),
     gitInfo: { hasGitDir: true, recentCommits: [] },
+    fileContents,
   }
 }
 
@@ -104,7 +105,7 @@ describe('checkInputValidationCoverage', () => {
   })
 
   it('returns low score when no API routes use validateBody', async () => {
-    const routeFile = makeFile('src/app/api/users/route.ts', 30, { imports: [] })
+    const routeFile = makeFile('src/app/api/users/route.ts', 30, { imports: [], exports: ['POST'] })
     const ctx = makeCtx([routeFile])
     const result = await checkInputValidationCoverage(ctx)
     expect(result.score).toBeLessThan(3)
@@ -125,7 +126,10 @@ describe('checkServiceKeyInFrontend', () => {
     const file = makeFile('src/components/Layout.tsx', 50, {
       imports: [{ source: 'src/components/Layout.tsx', target: 'src/lib/supabase-admin', symbols: ['supabaseAdmin'] }],
     })
-    const ctx = makeCtx([file])
+    const contents = new Map([
+      ['src/components/Layout.tsx', "'use client'\nimport { supabaseAdmin } from '@/lib/supabase-admin'\n"],
+    ])
+    const ctx = makeCtx([file], [], contents)
     const result = await checkServiceKeyInFrontend(ctx)
     expect(result.score).toBe(0)
     expect(result.findings[0].severity).toBe('critical')

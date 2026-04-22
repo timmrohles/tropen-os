@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Megaphone } from '@phosphor-icons/react'
 import { s, typeBadgeStyle } from './announcements.styles'
+import { useTranslations } from 'next-intl'
 
 interface OrgRow {
   id: string
@@ -44,6 +45,7 @@ const EMPTY_FORM: CreateForm = {
 }
 
 export default function SuperadminAnnouncementsPage() {
+  const t = useTranslations('superadmin')
   const [announcements, setAnnouncements] = useState<AnnouncementRow[]>([])
   const [orgs, setOrgs] = useState<OrgRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -155,14 +157,14 @@ export default function SuperadminAnnouncementsPage() {
         <div className="page-header-text">
           <h1 className="page-header-title">
             <Megaphone size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
-            Announcements
+            {t('announcements.title')}
           </h1>
-          <p className="page-header-sub">Tropen-weite Neuigkeiten für alle Organisationen</p>
+          <p className="page-header-sub">{t('announcements.subtitle')}</p>
         </div>
         <div className="page-header-actions">
           {!showForm && (
             <button className="btn btn-primary" onClick={openForm}>
-              + Neue Announcement
+              {t('announcements.newBtn')}
             </button>
           )}
         </div>
@@ -170,13 +172,13 @@ export default function SuperadminAnnouncementsPage() {
 
       {showForm && (
         <div className="card" style={{ padding: '24px 28px', marginBottom: 24 }}>
-          <div style={s.formTitle}>Neue Announcement erstellen</div>
+          <div style={s.formTitle}>{t('announcements.formTitle')}</div>
 
           {formError && <div style={s.errorBanner}>{formError}</div>}
 
           <div style={s.grid}>
             <div style={s.fullWidth}>
-              <label style={s.label}>Titel *</label>
+              <label style={s.label}>{t('announcements.titleLabel')}</label>
               <input
                 style={s.input}
                 placeholder="Titel der Announcement"
@@ -186,7 +188,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div style={s.fullWidth}>
-              <label style={s.label}>Body</label>
+              <label style={s.label}>{t('announcements.bodyLabel')}</label>
               <textarea
                 style={s.textarea}
                 placeholder="Optionaler Beschreibungstext…"
@@ -196,7 +198,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div>
-              <label style={s.label}>URL</label>
+              <label style={s.label}>{t('announcements.urlLabel')}</label>
               <input
                 style={s.input}
                 placeholder="https://…"
@@ -206,7 +208,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div>
-              <label style={s.label}>URL-Label</label>
+              <label style={s.label}>{t('announcements.urlLabelLabel')}</label>
               <input
                 style={s.input}
                 placeholder="Mehr erfahren"
@@ -216,7 +218,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div>
-              <label style={s.label}>Ablaufdatum</label>
+              <label style={s.label}>{t('announcements.expiresLabel')}</label>
               <input
                 style={s.input}
                 type="date"
@@ -226,7 +228,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div>
-              <label style={s.label}>Typ</label>
+              <label style={s.label}>{t('announcements.typeLabel')}</label>
               <select
                 style={s.input}
                 value={form.type}
@@ -241,7 +243,7 @@ export default function SuperadminAnnouncementsPage() {
             </div>
 
             <div style={s.fullWidth}>
-              <span style={s.label}>Zielgruppe</span>
+              <span style={s.label}>{t('announcements.audienceLabel')}</span>
               <div style={s.radioGroup}>
                 <label style={s.radioLabel}>
                   <input
@@ -251,7 +253,7 @@ export default function SuperadminAnnouncementsPage() {
                     checked={form.target === 'all'}
                     onChange={() => setForm((f) => ({ ...f, target: 'all', organization_id: '' }))}
                   />
-                  Alle Orgs
+                  {t('announcements.allOrgs')}
                 </label>
                 <label style={s.radioLabel}>
                   <input
@@ -261,14 +263,14 @@ export default function SuperadminAnnouncementsPage() {
                     checked={form.target === 'org'}
                     onChange={() => setForm((f) => ({ ...f, target: 'org' }))}
                   />
-                  Spezifische Org
+                  {t('announcements.specificOrg')}
                 </label>
               </div>
             </div>
 
             {form.target === 'org' && (
               <div style={s.fullWidth}>
-                <label style={s.label}>Organisation</label>
+                <label style={s.label}>{t('announcements.orgLabel')}</label>
                 <select
                   style={s.input}
                   value={form.organization_id}
@@ -287,10 +289,10 @@ export default function SuperadminAnnouncementsPage() {
 
           <div style={s.formFooter}>
             <button className="btn btn-ghost" onClick={cancelForm} disabled={saving}>
-              Abbrechen
+              {t('announcements.cancel')}
             </button>
             <button className="btn btn-primary" onClick={handleCreate} disabled={saving}>
-              {saving ? 'Speichern…' : 'Announcement erstellen'}
+              {saving ? t('announcements.saving') : t('announcements.createBtn')}
             </button>
           </div>
         </div>
@@ -300,7 +302,7 @@ export default function SuperadminAnnouncementsPage() {
 
       <div className="card">
         <div className="card-header">
-          <span className="card-header-label">Aktive Announcements</span>
+          <span className="card-header-label">{t('announcements.activeTitle')}</span>
         </div>
         <div className="card-body">
           {loading ? (
@@ -335,14 +337,14 @@ export default function SuperadminAnnouncementsPage() {
                     onClick={() => handleDeactivate(a.id)}
                     disabled={actioningId === a.id}
                   >
-                    Deaktivieren
+                    {t('announcements.deactivate')}
                   </button>
                   <button
                     className="btn btn-sm btn-danger"
                     onClick={() => handleDelete(a.id)}
                     disabled={actioningId === a.id}
                   >
-                    Löschen
+                    {t('announcements.delete')}
                   </button>
                 </div>
               </div>

@@ -141,6 +141,39 @@ export async function checkDeploymentConfig(ctx: AuditContext): Promise<RuleResu
   }])
 }
 
+// ── cat-15: next/font display mode ──────────────────────────────────────────
+// display: 'optional' suppresses Next.js auto-generated fallback metrics
+// (size-adjust, ascent-override etc.), making font-swap visually noticeable.
+
+export async function checkNextFontDisplayMode(ctx: AuditContext): Promise<RuleResult> {
+  const deps = { ...ctx.packageJson.dependencies, ...ctx.packageJson.devDependencies }
+  if (!('next' in deps)) return pass('cat-15-rule-8', 5, 'Not a Next.js project')
+
+  const layoutCandidates = ['src/app/layout.tsx', 'app/layout.tsx', 'src/app/layout.ts', 'app/layout.ts']
+  let layoutContent: string | null = null
+  let layoutPath = ''
+  for (const p of layoutCandidates) {
+    const c = readContent(ctx, p)
+    if (c) { layoutContent = c; layoutPath = p; break }
+  }
+
+  if (!layoutContent) return pass('cat-15-rule-8', 5, 'No root layout found — next/font not in use')
+
+  const usesNextFont = layoutContent.includes("from 'next/font") || layoutContent.includes('from "next/font')
+  if (!usesNextFont) return pass('cat-15-rule-8', 5, 'next/font not used in root layout')
+
+  const hasOptional = /display\s*:\s*['"]optional['"]/.test(layoutContent)
+  if (!hasOptional) return pass('cat-15-rule-8', 5, 'next/font display mode is not "optional"')
+
+  return fail('cat-15-rule-8', 3, 'next/font uses display: "optional" — fallback metrics not generated', [{
+    severity: 'medium',
+    message: 'next/font with display: "optional" skips auto-generated size-adjust/ascent-override on the fallback font — layout shift is visible on font swap. Use display: "swap" instead.',
+    filePath: layoutPath,
+    suggestion: `Replace display: 'optional' with display: 'swap' in the next/font config. Next.js automatically generates an adjusted Arial fallback (size-adjust, ascent-override, descent-override) that makes the swap visually imperceptible.`,
+    fixType: 'code-fix',
+  }])
+}
+
 // ── cat-10: Test framework installed ────────────────────────────────────────
 
 export async function checkTestFrameworkInstalled(ctx: AuditContext): Promise<RuleResult> {

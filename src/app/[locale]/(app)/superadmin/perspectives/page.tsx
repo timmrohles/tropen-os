@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Eye, Plus, Trash, FloppyDisk, PencilSimple, X } from '@phosphor-icons/react'
+import { useTranslations } from 'next-intl'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ function avatarToForm(a: Avatar): FormState {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PerspectivesPage() {
+  const t = useTranslations('superadmin')
   const [avatars, setAvatars] = useState<Avatar[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Avatar | null>(null)
@@ -216,14 +218,14 @@ export default function PerspectivesPage() {
         <div className="page-header-text">
           <h1 className="page-header-title">
             <Eye size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
-            Perspectives verwalten
+            {t('perspectives.title')}
           </h1>
-          <p className="page-header-sub">System-Avatare fur die Perspectives-Funktion</p>
+          <p className="page-header-sub">{t('perspectives.subtitle')}</p>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={openNew}>
             <Plus size={14} weight="bold" aria-hidden="true" />
-            Neuer Avatar
+            {t('perspectives.newBtn')}
           </button>
         </div>
       </div>
@@ -248,11 +250,11 @@ export default function PerspectivesPage() {
 
       {/* Avatar Grid */}
       {loading ? (
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Lade...</p>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('perspectives.loading')}</p>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: 32, textAlign: 'center' }}>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-            Keine System-Avatare gefunden.
+            {t('perspectives.noAvatars')}
           </p>
         </div>
       ) : (
@@ -310,7 +312,7 @@ export default function PerspectivesPage() {
           {/* Row 1: Emoji + Name */}
           <div style={s.formGrid}>
             <div style={s.formRow}>
-              <label style={s.label}>Emoji</label>
+              <label style={s.label}>{t('perspectives.emojiLabel')}</label>
               <input
                 style={{ ...s.input, width: 80, textAlign: 'center', fontSize: 20 }}
                 value={form.emoji}
@@ -319,7 +321,7 @@ export default function PerspectivesPage() {
               />
             </div>
             <div style={s.formRow}>
-              <label style={s.label}>Name *</label>
+              <label style={s.label}>{t('perspectives.nameLabel')}</label>
               <input
                 style={s.input}
                 value={form.name}
@@ -331,7 +333,7 @@ export default function PerspectivesPage() {
 
           {/* Description */}
           <div style={s.formRow}>
-            <label style={s.label}>Beschreibung</label>
+            <label style={s.label}>{t('perspectives.descLabel')}</label>
             <input
               style={s.input}
               value={form.description}
@@ -342,7 +344,7 @@ export default function PerspectivesPage() {
 
           {/* System Prompt */}
           <div style={s.formRow}>
-            <label style={s.label}>System-Prompt *</label>
+            <label style={s.label}>{t('perspectives.promptLabel')}</label>
             <textarea
               style={s.textarea}
               rows={6}
@@ -355,7 +357,7 @@ export default function PerspectivesPage() {
           {/* Row 2: Model + Context */}
           <div style={s.formGrid}>
             <div style={s.formRow}>
-              <label style={s.label}>Modell</label>
+              <label style={s.label}>{t('perspectives.modelLabel')}</label>
               <select
                 style={s.select}
                 value={form.model_id}
@@ -366,7 +368,7 @@ export default function PerspectivesPage() {
               </select>
             </div>
             <div style={s.formRow}>
-              <label style={s.label}>Kontext-Fenster</label>
+              <label style={s.label}>{t('perspectives.contextLabel')}</label>
               <select
                 style={s.select}
                 value={form.context_default}
@@ -421,7 +423,7 @@ export default function PerspectivesPage() {
               disabled={saving || !form.name.trim() || !form.system_prompt.trim()}
             >
               <FloppyDisk size={14} weight="fill" aria-hidden="true" />
-              {saving ? 'Speichert...' : 'Speichern'}
+              {saving ? t('perspectives.saving') : t('perspectives.save')}
             </button>
             {!isNew && (
               <button
@@ -430,7 +432,7 @@ export default function PerspectivesPage() {
                 style={{ color: 'var(--error)', marginLeft: 'auto' }}
               >
                 <Trash size={14} weight="fill" aria-hidden="true" />
-                Löschen
+                {t('perspectives.delete')}
               </button>
             )}
           </div>
@@ -443,10 +445,10 @@ export default function PerspectivesPage() {
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-                  {deleting ? 'Löscht…' : 'Ja, löschen'}
+                  {deleting ? t('perspectives.saving') : t('perspectives.deleteYes')}
                 </button>
                 <button className="btn btn-ghost" onClick={() => setDeleteConfirm(false)}>
-                  Abbrechen
+                  {t('perspectives.cancel')}
                 </button>
               </div>
             </div>

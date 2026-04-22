@@ -1,21 +1,19 @@
 // src/lib/fix-engine/consensus-generator.ts
 // Calls multiple providers in parallel with the fix prompt, then uses Opus judge to pick the best diff.
-// All reviewer calls route through the Vercel AI Gateway via plain "provider/model" strings.
-// The Opus judge uses the direct anthropicInstance (separate billing path, per spec).
+// Reviewers use direct provider SDKs (no AI Gateway — not available locally).
+// The Opus judge uses the direct anthropicInstance.
 import { generateText } from 'ai'
 import { anthropic as anthropicInstance } from '@/lib/llm/anthropic'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createLogger } from '@/lib/logger'
 import { FixLlmResponseSchema, JudgeResponseSchema } from './schemas'
 import type { FixContext, ProviderFixDraft, ConsensusFix, FixLlmResponse } from './types'
 
 const log = createLogger('fix-engine:consensus-generator')
 
-// Gateway availability: OIDC token is the default (via `vercel env pull`).
-// AI_GATEWAY_API_KEY is a fallback for CI / non-Vercel environments only.
-const gatewayAvailable = () => !!(process.env.VERCEL_OIDC_TOKEN || process.env.AI_GATEWAY_API_KEY)
-
 // ---------------------------------------------------------------------------
-// Provider definitions — all route through Vercel AI Gateway
+// Provider definitions — direct SDK calls, no AI Gateway dependency
 // ---------------------------------------------------------------------------
 
 interface FixProvider {
@@ -28,7 +26,7 @@ interface FixProvider {
 const PROVIDERS: FixProvider[] = [
   {
     id: 'anthropic',
-    isAvailable: gatewayAvailable,
+    isAvailable: () => !!process.env.ANTHROPIC_API_KEY,
     call: async (prompt) => {
       const result = await generateText({
         model: anthropicInstance(REVIEWER_MODEL),
@@ -46,10 +44,11 @@ const PROVIDERS: FixProvider[] = [
   },
   {
     id: 'openai',
-    isAvailable: gatewayAvailable,
+    isAvailable: () => !!process.env.OPENAI_API_KEY,
     call: async (prompt) => {
+      const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! })
       const result = await generateText({
-        model: 'openai/gpt-5.4' as Parameters<typeof generateText>[0]['model'],
+        model: openai('gpt-4o'),
         prompt,
         maxOutputTokens: 2048,
         temperature: 0.1,
@@ -64,10 +63,11 @@ const PROVIDERS: FixProvider[] = [
   },
   {
     id: 'google',
-    isAvailable: gatewayAvailable,
+    isAvailable: () => !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     call: async (prompt) => {
+      const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY! })
       const result = await generateText({
-        model: 'google/gemini-2.5-pro' as Parameters<typeof generateText>[0]['model'],
+        model: google('gemini-2.0-flash'),
         prompt,
         maxOutputTokens: 2048,
         temperature: 0.1,
@@ -78,7 +78,7 @@ const PROVIDERS: FixProvider[] = [
         outputTokens: result.usage?.outputTokens ?? 0,
       }
     },
-    costPerM: { input: 1.25, output: 5.0 },
+    costPerM: { input: 0.10, output: 0.40 },
   },
 ]
 

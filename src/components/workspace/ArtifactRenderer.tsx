@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { FloppyDisk, ArrowsOut, Code, FileText, Table, ListBullets, Atom, Play, ChatCircle, ArrowSquareOut, ProjectorScreen, CaretLeft, CaretRight, DownloadSimple, ChartBar, Warning, ArrowClockwise } from '@phosphor-icons/react'
@@ -163,6 +164,7 @@ export default function ArtifactRenderer({
   onSendDirect,
   isInSplitView = false,
 }: ArtifactRendererProps) {
+  const t = useTranslations('artifactRenderer')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -208,6 +210,8 @@ export default function ArtifactRenderer({
   useEffect(() => {
     if (!previewOpen) return
     function handleMessage(e: MessageEvent) {
+      // Sandboxed iframes have null origin; same-origin iframes use window.location.origin
+      if (e.origin !== 'null' && e.origin !== window.location.origin) return
       if (e.data?.type === 'artifact-action' && onSendDirect) {
         setLastAction(e.data.event as ArtifactActionEvent)
       }
@@ -264,7 +268,7 @@ export default function ArtifactRenderer({
               <FloppyDisk size={13} weight="bold" />
             </button>
           )}
-          {saved && <span className="artifact-saved-badge">Gespeichert</span>}
+          {saved && <span className="artifact-saved-badge">{t('saved')}</span>}
         </div>
       </div>
     )
@@ -330,19 +334,19 @@ export default function ArtifactRenderer({
           {(isReact || isPresentation || isChart) && (
             <button
               onClick={() => { setPreviewOpen(s => !s); setExpanded(false) }}
-              title={previewOpen ? 'Quellcode anzeigen' : 'Vorschau öffnen'}
+              title={previewOpen ? t('showSource') : t('openPreview')}
               className="artifact-action-btn"
             >
               {previewOpen ? <Code size={13} weight="bold" /> : <Play size={13} weight="bold" />}
-              <span>{previewOpen ? 'Code' : 'Vorschau'}</span>
+              <span>{previewOpen ? t('code') : t('preview')}</span>
             </button>
           )}
           {isReact && previewOpen && (
             <button
               onClick={() => setExpanded(s => !s)}
-              title={expanded ? 'Verkleinern' : 'Vergrößern'}
+              title={expanded ? t('collapse') : t('expand')}
               className="artifact-action-btn artifact-action-btn--icon"
-              aria-label={expanded ? 'Verkleinern' : 'Vergrößern'}
+              aria-label={expanded ? t('collapse') : t('expand')}
             >
               <ArrowsOut size={13} weight="bold" />
             </button>
@@ -351,31 +355,31 @@ export default function ArtifactRenderer({
             <button
               onClick={() => void handleSave()}
               disabled={saving}
-              title="Als Artefakt speichern"
+              title={t('saveArtifact')}
               className="artifact-action-btn"
             >
               <FloppyDisk size={13} weight="bold" />
-              <span>{saving ? 'Speichern…' : 'Speichern'}</span>
+              <span>{saving ? t('saving') : t('save')}</span>
             </button>
           )}
           {saved && (
-            <span className="artifact-saved-badge">Gespeichert</span>
+            <span className="artifact-saved-badge">{t('saved')}</span>
           )}
           {isPresentation && (
             <button
               onClick={() => void handleExportPptx()}
               disabled={exporting}
-              title="Als PowerPoint exportieren"
+              title={t('exportPptx')}
               className="artifact-action-btn"
             >
               <DownloadSimple size={13} weight="bold" />
-              <span>{exporting ? 'Exportiere…' : 'PPTX'}</span>
+              <span>{exporting ? t('exporting') : 'PPTX'}</span>
             </button>
           )}
           {isReact && iframeHtml && (
             <button
               onClick={handleExportHtml}
-              title="Als HTML exportieren"
+              title={t('exportHtml')}
               className="artifact-action-btn"
             >
               <DownloadSimple size={13} weight="bold" />
@@ -415,14 +419,14 @@ export default function ArtifactRenderer({
             <div className="artifact-error-card">
               <div className="artifact-error-card__header">
                 <Warning size={14} weight="fill" aria-hidden="true" />
-                <span>Artifact konnte nicht geladen werden</span>
+                <span>{t('loadError')}</span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                   <button className="artifact-action-btn" onClick={() => setRetryCount(c => c + 1)}>
                     <ArrowClockwise size={13} weight="bold" />
-                    <span>Nochmal</span>
+                    <span>{t('retry')}</span>
                   </button>
                   <button className="artifact-action-btn artifact-action-btn--ghost" onClick={() => setShowErrorDetails(v => !v)}>
-                    {showErrorDetails ? 'Ausblenden' : 'Details'}
+                    {showErrorDetails ? t('hideDetails') : t('showDetails')}
                   </button>
                 </div>
               </div>
@@ -440,13 +444,13 @@ export default function ArtifactRenderer({
             />
           ) : (
             <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
-              Wird kompiliert…
+              {t('compiling')}
             </div>
           )}
           {lastAction && onSendDirect && (
             <div className="artifact-action-choice">
               <span className="artifact-action-choice__label">
-                Auswahl: <strong>{String(lastAction.value)}</strong>
+                {t('selectionLabel')} <strong>{String(lastAction.value)}</strong>
               </span>
               <button
                 className="artifact-action-btn"
@@ -456,7 +460,7 @@ export default function ArtifactRenderer({
                 }}
               >
                 <ChatCircle size={13} weight="bold" />
-                <span>Mit Toro besprechen</span>
+                <span>{t('discussWithToro')}</span>
               </button>
               <button
                 className="artifact-action-btn"
@@ -466,7 +470,7 @@ export default function ArtifactRenderer({
                 }}
               >
                 <ArrowSquareOut size={13} weight="bold" />
-                <span>Vertiefen</span>
+                <span>{t('deepDive')}</span>
               </button>
               <button
                 className="artifact-action-btn artifact-action-btn--ghost"

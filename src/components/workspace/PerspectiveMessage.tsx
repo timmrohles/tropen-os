@@ -1,6 +1,6 @@
 'use client'
 
-// TODO(timm): Vollständige Implementierung kommt mit Perspectives-Feature (stash: mega-refactor-april-8)
+// Stub — full implementation in mega-refactor-april-8 stash
 interface PerspectiveMessageProps {
   avatarEmoji: string
   avatarName: string

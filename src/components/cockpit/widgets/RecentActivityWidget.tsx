@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ChatCircle, FolderSimple, Sparkle, ArrowRight } from '@phosphor-icons/react'
 import type { ElementType } from 'react'
 import { Link } from '@/i18n/navigation'
-import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
+import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './Shared'
 
 interface ActivityItem {
   id: string

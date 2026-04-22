@@ -23,24 +23,31 @@ export default function DeepFixButton({ findingId, runId }: Props) {
 
   return (
     <div>
-      <button
-        className="btn btn-ghost btn-sm"
-        onClick={trigger}
-        disabled={isLoading}
-        title={state === 'generating'
-          ? '4-Modell-Konsens läuft — dauert ca. 60 Sekunden'
-          : 'Konsens-Fix mit 4 KI-Modellen + Opus-Richter generieren'}
-        style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
-        aria-busy={isLoading}
-      >
-        <Scales
-          size={13}
-          weight="bold"
-          aria-hidden="true"
-          style={{ opacity: isLoading ? 0.5 : 1 }}
-        />
-        {label}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={trigger}
+          disabled={isLoading}
+          title={state === 'generating'
+            ? '4-Modell-Konsens läuft — dauert ca. 60 Sekunden'
+            : 'Konsens-Fix mit 4 KI-Modellen + Opus-Richter generieren'}
+          style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-tertiary)' }}
+          aria-busy={isLoading}
+        >
+          <Scales
+            size={12}
+            weight="bold"
+            aria-hidden="true"
+            style={{ opacity: isLoading ? 0.4 : 0.7 }}
+          />
+          {label}
+        </button>
+        {state === 'idle' && (
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', opacity: 0.7 }}>
+            ~30 Sek · Konsens aus 4 Modellen
+          </span>
+        )}
+      </div>
 
       {state === 'error' && errorMessage && (
         <p style={{

@@ -46,14 +46,14 @@ import {
 } from './checkers/agent-observability-checker'
 import {
   checkEmptyCatchBlocks, checkCommentedOutCode,
-  checkLegalPages, checkVVTPresent, checkCookieConsent, checkAnalyticsPiiSeparation,
+  checkLegalPages, checkVVTPresent, checkAnalyticsPiiSeparation,
   checkSoftDeletePattern, checkMigrationNaming,
   checkWebhookSignatureValidation, checkTimeoutRetryPatterns,
   checkGlobalMutableState,
   checkVitestCoverageThresholds,
   checkStagingEnvironment,
   checkRestoreTestDocumented,
-  checkCodeownersPresent, checkKiDependencyReviewDocs,
+  checkKiDependencyReviewDocs,
   checkHardcodedColors, checkCssVariablesFile,
   checkAxeCoreInstalled,
   checkCodeownersForGitGovernance,
@@ -67,7 +67,7 @@ import {
   checkImageAltText,
 } from './checkers/agent-committee-checker'
 import {
-  checkDsgvoPrivacyPage, checkDsgvoCookieConsentLibrary, checkDsgvoNoTrackingBeforeConsent,
+  checkDsgvoCookieConsentLibrary, checkDsgvoNoTrackingBeforeConsent,
   checkDsgvoPasswordHashing, checkDsgvoHstsHeader, checkDsgvoCspHeader,
   checkDsgvoDataExportEndpoint, checkDsgvoAccountDeletion,
   checkBfsgAccessibilityStatement, checkBfsgFeedbackMechanism,
@@ -106,7 +106,7 @@ import {
 import {
   checkIconLibraryConsistency, checkHardcodedStrings,
   checkGitignoreCompleteness, checkDeploymentConfig,
-  checkTestFrameworkInstalled,
+  checkTestFrameworkInstalled, checkNextFontDisplayMode,
 } from './checkers/thin-category-checkers'
 import {
   checkPlaceholderComments, checkAiToolFingerprints, checkOvercommenting,
@@ -161,7 +161,7 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('cat-3-rule-4',  3, 'HTTP Sicherheitsheader gesetzt', 2, 'code-fix'),
   manual('cat-3-rule-5',  3, 'Rate Limiting implementiert', 2, 'code-fix'),
   manual('cat-3-rule-6',  3, 'Auth und Authz klar getrennt', 3, 'refactoring'),
-  { id: 'cat-3-rule-7',  categoryId: 3, name: 'Dependency-Vulnerabilities geprueft', weight: 2, checkMode: 'external-tool', automatable: true, check: checkNpmAudit, agentSource: 'npm-audit', fixType: 'code-fix' },
+  { id: 'cat-3-rule-7',  categoryId: 3, name: 'Dependency-Vulnerabilities geprueft', weight: 2, checkMode: 'cli', automatable: true, check: checkNpmAudit, agentSource: 'npm-audit', fixType: 'code-fix' },
   manual('cat-3-rule-8',  3, 'Auth-Haertung (Token-Expiry, Rotation, Logout)', 3, 'code-fix'),
   manual('cat-3-rule-9',  3, 'Boilerplate-Hygiene (keine Default-Credentials)', 2, 'code-fix'),
   manual('cat-3-rule-10', 3, 'E-Mail-Sicherheit (SPF, DKIM, DMARC)', 2),
@@ -195,10 +195,10 @@ export const AUDIT_RULES: AuditRule[] = [
   // Legal Agent R1, R2, R3; Analytics Agent R3
   { id: 'cat-4-rule-7', categoryId: 4, name: 'Impressum + Datenschutz-Seiten vorhanden', weight: 3, checkMode: 'file-system', automatable: true, check: checkLegalPages, agentSource: 'legal', agentRuleId: 'R1', enforcement: 'blocked', fixType: 'code-gen' },
   { id: 'cat-4-rule-8', categoryId: 4, name: 'VVT (Verarbeitungsverzeichnis) in docs/ vorhanden', weight: 2, checkMode: 'documentation', automatable: true, check: checkVVTPresent, agentSource: 'legal', agentRuleId: 'R2', enforcement: 'reviewed', fixType: 'code-gen' },
-  { id: 'cat-4-rule-9', categoryId: 4, name: 'Cookie-Consent implementiert', weight: 2, checkMode: 'repo-map', automatable: true, check: checkCookieConsent, agentSource: 'legal', agentRuleId: 'R3', enforcement: 'blocked', fixType: 'code-gen' },
+  // cat-4-rule-9 removed — subset of cat-4-rule-12 (DSGVO CMP check covers all 3 libs + 7 more)
   { id: 'cat-4-rule-10', categoryId: 4, name: 'PII in Analytics-Events getrennt / anonymisiert', weight: 2, checkMode: 'repo-map', automatable: true, check: checkAnalyticsPiiSeparation, agentSource: 'analytics', agentRuleId: 'R3', enforcement: 'reviewed', fixType: 'code-fix' },
-  // DSGVO Deep Agent: R1, R4, R5, R10, R11, R12, R13, R15–R18
-  { id: 'cat-4-rule-11', categoryId: 4, name: 'DSGVO: Datenschutzseite vorhanden (Art. 13)', weight: 3, checkMode: 'file-system', automatable: true, check: checkDsgvoPrivacyPage, agentSource: 'dsgvo', agentRuleId: 'R1', enforcement: 'blocked', fixType: 'code-gen' },
+  // DSGVO Deep Agent: R4, R5, R10, R11, R12, R13, R15–R18
+  // cat-4-rule-11 removed — presence check is subset of cat-4-rule-7 (Impressum + Datenschutz)
   { id: 'cat-4-rule-12', categoryId: 4, name: 'DSGVO: Cookie Consent Library (ePrivacy Art. 5(3))', weight: 2, checkMode: 'file-system', automatable: true, check: checkDsgvoCookieConsentLibrary, agentSource: 'dsgvo', agentRuleId: 'R4', enforcement: 'blocked', fixType: 'code-gen' },
   { id: 'cat-4-rule-13', categoryId: 4, name: 'DSGVO: Kein Tracking vor Consent (Art. 7)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkDsgvoNoTrackingBeforeConsent, agentSource: 'dsgvo', agentRuleId: 'R5', enforcement: 'blocked', fixType: 'code-fix' },
   { id: 'cat-4-rule-14', categoryId: 4, name: 'DSGVO: Passwort-Hashing (Art. 32)', weight: 3, checkMode: 'file-system', automatable: true, check: checkDsgvoPasswordHashing, agentSource: 'dsgvo', agentRuleId: 'R10', enforcement: 'blocked', fixType: 'code-fix' },
@@ -309,8 +309,7 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-14-rule-2', categoryId: 14, name: 'Vulnerability-Scans in CI', weight: 3, checkMode: 'file-system', automatable: true, check: checkVulnerabilityScanInCI, fixType: 'code-gen' },
   { id: 'cat-14-rule-3', categoryId: 14, name: 'Renovate / Dependabot konfiguriert', weight: 2, checkMode: 'file-system', automatable: true, check: checkDependabotConfigured, fixType: 'code-gen' },
   { id: 'cat-14-rule-4', categoryId: 14, name: 'Node-Version fixiert', weight: 1, checkMode: 'file-system', automatable: true, check: checkNodeVersionFixed, fixType: 'code-gen' },
-  // Dependencies Agent R5; Git Governance Agent R3
-  { id: 'cat-14-rule-5', categoryId: 14, name: 'CODEOWNERS-Datei vorhanden', weight: 2, checkMode: 'file-system', automatable: true, check: checkCodeownersPresent, agentSource: 'git-governance', agentRuleId: 'R3', enforcement: 'reviewed', fixType: 'code-gen' },
+  // Git Governance Agent R3 — CODEOWNERS lives in cat-19-rule-4 (correct home)
   { id: 'cat-14-rule-6', categoryId: 14, name: 'KI-Dependency-Review-Prozess dokumentiert', weight: 1, checkMode: 'documentation', automatable: true, check: checkKiDependencyReviewDocs, agentSource: 'dependencies', agentRuleId: 'R5', enforcement: 'advisory', fixType: 'code-gen' },
 
   // ── Category 15: Design System (weights: 2,2,2,1) ────────────────────────
@@ -452,12 +451,12 @@ export const AUDIT_RULES: AuditRule[] = [
   // ── AST Code-Quality Checks (B1–B8) ──────────────────────────────────────
   { id: 'cat-2-rule-12', categoryId: 2, name: 'Cognitive Complexity <= 15 pro Funktion', weight: 2, checkMode: 'repo-map', automatable: true, check: checkCognitiveComplexity, agentSource: 'code-style', fixType: 'refactoring' },
   { id: 'cat-1-rule-10', categoryId: 1, name: 'Keine God Components (>300 Zeilen + >5 Hooks)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkGodComponents, agentSource: 'architecture', fixType: 'refactoring' },
-  { id: 'cat-2-rule-10', categoryId: 2, name: 'Error-Handling vollstaendig (keine leeren catch)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorHandling, agentSource: 'error-handling', fixType: 'code-fix' },
+  { id: 'cat-2-rule-16', categoryId: 2, name: 'Error-Handling vollstaendig (keine leeren catch)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorHandling, agentSource: 'error-handling', fixType: 'code-fix' },
   { id: 'cat-3-rule-30', categoryId: 3, name: 'Keine hardcodierten Secrets im Quellcode', weight: 3, checkMode: 'repo-map', automatable: true, check: checkHardcodedSecrets, agentSource: 'security', enforcement: 'blocked', fixType: 'code-fix' },
   { id: 'cat-1-rule-11', categoryId: 1, name: 'Keine zirkulaeren Imports', weight: 2, checkMode: 'repo-map', automatable: true, check: checkCircularImports, agentSource: 'architecture', fixType: 'refactoring' },
   { id: 'cat-2-rule-13', categoryId: 2, name: 'Minimale any-Type-Nutzung', weight: 1, checkMode: 'repo-map', automatable: true, check: checkAnyUsage, agentSource: 'code-style', fixType: 'code-fix' },
   { id: 'cat-5-rule-15', categoryId: 5, name: 'Keine N+1 Queries (DB-Call in Schleife)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkNPlusOneQueries, agentSource: 'database', fixType: 'code-fix' },
-  { id: 'cat-2-rule-11', categoryId: 2, name: 'Error Boundary vorhanden (error.tsx)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorBoundary, agentSource: 'error-handling', fixType: 'code-gen' },
+  { id: 'cat-2-rule-17', categoryId: 2, name: 'Error Boundary vorhanden (error.tsx)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorBoundary, agentSource: 'error-handling', fixType: 'code-gen' },
 
   // ── Gap Checks (from gap analysis 2026-04-15) ────────────────────────────
   { id: 'cat-14-rule-7', categoryId: 14, name: '.env.example vorhanden', weight: 2, checkMode: 'repo-map', automatable: true, check: checkEnvExample, agentSource: 'dependencies', fixType: 'code-gen' },
@@ -486,10 +485,11 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-21-rule-5', categoryId: 21, name: 'Web App Manifest vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkWebManifest, fixType: 'code-gen' },
   { id: 'cat-21-rule-6', categoryId: 21, name: 'Offline-Fallback (Service Worker)', weight: 1, checkMode: 'repo-map', automatable: true, check: checkOfflineFallback, fixType: 'code-gen' },
   // cat-23-rule-2 (Health Check) already exists via file-system-checker
-  { id: 'cat-23-rule-4', categoryId: 23, name: 'Deployment dokumentiert', weight: 1, checkMode: 'repo-map', automatable: true, check: checkDeploymentDocs, fixType: 'code-gen' },
+  { id: 'cat-23-rule-6', categoryId: 23, name: 'Deployment dokumentiert', weight: 1, checkMode: 'repo-map', automatable: true, check: checkDeploymentDocs, fixType: 'code-gen' },
 
   // ── Thin Category Strengthening ──────────────────────────────────────────
   { id: 'cat-15-rule-7', categoryId: 15, name: 'Konsistente Icon-Library', weight: 1, checkMode: 'repo-map', automatable: true, check: checkIconLibraryConsistency, agentSource: 'design-system', fixType: 'code-fix' },
+  { id: 'cat-15-rule-8', categoryId: 15, name: 'next/font display: swap (nicht optional)', weight: 1, checkMode: 'file-system', automatable: true, check: checkNextFontDisplayMode, agentSource: 'design-system', fixType: 'code-fix' },
   { id: 'cat-17-rule-4', categoryId: 17, name: 'Keine hardcodierten Strings in JSX', weight: 1, checkMode: 'repo-map', automatable: true, check: checkHardcodedStrings, agentSource: 'content', fixType: 'code-fix' },
   { id: 'cat-19-rule-5', categoryId: 19, name: '.gitignore vollstaendig', weight: 2, checkMode: 'repo-map', automatable: true, check: checkGitignoreCompleteness, agentSource: 'git-governance', fixType: 'code-gen' },
   { id: 'cat-23-rule-5', categoryId: 23, name: 'Deployment-Konfiguration vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkDeploymentConfig, fixType: 'code-gen' },

@@ -157,8 +157,8 @@ export default function ConnectProjectCard() {
           maxWidth: 480,
           marginInline: 'auto',
         }}>
-          <WarningCircle size={16} color="var(--error, #dc2626)" weight="fill" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
-          <span style={{ fontSize: 13, color: 'var(--error, #dc2626)' }}>{error}</span>
+          <WarningCircle size={16} color="var(--error)" weight="fill" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
+          <span style={{ fontSize: 13, color: 'var(--error)' }}>{error}</span>
         </div>
       )}
 

@@ -47,6 +47,7 @@ export default function ImpersonationBanner() {
           const next = params.toString() ? `${pathname}?${params}` : pathname
           router.replace(next)
         })
+        .catch(() => {})
       return
     }
     const stored = sessionStorage.getItem(KEY)

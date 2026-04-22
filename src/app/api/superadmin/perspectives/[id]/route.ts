@@ -23,32 +23,36 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await requireSuperadmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
-  const body = await req.json()
-
-  const allowed = ['name', 'emoji', 'description', 'system_prompt', 'model_id',
-    'context_default', 'is_tabula_rasa', 'is_active', 'sort_order']
-  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  for (const key of allowed) {
-    if (key in body) updates[key] = body[key]
+  try {  
+    const user = await requireSuperadmin()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+    const { id } = await params
+    const body = await req.json()
+  
+    const allowed = ['name', 'emoji', 'description', 'system_prompt', 'model_id',
+      'context_default', 'is_tabula_rasa', 'is_active', 'sort_order']
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    for (const key of allowed) {
+      if (key in body) updates[key] = body[key]
+    }
+  
+    const { data, error } = await supabaseAdmin
+      .from('perspective_avatars')
+      .update(updates)
+      .eq('id', id)
+      .eq('scope', 'system')
+      .select()
+      .single()
+  
+    if (error) {
+      log.error('PATCH perspective failed', { id, error })
+      return apiError(error)
+    }
+    return NextResponse.json({ avatar: data })
+  } catch (err) {
+    return apiError(err)
   }
-
-  const { data, error } = await supabaseAdmin
-    .from('perspective_avatars')
-    .update(updates)
-    .eq('id', id)
-    .eq('scope', 'system')
-    .select()
-    .single()
-
-  if (error) {
-    log.error('PATCH perspective failed', { id, error })
-    return apiError(error)
-  }
-  return NextResponse.json({ avatar: data })
 }
 
 export async function DELETE(

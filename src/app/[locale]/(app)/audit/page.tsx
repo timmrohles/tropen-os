@@ -109,6 +109,36 @@ export default async function AuditPage({
     return f
   })
 
+  // Compute deep review badge info server-side — consensus_level does not survive React flight serialization.
+  // When the selected run is a plain automated scan, fall back to the most recent multi_model run so
+  // badges remain visible after a fresh automated re-scan.
+  const deepReviewBadges: Record<string, { level: string; count: number }> = {}
+  function collectBadges(src: Array<Record<string, unknown>>) {
+    for (const f of src) {
+      if (f.consensus_level) {
+        const key = `${(f.rule_id as string) || 'unknown'}::${(f.agent_source as string) ?? 'core'}`
+        if (!deepReviewBadges[key]) {
+          deepReviewBadges[key] = {
+            level: f.consensus_level as string,
+            count: ((f.models_flagged as string[]) ?? []).length,
+          }
+        }
+      }
+    }
+  }
+  collectBadges(findings as Array<Record<string, unknown>>)
+
+  // Fallback: if current run has no deep review findings, pull badges from the latest multi_model run
+  if (Object.keys(deepReviewBadges).length === 0 && selectedRunId) {
+    const latestReviewRun = runList.find(
+      (r) => (r as { id: string; review_type?: string | null }).review_type === 'multi_model' && r.id !== selectedRunId
+    )
+    if (latestReviewRun) {
+      const reviewFindings = await fetchAuditFindings(latestReviewRun.id)
+      collectBadges(reviewFindings as Array<Record<string, unknown>>)
+    }
+  }
+
   const openFindings = allFindings.filter((f) => f.status === 'open').length
   const criticalOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'critical').length
   const highOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'high').length
@@ -125,7 +155,6 @@ export default async function AuditPage({
   const hasLighthouseData = (findings as { agent_source?: string }[]).some(
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
-
   // fixType stats for display
   const fixTypeStats = { 'code-fix': 0, 'code-gen': 0, refactoring: 0, manual: 0 }
   for (const f of allFindings) {
@@ -166,6 +195,7 @@ export default async function AuditPage({
             criticalCount={runDetail ? (runDetail.critical_findings as number ?? 0) : 0}
             scanProjectId={activeScanProjectId}
             initialLighthouseUrl={initialLighthouseUrl}
+            isVercelEnv={!!process.env.NEXT_PUBLIC_VERCEL_ENV}
           />
         </div>
       </div>
@@ -199,9 +229,10 @@ export default async function AuditPage({
             highOpenFindings={highOpenFindings}
             criticalOpenFindings={criticalOpenFindings}
             isFirstRun={isFirstRun}
+            hasExternalTools={hasLighthouseData}
           />
 
-          {/* fixType stats + percentile */}
+          {/* fixType stats + percentile + lighthouse indicator */}
           {allFindings.length > 0 && (
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 0, marginTop: -8 }}>
               {t('fixTypeStats', {
@@ -213,6 +244,17 @@ export default async function AuditPage({
               {percentileRank !== null && (
                 <span style={{ marginLeft: 12 }}>
                   · {t('scorePercentile', { rank: percentileRank })}
+                </span>
+              )}
+              {hasLighthouseData && (
+                <span style={{
+                  marginLeft: 12,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+                  color: 'var(--accent)',
+                  borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 500,
+                }}>
+                  Mit Lighthouse-Analyse
                 </span>
               )}
             </p>
@@ -237,6 +279,7 @@ export default async function AuditPage({
                   agentFilter={agent}
                   initialTaskMap={initialTaskMap}
                   isExternalProject={activeScanProjectId !== null}
+                  deepReviewBadges={deepReviewBadges}
                 />
               </div>
             }
@@ -245,6 +288,7 @@ export default async function AuditPage({
                 categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
                 findings={allFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
                 isExternalProject={activeScanProjectId !== null}
+                hasExternalTools={hasLighthouseData}
               />
             }
             historyContent={

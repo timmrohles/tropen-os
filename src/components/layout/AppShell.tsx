@@ -54,8 +54,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isMobile) {
     return (
       <>
+        <a href="#main-content" className="skip-nav">Zum Hauptinhalt springen</a>
         <MobileHeader />
-        <main className="app-main">
+        <main id="main-content" className="app-main">
           {children}
         </main>
         <BottomNav />
@@ -65,9 +66,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <a href="#main-content" className="skip-nav">Zum Hauptinhalt springen</a>
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <TopBar />
-      <main className="app-main" style={{ left: marginLeft }}>
+      <main id="main-content" className="app-main" style={{ left: marginLeft }}>
         {children}
       </main>
     </>

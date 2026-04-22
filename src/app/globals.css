@@ -46,16 +46,24 @@
   --status-production-bg: var(--accent-light);
   --status-stable:    #7E6200;
   --status-stable-bg: #FEF9E7;
-  --status-risky:     var(--warning);
+  --status-risky:     #E5A000;
   --status-risky-bg:  var(--warning-bg);
   --status-prototype: var(--error);
   --status-prototype-bg: var(--error-bg);
+  --color-online: #4ade80;
 
   /* ─── Tropen Theme (dunkle Features) ──────────────── */
   --tropen-process:     #7C6FF7;
   --tropen-process-bg:  #EEECFE;
   --tropen-output:      #F7A44A;
   --tropen-output-bg:   #FEF3C7;
+
+  /* ─── Branding Preset Palette (Farbwähler in Admin > Branding) ─── */
+  --brand-preset-indigo:   #6366f1;
+  --brand-preset-violet:   #8b5cf6;
+  --brand-preset-rose:     #f43f5e;
+  --brand-preset-amber:    #f59e0b;
+  --brand-preset-emerald:  #10b981;
 
   /* ─── Toggle / UI ─────────────────────────────────── */
   --toggle-off:     #C5C2BC;
@@ -389,6 +397,15 @@
   margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
   white-space: nowrap; border-width: 0;
 }
+.skip-nav {
+  position: absolute; top: -100%; left: 8px;
+  background: var(--bg-surface-solid); color: var(--accent);
+  padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;
+  text-decoration: none; border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(26,23,20,0.12); z-index: 10000;
+  transition: top 0.15s;
+}
+.skip-nav:focus { top: 8px; }
 
 /* ─── Typografie-Skala ───────────────────────────────── */
 h1 {
@@ -407,7 +424,7 @@ h3 {
   color: var(--text-primary);
 }
 
-html { font-size: 16px; }
+html { font-size: 16px; font-synthesis: none; }
 
 body {
   margin: 0;
@@ -417,6 +434,7 @@ body {
   color: var(--text-primary);
   background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
   /* Safe Area — iPhone X+ Home-Indicator, Android Gesten-Navigation */
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);

@@ -18,8 +18,8 @@ import DistributionsPanel from './_components/DistributionsPanel'
 
 const SOURCE_COLOR: Record<string, string> = {
   rss:   'var(--accent)',
-  email: '#7C6FF7',
-  api:   '#F7A44A',
+  email: 'var(--tropen-process)',
+  api:   'var(--tropen-output)',
   url:   'var(--text-tertiary)',
 }
 
@@ -57,8 +57,8 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/projects').then(r => r.json()),
-      fetch('/api/workspaces').then(r => r.json()),
+      fetch('/api/projects').then(r => r.json()).catch(() => ({})),
+      fetch('/api/workspaces').then(r => r.json()).catch(() => ({})),
     ]).then(([pJson, wJson]: [Record<string, unknown>, Record<string, unknown>]) => {
       setProjects(((pJson.projects ?? []) as Record<string, unknown>[]).map((p) => ({ id: p.id as string, name: p.name as string })))
       setWorkspaces(((wJson.data ?? []) as Record<string, unknown>[]).map((w) => ({ id: w.id as string, name: w.name as string })))
@@ -190,7 +190,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
               onClick={() => openEdit(src)}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: 'var(--text-inverse)', background: SOURCE_COLOR[src.type] ?? 'var(--text-tertiary)' }}>
                   {src.type.toUpperCase()}
                 </span>
                 <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
@@ -283,7 +283,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                     <span key={t.id} style={{
                       display: 'inline-flex', alignItems: 'center',
                       padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500,
-                      background: t.color ?? 'var(--active-bg)', color: '#fff',
+                      background: t.color ?? 'var(--active-bg)', color: 'var(--text-inverse)',
                     }}>
                       {t.name}
                     </span>
@@ -394,7 +394,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                       <span style={{
                         padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 500,
                         background: assigned ? (t.color ?? 'var(--active-bg)') : 'var(--border)',
-                        color: assigned ? '#fff' : 'var(--text-secondary)',
+                        color: assigned ? 'var(--text-inverse)' : 'var(--text-secondary)',
                       }}>
                         {t.name}
                       </span>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import {
   Table,
   TableBody,
@@ -28,11 +29,6 @@ interface StatsData {
   isPrivileged: boolean
 }
 
-const PERIOD_LABELS: Record<Period, string> = {
-  today: 'Heute',
-  week: 'Diese Woche',
-  month: 'Dieser Monat',
-}
 
 function fmt(n: number) {
   return `€${n.toFixed(4)}`
@@ -57,6 +53,12 @@ const metricStyle = {
 }
 
 export function KostenVerbrauchSection() {
+  const t = useTranslations('settings')
+  const PERIOD_LABELS: Record<Period, string> = {
+    today: t('kosten.periodToday'),
+    week: t('kosten.periodWeek'),
+    month: t('kosten.periodMonth'),
+  }
   const [period, setPeriod] = useState<Period>('month')
   const [data, setData] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -95,7 +97,7 @@ export function KostenVerbrauchSection() {
       )}
 
       {loading && (
-        <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>Lade…</p>
+        <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>{t('kosten.loading')}</p>
       )}
 
       {data && !loading && (
@@ -103,19 +105,19 @@ export function KostenVerbrauchSection() {
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={labelStyle}>Gesamtkosten</p>
+              <p style={labelStyle}>{t('kosten.totalCosts')}</p>
               <p style={metricStyle}>{fmt(data.totalCost)}</p>
             </div>
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={labelStyle}>Anfragen</p>
+              <p style={labelStyle}>{t('kosten.requests')}</p>
               <p style={metricStyle}>{data.requestCount.toLocaleString('de-DE')}</p>
             </div>
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={labelStyle}>Aktive User</p>
+              <p style={labelStyle}>{t('kosten.activeUsers')}</p>
               <p style={metricStyle}>{data.activeUsers}</p>
             </div>
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={labelStyle}>Top-Modell</p>
+              <p style={labelStyle}>{t('kosten.topModel')}</p>
               <p style={{ ...metricStyle, fontSize: 18, color: 'var(--active-bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {data.topModel}
               </p>
@@ -130,13 +132,13 @@ export function KostenVerbrauchSection() {
                 href="/responsible-ai"
                 style={{ display: 'block', marginTop: 8, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
               >
-                Wie berechnen wir das? →
+                {t('kosten.howCalculated')}
               </Link>
             </div>
 
             {/* Chart */}
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={{ ...labelStyle, marginBottom: 16 }}>Kosten – letzte 30 Tage</p>
+              <p style={{ ...labelStyle, marginBottom: 16 }}>{t('kosten.chartTitle')}</p>
               <CostChart data={data.chartData} />
             </div>
           </div>
@@ -144,22 +146,22 @@ export function KostenVerbrauchSection() {
           {/* Tables */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={{ ...labelStyle, marginBottom: 16 }}>Nach Department</p>
+              <p style={{ ...labelStyle, marginBottom: 16 }}>{t('kosten.byDepartment')}</p>
               <div className="table-scroll">
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Department</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Top-Modell</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{t('kosten.colDepartment')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>{t('kosten.colRequests')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>{t('kosten.colCost')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{t('kosten.colTopModel')}</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {data.wsTable.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0', fontSize: 13 }}>
-                          Keine Daten für diesen Zeitraum
+                          {t('kosten.noData')}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -188,22 +190,22 @@ export function KostenVerbrauchSection() {
             </div>
 
             <div className="card" style={{ padding: '16px 20px' }}>
-              <p style={{ ...labelStyle, marginBottom: 16 }}>Nach User</p>
+              <p style={{ ...labelStyle, marginBottom: 16 }}>{t('kosten.byUser')}</p>
               <div className="table-scroll">
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Name</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Anfragen</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>Kosten</TableHeaderCell>
-                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Letzter Tag</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{t('kosten.colName')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>{t('kosten.colRequests')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12, textAlign: 'right' }}>{t('kosten.colCost')}</TableHeaderCell>
+                      <TableHeaderCell style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{t('kosten.colLastDay')}</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {data.userTable.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0', fontSize: 13 }}>
-                          Keine Daten für diesen Zeitraum
+                          {t('kosten.noData')}
                         </TableCell>
                       </TableRow>
                     ) : (

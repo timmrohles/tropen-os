@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-04-09T14:36:20.477Z",
+  "generatedAt": "2026-04-21T09:12:59.782Z",
   "version": "1.0.0",
-  "totalFiles": 624,
-  "totalSymbols": 2677,
-  "totalLines": 75257,
-  "includedSymbols": 283,
+  "totalFiles": 697,
+  "totalSymbols": 3154,
+  "totalLines": 89002,
+  "includedSymbols": 203,
   "tokenBudget": 4096,
-  "estimatedTokens": 4047,
-  "elapsedSeconds": 1.11
+  "estimatedTokens": 4021,
+  "elapsedSeconds": 1.18
 }

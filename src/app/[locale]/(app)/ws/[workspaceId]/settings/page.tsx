@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { updateWorkspace } from '@/actions/workspaces'
+import { useTranslations } from 'next-intl'
 
 const s: Record<string, React.CSSProperties> = {
   fieldGroup: { marginBottom: 24 },
@@ -41,6 +42,7 @@ interface FormState {
 }
 
 export default function WorkspaceSettingsPage() {
+  const t = useTranslations('workspaces')
   const params = useParams()
   const router = useRouter()
   const workspaceId = params.workspaceId as string
@@ -111,42 +113,42 @@ export default function WorkspaceSettingsPage() {
     <div className="content-narrow">
       <div className="page-header">
         <div className="page-header-text">
-          <h1 className="page-header-title">Workspace-Einstellungen</h1>
-          <p className="page-header-sub">Name und Einstellungen dieses Workspaces</p>
+          <h1 className="page-header-title">{t('settingsPage.title')}</h1>
+          <p className="page-header-sub">{t('settingsPage.subtitle')}</p>
         </div>
       </div>
 
       <div aria-label="Workspace-Einstellungen">
-        <p style={s.sectionTitle}>Ziel & Fokus</p>
+        <p style={s.sectionTitle}>{t('settingsPage.goalSection')}</p>
 
         <div style={s.fieldGroup}>
-          <label htmlFor="ws-goal" style={s.label}>Ziel</label>
+          <label htmlFor="ws-goal" style={s.label}>{t('settingsPage.goalLabel')}</label>
           <textarea id="ws-goal" name="goal" value={form.goal} onChange={handleChange}
             placeholder="Was soll dieser Workspace erreichen?" style={s.textarea} />
         </div>
 
-        <p style={s.sectionTitle}>Meta-Kontext</p>
+        <p style={s.sectionTitle}>{t('settingsPage.metaSection')}</p>
 
         <div style={s.fieldGroup}>
-          <label htmlFor="ws-context" style={s.label}>Kontext</label>
+          <label htmlFor="ws-context" style={s.label}>{t('settingsPage.contextLabel')}</label>
           <textarea id="ws-context" name="context" value={form.context} onChange={handleChange}
             placeholder="Hintergrundinformationen für den KI-Assistenten" style={s.textarea} />
         </div>
 
         <div style={s.fieldGroup}>
-          <label htmlFor="ws-tone" style={s.label}>Ton</label>
+          <label htmlFor="ws-tone" style={s.label}>{t('settingsPage.toneLabel')}</label>
           <input id="ws-tone" name="tone" type="text" value={form.tone} onChange={handleChange}
             placeholder="z.B. professionell, sachlich, kreativ" style={s.input} />
         </div>
 
         <div style={s.fieldGroup}>
-          <label htmlFor="ws-language" style={s.label}>Sprache</label>
+          <label htmlFor="ws-language" style={s.label}>{t('settingsPage.languageLabel')}</label>
           <input id="ws-language" name="language" type="text" value={form.language} onChange={handleChange}
             placeholder="z.B. Deutsch, Englisch" style={s.input} />
         </div>
 
         <div style={s.fieldGroup}>
-          <label htmlFor="ws-target-audience" style={s.label}>Zielgruppe</label>
+          <label htmlFor="ws-target-audience" style={s.label}>{t('settingsPage.audienceLabel')}</label>
           <input id="ws-target-audience" name="target_audience" type="text"
             value={form.target_audience} onChange={handleChange}
             placeholder="z.B. B2B Entscheider, Studierende" style={s.input} />
@@ -155,21 +157,21 @@ export default function WorkspaceSettingsPage() {
         <div style={s.actions}>
           <button type="button" disabled={isPending} className="btn btn-primary"
             style={{ opacity: isPending ? 0.6 : 1 }} aria-busy={isPending} onClick={handleSubmit}>
-            {isPending ? 'Speichert…' : 'Speichern'}
+            {isPending ? t('settingsPage.saving') : t('settingsPage.save')}
           </button>
-          {saved && <span style={s.savedMsg}>Gespeichert</span>}
+          {saved && <span style={s.savedMsg}>{t('settingsPage.saved')}</span>}
           {error && <span role="alert" style={s.errorMsg}>{error}</span>}
         </div>
 
         {/* ── Aktionen ────────────────────────────────────────── */}
-        <p style={s.sectionTitle}>Aktionen</p>
+        <p style={s.sectionTitle}>{t('settingsPage.actionsSection')}</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Copy */}
           <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                Workspace duplizieren
+                {t('settingsPage.duplicateTitle')}
               </p>
               <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
                 Erstellt eine Kopie mit allen Karten — Status wird auf Entwurf zurückgesetzt
@@ -177,7 +179,7 @@ export default function WorkspaceSettingsPage() {
             </div>
             <button type="button" className="btn btn-ghost btn-sm" onClick={handleCopy}
               disabled={copying} aria-busy={copying} style={{ flexShrink: 0 }}>
-              {copying ? 'Kopiere…' : 'Duplizieren'}
+              {copying ? t('settingsPage.duplicating') : t('settingsPage.duplicate')}
             </button>
           </div>
 
@@ -185,7 +187,7 @@ export default function WorkspaceSettingsPage() {
           <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, border: '1px solid rgba(192,57,43,0.15)' }}>
             <div>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--error)', margin: 0 }}>
-                Workspace löschen
+                {t('settingsPage.deleteTitle')}
               </p>
               <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
                 Löscht diesen Workspace und alle Karten unwiderruflich
@@ -195,17 +197,17 @@ export default function WorkspaceSettingsPage() {
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                 <button type="button" className="btn btn-danger btn-sm" onClick={handleDelete}
                   disabled={deleting} aria-busy={deleting}>
-                  {deleting ? 'Löscht…' : 'Ja, löschen'}
+                  {deleting ? t('settingsPage.deleting') : t('settingsPage.deleteYes')}
                 </button>
                 <button type="button" className="btn btn-ghost btn-sm"
                   onClick={() => setDeleteConfirm(false)}>
-                  Abbrechen
+                  {t('settingsPage.cancelDelete')}
                 </button>
               </div>
             ) : (
               <button type="button" className="btn btn-danger btn-sm"
                 onClick={() => setDeleteConfirm(true)} style={{ flexShrink: 0 }}>
-                Löschen
+                {t('settingsPage.delete')}
               </button>
             )}
           </div>

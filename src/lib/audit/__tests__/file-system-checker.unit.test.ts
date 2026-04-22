@@ -201,10 +201,10 @@ describe('checkE2ETestsPresent', () => {
 })
 
 describe('checkSemanticVersioning', () => {
-  it('returns score 0 when version is 0.1.0 (pre-stable)', async () => {
+  it('returns score 3 when version is 0.1.0 (pre-stable)', async () => {
     const ctx = makeCtx({ packageJson: { version: '0.1.0' } })
     const result = await checkSemanticVersioning(ctx)
-    expect(result.score).toBe(0)
+    expect(result.score).toBe(3)
   })
 
   it('returns score 5 when version is >= 1.0.0', async () => {

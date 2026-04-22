@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { BOOKMARK_FIELDS } from '@/lib/db/fields'
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('bookmarks')
-    .select('*')
+    .select(BOOKMARK_FIELDS)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -39,53 +40,61 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {  
+    const user = await getAuthUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+    const body = await req.json()
+    const { messageId, conversationId, contentPreview } = body
+  
+    if (!messageId || !conversationId) {
+      return NextResponse.json({ error: 'messageId and conversationId required' }, { status: 400 })
+    }
+  
+    const { data, error } = await supabaseAdmin
+      .from('bookmarks')
+      .upsert(
+        {
+          message_id: messageId,
+          conversation_id: conversationId,
+          user_id: user.id,
+          content_preview: contentPreview ? contentPreview.slice(0, 200) : null,
+        },
+        { onConflict: 'message_id,user_id' }
+      )
+      .select(BOOKMARK_FIELDS)
+      .single()
 
-  const body = await req.json()
-  const { messageId, conversationId, contentPreview } = body
+    if (error) return apiError(error)
 
-  if (!messageId || !conversationId) {
-    return NextResponse.json({ error: 'messageId and conversationId required' }, { status: 400 })
+    return NextResponse.json(data, { status: 201 })
+  } catch (err) {
+    return apiError(err)
   }
-
-  const { data, error } = await supabaseAdmin
-    .from('bookmarks')
-    .upsert(
-      {
-        message_id: messageId,
-        conversation_id: conversationId,
-        user_id: user.id,
-        content_preview: contentPreview ? contentPreview.slice(0, 200) : null,
-      },
-      { onConflict: 'message_id,user_id' }
-    )
-    .select()
-    .single()
-
-  if (error) return apiError(error)
-
-  return NextResponse.json(data, { status: 201 })
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const body = await req.json()
-  const { messageId } = body
-
-  if (!messageId) {
-    return NextResponse.json({ error: 'messageId required' }, { status: 400 })
+  try {  
+    const user = await getAuthUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+    const body = await req.json()
+    const { messageId } = body
+  
+    if (!messageId) {
+      return NextResponse.json({ error: 'messageId required' }, { status: 400 })
+    }
+  
+    const { error } = await supabaseAdmin
+      .from('bookmarks')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', user.id)
+  
+    if (error) return apiError(error)
+  
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return apiError(err)
   }
-
-  const { error } = await supabaseAdmin
-    .from('bookmarks')
-    .delete()
-    .eq('message_id', messageId)
-    .eq('user_id', user.id)
-
-  if (error) return apiError(error)
-
-  return NextResponse.json({ success: true })
 }

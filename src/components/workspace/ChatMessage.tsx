@@ -14,7 +14,7 @@ import GuidedStepCard from './GuidedStepCard'
 import GuidedSummary from './GuidedSummary'
 import SourcesBar from './SourcesBar'
 import ThinkingBlock from './ThinkingBlock'
-import { makeMdComponents, renderAssistantContent } from './chat-renderers'
+import { makeMdComponents, renderAssistantContent } from './ChatRenderers'
 
 interface ChatMessageProps {
   msg: ChatMessageType

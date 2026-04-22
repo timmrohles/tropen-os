@@ -71,24 +71,30 @@ export async function GET() {
       return apiError(error)
     }
 
+    // Batch-fetch all referenced schemas upfront to avoid N+1 query
+    const schemaIds = [...new Set((items ?? []).map(i => i.feed_schema_id).filter(Boolean))]
+    const { data: schemaRows } = schemaIds.length > 0
+      ? await supabaseAdmin
+          .from('feed_schemas')
+          .select('id, department_id, user_id, name, description, include_keywords, exclude_keywords, languages, max_age_days, scoring_prompt, min_score, extraction_prompt, output_structure, monthly_token_budget, created_at, updated_at')
+          .in('id', schemaIds)
+      : { data: [] as FeedSchemaRow[] }
+
+    const schemaMap = new Map<string, ReturnType<typeof mapSchemaRow>>()
+    for (const row of schemaRows ?? []) {
+      schemaMap.set(row.id, mapSchemaRow(row as unknown as FeedSchemaRow))
+    }
+
     let processed = 0
     let stage2Only = 0
     let stage3Also = 0
     const errors: string[] = []
+    const pendingUpdates: Array<{ id: string } & Record<string, unknown>> = []
 
     for (const item of items ?? []) {
       try {
-        const { data: schemaRow, error: schemaError } = await supabaseAdmin
-          .from('feed_schemas')
-          .select('*')
-          .eq('id', item.feed_schema_id)
-          .maybeSingle()
-
-        if (schemaError || !schemaRow) {
-          continue
-        }
-
-        const schema = mapSchemaRow(schemaRow as unknown as FeedSchemaRow)
+        const schema = schemaMap.get(item.feed_schema_id)
+        if (!schema) continue
 
         const rawItem = {
           title: item.raw_title ?? '',
@@ -117,12 +123,17 @@ export async function GET() {
           stage2Only++
         }
 
-        await supabaseAdmin.from('feed_items').update(update).eq('id', item.id)
-
+        pendingUpdates.push({ id: item.id, ...update })
         processed++
       } catch (err: unknown) {
         errors.push(`[${item.id}] ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
+    }
+
+    // Batch-write all scored items in one upsert instead of N individual updates
+    if (pendingUpdates.length > 0) {
+      const { error } = await supabaseAdmin.from('feed_items').upsert(pendingUpdates)
+      if (error) errors.push(`batch_update: ${error.message}`)
     }
 
     return NextResponse.json({ processed, stage2Only, stage3Also, errors }, { status: 200 })

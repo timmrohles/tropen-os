@@ -26,7 +26,7 @@ export function useAssistantName(): string {
         .eq('organization_id', profile.organization_id)
         .maybeSingle()
       if (settings?.ai_guide_name) setName(settings.ai_guide_name)
-    })
+    }).catch(() => {})
   }, [])
 
   return name

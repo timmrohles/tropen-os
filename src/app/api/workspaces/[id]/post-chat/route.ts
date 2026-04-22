@@ -1,9 +1,11 @@
+export const maxDuration = 60
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { MODEL_HAIKU } from '@/lib/llm/models'
 import { apiError } from '@/lib/api-error'
 
@@ -14,6 +16,9 @@ export async function POST(request: Request, { params }: Params) {
   const { id: workspaceId } = await params
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+
+  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+  if (!budget.allowed) return budgetExhaustedResponse()
 
   const workspace = await requireWorkspaceAccess(workspaceId, me)
   if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })

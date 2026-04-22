@@ -50,6 +50,7 @@ function YoutubeCard({ src }: { src: SearchSource }) {
           src={thumb}
           alt={src.title}
           className="source-card-thumb"
+          loading="lazy"
           onError={(e) => {
             const img = e.currentTarget as HTMLImageElement
             img.style.display = 'none'
@@ -68,6 +69,7 @@ function YoutubeCard({ src }: { src: SearchSource }) {
             alt=""
             width={12}
             height={12}
+            loading="lazy"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
           />
           YouTube
@@ -104,6 +106,7 @@ function ArticleCard({ src }: { src: SearchSource }) {
           alt=""
           width={28}
           height={28}
+          loading="lazy"
           style={{ borderRadius: 6, opacity: 0.9 }}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
         />

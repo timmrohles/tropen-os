@@ -5,6 +5,8 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import ImpersonationBanner from '@/components/ImpersonationBanner'
+import CookieBanner from '@/components/CookieBanner'
+import AxeHelper from '@/components/AxeHelper'
 
 interface Props {
   children: ReactNode
@@ -27,6 +29,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         <ImpersonationBanner />
       </Suspense>
       {children}
+      <CookieBanner />
+      <AxeHelper />
     </NextIntlClientProvider>
   )
 }

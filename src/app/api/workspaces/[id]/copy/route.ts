@@ -37,7 +37,7 @@ export async function POST(_req: Request, { params }: Params) {
   // Add creator as participant
   await supabaseAdmin.from('workspace_participants').insert({
     workspace_id: copy.id, user_id: me.id, role: 'admin',
-  }).then()
+  })
 
   // Copy workspace_items (without id/created_at — new rows)
   const { data: items } = await supabaseAdmin

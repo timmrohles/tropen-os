@@ -4,6 +4,7 @@ import { validateBody } from '@/lib/validators'
 import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
 import { createAssetSchema } from '@/lib/validators/workspace-plan-c'
 import { apiError } from '@/lib/api-error'
+import { WORKSPACE_ASSET_FIELDS } from '@/lib/db/fields'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -17,7 +18,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const { data, error } = await supabaseAdmin
     .from('workspace_assets')
-    .select('*')
+    .select(WORKSPACE_ASSET_FIELDS)
     .eq('workspace_id', id)
     .order('created_at', { ascending: false })
 
@@ -47,7 +48,7 @@ export async function POST(request: Request, { params }: Params) {
       size: body.size ?? null,
       meta: body.meta ?? {},
     })
-    .select()
+    .select(WORKSPACE_ASSET_FIELDS)
     .single()
 
   if (error) return apiError(error)

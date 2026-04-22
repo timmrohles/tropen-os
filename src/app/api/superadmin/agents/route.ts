@@ -30,6 +30,7 @@ export async function GET() {
     .from('audit_findings')
     .select('agent_source, created_at')
     .order('created_at', { ascending: false })
+    .limit(500)
 
   // Build a map of agentSource → { count, lastCheckAt }
   const agentStats = new Map<string, { count: number; lastCheckAt: string | null }>()

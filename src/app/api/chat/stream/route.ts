@@ -1,3 +1,4 @@
+export const maxDuration = 60
 import { NextRequest, NextResponse } from 'next/server'
 import { streamText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'

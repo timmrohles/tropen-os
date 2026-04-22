@@ -34,7 +34,7 @@ interface Props {
 function severityColor(s: AuditTask['severity']): string {
   switch (s) {
     case 'critical': return 'var(--error)'
-    case 'high':     return '#E5A000'
+    case 'high':     return 'var(--warning)'
     case 'medium':   return 'var(--text-secondary)'
     case 'low':      return 'var(--text-tertiary)'
     default:         return 'var(--text-tertiary)'
@@ -44,7 +44,7 @@ function severityColor(s: AuditTask['severity']): string {
 function statusColor(task: AuditTask): string {
   if (task.dismissed_at) return 'var(--text-tertiary)'
   if (task.completed)    return 'var(--accent)'
-  return '#E5A000'
+  return 'var(--warning)'
 }
 
 function relativeTime(iso: string): string {

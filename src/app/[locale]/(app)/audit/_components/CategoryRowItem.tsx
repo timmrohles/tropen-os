@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Info, CaretRight, CaretDown } from '@phosphor-icons/react'
 import type { AgentSource } from '@/lib/audit/types'
 import { CATEGORY_DESCRIPTIONS } from './category-descriptions'
+import { useTranslations } from 'next-intl'
 
 interface DbCategoryScore {
   id: string
@@ -31,6 +32,10 @@ export interface CategoryRowItemProps {
   hasFindings: boolean
   /** When true, shows a "Live-Check fehlt" hint on DB + Security categories */
   showLiveCheckHint?: boolean
+  /** Number of rules in this category that require external tools (Lighthouse, depcruise, etc.) */
+  externalToolRuleCount?: number
+  /** False when no Lighthouse findings were found — indicates external tools didn't run */
+  hasExternalTools?: boolean
 }
 
 function scoreColor(score: number): string {
@@ -58,6 +63,36 @@ const AGENT_FULL_LABELS: Partial<Record<AgentSource, string>> = {
   dsgvo:            'DSGVO Agent',
   bfsg:             'BFSG Agent',
   'ai-act':         'AI Act Agent',
+}
+
+function ExternalToolHint({ count }: { count: number }) {
+  const t = useTranslations('audit')
+  const [visible, setVisible] = useState(false)
+  return (
+    <span
+      onClick={(e) => e.stopPropagation()}
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      style={{ marginLeft: 4, color: 'var(--text-tertiary)', flexShrink: 0, cursor: 'help', display: 'flex', position: 'relative' }}
+      aria-label={t('categoryExternalHint', { count })}
+    >
+      <Info size={12} weight="bold" aria-hidden="true" />
+      {visible && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 20,
+          marginTop: 4, padding: '8px 12px',
+          background: 'var(--bg-tooltip)',
+          border: '1px solid var(--border)',
+          borderRadius: 8, fontSize: 12,
+          color: 'var(--text-secondary)', lineHeight: 1.5,
+          width: 220, boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          pointerEvents: 'none',
+        }}>
+          {t('categoryExternalHint', { count })}
+        </div>
+      )}
+    </span>
+  )
 }
 
 function InfoTooltip({ description, isManualOnly }: { description: string; isManualOnly: boolean }) {
@@ -98,6 +133,8 @@ export default function CategoryRowItem({
   agentSource, agentInfo,
   onToggleExpand, onCategoryClick, hasFindings,
   showLiveCheckHint = false,
+  externalToolRuleCount = 0,
+  hasExternalTools,
 }: CategoryRowItemProps) {
   const pct = (cat.score / (cat.max_score || 5)) * 100
   const color = scoreColor(cat.score)
@@ -188,6 +225,9 @@ export default function CategoryRowItem({
               >
                 ⚠
               </span>
+            )}
+            {!hasExternalTools && externalToolRuleCount > 0 && (
+              <ExternalToolHint count={externalToolRuleCount} />
             )}
           </div>
 

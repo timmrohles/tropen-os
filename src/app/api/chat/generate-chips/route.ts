@@ -1,7 +1,9 @@
+export const maxDuration = 60
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
 import { getAuthUser } from '@/lib/api/projects'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { modelFor } from '@/lib/model-selector'
 import { buildChipsPrompt, parseChipsResponse } from './chips-prompt'
 import { createLogger } from '@/lib/logger'
@@ -11,6 +13,9 @@ const log = createLogger('generate-chips')
 export async function POST(req: NextRequest) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+  if (!budget.allowed) return budgetExhaustedResponse()
 
   let lastMessage: string
   try {

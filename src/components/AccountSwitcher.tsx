@@ -21,7 +21,7 @@ const ACCOUNTS = [
     description: 'Lese-Zugriff, keine Erstellung' },
 ]
 
-// TODO: Account-Switcher Backend
+// Account-Switcher Backend (deferred)
 // Wenn echter Multi-Account: onChange ruft Supabase setSession() mit dem
 // entsprechenden User-Token auf. Bis dahin: lokaler State via sessionStorage.
 

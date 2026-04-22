@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
+import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './Shared'
 
 interface TeamActivityItem {
   id: string

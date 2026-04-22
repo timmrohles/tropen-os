@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { WidgetSkeleton, WidgetEmpty } from './shared'
+import { WidgetSkeleton, WidgetEmpty } from './Shared'
 
 interface ArtifactStats {
   thisWeek: number

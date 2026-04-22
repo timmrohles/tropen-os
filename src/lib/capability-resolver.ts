@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { checkBudget } from '@/lib/budget'
 
 const log = createLogger('capability-resolver')
 
@@ -147,6 +148,9 @@ export async function resolveWorkflow(
   // 7. Cost estimate (output costs dominate)
   const estimatedCostPer1k = (model as { cost_per_1k_output?: number }).cost_per_1k_output ?? 0
 
+  // 8. Budget check — fail-open: RPC error → allow (no outage over a DB hiccup)
+  const budgetResult = await checkBudget(orgId, 'claude-sonnet')
+
   return {
     available:             true,
     model_id:              (model as { api_model_id?: string; name: string }).api_model_id ?? (model as { name: string }).name,
@@ -155,7 +159,7 @@ export async function resolveWorkflow(
     tools,
     card_type:             resolveCardType((out as { output_type: string }).output_type),
     estimated_cost_per_1k: estimatedCostPer1k,
-    budget_ok:             true, // TODO(timm): wire into budget_limit check from org settings
+    budget_ok:             budgetResult.allowed,
     capability_id:         capabilityId,
     outcome_id:            outcomeId,
     resolved_model_uuid:   resolvedModelUuid,

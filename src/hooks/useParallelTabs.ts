@@ -46,12 +46,10 @@ export function useParallelTabs({
             body: JSON.stringify({ title: `${label} — ${topicSnippet}` }),
           }).then(async r => {
             if (!r.ok) {
-              const err = await r.text()
-              console.error('create tab failed:', r.status, err)
               return null
             }
             return r.json() as Promise<{ conversation_id: string }>
-          })
+          }).catch(() => null)
         )
       )
 

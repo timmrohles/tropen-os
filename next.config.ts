@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import path from 'path'
 import { withSentryConfig } from '@sentry/nextjs'
 import bundleAnalyzer from '@next/bundle-analyzer'
 import createNextIntlPlugin from 'next-intl/plugin'
@@ -44,6 +45,18 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  webpack(config) {
+    // Force all @opentelemetry/api-logs imports (including nested copies from
+    // pnpm's virtual store) to resolve to the single top-level installation.
+    // Without this, webpack finds the nested copy inside instrumentation-amqplib
+    // and fails to open its ESM entry on Windows because pnpm hard-links it
+    // from a store path that webpack can't follow.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@opentelemetry/api-logs': path.resolve('node_modules/@opentelemetry/api-logs'),
+    }
+    return config
+  },
   env: {
     // Ändert sich bei jedem Server-Start / Build → SW-Cache wird automatisch invalidiert
     NEXT_PUBLIC_BUILD_TIME: String(Date.now()),
@@ -68,4 +81,10 @@ export default withNextIntl(withSentryConfig(withBundleAnalyzer(nextConfig), {
   // Sentry-eigene Performance-Tracing Instrumentierung
   widenClientFileUpload: true,
   hideSourceMaps: true,
+
+  // @sentry/webpack-plugin v5 injiziert Runtime-Hooks in das webpack-Modul-System,
+  // die mit Next.js 15.5 RSC-Streaming kollidieren ("options.factory undefined" auf
+  // Lazy-Chunks). In Dev nicht nötig — SDK in instrumentation-client.ts trackt Fehler
+  // weiterhin. In Prod bleibt alles aktiv (Source Maps + Instrumentation).
+  disable: process.env.NODE_ENV !== 'production',
 }))

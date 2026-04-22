@@ -159,7 +159,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         setIsAdmin(['owner', 'admin'].includes(profile.role))
         setOrganizationId(profile.organization_id ?? null)
       }
-    })
+    }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -265,7 +265,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   useEffect(() => {
     if (!activeConvId) return
     if (sendingRef.current) return
-    supabase
+    void Promise.resolve(supabase
       .from('messages')
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
       .eq('conversation_id', activeConvId)
@@ -303,7 +303,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
             })
             .catch(() => {/* non-blocking */})
         }
-      })
+      })).catch(() => {})
   }, [activeConvId])
 
   const messageCount = messages.length

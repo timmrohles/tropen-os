@@ -93,7 +93,7 @@ export default function HowItWorksClient({ steps, badgeRules }: Props) {
           </pre>
           {/* Status bar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80' }} />
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-online)' }} />
             <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Ready</span>
           </div>
         </div>

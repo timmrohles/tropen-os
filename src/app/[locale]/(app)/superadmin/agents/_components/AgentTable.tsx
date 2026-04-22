@@ -118,7 +118,7 @@ export function AgentTable({ agents, onSelect, selectedId }: Props) {
               <td style={s.td}>
                 <span style={{ fontWeight: 500 }}>{agent.name}</span>
                 {agent.findingsCount > 0 && (
-                  <span style={{ ...s.badge, marginLeft: 8, color: agent.findingsCount > 5 ? '#dc2626' : 'var(--text-tertiary)' }}>
+                  <span style={{ ...s.badge, marginLeft: 8, color: agent.findingsCount > 5 ? 'var(--error)' : 'var(--text-tertiary)' }}>
                     {agent.findingsCount} Findings
                   </span>
                 )}

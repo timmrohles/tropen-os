@@ -1,14 +1,8 @@
-'use client'
+import { CheckCircle, Circle } from '@phosphor-icons/react/dist/ssr'
+import type { OrgStats } from '@/lib/home/fetchOrgStats'
 
-import { useEffect, useState } from 'react'
-import { CheckCircle, Circle } from '@phosphor-icons/react'
-
-interface OrgStats {
-  totalChats: number
-  totalProjects: number
-  totalFeeds: number
-  totalArtifacts: number
-  hasContext: boolean
+interface OrgOnboardingProgressProps {
+  stats: OrgStats
 }
 
 const STEPS = [
@@ -49,21 +43,10 @@ const STEPS = [
   },
 ]
 
-export function OrgOnboardingProgress() {
-  const [stats, setStats] = useState<OrgStats | null>(null)
-
-  useEffect(() => {
-    fetch('/api/home/org-stats')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setStats(d) })
-  }, [])
-
-  if (!stats) return null
-
+export function OrgOnboardingProgress({ stats }: OrgOnboardingProgressProps) {
   const steps = STEPS.map(step => ({ ...step, done: step.check(stats) }))
   const doneCount = steps.filter(s => s.done).length
 
-  // Hide when all done
   if (doneCount === steps.length) return null
 
   const nextStep = steps.find(s => !s.done)
@@ -84,7 +67,6 @@ export function OrgOnboardingProgress() {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div
         style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', marginBottom: 14 }}
         role="progressbar"
@@ -99,7 +81,6 @@ export function OrgOnboardingProgress() {
         }} />
       </div>
 
-      {/* Steps */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {steps.map(step => (
           <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>

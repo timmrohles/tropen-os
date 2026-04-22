@@ -1,27 +1,11 @@
-'use client'
+import { Users, ChatCircle, Sparkle, CurrencyEur } from '@phosphor-icons/react/dist/ssr'
+import type { OrgStats } from '@/lib/home/fetchOrgStats'
 
-import { useEffect, useState } from 'react'
-import { Users, ChatCircle, Sparkle, CurrencyEur } from '@phosphor-icons/react'
-
-interface OrgStats {
-  activeUsers: number
-  chatCount: number
-  artifactCount: number
-  budgetUsedPercent: number | null
-  budgetWarning: boolean
+interface OrgHealthSectionProps {
+  stats: OrgStats
 }
 
-export function OrgHealthSection() {
-  const [stats, setStats] = useState<OrgStats | null>(null)
-
-  useEffect(() => {
-    fetch('/api/home/org-stats')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setStats(d) })
-  }, [])
-
-  if (!stats) return null
-
+export function OrgHealthSection({ stats }: OrgHealthSectionProps) {
   return (
     <div style={{ marginTop: 32 }}>
       <span style={{

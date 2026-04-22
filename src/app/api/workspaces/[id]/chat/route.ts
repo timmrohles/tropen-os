@@ -1,9 +1,11 @@
+export const maxDuration = 60
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
+import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { sendChatMessageSchema } from '@/lib/validators/workspace-plan-c'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/workspace-context'
 import { createLogger } from '@/lib/logger'
@@ -44,6 +46,9 @@ export async function POST(request: Request, { params }: Params) {
   const { id } = await params
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+
+  const budget = await checkBudget(me.organization_id, 'claude-sonnet')
+  if (!budget.allowed) return budgetExhaustedResponse()
 
   const canWrite = await canWriteWorkspace(id, me)
   if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })

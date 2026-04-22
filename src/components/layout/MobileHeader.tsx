@@ -26,11 +26,13 @@ export default function MobileHeader() {
   const accountPanelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    supabase
-      .from('organization_settings')
-      .select('logo_url, organization_display_name')
-      .maybeSingle()
-      .then(({ data }) => { if (data) setBranding(data) })
+    void Promise.resolve(
+      supabase
+        .from('organization_settings')
+        .select('logo_url, organization_display_name')
+        .maybeSingle()
+        .then(({ data }) => { if (data) setBranding(data) })
+    ).catch(() => {})
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
@@ -42,7 +44,7 @@ export default function MobileHeader() {
       const name: string = profile?.full_name || user.email || ''
       setUserName(name)
       setUserInitial((name[0] ?? '?').toUpperCase())
-    })
+    }).catch(() => {})
 
     fetch('/api/feeds/notifications?unread=true&limit=1')
       .then(r => r.ok ? r.json() : null)

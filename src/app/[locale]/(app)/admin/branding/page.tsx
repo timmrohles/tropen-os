@@ -5,7 +5,14 @@ import { createClient } from '@/utils/supabase/client'
 import { PaintBrush, UploadSimple, X } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 
-const PRESET_COLORS = ['var(--accent)', '#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981']
+const PRESET_COLORS = [
+  'var(--accent)',
+  'var(--brand-preset-indigo)',
+  'var(--brand-preset-violet)',
+  'var(--brand-preset-rose)',
+  'var(--brand-preset-amber)',
+  'var(--brand-preset-emerald)',
+]
 
 interface BrandingData {
   logo_url: string | null
@@ -55,14 +62,14 @@ export default function BrandingPage() {
           .single()
         if (userProfile?.organization_id) setOrgId(userProfile.organization_id)
       }
-    })
+    }).catch(() => {})
 
     fetch('/api/admin/branding')
       .then((r) => r.json())
       .then((d: BrandingData) => {
         setData(d)
         if (d.logo_url) setLogoPreview(d.logo_url)
-      })
+      }).catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Buildings } from '@phosphor-icons/react'
 import type { ImpModal, ImpForm, OrgRow, EditState } from './clients.types'
@@ -10,6 +10,7 @@ import { owner, onboardingDone, planStyle, s } from './clients.types'
 
 export default function ClientsPage() {
   const locale = useLocale()
+  const t = useTranslations('superadmin')
   const [orgs, setOrgs] = useState<OrgRow[]>([])
   const [loading, setLoading] = useState(true)
   const [editOrg, setEditOrg] = useState<OrgRow | null>(null)
@@ -175,32 +176,32 @@ export default function ClientsPage() {
         <div className="page-header-text">
           <h1 className="page-header-title">
             <Buildings size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
-            Clients
+            {t('clients.title')}
           </h1>
-          <p className="page-header-sub">Organisationen, Workspaces und Pakete verwalten</p>
+          <p className="page-header-sub">{t('clients.subtitle')}</p>
         </div>
         <div className="page-header-actions">
-          <Link href="/superadmin/clients/new" className="btn btn-primary">+ Neuer Client</Link>
+          <Link href="/superadmin/clients/new" className="btn btn-primary">{t('clients.newBtn')}</Link>
         </div>
       </div>
 
       <div className="table-scroll">
         {loading ? (
-          <p style={s.muted}>Lade…</p>
+          <p style={s.muted}>{t('clients.loading')}</p>
         ) : orgs.length === 0 ? (
-          <p style={s.muted}>Noch keine Clients angelegt.</p>
+          <p style={s.muted}>{t('clients.noClients')}</p>
         ) : (
           <table style={s.table}>
             <thead>
               <tr>
-                <th style={s.th}>Firma</th>
-                <th style={s.th}>Plan</th>
-                <th style={s.th}>Budget Org</th>
-                <th style={s.th}>Department</th>
-                <th style={s.th}>User</th>
-                <th style={s.th}>Onboarding</th>
-                <th style={s.th}>Pakete</th>
-                <th style={s.th}>Aktionen</th>
+                <th style={s.th}>{t('clients.colFirma')}</th>
+                <th style={s.th}>{t('clients.colPlan')}</th>
+                <th style={s.th}>{t('clients.colBudgetOrg')}</th>
+                <th style={s.th}>{t('clients.colDepartment')}</th>
+                <th style={s.th}>{t('clients.colUser')}</th>
+                <th style={s.th}>{t('clients.colOnboarding')}</th>
+                <th style={s.th}>{t('clients.colPakete')}</th>
+                <th style={s.th}>{t('clients.colActions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -213,7 +214,7 @@ export default function ClientsPage() {
                       <div style={s.orgId}>{org.id.slice(0, 8)}…</div>
                     </td>
                     <td style={s.td}>
-                      <span style={{ ...s.badge, ...(planStyle[org.plan] ?? { background: '#4a5568', color: '#fff' }) }}>
+                      <span style={{ ...s.badge, ...(planStyle[org.plan] ?? { background: 'var(--text-secondary)', color: 'var(--text-inverse)' }) }}>
                         {org.plan}
                       </span>
                     </td>
@@ -253,7 +254,7 @@ export default function ClientsPage() {
                                     setImpForm({ ticketRef: '', durationMinutes: 30 })
                                   }}
                                 >
-                                  Ansicht öffnen
+                                  {t('clients.viewOpen')}
                                 </button>
                               )}
                             </div>
@@ -263,9 +264,9 @@ export default function ClientsPage() {
                     </td>
                     <td style={s.td}>
                       {onboardingDone(org) ? (
-                        <span style={s.badgeDone}>Fertig</span>
+                        <span style={s.badgeDone}>{t('clients.onboardingDone')}</span>
                       ) : (
-                        <span style={s.badgePending}>Ausstehend</span>
+                        <span style={s.badgePending}>{t('clients.onboardingPending')}</span>
                       )}
                     </td>
                     <td style={s.td}>
@@ -291,7 +292,7 @@ export default function ClientsPage() {
                                 <button
                                   onClick={() => handleTogglePackage(org.id, pkg.id, active)}
                                   disabled={pkgTogglingKey === key}
-                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? '#fff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? 'var(--text-inverse)' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
                                 >
                                   {pkgTogglingKey === key ? '…' : active ? 'Aktiv' : 'Inaktiv'}
                                 </button>
@@ -303,7 +304,7 @@ export default function ClientsPage() {
                     </td>
                     <td style={s.td}>
                       <div style={s.actions}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(org)}>Bearbeiten</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(org)}>{t('clients.bearbeiten')}</button>
                         <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)' }} onClick={() => { setActivateOrg(org); setActivateMsg('') }}>+ User</button>
                         {!org.users.some((u) => u.role === 'superadmin') && (
                           <button className="btn btn-danger btn-sm" onClick={() => setDeleteOrg(org)}>Löschen</button>
@@ -322,13 +323,13 @@ export default function ClientsPage() {
       {editOrg && editForm && (
         <div style={s.overlay} onClick={() => { setEditOrg(null); setEditForm(null) }}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={s.modalTitle}>Client bearbeiten</h2>
+            <h2 style={s.modalTitle}>{t('clients.editTitle')}</h2>
 
-            <label style={s.label}>Firmenname</label>
+            <label style={s.label}>{t('clients.firmenname')}</label>
             <input style={s.input} value={editForm.org_name}
               onChange={(e) => setEditForm({ ...editForm, org_name: e.target.value })} />
 
-            <label style={s.label}>Plan</label>
+            <label style={s.label}>{t('clients.plan')}</label>
             <select style={s.input} value={editForm.plan}
               onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}>
               <option value="free">free</option>
@@ -336,28 +337,28 @@ export default function ClientsPage() {
               <option value="enterprise">enterprise</option>
             </select>
 
-            <label style={s.label}>Budget Org (€/Monat, leer = kein Limit)</label>
+            <label style={s.label}>{t('clients.budgetOrg')}</label>
             <input style={s.input} type="number" value={editForm.org_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, org_budget_limit: e.target.value })} />
 
-            <label style={s.label}>Department-Name</label>
+            <label style={s.label}>{t('clients.deptName')}</label>
             <input style={s.input} value={editForm.workspace_name}
               onChange={(e) => setEditForm({ ...editForm, workspace_name: e.target.value })} />
 
-            <label style={s.label}>Budget Department (€/Monat, leer = kein Limit)</label>
+            <label style={s.label}>{t('clients.budgetDept')}</label>
             <input style={s.input} type="number" value={editForm.workspace_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, workspace_budget_limit: e.target.value })} />
 
-            <label style={s.label}>Owner-Email</label>
+            <label style={s.label}>{t('clients.ownerEmail')}</label>
             <input style={s.input} type="email" value={editForm.owner_email}
               onChange={(e) => setEditForm({ ...editForm, owner_email: e.target.value })} />
 
             <div style={s.modalFooter}>
               <button className="btn btn-ghost" onClick={() => { setEditOrg(null); setEditForm(null) }}>
-                Abbrechen
+                {t('clients.cancel')}
               </button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Speichern…' : 'Speichern'}
+                {saving ? t('clients.saving') : t('clients.save')}
               </button>
             </div>
           </div>
@@ -368,18 +369,18 @@ export default function ClientsPage() {
       {activateOrg && (
         <div style={s.overlay} onClick={() => setActivateOrg(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={s.modalTitle}>User aktivieren</h2>
+            <h2 style={s.modalTitle}>{t('clients.activateTitle')}</h2>
             <p style={s.confirmText}>
               Org: <strong style={{ color: 'var(--text-primary)' }}>{activateOrg.name}</strong><br />
               User muss bereits in Supabase Dashboard angelegt sein.
             </p>
 
-            <label style={s.label}>E-Mail des Users</label>
+            <label style={s.label}>{t('clients.userEmail')}</label>
             <input style={s.input} type="email" placeholder="user@example.com"
               value={activateEmail}
               onChange={(e) => setActivateEmail(e.target.value)} />
 
-            <label style={s.label}>Rolle</label>
+            <label style={s.label}>{t('clients.role')}</label>
             <select style={s.input} value={activateRole}
               onChange={(e) => setActivateRole(e.target.value)}>
               <option value="owner">owner</option>
@@ -395,9 +396,9 @@ export default function ClientsPage() {
             )}
 
             <div style={s.modalFooter}>
-              <button className="btn btn-ghost" onClick={() => setActivateOrg(null)}>Schließen</button>
+              <button className="btn btn-ghost" onClick={() => setActivateOrg(null)}>{t('clients.close')}</button>
               <button className="btn btn-primary" onClick={handleActivate} disabled={activating || !activateEmail}>
-                {activating ? 'Aktivieren…' : 'Aktivieren'}
+                {activating ? t('clients.activating') : t('clients.activate')}
               </button>
             </div>
           </div>
@@ -408,13 +409,13 @@ export default function ClientsPage() {
       {impModal && (
         <div style={s.overlay} onClick={() => setImpModal(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={s.modalTitle}>Ansicht öffnen</h2>
+            <h2 style={s.modalTitle}>{t('clients.impersonateTitle')}</h2>
             <div style={s.impWarning}>
               Du siehst genau was <strong style={{ color: 'var(--text-primary)' }}>{impModal.email}</strong> sieht — nichts mehr.
               Kein Schreiben, Löschen oder Ändern. Diese Session wird protokolliert.
             </div>
 
-            <label style={s.label}>Support-Ticket-Referenz</label>
+            <label style={s.label}>{t('clients.ticketLabel')}</label>
             <input
               style={s.input}
               placeholder="z.B. TICKET-4321"
@@ -422,7 +423,7 @@ export default function ClientsPage() {
               onChange={(e) => setImpForm(f => ({ ...f, ticketRef: e.target.value }))}
             />
 
-            <label style={{ ...s.label, marginTop: 12 }}>Dauer</label>
+            <label style={{ ...s.label, marginTop: 12 }}>{t('clients.durationLabel')}</label>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {[15, 30, 60].map(min => (
                 <button
@@ -432,7 +433,7 @@ export default function ClientsPage() {
                     flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13,
                     cursor: 'pointer', fontWeight: impForm.durationMinutes === min ? 700 : 400,
                     background: impForm.durationMinutes === min ? 'var(--accent)' : 'var(--bg-input)',
-                    color: impForm.durationMinutes === min ? '#fff' : 'var(--text-secondary)',
+                    color: impForm.durationMinutes === min ? 'var(--text-inverse)' : 'var(--text-secondary)',
                     border: impForm.durationMinutes === min ? 'none' : '1px solid rgba(255,255,255,0.12)',
                   }}
                 >
@@ -446,9 +447,9 @@ export default function ClientsPage() {
             </p>
 
             <div style={s.modalFooter}>
-              <button className="btn btn-ghost" onClick={() => setImpModal(null)}>Abbrechen</button>
+              <button className="btn btn-ghost" onClick={() => setImpModal(null)}>{t('clients.cancel')}</button>
               <button className="btn btn-primary" onClick={openImpersonation} disabled={impLoading}>
-                {impLoading ? 'Öffne…' : 'In neuem Tab öffnen'}
+                {impLoading ? t('clients.opening') : t('clients.openInTab')}
               </button>
             </div>
           </div>
@@ -459,15 +460,15 @@ export default function ClientsPage() {
       {deleteOrg && (
         <div style={s.overlay} onClick={() => setDeleteOrg(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={s.modalTitle}>Client löschen?</h2>
+            <h2 style={s.modalTitle}>{t('clients.deleteTitle')}</h2>
             <p style={s.confirmText}>
               <strong style={{ color: 'var(--text-primary)' }}>{deleteOrg.name}</strong> und alle zugehörigen
               Daten (Department, User, Einstellungen) werden unwiderruflich gelöscht.
             </p>
             <div style={s.modalFooter}>
-              <button className="btn btn-ghost" onClick={() => setDeleteOrg(null)}>Abbrechen</button>
+              <button className="btn btn-ghost" onClick={() => setDeleteOrg(null)}>{t('clients.cancel')}</button>
               <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Löschen…' : 'Endgültig löschen'}
+                {deleting ? t('clients.deleting') : t('clients.deleteConfirm')}
               </button>
             </div>
           </div>

@@ -13,9 +13,10 @@ interface AuditActionsProps {
   criticalCount?: number
   scanProjectId?: string | null
   initialLighthouseUrl?: string | null
+  isVercelEnv?: boolean
 }
 
-export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl }: AuditActionsProps) {
+export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl, isVercelEnv = false }: AuditActionsProps) {
   const t = useTranslations('audit')
   const router = useRouter()
   const [auditState, setAuditState] = useState<TriggerState>('idle')
@@ -148,17 +149,21 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <input
+          suppressHydrationWarning
           type="url"
           value={lighthouseUrl}
           onChange={(e) => handleUrlChange(e.target.value)}
-          placeholder={t('lighthousePlaceholder')}
-          disabled={isAuditRunning}
+          placeholder={isVercelEnv ? 'Lighthouse (nur lokal)' : t('lighthousePlaceholder')}
+          disabled={isAuditRunning || isVercelEnv}
+          title={isVercelEnv ? 'Lighthouse-Analyse nur lokal verfügbar — pnpm exec tsx src/scripts/run-audit.ts --with-tools --lighthouse-url URL' : undefined}
           aria-label={t('lighthousePlaceholder')}
+          aria-disabled={isVercelEnv}
           style={{
             height: 36, padding: '0 12px', borderRadius: 8, fontSize: 13,
             border: '1px solid var(--border)', background: 'var(--bg-surface-solid)',
             color: 'var(--text-primary)', outline: 'none', width: 300,
-            opacity: isAuditRunning ? 0.5 : 1,
+            opacity: (isAuditRunning || isVercelEnv) ? 0.45 : 1,
+            cursor: isVercelEnv ? 'not-allowed' : 'text',
           }}
         />
         <button

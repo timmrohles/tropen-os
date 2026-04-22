@@ -66,8 +66,8 @@ export default function FeedsPage() {
   })
 
   useEffect(() => {
-    listFeedSources().then((data) => setSources(data))
-    listTopics().then((data) => setTopics(data))
+    listFeedSources().then((data) => setSources(data)).catch(() => {})
+    listTopics().then((data) => setTopics(data)).catch(() => {})
   }, [])
 
   const loadItems = useCallback(async (offset = 0, replace = true) => {

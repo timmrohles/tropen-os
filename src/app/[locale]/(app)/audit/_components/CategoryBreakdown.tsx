@@ -34,6 +34,17 @@ interface CategoryBreakdownProps {
   isExternalProject?: boolean
   /** When true, shows ⚠ live-check hint on DB and Security category rows */
   showLiveCheckHint?: boolean
+  /** False when no Lighthouse findings were found — indicates partial external-tool coverage */
+  hasExternalTools?: boolean
+}
+
+/** Number of external-tool rules per category (cat-1-rule-3, cat-2-rule-9/11, cat-7-rule-1/2, cat-16-rule-1, cat-18-rule-5) */
+const EXTERNAL_TOOL_RULE_COUNT: Record<number, number> = {
+  1: 1,
+  2: 2,
+  7: 2,
+  16: 1,
+  18: 1,
 }
 
 /** Primary agent(s) for each audit category */
@@ -71,7 +82,7 @@ const AGENT_PILL: Record<AgentSource, { label: string; color: string }> = {
   legal:            { label: 'Legal',   color: 'var(--text-secondary)' },
   'ai-integration': { label: 'AI',      color: 'var(--accent)' },
   analytics:        { label: 'Track',   color: 'var(--text-secondary)' },
-  'security-scan':  { label: 'SecScan', color: '#C42020' },
+  'security-scan':  { label: 'SecScan', color: 'var(--error)' },
   dsgvo:            { label: 'DSGVO',   color: 'var(--text-secondary)' },
   bfsg:             { label: 'BFSG',    color: 'var(--text-secondary)' },
   'ai-act':                  { label: 'AI Act',    color: 'var(--accent)' },
@@ -106,6 +117,7 @@ export default function CategoryBreakdown({
   highlightedCategoryId,
   isExternalProject = false,
   showLiveCheckHint = false,
+  hasExternalTools,
 }: CategoryBreakdownProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -198,6 +210,8 @@ export default function CategoryBreakdown({
               onCategoryClick={() => handleCategoryClick(cat)}
               hasFindings={findings.length > 0}
               showLiveCheckHint={showLiveCheckHint}
+              externalToolRuleCount={EXTERNAL_TOOL_RULE_COUNT[cat.category_id] ?? 0}
+              hasExternalTools={hasExternalTools}
             />
           )
         })}

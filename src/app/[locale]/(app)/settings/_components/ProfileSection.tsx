@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FloppyDisk } from '@phosphor-icons/react'
+import { useTranslations } from 'next-intl'
 
 interface ProfileData {
   full_name?: string
@@ -11,6 +12,7 @@ interface ProfileData {
 }
 
 export function ProfileSection() {
+  const t = useTranslations('settings')
   const [data, setData] = useState<ProfileData>({})
   const [fullName, setFullName] = useState('')
   const [salutation, setSalutation] = useState('')
@@ -33,6 +35,7 @@ export function ProfileSection() {
         setToroAddress(d.prefs?.toro_address ?? '')
         setLanguageStyle(d.prefs?.language_style ?? '')
       })
+      .catch(() => {})
   }, [])
 
   async function handleSave() {
@@ -51,12 +54,12 @@ export function ProfileSection() {
   return (
     <div className="card">
       <div className="card-header">
-        <span className="card-header-label">Profil</span>
+        <span className="card-header-label">{t('profile.title')}</span>
       </div>
       <div className="card-body" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="full-name">Name</label>
+          <label className="settings-label" htmlFor="full-name">{t('profile.nameLabel')}</label>
           <input
             id="full-name"
             type="text"
@@ -68,40 +71,40 @@ export function ProfileSection() {
         </div>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="salutation">Anrede</label>
+          <label className="settings-label" htmlFor="salutation">{t('profile.salutationLabel')}</label>
           <select id="salutation" className="settings-select" value={salutation} onChange={e => setSalutation(e.target.value)}>
-            <option value="">Keine Angabe</option>
-            <option value="herr">Herr</option>
-            <option value="frau">Frau</option>
-            <option value="divers">Divers</option>
+            <option value="">{t('profile.salutationNone')}</option>
+            <option value="herr">{t('profile.salutationMr')}</option>
+            <option value="frau">{t('profile.salutationMs')}</option>
+            <option value="divers">{t('profile.salutationOther')}</option>
           </select>
         </div>
 
         <div className="settings-field">
-          <label className="settings-label">E-Mail</label>
+          <label className="settings-label">{t('profile.emailLabel')}</label>
           <input type="email" className="settings-input settings-input--readonly" readOnly value={data.email ?? ''} />
-          <p className="settings-hint">E-Mail kann nicht geändert werden</p>
+          <p className="settings-hint">{t('profile.emailReadOnly')}</p>
         </div>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="language">Sprache</label>
+          <label className="settings-label" htmlFor="language">{t('profile.languageLabel')}</label>
           <select id="language" className="settings-select" value={language} onChange={e => setLanguage(e.target.value)}>
-            <option value="de">Deutsch</option>
-            <option value="en">English</option>
+            <option value="de">{t('profile.languageDe')}</option>
+            <option value="en">{t('profile.languageEn')}</option>
           </select>
         </div>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="chat-style">Antwort-Stil</label>
+          <label className="settings-label" htmlFor="chat-style">{t('profile.chatStyleLabel')}</label>
           <select id="chat-style" className="settings-select" value={chatStyle} onChange={e => setChatStyle(e.target.value)}>
-            <option value="clear">Klar und knapp</option>
-            <option value="structured">Strukturiert</option>
-            <option value="detailed">Ausführlich</option>
+            <option value="clear">{t('profile.chatStyleClear')}</option>
+            <option value="structured">{t('profile.chatStyleStructured')}</option>
+            <option value="detailed">{t('profile.chatStyleDetailed')}</option>
           </select>
         </div>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="toro-address">Toro spricht mich an mit</label>
+          <label className="settings-label" htmlFor="toro-address">{t('profile.toroAddressLabel')}</label>
           <input
             id="toro-address"
             type="text"
@@ -114,7 +117,7 @@ export function ProfileSection() {
         </div>
 
         <div className="settings-field">
-          <label className="settings-label" htmlFor="language-style">Sprachstil</label>
+          <label className="settings-label" htmlFor="language-style">{t('profile.langStyleLabel')}</label>
           <textarea
             id="language-style"
             className="settings-input"
@@ -133,7 +136,7 @@ export function ProfileSection() {
           disabled={saving}
         >
           <FloppyDisk size={14} weight="bold" aria-hidden="true" />
-          {saved ? 'Gespeichert' : saving ? 'Speichern…' : 'Speichern'}
+          {saved ? t('profile.saved') : saving ? t('profile.saving') : t('profile.save')}
         </button>
       </div>
     </div>

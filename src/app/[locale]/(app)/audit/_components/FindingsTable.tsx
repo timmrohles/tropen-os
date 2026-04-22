@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
-import { useRouter, usePathname } from '@/i18n/navigation'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import type { AgentSource, FixType } from '@/lib/audit/types'
 import RecommendationCard from './RecommendationCard'
@@ -44,6 +43,7 @@ interface FindingsTableProps {
   /** @deprecated — individual finding tasks are no longer shown */
   initialTaskMap?: Record<string, string>
   isExternalProject?: boolean
+  deepReviewBadges?: Record<string, { level: string; count: number }>
 }
 
 const SEVERITY_COUNTS = (findings: DbFinding[], sev: string) =>
@@ -78,33 +78,39 @@ export default function FindingsTable({
   severityFilter: severityFilterProp = 'all',
   agentFilter: agentFilterProp = 'all',
   isExternalProject = false,
+  deepReviewBadges = {},
 }: FindingsTableProps) {
   const t = useTranslations('audit')
-  const router = useRouter()
-  const pathname = usePathname()
-
   const [findings, setFindings] = useState<DbFinding[]>(initialFindings)
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
-  const [fixTypeHintDismissed, setFixTypeHintDismissed] = useState(() => {
-    try { return localStorage.getItem('audit-fixtypes-dismissed') === 'true' } catch { return false }
-  })
+  const [fixTypeHintDismissed, setFixTypeHintDismissed] = useState(false)
+  useEffect(() => {
+    try { if (localStorage.getItem('audit-fixtypes-dismissed') === 'true') setFixTypeHintDismissed(true) } catch { /* ignore */ }
+  }, [])
+
+  const VALID_SEVERITIES: SeverityFilter[] = ['all', 'critical', 'high', 'medium', 'low', 'info']
+  const VALID_STATUSES:   StatusFilter[]   = ['all', 'open', 'acknowledged', 'fixed', 'dismissed']
+
   const [localFixTypeFilter, setLocalFixTypeFilter] = useState<FixTypeFilter>(
     (['all', 'code-fix', 'code-gen', 'refactoring', 'manual'] as FixTypeFilter[]).includes(fixTypeFilterProp as FixTypeFilter)
       ? fixTypeFilterProp as FixTypeFilter : 'all'
   )
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    VALID_STATUSES.includes(statusFilterProp as StatusFilter) ? statusFilterProp as StatusFilter : 'open'
+  )
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>(
+    VALID_SEVERITIES.includes(severityFilterProp as SeverityFilter) ? severityFilterProp as SeverityFilter : 'all'
+  )
+  const [agentFilter, setAgentFilter] = useState<AgentFilter>(
+    agentFilterProp ? agentFilterProp as AgentFilter : 'all'
+  )
 
-  const VALID_SEVERITIES: SeverityFilter[] = ['all', 'critical', 'high', 'medium', 'low', 'info']
-  const VALID_STATUSES:   StatusFilter[]   = ['all', 'open', 'acknowledged', 'fixed', 'dismissed']
-  const severityFilter: SeverityFilter = VALID_SEVERITIES.includes(severityFilterProp as SeverityFilter) ? severityFilterProp as SeverityFilter : 'all'
-  const statusFilter:   StatusFilter   = VALID_STATUSES.includes(statusFilterProp as StatusFilter)       ? statusFilterProp as StatusFilter       : 'all'
-  const agentFilter:    AgentFilter    = agentFilterProp as AgentFilter
-
-  function setFilter(key: 'status' | 'severity' | 'agent', value: string) {
-    const params = new URLSearchParams(window.location.search)
-    if (value === 'all') params.delete(key)
-    else params.set(key, value)
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-  }
+  // Agent sources that actually have findings in this run (used to hide empty filter options)
+  const activeAgentSources = useMemo(() => {
+    const s = new Set<string>()
+    for (const f of findings) s.add(f.agent_source ?? 'core')
+    return s
+  }, [findings])
 
   // fixType counts for tabs (based on status/severity/agent-filtered findings, not fixType-filtered)
   const baseFiltered = useMemo(() =>
@@ -201,21 +207,37 @@ export default function FindingsTable({
     { value: 'dismissed', label: `Nicht relevant (${dismissedCount})` },
   ]
 
-  const agentChips: Array<{ value: AgentFilter; label: string }> = [
-    { value: 'all',          label: t('allAgents') },
-    { value: 'core',         label: 'Core' },
-    { value: 'security',     label: 'Security' },
-    { value: 'architecture', label: 'Architektur' },
-    { value: 'observability',label: 'Observability' },
-    { value: 'code-style',   label: 'Code Style' },
-    { value: 'testing',      label: 'Testing' },
-    { value: 'database',     label: 'Database' },
-    { value: 'api',          label: 'API' },
-    { value: 'platform',     label: 'Platform' },
-    { value: 'legal',        label: 'Legal' },
-    { value: 'accessibility',label: 'A11y' },
-    { value: 'ai-integration',label: 'AI' },
+  const allAgentChips: Array<{ value: AgentFilter; label: string }> = [
+    { value: 'all',                      label: t('allAgents') },
+    { value: 'core',                     label: 'Core' },
+    { value: 'security',                 label: 'Security' },
+    { value: 'security-scan',            label: 'Security Scan' },
+    { value: 'architecture',             label: 'Architektur' },
+    { value: 'observability',            label: 'Observability' },
+    { value: 'code-style',               label: 'Code Style' },
+    { value: 'testing',                  label: 'Testing' },
+    { value: 'database',                 label: 'Database' },
+    { value: 'api',                      label: 'API' },
+    { value: 'platform',                 label: 'Platform' },
+    { value: 'performance',              label: 'Performance' },
+    { value: 'legal',                    label: 'Legal' },
+    { value: 'accessibility',            label: 'A11y' },
+    { value: 'ai-integration',           label: 'AI' },
+    { value: 'npm-audit',                label: 'Pakete' },
+    { value: 'lighthouse-performance',   label: 'LH Performance' },
+    { value: 'lighthouse-accessibility', label: 'LH A11y' },
+    { value: 'lighthouse-best-practices',label: 'LH Best Practices' },
+    { value: 'lighthouse-seo',           label: 'LH SEO' },
+    { value: 'slop',                     label: 'Code Hygiene' },
+    { value: 'spec',                     label: 'Spec' },
+    { value: 'dsgvo',                    label: 'DSGVO' },
+    { value: 'bfsg',                     label: 'BFSG' },
+    { value: 'ai-act',                   label: 'AI Act' },
   ]
+  // Only show options for agents that actually produced findings in this run
+  const agentChips = allAgentChips.filter(
+    (c) => c.value === 'all' || activeAgentSources.has(c.value)
+  )
 
   if (findings.length === 0) {
     return (
@@ -296,7 +318,7 @@ export default function FindingsTable({
         <select
           aria-label="Severity"
           value={severityFilter}
-          onChange={(e) => setFilter('severity', e.target.value)}
+          onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
           style={dropdownStyle}
         >
           {severityChips.map(({ value, label }) => (
@@ -308,7 +330,7 @@ export default function FindingsTable({
         <select
           aria-label={t('allAgents')}
           value={agentFilter}
-          onChange={(e) => setFilter('agent', e.target.value)}
+          onChange={(e) => setAgentFilter(e.target.value as AgentFilter)}
           style={dropdownStyle}
         >
           {agentChips.map(({ value, label }) => (
@@ -320,7 +342,7 @@ export default function FindingsTable({
         <select
           aria-label="Status"
           value={statusFilter}
-          onChange={(e) => setFilter('status', e.target.value)}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           style={dropdownStyle}
         >
           {statusChips.map(({ value, label }) => (
@@ -376,6 +398,7 @@ export default function FindingsTable({
                 onMarkFixed={handleMarkFixed}
                 onMarkNotRelevant={handleMarkNotRelevant}
                 runId={runId}
+                deepReview={deepReviewBadges[group.ruleId]}
               />
             </div>
           ))}

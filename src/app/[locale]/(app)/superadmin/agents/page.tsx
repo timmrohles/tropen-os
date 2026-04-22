@@ -84,13 +84,13 @@ export default function AgentsPage() {
             {activeCount} aktiv
           </span>
           <span style={s.statItem}>
-            <span style={{ ...s.dot, background: '#d97706' }} />
+            <span style={{ ...s.dot, background: 'var(--warning)' }} />
             {draftCount} Entwurf
           </span>
           <span>·</span>
           <span>{totalRules} Regeln total</span>
           <span>·</span>
-          <span style={{ color: totalFindings > 0 ? '#dc2626' : 'var(--text-secondary)' }}>
+          <span style={{ color: totalFindings > 0 ? 'var(--error)' : 'var(--text-secondary)' }}>
             {totalFindings} Findings (letzter Run)
           </span>
         </div>
@@ -130,7 +130,7 @@ export default function AgentsPage() {
       )}
 
       {error && (
-        <div className="card" style={{ padding: '20px 24px', color: '#dc2626', fontSize: 14 }}>
+        <div className="card" style={{ padding: '20px 24px', color: 'var(--error)', fontSize: 14 }}>
           {error}
         </div>
       )}

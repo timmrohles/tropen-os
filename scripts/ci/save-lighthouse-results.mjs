@@ -1,5 +1,5 @@
 // scripts/ci/save-lighthouse-results.mjs
-// Parses lhci-output.txt and saves results to qa_lighthouse_runs table
+// Parses LHCI JSON results and saves to qa_lighthouse_runs table
 
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, readdirSync } from 'fs'
@@ -16,8 +16,8 @@ if (!supabaseUrl || !serviceKey) {
 
 const supabase = createClient(supabaseUrl, serviceKey)
 
-// Try to read LHCI JSON results from .lighthouseci/
 let scores = { performance: null, accessibility: null, best_practices: null, seo: null }
+let scannedUrl = null
 
 try {
   const lhciDir = '.lighthouseci'
@@ -30,24 +30,30 @@ try {
       best_practices: Math.round((lhr.categories?.['best-practices']?.score ?? 0) * 100),
       seo:            Math.round((lhr.categories?.seo?.score            ?? 0) * 100),
     }
+    // Extract the actual URL that was scanned from the report
+    scannedUrl = lhr.finalUrl ?? lhr.requestedUrl ?? null
   }
 } catch (err) {
   console.warn('Could not parse LHCI JSON:', err.message)
 }
 
+// url is NOT NULL in qa_lighthouse_runs — fall back to env var if report didn't yield one
+const url = scannedUrl ?? process.env.VERCEL_PRODUCTION_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'unknown'
+
 const row = {
-  commit_sha:     commitSha,
-  performance:    scores.performance,
-  accessibility:  scores.accessibility,
+  commit_sha:    commitSha,
+  performance:   scores.performance,
+  accessibility: scores.accessibility,
   best_practices: scores.best_practices,
-  seo:            scores.seo,
-  created_at:     new Date().toISOString(),
+  seo:           scores.seo,
+  url,
+  // run_at has DEFAULT NOW() — omit to let DB set it
 }
 
 const { error } = await supabase.from('qa_lighthouse_runs').insert(row)
 if (error) {
-  console.warn('Could not save lighthouse results (non-fatal):', error.message)
-  process.exit(0)
+  console.error('Failed to save lighthouse results:', error.message)
+  process.exit(1)
 }
 
-console.log('Lighthouse results saved:', scores)
+console.log('Lighthouse results saved:', { url, ...scores })

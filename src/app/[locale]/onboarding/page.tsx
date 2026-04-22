@@ -76,7 +76,7 @@ export default function OnboardingPage() {
       if (!['owner', 'admin'].includes(roleVal)) {
         setStep(3) // Members starten bei Schritt 3
       }
-    })
+    }).catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

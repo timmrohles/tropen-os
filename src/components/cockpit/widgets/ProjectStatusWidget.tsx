@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { FolderSimple } from '@phosphor-icons/react'
-import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './shared'
+import { WidgetSkeleton, WidgetEmpty, formatRelativeDate } from './Shared'
 
 interface Project {
   id: string

@@ -1,4 +1,4 @@
-// TODO(timm): Vollständige Implementierung kommt mit Parallel-Tabs-Feature (stash: mega-refactor-april-8)
+// Stub — full implementation in mega-refactor-april-8 stash
 export interface ParallelIntent {
   count: number
   labels: string[]

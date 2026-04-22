@@ -122,7 +122,7 @@ export function AgentDetailDrawer({ agent, onClose }: Props) {
               <span style={s.statLabel}>Kategorien</span>
             </div>
             <div style={s.statCard}>
-              <span style={{ ...s.statNum, color: agent.findingsCount > 0 ? '#dc2626' : 'var(--accent)' }}>
+              <span style={{ ...s.statNum, color: agent.findingsCount > 0 ? 'var(--error)' : 'var(--accent)' }}>
                 {agent.findingsCount}
               </span>
               <span style={s.statLabel}>Findings</span>
@@ -166,10 +166,10 @@ export function AgentDetailDrawer({ agent, onClose }: Props) {
                     <div key={i} style={{
                       fontSize: 12, padding: '5px 10px', borderRadius: 5,
                       background: isCritical
-                        ? 'color-mix(in srgb, #dc2626 8%, transparent)'
+                        ? 'color-mix(in srgb, var(--error) 8%, transparent)'
                         : 'color-mix(in srgb, var(--text-primary) 4%, transparent)',
                       color: 'var(--text-primary)',
-                      borderLeft: `3px solid ${isCritical ? '#dc2626' : 'var(--border)'}`,
+                      borderLeft: `3px solid ${isCritical ? 'var(--error)' : 'var(--border)'}`,
                     }}>
                       {rule}
                     </div>

@@ -17,64 +17,68 @@ async function requireSuperadmin() {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await requireSuperadmin()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const { id } = await params
-  const body = await req.json()
-  const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
-
-  // Update organization
-  const { error: orgError } = await supabaseAdmin
-    .from('organizations')
-    .update({
-      name: org_name,
-      plan,
-      budget_limit: org_budget_limit ?? null,
-    })
-    .eq('id', id)
-
-  if (orgError) {
-    return apiError(orgError)
-  }
-
-  // Update first workspace
-  if (workspace_name !== undefined) {
-    const { data: ws } = await supabaseAdmin
-      .from('departments')
-      .select('id')
-      .eq('organization_id', id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .single()
-
-    if (ws) {
-      await supabaseAdmin
+  try {  
+    const user = await requireSuperadmin()
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  
+    const { id } = await params
+    const body = await req.json()
+    const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
+  
+    // Update organization
+    const { error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .update({
+        name: org_name,
+        plan,
+        budget_limit: org_budget_limit ?? null,
+      })
+      .eq('id', id)
+  
+    if (orgError) {
+      return apiError(orgError)
+    }
+  
+    // Update first workspace
+    if (workspace_name !== undefined) {
+      const { data: ws } = await supabaseAdmin
         .from('departments')
-        .update({
-          name: workspace_name,
-          budget_limit: workspace_budget_limit ?? null,
-        })
-        .eq('id', ws.id)
+        .select('id')
+        .eq('organization_id', id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single()
+  
+      if (ws) {
+        await supabaseAdmin
+          .from('departments')
+          .update({
+            name: workspace_name,
+            budget_limit: workspace_budget_limit ?? null,
+          })
+          .eq('id', ws.id)
+      }
     }
-  }
-
-  // Update owner email
-  if (owner_email) {
-    const { data: ownerRow } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('organization_id', id)
-      .eq('role', 'owner')
-      .maybeSingle()
-
-    if (ownerRow) {
-      await supabaseAdmin.auth.admin.updateUserById(ownerRow.id, { email: owner_email })
-      await supabaseAdmin.from('users').update({ email: owner_email }).eq('id', ownerRow.id)
+  
+    // Update owner email
+    if (owner_email) {
+      const { data: ownerRow } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('organization_id', id)
+        .eq('role', 'owner')
+        .maybeSingle()
+  
+      if (ownerRow) {
+        await supabaseAdmin.auth.admin.updateUserById(ownerRow.id, { email: owner_email })
+        await supabaseAdmin.from('users').update({ email: owner_email }).eq('id', ownerRow.id)
+      }
     }
+  
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return apiError(err)
   }
-
-  return NextResponse.json({ success: true })
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

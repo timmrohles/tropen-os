@@ -84,15 +84,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    supabase
-      .from('organization_settings')
-      .select('logo_url, organization_display_name')
-      .maybeSingle()
-      .then(({ data }) => { if (data) setBranding(data) })
+    void Promise.resolve(
+      supabase
+        .from('organization_settings')
+        .select('logo_url, organization_display_name')
+        .maybeSingle()
+        .then(({ data }) => { if (data) setBranding(data) })
+    ).catch(() => {})
 
     supabase.auth.getUser().then(({ data: { user: authUser } }) => {
       if (authUser) setUser(authUser)
-    })
+    }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

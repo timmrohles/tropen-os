@@ -28,9 +28,9 @@ function formatDate(iso: string | null): string {
 function scoreColor(score: number | null): string {
   if (score == null) return 'var(--text-tertiary)'
   if (score >= 85) return 'var(--accent)'
-  if (score >= 70) return '#B45309'
-  if (score >= 50) return '#D97706'
-  return '#DC2626'
+  if (score >= 70) return 'var(--status-stable)'
+  if (score >= 50) return 'var(--warning)'
+  return 'var(--error)'
 }
 
 function ProjectRow({ project }: { project: ScanProject }) {

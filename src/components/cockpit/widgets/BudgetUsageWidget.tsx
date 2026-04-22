@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { WidgetSkeleton } from './shared'
+import { WidgetSkeleton } from './Shared'
 
 interface BudgetData {
   usedPercent: number

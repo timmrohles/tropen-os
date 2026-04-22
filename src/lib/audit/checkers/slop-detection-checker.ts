@@ -204,14 +204,14 @@ export async function checkOvercommenting(ctx: AuditContext): Promise<RuleResult
 // Example: "YOUR_API_KEY_HERE" vs "AIzaSy..." (the latter is a real key, caught by secrets check).
 
 const PLACEHOLDER_PATTERNS = [
-  /["']YOUR[_\s-](API[_\s-]KEY|TOKEN|SECRET)[_\s-]HERE["']/i,
-  /["']INSERT[_\s-]YOUR[_\s-]/i,
-  /["']REPLACE[_\s-]WITH[_\s-]/i,
+  /["']YOUR[_-](API[_-]KEY|TOKEN|SECRET)[_-]HERE["']/i,
+  /["']INSERT[_-]YOUR[_-]/i,
+  /["']REPLACE[_-]WITH[_-]/i,
   /["']your-project-id["']/i,
   /["']your[_-]api[_-]key["']/i,
   /["']YOUR_SECRET_HERE["']/i,
   /["']PLACEHOLDER["']/i,
-  /=\s*["']?YOUR[_\s]/i,
+  /=\s*["']?YOUR[_]/i,
 ]
 
 // Files where placeholders are expected and should not be flagged
@@ -238,6 +238,9 @@ export async function checkPlaceholderCredentials(ctx: AuditContext): Promise<Ru
     const lines = content.split('\n')
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
+      const trimmed = line.trimStart()
+      // Skip comment lines — they may contain placeholder text as examples/documentation
+      if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
       for (const pattern of PLACEHOLDER_PATTERNS) {
         if (pattern.test(line)) {
           // Determine severity: higher for src/ files, medium for config

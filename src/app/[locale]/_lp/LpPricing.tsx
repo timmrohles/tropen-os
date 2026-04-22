@@ -46,7 +46,7 @@ export function LpPricing({ locale }: { locale: string }) {
           {pricing.plans.map((plan, idx) => (
             <div key={plan.id} className={idx === 1 ? 'lp-pricing-cell lp-pricing-cell-pop' : 'lp-pricing-cell'} style={{ position: 'relative' }}>
               {idx === 1 && (
-                <span style={{ position: 'absolute', top: -11, left: 24, background: '#E5A000', color: '#ffffff', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '3px 12px', letterSpacing: '0.07em' }}>
+                <span style={{ position: 'absolute', top: -11, left: 24, background: 'var(--warning)', color: '#ffffff', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '3px 12px', letterSpacing: '0.07em' }}>
                   Most Popular
                 </span>
               )}

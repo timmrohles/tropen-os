@@ -6,6 +6,14 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('feeds:distributor')
 
+function buildContent(src: Record<string, unknown>): string {
+  return [
+    src.summary,
+    ...(Array.isArray(src.key_facts) ? (src.key_facts as string[]).map((f) => `• ${f}`) : []),
+    src.url ? `Quelle: ${src.url}` : '',
+  ].filter(Boolean).join('\n')
+}
+
 export async function distributeItem(itemId: string): Promise<void> {
   const { data: item } = await supabaseAdmin
     .from('feed_items')
@@ -23,58 +31,51 @@ export async function distributeItem(itemId: string): Promise<void> {
     .eq('source_id', src.source_id as string)
     .eq('auto_inject', true)
 
+  // Pre-fetch org users once if any notification-type distribution exists
+  const needsNotification = (dists ?? []).some(d => (d as Record<string, unknown>).target_type === 'notification')
+  let orgUsers: Array<Record<string, unknown>> = []
+  if (needsNotification) {
+    const { data } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('organization_id', src.organization_id as string)
+    orgUsers = (data as Array<Record<string, unknown>> | null) ?? []
+  }
+
+  // Accumulate inserts by type — batch after loop to avoid N+1
+  const workspaceInserts: Array<Record<string, unknown>> = []
+  const notificationInserts: Array<Record<string, unknown>> = []
+  const projectMemoryInserts: Array<Record<string, unknown>> = []
+
   for (const dist of dists ?? []) {
     const d = dist as Record<string, unknown>
     if ((src.score as number) < (d.min_score as number)) continue
 
     if (d.target_type === 'workspace') {
-      const content = [
-        src.summary,
-        ...(Array.isArray(src.key_facts) ? (src.key_facts as string[]).map((f) => `• ${f}`) : []),
-        src.url ? `Quelle: ${src.url}` : '',
-      ].filter(Boolean).join('\n')
-
-      const { error } = await supabaseAdmin.from('knowledge_entries').insert({
+      workspaceInserts.push({
         workspace_id: d.target_id,
         title: src.title,
-        content,
+        content: buildContent(src),
         source_url: src.url ?? null,
         entry_type: 'feed',
       })
-      if (error) log.error('[distributor] workspace inject failed', { error: error.message })
-
     } else if (d.target_type === 'notification') {
-      // Notify all org members
-      const { data: orgUsers } = await supabaseAdmin
-        .from('users')
-        .select('id')
-        .eq('organization_id', src.organization_id as string)
-
-      const notifications = (orgUsers ?? []).map((u: Record<string, unknown>) => ({
-        organization_id: src.organization_id as string,
-        user_id: u.id as string,
-        source_id: src.source_id as string,
-        item_id: itemId,
-        type: 'new_item' as const,
-        title: src.title as string,
-        body: (src.summary as string) ?? null,
-      }))
-
-      if (notifications.length > 0) {
-        const { error } = await supabaseAdmin.from('feed_notifications').insert(notifications)
-        if (error) log.error('[distributor] notification insert failed', { error: error.message })
+      for (const u of orgUsers) {
+        notificationInserts.push({
+          organization_id: src.organization_id as string,
+          user_id: u.id as string,
+          source_id: src.source_id as string,
+          item_id: itemId,
+          type: 'new_item',
+          title: src.title as string,
+          body: (src.summary as string) ?? null,
+        })
       }
     } else if (d.target_type === 'project') {
-      const content = [
-        src.summary,
-        ...(Array.isArray(src.key_facts) ? (src.key_facts as string[]).map((f: string) => `• ${f}`) : []),
-        src.url ? `Quelle: ${src.url}` : '',
-      ].filter(Boolean).join('\n')
-
-      const { error } = await supabaseAdmin.from('project_memory').insert({
+      projectMemoryInserts.push({
         project_id: d.target_id,
         organization_id: src.organization_id,
-        content,
+        content: buildContent(src),
         memory_type: 'feed_item',
         source_url: src.url ?? null,
         metadata: {
@@ -83,7 +84,19 @@ export async function distributeItem(itemId: string): Promise<void> {
           title: src.title,
         },
       })
-      if (error) log.error('[distributor] project memory inject failed', { error: error.message })
     }
+  }
+
+  if (workspaceInserts.length > 0) {
+    const { error } = await supabaseAdmin.from('knowledge_entries').insert(workspaceInserts)
+    if (error) log.error('[distributor] workspace inject failed', { error: error.message })
+  }
+  if (notificationInserts.length > 0) {
+    const { error } = await supabaseAdmin.from('feed_notifications').insert(notificationInserts)
+    if (error) log.error('[distributor] notification insert failed', { error: error.message })
+  }
+  if (projectMemoryInserts.length > 0) {
+    const { error } = await supabaseAdmin.from('project_memory').insert(projectMemoryInserts)
+    if (error) log.error('[distributor] project memory inject failed', { error: error.message })
   }
 }

@@ -16,6 +16,7 @@ Wenn Daten korrumpiert oder versehentlich gelöscht wurden:
 6. Vercel Redeploy triggern, testen
 
 > **TODO:** Ersten Restore-Test durchführen und Datum hier eintragen.
+> Schritte zum Testen: Supabase → Database → Backups → Point in Time Recovery → 1h alten Zeitstempel wählen → in separates Projekt restoren → `SELECT COUNT(*) FROM users` vergleichen → Ergebnis hier dokumentieren.
 
 ---
 

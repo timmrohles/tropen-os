@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ShieldCheck, ArrowRight } from '@phosphor-icons/react'
+import { useTranslations } from 'next-intl'
 
 type Platform = 'lovable' | 'bolt' | 'cursor' | 'other'
 
@@ -13,6 +14,7 @@ const PLATFORMS: { value: Platform; label: string }[] = [
 ]
 
 export default function BetaPage() {
+  const t = useTranslations('beta')
   const [email,    setEmail]    = useState('')
   const [platform, setPlatform] = useState<Platform | ''>('')
   const [message,  setMessage]  = useState('')
@@ -45,30 +47,24 @@ export default function BetaPage() {
       {/* Header */}
       <div style={s.logoRow}>
         <ShieldCheck size={20} color="var(--accent)" weight="fill" aria-hidden="true" />
-        <span style={s.logoText}>Tropen OS</span>
-        <span style={s.betaBadge}>Beta</span>
+        <span style={s.logoText}>{t('logoText')}</span>
+        <span style={s.betaBadge}>{t('badge')}</span>
       </div>
 
       {done ? (
         <div style={s.doneCard}>
-          <p style={s.doneTitle}>Du bist auf der Liste.</p>
-          <p style={s.doneSub}>
-            Wir melden uns per E-Mail, sobald du Zugang bekommst.
-            Beta-User bekommen eine separate Mail mit Login-Daten.
-          </p>
+          <p style={s.doneTitle}>{t('doneTitle')}</p>
+          <p style={s.doneSub}>{t('doneSub')}</p>
         </div>
       ) : (
         <>
           {/* Headline */}
-          <h1 style={s.h1}>Ist deine App bereit für echte Nutzer?</h1>
-          <p style={s.lead}>
-            Du hast mit Lovable, Bolt oder Cursor etwas gebaut. Es funktioniert.
-            Aber wie steht es mit Datenschutz, Fehlerbehandlung, Sicherheit?
-          </p>
+          <h1 style={s.h1}>{t('headline')}</h1>
+          <p style={s.lead}>{t('lead')}</p>
 
           {/* What it does */}
           <div style={s.card}>
-            <p style={s.cardTitle}>Tropen OS scannt deinen Code und zeigt dir konkret:</p>
+            <p style={s.cardTitle}>{t('whatTitle')}</p>
             <ul style={s.list}>
               <li>Was sofort gefixt werden muss <span style={s.hint}>(mit Copy-Paste Cursor-Prompt)</span></li>
               <li>Was du diese Woche angehen solltest</li>
@@ -78,19 +74,19 @@ export default function BetaPage() {
 
           {/* What it's NOT */}
           <div style={s.notCard}>
-            <p style={s.notTitle}>Was es <em>nicht</em> ist:</p>
+            <p style={s.notTitle}>{t('notTitle')}</p>
             <ul style={s.notList}>
-              <li>Kein automatischer Code-Fixer</li>
-              <li>Kein Ersatz für einen Senior Developer</li>
-              <li>Nicht perfekt — wir sind in Beta</li>
+              <li>{t('notItem1')}</li>
+              <li>{t('notItem2')}</li>
+              <li>{t('notItem3')}</li>
             </ul>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={s.form} noValidate>
-            <p style={s.formTitle}>Zugang zur Beta anfragen</p>
+            <p style={s.formTitle}>{t('formTitle')}</p>
 
-            <label htmlFor="beta-email" style={s.label}>E-Mail-Adresse</label>
+            <label htmlFor="beta-email" style={s.label}>{t('emailLabel')}</label>
             <input
               id="beta-email"
               type="email"
@@ -102,7 +98,7 @@ export default function BetaPage() {
               style={s.input}
             />
 
-            <label style={s.label}>Welches Tool nutzt du?</label>
+            <label style={s.label}>{t('platformLabel')}</label>
             <div style={s.platformRow}>
               {PLATFORMS.map(p => (
                 <button
@@ -121,7 +117,7 @@ export default function BetaPage() {
             </div>
 
             <label htmlFor="beta-message" style={s.label}>
-              Was baust du? <span style={s.optional}>(optional)</span>
+              {t('messageLabel')} <span style={s.optional}>{t('optional')}</span>
             </label>
             <textarea
               id="beta-message"
@@ -140,9 +136,9 @@ export default function BetaPage() {
               className="btn btn-primary"
               style={s.submitBtn}
             >
-              {loading ? 'Wird gespeichert…' : (
+              {loading ? t('submitLoading') : (
                 <>
-                  Zugang anfragen
+                  {t('submitBtn')}
                   <ArrowRight size={15} weight="bold" aria-hidden="true" />
                 </>
               )}
@@ -152,7 +148,7 @@ export default function BetaPage() {
       )}
 
       <p style={s.footer}>
-        Kein Spam. Keine Weitergabe. Nur Tropen OS.
+        {t('footer')}
       </p>
     </div>
   )

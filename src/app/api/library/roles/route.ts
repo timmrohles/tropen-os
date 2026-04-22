@@ -20,6 +20,7 @@ export async function GET() {
       .eq('is_active', true)
       .or(`scope.in.(system,public),scope.eq.package,and(scope.eq.org,organization_id.eq.${me.organization_id}),and(scope.eq.user,user_id.eq.${me.id})`)
       .order('sort_order')
+      .limit(200)
 
     if (error) { log.error('fetch roles', { error }); throw error }
     return NextResponse.json({ roles: data ?? [] })

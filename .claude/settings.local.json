@@ -6,7 +6,11 @@
       "mcp__plugin_github_github__get_file_contents",
       "mcp__512d6f36-3963-4dde-a0af-9631130bace2__list_teams",
       "mcp__plugin_github_github__get_me",
-      "mcp__plugin_github_github__list_pull_requests"
+      "mcp__plugin_github_github__list_pull_requests",
+      "mcp__512d6f36-3963-4dde-a0af-9631130bace2__list_projects",
+      "mcp__512d6f36-3963-4dde-a0af-9631130bace2__list_deployments",
+      "mcp__512d6f36-3963-4dde-a0af-9631130bace2__get_project",
+      "mcp__512d6f36-3963-4dde-a0af-9631130bace2__deploy_to_vercel"
     ]
   }
 }

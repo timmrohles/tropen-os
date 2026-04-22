@@ -22,6 +22,63 @@ interface ScoreHeroProps {
   codeOnlyMode?: boolean
   /** Whether a Schema Drift Check finding is present in the report */
   hasSchemaDriftFinding?: boolean
+  /** False when no Lighthouse findings were found in this run — indicates partial measurement */
+  hasExternalTools?: boolean
+}
+
+function ExternalToolsGapBadge({ t }: { t: ReturnType<typeof useTranslations<'audit'>> }) {
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 8 }}>
+      <span style={{
+        fontSize: 11, fontWeight: 500,
+        color: 'var(--text-tertiary)',
+        letterSpacing: '0.01em',
+      }}>
+        {t('partialScore')}
+      </span>
+      <button
+        onMouseEnter={() => setTooltipVisible(true)}
+        onMouseLeave={() => setTooltipVisible(false)}
+        onFocus={() => setTooltipVisible(true)}
+        onBlur={() => setTooltipVisible(false)}
+        aria-label={t('partialScoreAriaLabel')}
+        style={{
+          background: 'none', border: 'none', cursor: 'help', padding: 0,
+          color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <Info size={13} weight="bold" aria-hidden="true" />
+      </button>
+
+      {tooltipVisible && (
+        <div role="tooltip" style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          zIndex: 30,
+          width: 300,
+          padding: '10px 12px',
+          background: 'var(--bg-tooltip)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          boxShadow: '0 4px 12px rgba(26,23,20,0.10)',
+          fontSize: 12,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.5,
+          pointerEvents: 'none',
+        }}>
+          <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {t('partialScoreTooltipTitle')}
+          </p>
+          <p style={{ margin: 0 }}>
+            {t('partialScoreTooltipBody')}
+          </p>
+        </div>
+      )}
+    </span>
+  )
 }
 
 function RuntimeGapBadge({ hasSchemaDriftFinding }: { hasSchemaDriftFinding: boolean }) {
@@ -177,15 +234,22 @@ export default function ScoreHero({
   isFirstRun = false,
   codeOnlyMode = true,
   hasSchemaDriftFinding = false,
+  hasExternalTools,
 }: ScoreHeroProps) {
   const t = useTranslations('audit')
-  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
-    try { return localStorage.getItem('audit-onboarding-dismissed') === 'true' } catch { return false }
-  })
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    try {
+      if (localStorage.getItem('audit-onboarding-dismissed') === 'true') setOnboardingDismissed(true)
+    } catch { /* localStorage unavailable in private mode */ }
+  }, [])
 
   function dismissOnboarding() {
     setOnboardingDismissed(true)
-    try { localStorage.setItem('audit-onboarding-dismissed', 'true') } catch {}
+    try { localStorage.setItem('audit-onboarding-dismissed', 'true') } catch { /* ignore */ }
   }
 
   const color = STATUS_COLOR[status]
@@ -270,6 +334,7 @@ export default function ScoreHero({
         {/* Runtime Gap Badge */}
         <div style={{ marginBottom: 8 }}>
           <RuntimeGapBadge hasSchemaDriftFinding={hasSchemaDriftFinding} />
+          {mounted && !hasExternalTools && <ExternalToolsGapBadge t={t} />}
         </div>
 
         {/* Progress bar — thin (4px) */}
