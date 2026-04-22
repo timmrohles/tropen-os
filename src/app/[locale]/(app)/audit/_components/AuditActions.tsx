@@ -72,7 +72,10 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
       const data = await res.json() as { runId: string; percentage: number }
       setAuditResult(data)
       setAuditState('done')
-      router.push(`/audit?runId=${data.runId}`)
+      const dest = scanProjectId
+        ? `/audit?project=${scanProjectId}&runId=${data.runId}`
+        : `/audit?runId=${data.runId}`
+      router.push(dest)
     } catch {
       setErrorMsg('Netzwerkfehler — bitte erneut versuchen')
       setAuditState('error')
