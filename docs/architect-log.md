@@ -6,6 +6,313 @@
 
 ---
 
+## 2026-04-22 — 5 Strukturelle Checker-Probleme behoben (Dogfooding-Insights)
+
+**Ampel:** 🟢
+**Prompt:** Dogfooding-Session: 187 Refactoring-Findings triagiert → 5 strukturelle Checker-Probleme identifiziert und behoben
+
+**Kontext:**
+Während der Triage von 187 Findings aus Audit-Run `104fca64-786a-40d4-8fe3-3fee90c382d5` wurden 5 systematische Probleme erkannt, die zu False Positives oder Rauschen führten.
+
+**Insight 1 — Frozen Feature Classification (P17)**
+- **Problem:** ~40+ Findings aus eingefrornenen Routen (`/agenten`, `/feeds`, etc.) erschienen in der "Offen"-Ansicht
+- **Fix:** `AuditOptions.frozenPaths?: string[]` + `Finding.frozen?: boolean`; `runAudit()` markiert Findings aus diesen Pfaden; Trigger-Route persistiert sie als `status='dismissed', not_relevant_reason='frozen-path'`
+- **CLI:** `--frozen-paths agenten,feeds,workspaces,chat,projects,artifacts`
+- **Dateien:** `types.ts`, `index.ts`, `trigger/route.ts`, `deduplicator.ts`, `run-audit.ts`
+
+**Insight 2 — Bundle Size Checker Kalibrierung (P15)**
+- **Problem:** `checkBundleSizes()` summierte ALLE `.next/static/chunks/*.js` → 17 MB → immer Score 1 (false)
+- **Fix:** Filtert auf Initial-Load-Chunks: `framework-*.js`, `main-*.js`, `polyfills-*.js`, `webpack-*.js`
+- **Datei:** `external-tools-checker.ts` → `checkBundleSizes()`
+
+**Insight 3 — Prop Drilling Checker (P14)**
+- **Problem:** `checkPropDrilling()` flaggte Komponenten mit >10 Props als "Prop Drilling" — unabhängig davon ob Props tatsächlich weitergereicht werden
+- **Fix:** Identity-Forwarding-Detektion: `propName={propName}` Pattern (≥3 Matches) + `{...props}/{...rest}` Spread-Detektion
+- **Datei:** `state-deps-obs-checkers.ts` → `checkPropDrilling()`
+- **Limitation:** Regex matcht gegen ganzen File-Content, nicht nur die Komponenten-Body — bekannte Einschränkung, kein Regressionsrisiko
+
+**Insight 4 — Multi-Counting UI Deduplication (Approach B)**
+- **Problem:** Eine Datei die von 4 Regeln gleichzeitig geflagt wird (z.B. FixPreview.tsx: Dateigröße + CC + God Component + Länge) erscheint als 4 unabhängige Karten ohne sichtbare Verbindung
+- **Fix:** `alsoAffectedByRules?: Array<{ruleId, label}>` in `FindingGroup`; `groupFindings()` berechnet Cross-Referenzen nach dem Aufbau der Groups; `RecommendationCard` zeigt "betrifft auch: CC, Dateigröße" Pill-Badges
+- **Dateien:** `group-findings.ts` (Interface + Algorithmus), `RecommendationCard.tsx` (Display)
+
+**Insight 5 — Naming Convention Whitelist (P16)**
+- **Problem:** `_DESIGN_REFERENCE.tsx` wurde als PascalCase-Verletzung geflagt (Underscore-Prefix)
+- **Fix:** `/^_[A-Z]/`-Guard in `checkNamingConventions()` — `_ALLCAPS.tsx`-Dateien werden übersprungen
+- **Datei:** `repo-map-checker.ts` → `checkNamingConventions()`
+
+**Neue Patterns:** P14 (Threshold-Heuristik ohne Semantik), P15 (Kumulative Metrik misst das Falsche), P16 (Konventions-Ausnahmen fehlen), P17 (Feature-blinde Auditierung) → `docs/checker-design-patterns.md`
+
+**Erwartete Auswirkung:** Nächster Audit-Run mit `--frozen-paths` → deutlich weniger Noise in der "Offen"-Ansicht. Prop-Drilling und Bundle-Size-Findings werden selektiver und präziser.
+
+---
+
+## 2026-04-22 — FOUT beseitigt (Font-Loading-Flicker)
+
+**Ampel:** 🟢
+**Prompt:** FOUT beim Scrollen — Überschriften und Bold-Text zeigen kurz System-Fallback
+
+**Diagnose:**
+- Inter war mit Gewichten `['300', '400', '500', '600']` konfiguriert — **700 fehlte**, obwohl `font-weight: 700` ~70× in globals.css vorkommt. Browser synthetisierte Bold künstlich (leicht anders als echter Bold-Font).
+- Alle drei Fonts (`Inter`, `Plus_Jakarta_Sans`, `JetBrains_Mono`) nutzten `display: 'swap'` → System-Fallback wird zuerst gezeigt, dann ausgetauscht → sichtbarer Wechsel beim Scrollen in langen Listen.
+- Kein `font-synthesis: none` → Browser durfte Bold/Italic simulieren.
+
+**Fix in `src/app/layout.tsx`:**
+- Inter Gewicht `'700'` ergänzt
+- Alle drei Fonts auf `display: 'optional'` umgestellt (kein sichtbarer Swap; bei sehr langsamer Verbindung bleibt Fallback dauerhaft — akzeptabel)
+- `preload: true` explizit gesetzt (war implizit aktiv, jetzt explizit dokumentiert)
+
+**Fix in `src/app/globals.css`:**
+- `font-synthesis: none` auf `html` und `body` — verhindert künstliche Bold/Italic-Simulation während Font lädt
+
+**Entscheidung `display: optional` statt `swap`:** Kein FOUT möglich, weil der Browser bei `optional` den Font nur nutzt wenn er aus dem Cache kommt. Beim ersten Load bleibt der System-Font stabil sichtbar. Ab dem zweiten Load (Font im Cache) erscheint der Custom-Font sofort ohne Wechsel. Für eine Production-App mit wiederkehrenden Nutzern ist das die beste Strategie.
+
+---
+
+## 2026-04-22 — Deep Fix Button (Consensus Fix Engine UI)
+
+**Ampel:** 🟢
+**Prompt:** Integrate existing Consensus Fix Engine backend into audit UI (superpowers:writing-plans)
+
+**Entscheidung:** Lazy-caching strategy für Deep Fix: GET on first click (cache hit → sofort), 404 → POST (generation). Verhindert 50+ GET-Requests beim ersten Render von FindingsTable. `runId` wird von FindingsTable → RecommendationCard als optionaler Prop durchgereicht — AuditFinding hat kein run_id-Feld. `DeepFixButton` rendert unter der Actions-Flex-Row (nicht darin), damit ConsensusFixResult als Block-Element sauber expandiert.
+
+**Anpassungen:**
+- GET route scoped per `organization_id` (Tenant-Isolation)
+- POST response fehlte `drafts`-Feld → `ConsensusFixResult` crashte auf `.filter()`. Fix: `drafts: consensus.drafts` und `riskReasons` explizit in POST-Response aufgenommen.
+- `localStorage` in `useState`-Lazy-Initializer in `FindingsTable` verursachte Hydration-Mismatch → `useState(false)` + `useEffect` für client-seitiges Lesen.
+
+**Offene Punkte:**
+- Diff-Viewer: POST response enthält `diffs` — aktuell nicht angezeigt (future: inline diff mit Syntax-Highlighting)
+- Budget-Check vor POST wäre ideal (analog zu anderen LLM-Routes)
+
+**Neues Lernmuster:** Bei feature-gated UI-Buttons auf API-Features immer lazy-check pattern verwenden (GET → 404 → POST) statt on-mount-prefetch — verhindert Request-Storms bei Listen-Views.
+
+---
+
+## 2026-04-22 — Secret-Detection-Checker kalibriert + Komitee-Beobachtung dokumentiert
+
+**Ampel:** 🟢
+**Prompt:** False Positive: hardcoded-secret auf src/scripts/agent-gen-defs.ts
+
+### Kalibrierung: scripts/agent-gen aus hardcoded-secret ausgeschlossen
+
+`hardcoded-secret` Pattern in `security-scan-checker.ts` (cat-3-rule-21) bekam `[\\/]scripts[\\/]agent-gen` als zusätzliche `excludePattern`-Exclusion.
+
+**Datei-Charakter:** `src/scripts/agent-gen-defs.ts` enthält keine Credentials. Sie definiert drei große Template-String-Literale (`RULES_*`), die als System-Prompt-Bausteine für den LLM-Agent-Generierungsprozess (`generate-agents.ts`) dienen. Diese Prompts instruieren die LLMs bei der Code-Analyse welche Security-Regeln zu prüfen sind — deshalb tauchen Wörter wie "Secret", "Key", "Token", "Password" als Regel-Vokabular auf, nicht als Credential-Zuweisungen.
+
+**Pattern-Kontext:** Das `hardcoded-secret`-Regex erfordert `keyword\s*[:=]\s*['"][8+ chars]['"]` — also eine tatsächliche Zuweisung mit quoted Value. Natürliche Sprache in Prompts hat diese Struktur selten. Trotzdem: prophylaktische Exclusion verhindert zukünftige Matches wenn Prompt-Text zufällig dieser Struktur ähnelt (z.B. Beispiel-Code in Prompt-Instruktionen). Pattern-Klasse: P5 (Checker trifft Dokumentations-Code).
+
+### Komitee-Beobachtung: Common-Mode-Failure bei LLM-Konsens
+
+**Beobachtung:** Das Finding wurde vom Multi-Model Komitee (4 Reviewer: Sonnet 4.6, GPT-5.4, Gemini 2.5 Pro, DeepSeek + Opus-Judge) als gültig eingeschätzt. Kein Modell hat widersprochen.
+
+**Interpretation:** Dies ist ein Common-Mode-Failure. Alle vier Modelle haben im Training gelernt: "Datei enthält Security-Vokabular → potentielles Credential-Risiko". Bei einer Datei die über Security schreibt (nicht Security verletzt), führt diese Heuristik systematisch zum gleichen False Positive. Die Modelle sind nicht unabhängig genug in dieser spezifischen Fehlerkategorie.
+
+**Implikation für die Komitee-Hypothese:** "Konsens aus vier Modellen macht bessere Findings" gilt für viele Klassen. Es gilt NICHT wenn alle Modelle dieselbe Heuristik-Schwäche gelernt haben — dann multipliziert der Komitee-Konsens das Problem, statt es zu korrigieren. Deterministische Exclusion-Rules (wie der hier gemachte Fix) sind in dieser Klasse zuverlässiger als LLM-Konsens.
+
+**Referenz:** Backlog-Eintrag "Auswertung Komitee-Findings" — dieser Befund gehört in die dortige Analyse.
+
+### Geänderte Dateien
+
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/audit/checkers/security-scan-checker.ts` | `hardcoded-secret.excludePattern` um `[\\/]scripts[\\/]agent-gen` erweitert + erklärender Kommentar |
+| `docs/checker-feedback.md` | FP-Eintrag cat-3-rule-21 ergänzt (Komitee-Kontext, Pattern P5+P13) |
+| `docs/checker-design-patterns.md` | P13 "Security-Checker: Pattern-Matching statt Keyword-Matching" neu angelegt |
+
+---
+
+## 2026-04-22 — Deep Fix Button: Consensus Fix Engine als UI-Feature exposed
+
+**Ampel:** 🟢
+**Prompt:** Deep Fix Button — macht Consensus Fix Engine für Nutzer zugänglich
+
+### Architektur-Entscheidung: Lazy-Cache-Pattern für teure LLM-Operationen
+
+Der Konsens-Fix kostet ~€0.50 und dauert ~60 Sekunden. Statt einem reinen POST-Button-Ansatz wählen wir ein GET-first-Muster:
+
+1. Klick → GET `/api/audit/fix/consensus?findingId=...` (Cache-Lookup in DB)
+2. HTTP 200 → sofort anzeigen (Cache-Hit)
+3. HTTP 404 → POST (Generierung, ~60s)
+
+Dieses Pattern verhindert Doppelgenerierungen und macht den Button nach erstem Klick sofort reagierend.
+
+### State-Machine im Hook
+
+`useDeepFix` implementiert explizit `idle | checking | generating | ready | error` — kein boolean `isLoading`. Vorteil: UI kann zwischen "Prüft Cache" und "Generiert (60s)" unterscheiden.
+
+### Tenant-Isolation
+
+Jede `audit_fixes`-Query filtert auf `organization_id` (threading über Auth-Guard im GET-Handler). Keine Org-übergreifende Fix-Sichtbarkeit möglich.
+
+### Wo der Button sitzt
+
+`DeepFixButton` rendert am Ende der aufgeklappten `RecommendationCard` — nach den Aktions-Buttons (Fix-Prompt / Erledigt / Nicht relevant), aber vor dem "Nicht relevant"-Block. Karte muss aufgeklappt sein (Klick auf Header).
+
+Sichtbarkeits-Bedingung: `runId && !(group.fixType === 'manual' && recommendation?.manualSteps)` — identisch mit Fix-Prompt-Button.
+
+### runId-Threading
+
+`AuditFinding` hat kein `run_id`-Feld. `runId` wird von `FindingsTable` (existierendes Prop) über `RecommendationCard` (neues optionales Prop) bis zu `DeepFixButton` gethreaded.
+
+### Hydration-Bugfix
+
+`isVercelEnv={!!process.env.VERCEL}` in `audit/page.tsx` erzeugte einen Hydration-Mismatch: Non-`NEXT_PUBLIC`-Env-Vars werden vom Next.js-Bundler client-seitig auf `undefined` gesetzt. Fix: `NEXT_PUBLIC_VERCEL_ENV` — von Vercel auf beiden Seiten injiziert, lokal immer `undefined`.
+
+### Neue Dateien
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/hooks/useDeepFix.ts` | State-Machine-Hook (idle/checking/generating/ready/error) |
+| `src/app/[locale]/(app)/audit/_components/ConsensusFixResult.tsx` | Ergebnis-Karte (Drafts, Risk, Judge, Explanation) |
+| `src/app/[locale]/(app)/audit/_components/DeepFixButton.tsx` | Button-Komponente mit Lazy-Cache-Logik |
+| `test/audit/useDeepFix.unit.test.ts` | 5 Unit-Tests (Cache-Hit, 404→POST, Error, Toggle) |
+
+### Geänderte Dateien
+
+| Datei | Änderung |
+|-------|----------|
+| `src/app/api/audit/fix/consensus/route.ts` | GET-Handler ergänzt (Cache-Lookup mit Tenant-Isolation) |
+| `src/app/[locale]/(app)/audit/_components/FindingsTable.tsx` | `runId={runId}` an RecommendationCard übergeben |
+| `src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx` | `runId?: string` Prop + DeepFixButton eingebunden |
+| `src/app/[locale]/(app)/audit/page.tsx` | `NEXT_PUBLIC_VERCEL_ENV` statt `VERCEL` für hydration-sichere isVercelEnv-Prop |
+| `package.json` | `balanced-match: >=4.0.4` pnpm-Override (webpack ENOENT-Fix) |
+
+**Offene Punkte:**
+- Consensus Fix Engine Status in `docs/features/status.md` von C → A aktualisieren (UI jetzt vorhanden)
+
+---
+
+## 2026-04-22 — Windows ENOENT-Fix: platformCommand-Utility + alle Aufrufstellen migriert
+
+**Ampel:** 🟢
+**Prompt:** ENOENT bei execFileSync('pnpm', ...) auf Windows systematisch beheben
+
+### Diagnose
+
+Alle vier externen Tool-Calls in `external-tools-checker.ts` (depcruise, Lighthouse, ESLint, pnpm audit) plus `resolvePnpmBin()` in `cli-checker.ts` warfen `ENOENT` auf Windows. Ursache: `execFileSync`/`spawnSync` verwenden intern `CreateProcessW` ohne PATHEXT-Auflösung. Node CLI-Tools sind auf Windows als `pnpm.cmd` installiert — `'pnpm'` ist unbekannt.
+
+**Strategische Konsequenz:** Alle Audit-Läufe auf Windows-Entwicklungsmaschinen seit Einführung des `external-tools-checker.ts` lieferten inkomplette Ergebnisse für alle vier externen Tool-Kategorien (Architektur, Lighthouse, Code-Style, Security). Die Scores waren strukturell zu optimistisch (null-Results statt echter Messungen).
+
+### Lösung
+
+Neue Utility `src/lib/audit/utils/platform-utils.ts` mit zwei Funktionen:
+
+| Funktion | Zweck |
+|----------|-------|
+| `platformCommand(name)` | `'pnpm'` → `'pnpm.cmd'` auf win32, sonst unverändert |
+| `resolveNodeCli(name, rootPath)` | Vollständige Auflösung: local .bin → global Windows-Pfade → platformCommand() |
+
+Unit-Tests: `platform-utils.unit.test.ts` — 4 Tests (win32, linux, darwin, default).
+
+### Migrierte Aufrufstellen
+
+| Datei | Aufruf vorher | Nach der Migration |
+|-------|--------------|-------------------|
+| `external-tools-checker.ts` | `run('pnpm', ['exec', 'depcruise', ...])` | `run(platformCommand('pnpm'), ...)` |
+| `external-tools-checker.ts` | `run('pnpm', ['exec', 'lighthouse', ...])` | `run(platformCommand('pnpm'), ...)` |
+| `external-tools-checker.ts` | `run('pnpm', ['exec', 'eslint', ...])` | `run(platformCommand('pnpm'), ...)` |
+| `external-tools-checker.ts` | `run('pnpm', ['audit', '--json'])` | `run(platformCommand('pnpm'), ...)` |
+| `cli-checker.ts` | `resolvePnpmBin(ctx.rootPath)` (inline) | `resolveNodeCli('pnpm', ctx.rootPath)` |
+
+`git` und `gitleaks` sind native Binaries — PATHEXT-Problem tritt dort nicht auf, kein Fix nötig.
+
+### Dokumentation
+
+Neues Pattern P12 "Cross-Platform Command Execution (Windows ENOENT)" in `docs/checker-design-patterns.md` dokumentiert, inkl. Checklisten-Punkt.
+
+**Geänderte Dateien:** `src/lib/audit/utils/platform-utils.ts` (neu), `src/lib/audit/utils/platform-utils.unit.test.ts` (neu), `src/lib/audit/checkers/external-tools-checker.ts`, `src/lib/audit/checkers/cli-checker.ts`, `docs/checker-design-patterns.md`
+
+**Nachtrag — zweiter Fix (gleiche Session):** `shell: true` wirft DEP0190-Deprecation-Warning in Node.js v22 wenn args-Array übergeben wird. Endlösung: explizit `['cmd.exe', ['/c', cmd, ...args]]`. Nebenbugs: `balanced-match: >=4.0.4` Override bricht ESLint-Abhängigkeitskette (ESLint-Crash "balanced is not a function") → `^1.0.0`. `checkUnitTestCoverage` verwendete Unix-`cat` → `readFileSync`. **Ergebnis: erster echter Audit mit vollem Tool-Stack: 94.7%** (147 auto-Regeln; Performance 80% mit Lighthouse statt 68% bundle-only).
+
+---
+
+## 2026-04-22 — Audit-System: 3 Bugs behoben (withTools, Rule-ID-Mismatch, GitHub Actions)
+
+**Ampel:** 🟢
+**Prompt:** Punkt 1 (GitHub Actions), Punkt 2 (withTools), Punkt 3 (false attribution)
+
+### Punkt 1 — GitHub Actions: pnpm/action-setup@v6 → @v5
+
+Alle 5 CI-Workflows hatten `pnpm/action-setup@v6`, das nicht existiert (latest: v5.0.0). Vor der Änderung via GitHub API verifiziert (`gh api repos/pnpm/action-setup/releases/latest`). Alle anderen Actions (checkout@v6, setup-node@v6, upload-artifact@v7, github-script@v9) waren korrekt. `lighthouse.yml` zusätzlich um `workflow_dispatch` ergänzt.
+
+**Geänderte Dateien:** `.github/workflows/lighthouse.yml`, `ci.yml`, `bias-eval.yml`, `design-lint.yml`, `pr-check.yml`
+
+---
+
+### Punkt 2 — withTools-Konsistenz zwischen CLI und API
+
+**Problem:** `trigger/route.ts` ignorierte `body.withTools` bei der skipModes-Berechnung: `external-tool`-Checker liefen immer (auch wenn `withTools: false`). Außerdem war der Log-Eintrag hardcodiert auf `{ withTools: true }`.
+
+**Fix:** CLI-Logik gespiegelt:
+```typescript
+if (!body.withTools) skipModes.push('external-tool')
+const externalTools = body.withTools ? { ... } : undefined
+log.info('Audit options', { withTools: body.withTools, skipModes })
+```
+
+**Geänderte Datei:** `src/app/api/audit/trigger/route.ts`
+
+---
+
+### Punkt 3 — False Attribution durch Rule-ID-Mismatch in ast-quality-checker.ts
+
+**Root Cause:** Zwei Checker-Funktionen in `ast-quality-checker.ts` hardcodierten falsche Rule-IDs (P11-Pattern — neu in checker-design-patterns.md dokumentiert):
+
+| Funktion | Hardcodiert | Registry-Eintrag | Richtig |
+|----------|-------------|------------------|---------|
+| `checkErrorHandling` | `cat-2-rule-10` (Strict Equality!) | `cat-2-rule-16` | `cat-2-rule-16` |
+| `checkErrorBoundary` | `cat-2-rule-11` (Lighthouse Best Practices!) | `cat-2-rule-17` | `cat-2-rule-17` |
+
+**Konsequenzen:**
+- Error-Handling-Befunde wurden als Strict-Equality-Befunde gespeichert (falsche `agentSource: 'code-style'` statt `'error-handling'`)
+- Error-Boundary-Befunde wurden als Lighthouse-Befunde gespeichert (`agentSource: 'lighthouse-best-practices'` statt `'error-handling'`)
+- Regeln `cat-2-rule-16` und `cat-2-rule-17` zeigten immer score=5 (fälschlich "alles gut")
+
+**Fix:** Hardcodierte IDs in `pass()`/`fail()`-Aufrufen korrigiert. Neues Pattern P11 in `docs/checker-design-patterns.md` dokumentiert inkl. Checklisten-Punkt.
+
+**Geänderte Dateien:** `src/lib/audit/checkers/ast-quality-checker.ts`, `docs/checker-design-patterns.md`
+
+---
+
+## 2026-04-22 — Feature-Inventar angelegt
+
+**Ampel:** 🟢
+**Prompt:** Feature-Inventar aufbauen — docs/features/status.md
+
+**Entscheidung:**
+Reine Dokumentationsaufgabe. Neues Verzeichnis `docs/features/` und Datei `status.md` angelegt.
+
+Auslöser: Drei Features (Komitee-Review, Consensus Fix Engine, Lighthouse) deren Status nicht ohne frische Analyse klar war. Strukturelles Problem: Features werden gebaut, Bau-Aktivität landet in architect-log.md, aber der aktuelle Zustand ist nirgends konsolidiert abrufbar.
+
+**Inhalt des Inventars:**
+25 Features eingetragen mit Status A/B/C/D, Schichten-Check (DB/Backend/UI/Nutzung), Abhängigkeiten und Offenen Punkten.
+
+| Status | Anzahl Features |
+|--------|----------------|
+| A — Produktiv genutzt | 13 |
+| B — Fertig, ungenutzt | 8 |
+| C — Teilweise implementiert | 4 |
+| D — Nur Stub | 0 |
+
+**Wichtigste Findings:**
+- Consensus Fix Engine (C): UI-Trigger fehlt noch — Backend + DB fertig
+- Lighthouse System A (C): Nur lokal funktional, Cloud-Strategie offen
+- Lighthouse System B (C): QA-Panel-Bugs unverified
+- Manual Finding Card (C): Rendering-Logik da, aber keine finding-recommendations mit manualSteps befüllt
+- Beta-Pilot (B): Infra fertig, Einladungen können starten (Score 95.2% > Schwelle 85%)
+- Feeds + Agenten + Perspectives (B): Vollständig gebaut, aber seit Produkt-Pivot (2026-04-10) eingefroren
+
+**Pflege-Pflicht:**
+Dieses Inventar muss nach jedem Feature-Build oder Status-Änderung aktualisiert werden.
+Vor jeder V1-Roadmap-Entscheidung ist docs/features/status.md zu konsultieren.
+
+**Anpassungen:** CLAUDE.md → Referenzdokumentation: Verweis auf docs/features/status.md ergänzt.
+
+**Offene Punkte:** keine
+
+---
+
 ## Format
 
 Jeder Eintrag folgt diesem Schema:
@@ -19,6 +326,143 @@ Jeder Eintrag folgt diesem Schema:
 **Offene Punkte:** [keine | Liste]
 **Neue Lernmuster:** [keine | Was gelernt]
 ```
+
+---
+
+## 2026-04-21 — checker-design-patterns.md: P1.1 Sub-Ausprägung ergänzt
+
+**Ampel:** 🟢
+**Prompt:** Pattern P1 um Sub-Ausprägung P1.1 (Repo-Map-Index vs. Dateisystem) erweitern
+
+**Entscheidung:**
+Reine Dokumentationsänderung — kein Code.
+
+Pattern P1 ("Heuristik statt direkter Prüfung") war abstrakt formuliert und deckte das Repo-Map-Index-Problem konzeptuell ab, aber nicht als explizite Sub-Ausprägung. Das `.env.example`/`CHANGELOG`/`manifest.json`-Muster trat in 6 Checkern auf und wurde in Prompt 1 zur `file-utils.ts`-Utility konsolidiert — das verdient eine eigene Referenzstelle.
+
+**Änderungen an docs/checker-design-patterns.md:**
+- P1: Sub-Ausprägung P1.1 mit Symptom, Ursprung, Lösung, Code-Beispiel, Faustregel und 7 Praxis-Belegen als Tabelle
+- P9: Zweiter Praxis-Beleg (`file-utils.ts`, 6 Stellen) ergänzt
+- Prinzipien: Regel 7 ("Existenz-Prüfung ist nicht dasselbe wie Content-Analyse") hinzugefügt
+- Checkliste: 14. Punkt für Non-TS-Datei-Existenz-Prüfung ergänzt
+
+**Offene Punkte:** keine
+
+---
+
+## 2026-04-21 — fileExists Utility: Zweite Shared-Utility in src/lib/audit/utils/
+
+**Ampel:** 🟢
+**Prompt:** fileExists-Utility extrahieren (analog route-utils.ts)
+
+**Entscheidung:**
+Neue Datei `src/lib/audit/utils/file-utils.ts` mit `fileExists()` und `fileExistsInAnyOf()` angelegt.
+
+**Root Cause:** Das Repo-Map indexiert nur `.ts/.tsx`-Dateien. Non-TS-Dateien (`.env.example`, `CHANGELOG.md`, `manifest.json`, `sw.js`) sind für `ctx.filePaths.some()` unsichtbar. Das `ctx.rootPath ? existsSync(join(ctx.rootPath, '...')) : false`-Pattern hatte sich in 6 Stellen über 2 Checker-Dateien verbreitet — jede Instanz identisch, aber keine geteilte Logik.
+
+**Scope:**
+| Checker | Funktion | Ersetzt durch |
+|---------|----------|--------------|
+| `gap-checkers.ts` | `checkEnvExample` | `fileExists(ctx.rootPath, '.env.example')` |
+| `final-category-checkers.ts` | `checkChangelog` | `fileExists(ctx.rootPath, 'CHANGELOG.md')` |
+| `final-category-checkers.ts` | `checkBackupDocs` | `fileExistsInAnyOf(ctx.rootPath, [...])` |
+| `final-category-checkers.ts` | `checkWebManifest` | `fileExistsInAnyOf(ctx.rootPath, [...])` |
+| `final-category-checkers.ts` | `checkOfflineFallback` | `fileExistsInAnyOf(ctx.rootPath, [...])` |
+| `final-category-checkers.ts` | `checkDeploymentDocs` | `fileExistsInAnyOf(ctx.rootPath, [...])` |
+
+Beide Checker-Dateien importieren `existsSync` nicht mehr direkt — nur noch über die Utility.
+
+**Tests:** `file-utils.unit.test.ts` — 8 Tests (4 fileExists + 4 fileExistsInAnyOf), alle grün. Vitest ESM-Mock via `vi.mock('fs')` + Namespace-Import in der Utility.
+
+**Score-Auswirkung:** Keine — reine Konsolidierung, kein Logik-Change.
+
+**Neue Lernmuster:**
+- Vitest ESM-Mocking: `vi.spyOn(fs, 'existsSync')` funktioniert nicht bei Named-Imports in ESM. Lösung: Utility nutzt `import * as fs from 'fs'` → `fs.existsSync()`, dann greift `vi.mock('fs', factory)` korrekt.
+- P9-Trigger erfüllt: Sobald 4+ identische Patterns in ≥2 Dateien → Utility extrahieren, nicht weiterkopieren.
+
+**Offene Punkte:** keine
+
+---
+
+## 2026-04-21 — Checker Design Patterns Dokument
+
+**Ampel:** 🟢
+**Prompt:** Checker-Design-Patterns-Dokument anlegen
+
+**Entscheidung:**
+Neues Referenz-Dokument `docs/checker-design-patterns.md` angelegt. Konsolidiert 10 strukturelle Fehlertypen (P1–P10) die in den Dogfooding-Sessions 2026-04-14 bis 2026-04-21 empirisch identifiziert wurden.
+
+Zwei Kategorien von Quellen:
+- **Bekannte Patterns (P1–P5):** Bereits in checker-feedback.md und architect-log.md verstreut dokumentiert — jetzt als architektonische Referenz konsolidiert.
+- **Neue Patterns aus heutiger Session (P6–P10):** Silent Read-Failure, Import-Graph-Dependency, Too-broad String Matching, Shared Logic Without Utility, Incomplete Pattern Lists — entstanden durch Dogfooding mit eigenem Score-Delta als Feedback.
+
+Warum kein einfacher Eintrag in checker-feedback.md: checker-feedback.md ist ein Fehler-Log (Was ist wann kaputtgegangen?). checker-design-patterns.md ist eine Design-Referenz (Wie schreibt man einen Checker richtig?). Unterschiedliche Zielgruppe, unterschiedliche Nutzungsfrequenz.
+
+**Anpassungen gegenüber ursprünglichem Plan:** keine — alle 10 Patterns dokumentiert, alle mit Praxis-Beleg belegt.
+
+**Offene Punkte:**
+- P9 (Shared Logic Without Utility): `isListRoute()` existiert noch in drei Checkern redundant. Extraktion nach `src/lib/audit/checkers/utils.ts` ist der nächste Schritt wenn ein vierter Checker die Logik braucht.
+
+**Neue Lernmuster:**
+- Score-Delta als Test-Signal: Wenn ein Checker-Fix die Score einer Kategorie von 85% auf 55% senkt (statt ansteigen lässt), ist das kein Regression — das ist die erste korrekte Messung. Silent Read-Failures produzieren künstlich hohe Scores.
+- Selbst-Scanning als Qualitätstest: Jeder neue Checker sollte zuerst auf dem eigenen Code ausgeführt werden. Wenn der Checker sich selbst flaggt, ist das ein P5-Signal (falscher Datei-Typ).
+
+---
+
+## 2026-04-21 — Dogfooding Fix #7: 7 Checker-Fixes + Score 82.3% → 86.9%
+
+**Ampel:** 🟢
+**Prompt:** Dogfooding-Session: tropenOS-eigene Findings systematisch durcharbeiten
+
+**Score-Delta:** 82.3% → 86.9% (+4.6pp) über die Session
+
+**Fixes:**
+| Checker | Pattern | Fix |
+|---------|---------|-----|
+| `final-category-checkers.ts` `readContent()` | P6 (Silent Read-Failure) | `readFileSync`-Disk-Fallback ergänzt |
+| `agent-security-checker.ts` `checkRateLimiting()` | P7 (Import-Graph) | Content-basierte Erkennung via `readFileSafe(proxy.ts)` |
+| `security-scan-checker.ts` `math-random-*` | P5 (Falscher Datei-Typ) | `excludePattern: /\/lib\/audit\//` ergänzt |
+| `category-gap-checkers.ts` `checkLLMTokenLimits()` | P3 (Zu grobe Regex) | `\(` nach Funktionsnamen erzwungen |
+| `final-category-checkers.ts` `checkAPITimeouts()` | P8 (Too-broad String) | `openai\|anthropic` → `from ['"]openai['"]` etc. |
+| `agent-committee-checker.ts` `isListRoute()` | P9/P10 | Dynamic-Parent-Segment-Check + Cron-Exclude + org_id-Scope-Filter |
+| `compliance-checker.ts` `checkAiTransparency()` | P10 (Incomplete Patterns) | `/responsible-ai/` + Toro-Avatar-Detection ergänzt |
+
+**Infrastruktur-Fixes:**
+- 9 LLM-Routes: `export const maxDuration = 60` ergänzt (reale Finding)
+- `superadmin/agents/route.ts`: `.limit(500)` ergänzt
+- 5 Library-Catalog-Routes: `.limit(200)` ergänzt
+- `final-category-checkers.ts` `checkUnlimitedQueries()`: `isListRoute()`-Filter + GET-only + `.eq('org_id')`-Scope-Filter
+
+**Neue Docs:**
+- `docs/PRD.md` — Product Requirements Document
+- `CHANGELOG.md` — Changelog im keepachangelog.com Format
+- `docs/checker-design-patterns.md` — dieses Dokument
+
+**Offene Punkte:**
+- State Management 63.3% bleibt schwach — echte Architekturschuld (56 useEffect/fetch, 11 prop drilling). Kein Quick-Fix.
+- DSGVO Cookie-Consent bleibt einziges CRITICAL Finding.
+
+---
+
+## 2026-04-20 — Dogfooding Fix #6: select-star-api Checker eingeschränkt
+
+**Ampel:** 🟢
+**Prompt:** Fix cat-3-rule-22 select-star Checker (42 False Positives)
+
+**Entscheidungen:**
+- **Root Cause:** `select-star-api` Pattern in `DATA_EXPOSURE_PATTERNS` hatte `fileGlob: ['.ts', '.js']` ohne Pfad-Einschränkung. Scannte `src/actions/`, `src/lib/`, `scripts/`, `supabase/functions/` — alles Dateien, die `.select('*')` legitim nutzen, aber keine direkten HTTP-Response-Quellen sind.
+- **Fix:** Neues `includePattern?: RegExp` Feld im `SecurityPattern` Interface. Wenn gesetzt, muss der Dateipfad dieses Pattern matchen — positive Allowlist statt negativer Excludes. Geprüft in `scanPatterns()` nach `excludePattern`.
+- **Pattern für select-star-api:** `/(?:^|\/)(?:app\/api\/|pages\/api\/).*\.[jt]sx?$/` — trifft Next.js App Router (`app/api/**/route.ts`, mit oder ohne `src/`-Prefix) und Pages Router (`pages/api/**`). Lässt Server Actions, lib, scripts und Edge Functions explizit aus.
+- **Warum kein Inhalt-Check auf HTTP-Handler-Exports:** Der Pfad `app/api/**/route.ts` ist Next.js-Konvention — Nicht-Handler-Code landet dort nicht. Content-Check würde Komplexität ohne echten Mehrwert addieren.
+- **Scope:** `includePattern` ist universell in `SecurityPattern` — andere Patterns können es nutzen wenn nötig. Backward-compat: `undefined` = Verhalten unverändert.
+
+**Anpassungen:** keine
+
+**Offene Punkte:**
+- `runSecurityScanFromFiles` (externe Projekte) nutzt denselben `scanPatterns()` Call — `includePattern` wirkt auch dort. Benchmark-Repos (Lovable/Bolt/Cursor, alle Next.js) profitieren direkt.
+- Weitere M2-FP-Fixes geplant: cat-12-rule-6, cat-25-rule-1, cat-8-rule-5, cat-7-rule-6
+
+**Neue Lernmuster:**
+- Bei Security-Patterns die von "gefährlich in API-Kontext" sprechen: immer `includePattern` setzen wenn der Check nur für HTTP-Handler sinnvoll ist. Ohne Einschränkung entstehen massenweise FPs in gut strukturierten Codebases die Business-Logik korrekt in `src/lib/` halten.
 
 ---
 
@@ -242,6 +686,55 @@ Jeder Eintrag folgt diesem Schema:
 **Neue Lernmuster:**
 - File System Access API typisiert TypeScript nicht vollständig — `(handle as any)` notwendig
 - Turbopack liefert veraltete Client-Bundles nach Code-Änderungen — bei Hydration-Mismatch immer erst `pnpm dev` restart
+
+---
+
+## 2026-04-22 — GitHub Actions pnpm/action-setup@v6 → @v5 (alle Workflows)
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+- `pnpm/action-setup@v6` → `@v5` in allen 5 Workflows: `ci.yml`, `lighthouse.yml`, `bias-eval.yml`, `design-lint.yml`, `pr-check.yml`
+- `lighthouse.yml`: `workflow_dispatch` hinzugefügt — Workflow jetzt manuell auslösbar
+
+**Versions-Analyse (GitHub API, 2026-04-22):**
+- `actions/checkout@v6` → latest `v6.0.2` ✅
+- `actions/setup-node@v6` → latest `v6.4.0` ✅
+- `actions/upload-artifact@v7` → latest `v7.0.1` ✅
+- `actions/github-script@v9` → latest `v9.0.0` ✅
+- `pnpm/action-setup@v6` → latest `v5.0.0` ❌ — v6 existiert nicht, war Blocker für alle CI-Runs
+
+**Offen:** Verifikation nach Push — `workflow_dispatch` triggern, Record in `qa_lighthouse_runs` erwarten.
+
+---
+
+## 2026-04-22 — Lighthouse-Integration repariert (System A + System B)
+
+**Ampel:** 🟢
+**Was gebaut wurde:**
+
+### System A — Audit-URL-Input (lokal)
+- `lighthouse@^13` als devDependency installiert (`pnpm add -D lighthouse`) — war die einzige fehlende Voraussetzung für lokale Runs
+- `AuditActions.tsx`: neues Prop `isVercelEnv` — URL-Input auf Vercel ausgegraut (`opacity: 0.45`, `cursor: not-allowed`, `disabled`, Tooltip mit CLI-Befehl als Hinweis)
+- `audit/page.tsx`: `isVercelEnv={!!process.env.VERCEL}` an AuditActions übergeben (Server-Component → Prop, da Client-Component keinen Env-Zugriff hat)
+- `audit/page.tsx`: `hasLighthouseData`-Badge verdrahtet — dezenter grüner Chip "Mit Lighthouse-Analyse" neben den fixType-Stats, sichtbar wenn der aktuelle Run Lighthouse-Findings enthält
+
+### System B — CI QA-Panel
+- `scripts/ci/save-lighthouse-results.mjs` repariert:
+  - Bug 1: `url`-Feld ergänzt — aus `lhr.finalUrl ?? lhr.requestedUrl`, Fallback auf `VERCEL_PRODUCTION_URL`/`NEXT_PUBLIC_SITE_URL`
+  - Bug 2: `created_at` (falscher Spaltenname) entfernt — `run_at` hat `DEFAULT NOW()`
+  - Error-Handling: `exit(1)` statt `exit(0)` bei DB-Fehler — CI-Workflow wird rot sichtbar
+
+**Entscheidungen:**
+- IS_VERCEL-Guard in `trigger/route.ts` bleibt unverändert — serverless hat keinen Chrome-Zugang, das ist korrekt
+- Lighthouse-Checker-Logik in `external-tools-checker.ts` bleibt unverändert — sie funktioniert
+- Keine neue Migration für `qa_lighthouse_runs` — bestehende Struktur ist korrekt
+- 4 Fehl-Attributierungs-Records in `audit_findings` (agent_source='lighthouse-best-practices', tatsächlich Error-Boundary-Findings) werden nicht bereinigt — beim nächsten regulären Scan überschrieben
+
+**Bekanntes Follow-up (kein akuter Handlungsbedarf):**
+- Fallback `f.agentSource ?? rule?.agentSource ?? 'core'` in `trigger/route.ts` kann fehlerhafte Attributionen erzeugen wenn ein Checker kein eigenes `agentSource` setzt und die Regel-Registry einen misleadenden Source-Wert hat — beim nächsten Checker-Review prüfen
+
+**Offen (außerhalb dieses Scopes):**
+- Cloud-Lighthouse für User-Projekte auf Vercel (Browserless/Playwright-Service) — gehört in Scan-Architektur-Entscheidung
 
 ---
 
@@ -1389,3 +1882,121 @@ Zwei System-Prompt-Ebenen angepasst:
 **Neue Lernmuster:**
 - Empirische Benchmarks > theoretische Diskussionen (/ultrareview-Vergleich hat die Positionierung in 1 Stunde geklärt)
 - Dogfooding vor User-Tests — eigener Score muss Production Grade sein
+
+---
+
+### 2026-04-21 — Silent-Failure-Audit P6: Vollständiger Checker-Scan
+
+**Ampel:** 🟢
+**Prompts:** Systematischer P6-Scan aller 21 Checker-Dateien + Kategorisierung A/B/C/D + Dokumentation
+
+**Ergebnis:** Keine neuen Category-A-Issues (false-clean score=5) gefunden. Die 2 bereits fixierten Checker aus der vorherigen Session waren die einzigen Fälle.
+
+**Kategorisierung (alle 21 Checker):**
+
+| Kategorie | Dateien | Aktion |
+|-----------|---------|--------|
+| A (false-clean) | `final-category-checkers.ts`, `agent-security-checker.ts` | ✅ bereits gefixt (vorherige Session) |
+| B (false-fail) | — | keine gefunden |
+| C (crash-risk, mitigiert) | `documentation-checker.ts`, `agent-architecture-checker.ts`, `agent-committee-checker.ts`, `agent-regulatory-checker.ts` | rootPath unguarded → runner catch → score: null (korrekt) |
+| D (korrekt) | 15 weitere Checker | — |
+
+**Befund zu Category C:** Runner in `src/lib/audit/index.ts:104-112` wraps jeden Checker-Aufruf in try-catch → gibt `score: null` zurück. D.h. rootPath-unguarded Checker produzieren keine falschen Scores. Kein Fix nötig (wäre Refactoring, kein P6-Fix).
+
+**Score:** 86.9% stabil (Δ 0.0)
+
+**Neue Lernmuster:**
+- Runner-Level try-catch ist ein wichtiges Sicherheitsnetz — macht Category-C zu einem stilistischen, nicht fachlichen Problem
+- Vollständiger Scan bestätigt: `final-category-checkers.ts` readContent-Fix war die einzige systemische P6-Lücke
+
+---
+
+### 2026-04-21 — isListRoute Shared Utility Extraktion (P9)
+
+**Ampel:** 🟡
+**Prompt:** List-Route-Detection als Shared Utility extrahieren
+
+**Architektur-Entscheidung:**
+- `isListRoute()` existierte in 2 Checkern mit divergierenden Implementierungen
+- `agent-committee-checker.ts` hatte die raffinierte Version (26 NON_LIST_SEGMENTS, dynamic-parent, cron, hyphen checks)
+- `final-category-checkers.ts` hatte die simplere Version (19 NON_LIST_SEGMENTS, ohne die 4 Guards)
+- Canonical = raffinierte Version; minimal behaviour change für `checkUnlimitedQueries` (weniger FPs)
+- Neues Utility-Verzeichnis: `src/lib/audit/utils/` — kanonischer Ort für geteilte Checker-Logik
+
+**Entscheidungen:**
+- `.eq()`-Check bleibt AUSSERHALB der Utility — gehört zur Content-Inspektion des Callers
+- Utility-Datei + Unit-Test im selben Verzeichnis (`route-utils.ts` + `route-utils.unit.test.ts`)
+- P9 in `checker-design-patterns.md` aktualisiert: Referenz auf `route-utils.ts` als erste realisierte Extraktion
+
+**Neue Dateien:** `src/lib/audit/utils/route-utils.ts`, `src/lib/audit/utils/route-utils.unit.test.ts`
+**Geänderte Dateien:** `agent-committee-checker.ts`, `final-category-checkers.ts`, `category-gap-checkers.ts` (pre-existing existsSync import fix)
+
+**Score:** 86.9% stabil (Δ 0.0)
+**Tests:** 22 Unit-Tests, alle grün
+
+**Neue Lernmuster:**
+- Divergierende Implementierungen derselben Logik sind ein Risiko-Indikator — auch bei nur 2 Vorkommen (nicht erst ab 3)
+- `src/lib/audit/utils/` ist etabliert als Utility-Verzeichnis; nächster Kandidat: `isApiRoute()`, `isClientComponent()`
+
+---
+
+### 2026-04-21 — Framework-Kontext-Guard für checkFetchInEffect (P4.1)
+
+**Ampel:** 🟢
+**Prompt:** fetch-in-useEffect-Checker um Next.js App Router-Kontext erweitern
+
+**Architektur-Entscheidung:**
+- Bestehender Checker hatte `isNextJs`-Erkennung, nutzte sie aber nur für Suggestion-Text, nicht für Finding-Entscheidung
+- 56 Findings waren false positives: Server Components (useEffect unmöglich), Client Components mit Auth/Realtime-Bedarf, API Route Handlers
+- Neues Pattern P4.1 etabliert: Framework-blinde Kalibrierung als Spezialisierung von P4
+
+**Guards (in Priorität):**
+1. Next.js App Router-Datei + API Route → skip (Route Handler hat kein useEffect)
+2. Next.js App Router-Datei + kein `'use client'` → skip (Server Component, useEffect läuft nicht)
+3. Next.js App Router-Datei + `'use client'` + CLIENT_STATE_INDICATORS → skip (useAuth, WebSocket, supabase.channel, EventSource, useSession, etc.)
+4. Alle anderen Dateien → Finding bleibt
+
+**Score-Auswirkung:**
+- Vor Fix: 56+ Findings → score 1 (schlechtester Wert)
+- Nach Fix: erwartete echte Findings 5–15 → score 2 (realistisch)
+- State-Management-Kategorie-Score steigt auf realistische Werte
+
+**Geänderte Dateien:**
+- `src/lib/audit/checkers/state-deps-obs-checkers.ts` — checkFetchInEffect mit Framework-Guard
+- `src/lib/audit/__tests__/state-deps-obs-checkers.unit.test.ts` — neue Testdatei, 15 Tests
+- `docs/checker-design-patterns.md` — P4.1 als neues Pattern dokumentiert
+- `docs/checker-feedback.md` — Eintrag für cat-9-rule-5 FP-Fix
+
+**Tests:** 15 Unit-Tests, alle grün
+
+**Neue Lernmuster:**
+- Framework-Awareness reicht nicht — Datei-Pfad-Kontext und Runtime-Kontext müssen separat geprüft werden
+- `CLIENT_STATE_INDICATORS` als benannte Konstante exportiert — kann von anderen Checkern genutzt werden (isClientComponent-Utility wäre nächster Schritt)
+- Prop-Drilling (cat-9-rule-6): 11 Findings NICHT angefasst — echte Probleme, kein False-Positive-Verdacht
+
+---
+
+### 2026-04-21 — ManualFinding-Layout (Option B — neue Felder)
+
+**Ampel:** 🟢
+**Prompt:** Eigenständiges Layout für Finding-Typ "Manuell" — nummerierte Schritte statt Prompt-Monospace
+
+**Architektur-Entscheidung:**
+- Option A (semantische Umdeutung bestehender Felder) abgelehnt: `firstStep` + `strategy` haben für Prompt-Findings eine klare Bedeutung die nicht überschrieben werden sollte
+- Option B (neue Felder): `manualSteps: string[]`, `verification: string`, `codeSnippets: ManualCodeSnippet[]` zu `FindingRecommendation` hinzugefügt — optional, vollständig backwards-kompatibel
+- Kein DB-Schema-Change — alle neuen Felder sind statische Daten in `finding-recommendations.ts`
+
+**Typ-Weiche in RecommendationCard:**
+- `group.fixType === 'manual' && recommendation.manualSteps` → ManualStepsList-Layout
+- Alle anderen → bestehendes Prompt-firstStep-Layout (unverändert)
+- Für manuelle Findings mit Steps: kein FixPromptDrawer-Button (der rendert Monospace — falsche Semantik)
+
+**Content-Migration:**
+- `schema-drift`: `manualSteps` (5 Schritte) + `verification` gefüllt
+- `cat-13-rule-7` (PITR Restore-Test): neue Recommendation mit `manualSteps` (6 Schritte) + `verification` — bisher kein Eintrag vorhanden
+
+**Geänderte Dateien:**
+- `src/lib/audit/finding-recommendations.ts` — Interface + ManualCodeSnippet-Typ + 2 Recommendations
+- `src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx` — Typ-Weiche + ManualSteps-Layout
+
+**Tests:** 145 Unit-Tests, alle grün. TypeScript sauber.
