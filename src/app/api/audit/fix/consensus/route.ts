@@ -145,7 +145,7 @@ export async function GET(request: Request) {
 
   const { data: fix, error } = await supabaseAdmin
     .from('audit_fixes')
-    .select('id, explanation, confidence, model, cost_eur, judge_explanation, drafts, risk_level, risk_details')
+    .select('id, explanation, confidence, model, cost_eur, judge_explanation, drafts, risk_level, risk_details, status')
     .eq('finding_id', findingId)
     .eq('fix_mode', 'consensus')
     .eq('organization_id', profile.organization_id)
@@ -165,5 +165,6 @@ export async function GET(request: Request) {
     drafts: (fix.drafts ?? []) as Array<{ providerId: string; explanation: string; confidence: string; costEur: number; error?: string }>,
     riskLevel: fix.risk_level ?? null,
     riskReasons: ((fix.risk_details as Record<string, unknown> | null)?.reasons as string[] | undefined) ?? [],
+    status: fix.status,
   })
 }
