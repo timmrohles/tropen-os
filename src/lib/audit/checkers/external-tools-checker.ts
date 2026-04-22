@@ -31,7 +31,7 @@ function run(cmd: string, args: string[], cwd: string, timeoutMs = 60_000): stri
     // Many tools exit non-zero even with valid JSON output
     const e = err as { stdout?: unknown; code?: unknown }
     if (e?.code === 'ENOENT') {
-      log.warn(`Command '${cmd}' not found on PATH. On Windows, ensure pnpm/gitleaks are installed and accessible.`)
+      log.warn(`Command '${cmd}' not found on PATH. On Windows, ensure pnpm is installed and accessible (scoped npm tools run via pnpm exec).`)
     }
     if (e?.stdout && typeof e.stdout === 'string' && e.stdout.trim()) return e.stdout
     return null

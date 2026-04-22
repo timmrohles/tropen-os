@@ -1,51 +1,38 @@
 // src/lib/audit/checkers/cli-checker.ts
-import { execFileSync } from 'node:child_process'
-import { readFileSync, existsSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AuditContext, RuleResult, Finding } from '../types'
+import { resolveNodeCli } from '../utils/platform-utils'
 
 export type RunCommand = (cmd: string, args: string[], cwd: string) => string
 
 function defaultRunCommand(cmd: string, args: string[], cwd: string): string {
-  return execFileSync(cmd, args, { cwd, timeout: 60_000, encoding: 'utf-8' })
-}
-
-/**
- * Resolve the full path to the pnpm binary so the checker does not depend on
- * pnpm being in the server process PATH (which is often not the case when
- * Next.js is launched by an IDE or CI runner).
- *
- * Resolution order:
- *  1. Local node_modules/.bin/pnpm(.cmd) — most reliable, pinned to the
- *     project's own pnpm version
- *  2. Common Windows global locations (%APPDATA%\npm, %LOCALAPPDATA%\pnpm)
- *  3. Plain "pnpm(.cmd)" as last-resort fallback
- */
-function resolvePnpmBin(rootPath: string): string {
-  const ext = process.platform === 'win32' ? '.cmd' : ''
-  const local = join(rootPath, 'node_modules', '.bin', `pnpm${ext}`)
-  if (existsSync(local)) return local
-
-  if (process.platform === 'win32') {
-    const dirs = [process.env.APPDATA, process.env.LOCALAPPDATA].filter(Boolean) as string[]
-    for (const dir of dirs) {
-      for (const sub of ['npm', 'pnpm']) {
-        const candidate = join(dir, sub, `pnpm${ext}`)
-        if (existsSync(candidate)) return candidate
-      }
-    }
-  }
-
-  return `pnpm${ext}`
+  const [execCmd, execArgs] = process.platform === 'win32'
+    ? ['cmd.exe', ['/c', cmd, ...args]]
+    : [cmd, args]
+  return execFileSync(execCmd, execArgs, { cwd, timeout: 60_000, encoding: 'utf-8' })
 }
 
 function nullResult(ruleId: string, reason: string): RuleResult {
   return { ruleId, score: null, reason, findings: [], automated: false }
 }
 
+function isBinaryAvailable(name: string): boolean {
+  const result = spawnSync(process.platform === 'win32' ? 'where' : 'which', [name], { encoding: 'utf-8' })
+  return result.status === 0
+}
+
+function gitleaksInstallHint(): string {
+  if (process.platform === 'win32') {
+    return 'install via: winget install GitLeaks.GitLeaks  OR  scoop install gitleaks  OR  choco install gitleaks'
+  }
+  return 'install via: brew install gitleaks  OR  https://github.com/gitleaks/gitleaks#installing'
+}
+
 export function createCliChecks(runner: RunCommand = defaultRunCommand) {
   async function checkDependencyVulnerabilities(ctx: AuditContext): Promise<RuleResult> {
-    const pnpmBin = resolvePnpmBin(ctx.rootPath)
+    const pnpmBin = resolveNodeCli('pnpm', ctx.rootPath)
     let raw: string
     try {
       raw = runner(pnpmBin, ['audit', '--json'], ctx.rootPath)
@@ -97,6 +84,10 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
   }
 
   async function checkNoSecretsInRepo(ctx: AuditContext): Promise<RuleResult> {
+    if (!isBinaryAvailable('gitleaks')) {
+      return nullResult('cat-3-rule-3', `gitleaks not found — ${gitleaksInstallHint()}`)
+    }
+
     const reportPath = join(ctx.rootPath, '.gitleaks-report.json')
     const deepScan = ctx.externalTools?.deepSecretsScan ?? false
     const gitleaksArgs = deepScan
@@ -161,7 +152,7 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
   async function checkUnitTestCoverage(ctx: AuditContext): Promise<RuleResult> {
     let raw: string
     try {
-      raw = runner('cat', [join(ctx.rootPath, 'coverage', 'coverage-summary.json')], ctx.rootPath)
+      raw = readFileSync(join(ctx.rootPath, 'coverage', 'coverage-summary.json'), 'utf-8')
     } catch {
       return nullResult('cat-10-rule-1', 'Coverage report not found — run pnpm test --coverage first')
     }
