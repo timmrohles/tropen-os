@@ -10,6 +10,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { buildFixContext, generateConsensusFix, assessRisk } from '@/lib/fix-engine'
+import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:audit:fix:consensus')
 const REPO_ROOT = path.resolve(process.cwd())
@@ -120,4 +121,49 @@ export async function POST(request: Request) {
     log.error('Consensus fix generation failed', { error: String(err) })
     return NextResponse.json({ error: 'Consensus fix generation failed', code: 'GENERATE_ERROR' }, { status: 500 })
   }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const findingId = searchParams.get('findingId')
+  if (!findingId) return NextResponse.json({ error: 'findingId required' }, { status: 400 })
+
+  // Auth check (nur admin)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabaseAdmin
+    .from('users')
+    .select('role, organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
+    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
+
+  const { data: fix, error } = await supabaseAdmin
+    .from('audit_fixes')
+    .select('id, explanation, confidence, model, cost_eur, judge_explanation, drafts, risk_level, risk_details')
+    .eq('finding_id', findingId)
+    .eq('fix_mode', 'consensus')
+    .eq('organization_id', profile.organization_id)
+    .in('status', ['pending', 'applied'])
+    .maybeSingle()
+
+  if (error) return apiError(error)
+  if (!fix) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  return NextResponse.json({
+    fixId: fix.id,
+    explanation: fix.explanation,
+    confidence: fix.confidence,
+    model: fix.model,
+    costEur: fix.cost_eur,
+    judgeExplanation: fix.judge_explanation ?? null,
+    drafts: (fix.drafts ?? []) as Array<{ providerId: string; explanation: string; confidence: string; costEur: number; error?: string }>,
+    riskLevel: fix.risk_level ?? null,
+    riskReasons: ((fix.risk_details as Record<string, unknown> | null)?.reasons as string[] | undefined) ?? [],
+  })
 }
