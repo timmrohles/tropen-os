@@ -26,6 +26,12 @@ function fail(id: string, score: number, reason: string, findings: Finding[]): R
 
 // ── cat-9-rule-5: useEffect + fetch without cache layer ─────────────────────
 
+// Patterns that indicate genuine client-state need — these fetches are legitimate in
+// useEffect because the data is user-specific, realtime, browser-API-dependent, or
+// explicitly managed with loading state (developer-aware pattern, not an accidental anti-pattern).
+const CLIENT_STATE_INDICATORS =
+  /useAuth\s*\(|useUser\s*\(|useSession\s*\(|useCurrentUser\s*\(|useProfile\s*\(|useSupabaseClient\s*\(|useWebSocket\s*\(|new\s+WebSocket\s*\(|new\s+EventSource\s*\(|supabase\.channel\s*\(|\.subscribe\s*\(|useSocket\s*\(|useRealtime\s*\(|set\w*[Ll]oading\s*\(|set\w*[Ff]etching\s*\(|new\s+AbortController\s*\(|setSaving\s*\(|setSaved\s*\(/
+
 export async function checkFetchInEffect(ctx: AuditContext): Promise<RuleResult> {
   const deps = { ...ctx.packageJson.dependencies, ...ctx.packageJson.devDependencies }
   const hasCacheLib = '@tanstack/react-query' in deps || 'swr' in deps || 'react-query' in deps
@@ -34,32 +40,66 @@ export async function checkFetchInEffect(ctx: AuditContext): Promise<RuleResult>
     return pass('cat-9-rule-5', 5, 'Cache layer installed (React Query or SWR)')
   }
 
+  const isNextJs = Boolean(deps.next)
   const violations: Finding[] = []
+
   for (const file of ctx.repoMap.files) {
     if (!file.path.endsWith('.tsx') && !file.path.endsWith('.ts')) continue
+    if (file.path.includes('.test.') || file.path.includes('.spec.')) continue
+    // Skip infrastructure files — not React components, regex/string content can cause false positives
+    if (/(?:[\\/]|^)(?:src[\\/]lib[\\/]audit|src[\\/]scripts|src[\\/]lib[\\/]benchmark)[\\/]/.test(file.path)) continue
+
     const content = readContent(ctx, file.path)
     if (!content) continue
 
-    // useEffect with fetch/axios inside
-    const hasUseEffect = /useEffect\s*\(/.test(content)
-    const hasFetchInside = hasUseEffect && /(?:fetch\s*\(|axios\.|\.get\s*\(|\.post\s*\()/.test(content)
+    // Detect fetch/axios directly inside a useEffect callback.
+    // Use an 80-char window: tight enough to avoid nearby event-handler false positives
+    // (e.g. useEffect(() => { load() }) picking up fetch in a sibling function below),
+    // wide enough to catch the common `useEffect(async () => {\n  const res = await fetch(...)` pattern.
+    const useEffectMatches = [...content.matchAll(/useEffect\s*\(\s*(?:async\s*)?\(\s*\)\s*=>\s*\{/g)]
+    const hasFetchInEffect = useEffectMatches.some((m) => {
+      const slice = content.slice(m.index ?? 0, (m.index ?? 0) + 80)
+      return /fetch\s*\(|axios\.|supabase.*\.from\s*\(.*\)\.select/.test(slice)
+    })
 
-    if (hasFetchInside) {
-      violations.push({
-        severity: 'medium',
-        message: `fetch() in useEffect without cache layer — re-fetches on every render`,
-        filePath: file.path,
-        suggestion: "Cursor-Prompt: 'Replace useEffect + fetch with useQuery from @tanstack/react-query'",
-      })
+    if (!hasFetchInEffect) continue
+
+    // Skip files that use explicit loading-state management or client-only signals:
+    // auth hooks, realtime subscriptions, loading state setters, etc.
+    // These fetches are developer-aware patterns, not accidental anti-patterns.
+    // Applied globally — not just in App Router — because components/ widgets follow the same logic.
+    if (CLIENT_STATE_INDICATORS.test(content)) continue
+
+    if (isNextJs) {
+      // App Router files: apply additional framework-aware guards
+      const isAppRouterFile = /(?:[\\/]|^)(?:src[\\/])?app[\\/]/.test(file.path)
+
+      if (isAppRouterFile) {
+        // API Route Handlers are not components — useEffect is impossible there
+        if (/[\\/]api[\\/]/.test(file.path)) continue
+
+        const hasUseClient = content.includes("'use client'") || content.includes('"use client"')
+
+        // Server Components cannot run useEffect at all — not a caching issue, skip
+        if (!hasUseClient) continue
+      }
     }
+
+    violations.push({
+      severity: 'medium',
+      message: `fetch() in useEffect — no cache between remounts or navigation`,
+      filePath: file.path,
+      suggestion: "Cursor-Prompt: 'Add SWR or @tanstack/react-query to cache this fetch call and avoid redundant network requests'",
+    })
   }
 
   if (violations.length === 0) return pass('cat-9-rule-5', 4, 'No uncached fetch-in-useEffect patterns')
-  return fail('cat-9-rule-5', violations.length > 5 ? 1 : 2,
+  // 1–2 isolated cases = score 3; >2 = systemic problem = score 2; >10 = score 1
+  return fail('cat-9-rule-5', violations.length > 10 ? 1 : violations.length > 2 ? 2 : 3,
     `${violations.length} component(s) fetch data in useEffect without caching`, violations.slice(0, 10))
 }
 
-// ── cat-9-rule-6: Too many props (prop drilling indicator) ──────────────────
+// ── cat-9-rule-6: Prop drilling detection (actual forwarding, not prop count) ──
 
 export async function checkPropDrilling(ctx: AuditContext): Promise<RuleResult> {
   const violations: Finding[] = []
@@ -69,26 +109,51 @@ export async function checkPropDrilling(ctx: AuditContext): Promise<RuleResult> 
     const content = readContent(ctx, file.path)
     if (!content) continue
 
-    // Count destructured props in function components
-    const propMatch = content.match(/function\s+\w+\s*\(\s*\{([^}]+)\}\s*[):]/)
-      ?? content.match(/(?:const|let)\s+\w+\s*=\s*(?:\([^)]*\)\s*=>|function)\s*\(\s*\{([^}]+)\}\s*[):]/)
-    if (!propMatch) continue
+    const componentMatches = [
+      ...content.matchAll(/(?:export\s+(?:default\s+)?)?function\s+([A-Z]\w*)\s*\(\s*\{([^}]+)\}\s*[):]/g),
+      ...content.matchAll(/(?:export\s+)?(?:const|let)\s+([A-Z]\w*)\s*=\s*(?:\([^)]*\)\s*=>|function)\s*\(\s*\{([^}]+)\}\s*[):]/g),
+    ]
 
-    const propCount = propMatch[1].split(',').filter(p => p.trim()).length
-    if (propCount > 7) {
-      const name = file.path.split('/').pop() ?? file.path
+    for (const match of componentMatches) {
+      const componentName = match[1]
+      const propsStr = match[2]
+
+      const propNames = propsStr
+        .split(',')
+        .map((p) => p.trim().split(/[\s:=]/)[0].replace(/^\.\.\./, '').trim())
+        .filter((p) => /^[a-zA-Z_$]\w*$/.test(p))
+
+      if (propNames.length < 4) continue
+
+      // Identity-forwarding: propName={propName} — prop passed to child unchanged
+      const forwardedProps = propNames.filter((name) =>
+        new RegExp(`\\b${name}=\\{${name}\\}`).test(content)
+      )
+
+      // Spread forwarding: {...props} or {...rest} — all props forwarded at once
+      const hasPropSpread = /\{\.\.\.(?:props|rest)\}/.test(content)
+
+      const isDrilling = forwardedProps.length >= 3 || (hasPropSpread && propNames.length > 5)
+      if (!isDrilling) continue
+
+      const severity = forwardedProps.length >= 6 || (hasPropSpread && propNames.length > 15) ? 'high' as const : 'info' as const
+      const what = hasPropSpread
+        ? 'spreads all props to children'
+        : `forwards ${forwardedProps.length} props unchanged (${forwardedProps.slice(0, 3).join(', ')}${forwardedProps.length > 3 ? '...' : ''})`
       violations.push({
-        severity: 'info',
-        message: `${name} has ${propCount} props — possible prop drilling, consider Context or Zustand`,
+        severity,
+        message: `${componentName} ${what} — consider React Context or Zustand`,
         filePath: file.path,
-        suggestion: `Cursor-Prompt: 'Analyze if ${name} would benefit from React Context or Zustand for shared state'`,
+        suggestion: `Cursor-Prompt: 'Refactor ${componentName} in ${file.path.split('/').pop()} to use React Context instead of drilling props to children'`,
       })
     }
   }
 
-  if (violations.length === 0) return pass('cat-9-rule-6', 5, 'No excessive prop drilling detected')
-  return fail('cat-9-rule-6', violations.length > 5 ? 2 : 3,
-    `${violations.length} component(s) with >7 props`, violations.slice(0, 10))
+  if (violations.length === 0) return pass('cat-9-rule-6', 5, 'No prop drilling detected')
+  const highCount = violations.filter((v) => v.severity === 'high').length
+  const score = highCount > 2 ? 2 : 3
+  return fail('cat-9-rule-6', score,
+    `${violations.length} component(s) with prop drilling`, violations.slice(0, 10))
 }
 
 // ── cat-9-rule-7: Server data in global store ───────────────────────────────
