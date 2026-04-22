@@ -34,6 +34,8 @@ export interface EnrichedFinding {
   agentRuleId?: string
   /** Set to 'acknowledged' when status is inherited from previous run. */
   inheritedStatus?: string
+  /** True when filePath matches a frozenPath — finding will be auto-dismissed on persist */
+  frozen?: boolean
 }
 
 interface PreviousFinding {

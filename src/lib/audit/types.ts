@@ -51,6 +51,8 @@ export interface Finding {
   agentRuleId?: string
   /** How this finding should be fixed (inherited from the rule) */
   fixType?: FixType
+  /** True when filePath matches a frozenPath — finding will be auto-dismissed on persist */
+  frozen?: boolean
 }
 
 export interface RuleResult {
@@ -184,6 +186,8 @@ export interface AuditOptions {
   tier?: RuleTier
   /** If set, compliance rules use this profile. If absent, profile-gated rules are excluded. */
   complianceProfile?: { app_type: string; user_location: string; features: string[] }
+  /** Path prefixes for inactive/frozen features — findings from these paths are auto-dismissed */
+  frozenPaths?: string[]
 }
 
 /** Category metadata — weights match the manual audit report */

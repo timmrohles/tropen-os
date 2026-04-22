@@ -12,6 +12,7 @@ interface ParsedArgs {
   tokenBudget: number
   compareOnly: boolean
   externalTools?: ExternalToolsOptions
+  frozenPaths?: string[]
 }
 
 function parseArgs(): ParsedArgs {
@@ -22,6 +23,7 @@ function parseArgs(): ParsedArgs {
   let withTools = false
   let lighthouseUrl: string | undefined
   let deepSecretsScan = false
+  let frozenPaths: string[] | undefined
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--skip-cli') skipModes.push('cli')
@@ -38,6 +40,10 @@ function parseArgs(): ParsedArgs {
     if (args[i] === '--with-tools') withTools = true
     if (args[i] === '--lighthouse-url' && args[i + 1]) { lighthouseUrl = args[i + 1]; i++ }
     if (args[i] === '--deep-secrets') deepSecretsScan = true
+    if (args[i] === '--frozen-paths' && args[i + 1]) {
+      frozenPaths = args[i + 1].split(',').map((p) => p.trim()).filter(Boolean)
+      i++
+    }
   }
 
   // external-tool mode is skipped by default unless --with-tools is passed
@@ -48,6 +54,7 @@ function parseArgs(): ParsedArgs {
     tokenBudget,
     compareOnly,
     externalTools: withTools ? { lighthouseUrl, deepSecretsScan } : undefined,
+    frozenPaths,
   }
 }
 
@@ -69,7 +76,7 @@ function findPriorReport(): { date: string; percentage: number } | null {
 }
 
 async function main(): Promise<void> {
-  const { skipModes, tokenBudget, compareOnly, externalTools } = parseArgs()
+  const { skipModes, tokenBudget, compareOnly, externalTools, frozenPaths } = parseArgs()
 
   if (compareOnly) {
     const prior = findPriorReport()
@@ -94,7 +101,7 @@ async function main(): Promise<void> {
     console.log(`   External tools: ${toolsList.join(', ')}`)
   }
 
-  const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools })
+  const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools, frozenPaths })
 
   // Add prior audit comparison
   const prior = findPriorReport()

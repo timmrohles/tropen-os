@@ -120,6 +120,20 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
     )
   }
 
+  // Mark findings from frozen feature paths
+  const frozenPaths = options.frozenPaths ?? []
+  if (frozenPaths.length > 0) {
+    for (const catScore of categoryScores) {
+      for (const result of catScore.ruleResults) {
+        for (const finding of result.findings) {
+          if (finding.filePath && frozenPaths.some((fp) => finding.filePath!.includes(fp))) {
+            finding.frozen = true
+          }
+        }
+      }
+    }
+  }
+
   const fileCount = ctx.repoMap?.stats?.totalFiles ?? ctx.filePaths?.length ?? 0
   const overall = calculateOverallScore(categoryScores, { fileCount })
 
@@ -150,7 +164,7 @@ export async function buildAuditContextFromFiles(
   )
   let packageJson: PackageJson = {}
   if (pkgFile) {
-    try { packageJson = JSON.parse(pkgFile.content) as PackageJson } catch {}
+    try { packageJson = JSON.parse(pkgFile.content) as PackageJson } catch { /* ignore */ }
   }
 
   const tsFile = files.find(
@@ -158,7 +172,7 @@ export async function buildAuditContextFromFiles(
   )
   let tsConfig: TsConfig = {}
   if (tsFile) {
-    try { tsConfig = JSON.parse(tsFile.content) as TsConfig } catch {}
+    try { tsConfig = JSON.parse(tsFile.content) as TsConfig } catch { /* ignore */ }
   }
 
   // Build in-memory file contents map for AST-based checks (no disk access)

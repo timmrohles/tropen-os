@@ -78,10 +78,13 @@ export async function POST(request: Request) {
   try {
     const skipModes: import('@/lib/audit/types').CheckMode[] = []
     if (body.skipCli) skipModes.push('cli')
+    if (!body.withTools) skipModes.push('external-tool')
 
-    const externalTools = { lighthouseUrl: body.lighthouseUrl, deepSecretsScan: body.deepSecrets }
+    const externalTools = body.withTools
+      ? { lighthouseUrl: body.lighthouseUrl, deepSecretsScan: body.deepSecrets }
+      : undefined
 
-    log.info('Audit options', { withTools: true, skipModes })
+    log.info('Audit options', { withTools: body.withTools, skipModes })
 
     const ctx = await buildAuditContext(REPO_ROOT, undefined, 8192)
     const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools })
@@ -190,7 +193,9 @@ export async function POST(request: Request) {
           enforcement: f.enforcement ?? rule?.enforcement ?? null,
           affected_files: f.affectedFiles ?? null,
           fix_hint: f.fixHint ?? null,
-          ...(f.inheritedStatus ? { status: f.inheritedStatus } : {}),
+          ...(f.frozen
+            ? { status: 'dismissed', not_relevant_reason: 'frozen-path' }
+            : f.inheritedStatus ? { status: f.inheritedStatus } : {}),
         }
       })
 
