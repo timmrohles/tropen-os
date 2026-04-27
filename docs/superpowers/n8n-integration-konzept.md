@@ -1,3 +1,19 @@
+> **Status: SUPERSEDED — 2026-04-27**
+>
+> Dieses Dokument beschreibt die ursprüngliche n8n-Integrations-Strategie.
+> Es wurde durch ADR-018 abgelöst — die geltende Entscheidung ist Windmill.
+>
+> **Substanz nicht verloren:** Das Hetzner-Frankfurt-Self-hosted-Konzept,
+> die "Toro generiert, kein Editor"-Idee und die Phasen-Strategie sind
+> auf Windmill übertragbar und in `docs/superpowers/windmill-integration-konzept.md` weitergeführt.
+>
+> **Im MVP nicht aktiv:** Workflow-Automatisierung ist Phase-2-Thema
+> (Custom Agents sind in `docs/synthese/anhang-c-kill-und-einfrier-liste.md` eingefroren).
+>
+> Originaler Inhalt unten zur Referenz erhalten.
+
+---
+
 # n8n Integration — Konzept
 ## Tropen OS × n8n
 

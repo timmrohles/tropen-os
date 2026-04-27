@@ -6,6 +6,21 @@
 
 ---
 
+### 2026-04-27 — n8n/Windmill Doku-Hygiene (BP5)
+**Ampel:** 🟢
+**Entscheidung:** Windmill als Workflow-Engine festgeschrieben (ADR-018). Geltende Entscheidung im Repo eindeutig. Im MVP nicht aktiv — Phase-2-Thema.
+**Aktionen:**
+- ADR-006b gelöscht (war untracked, nie committed, inhaltlich identisch mit ADR-018)
+- ADR-018: "Letzte Bestätigung 2026-04-27", "Supersedes ADR-006b", "Relevant für Phase 2" ergänzt
+- n8n-integration-konzept.md: SUPERSEDED-Header eingefügt
+- windmill-integration-konzept.md: Active-Header + ADR-018-Verweis; ADR-006 → ADR-018 korrigiert
+- CLAUDE.md: n8n-Konzept-Referenz als SUPERSEDED markiert (Adapter-Code-Nennungen korrekt belassen)
+- phase-2-vision.md: ADR-006b-Verweis auf gelöschte Datei korrigiert
+**Offene Punkte:** Keine. Geltende Entscheidung eindeutig.
+**Lernmuster:** ADR-Nummerierung zentral verwalten. Bei DUP-ADRs: jüngere gewinnt, ältere löschen wenn untracked / archivieren wenn committed.
+
+---
+
 ### 2026-04-27 — phase-2-vision.md + feature-bestand.md angelegt (Timms Aufgaben)
 **Ampel:** 🟢
 **Prompt:** Tag 4.5 Abschluss

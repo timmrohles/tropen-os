@@ -1480,7 +1480,7 @@ eslint src/           # keine Fehler
 | `docs/synthese/anhang-c-kill-und-einfrier-liste.md` | Kill- und Einfrier-Liste mit Wieder-Anschalten-Bedingungen |
 | `docs/phase-2-vision.md` | Phase-2-Backup-Konzept (KMU-Substanz konzentriert) — 5 Pfeiler: Drei-Ebenen-Modell, Kontroll-Spektrum, Karten-Aggregatzustände, Aufbau/Produktion, Wissens-Hierarchie |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
-| `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
+| `docs/superpowers/n8n-integration-konzept.md` | **SUPERSEDED** — Pre-Pivot n8n-Konzept. Substanz übertragen nach `windmill-integration-konzept.md`. |
 | `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
 | `docs/agents/` | **21 Agent Rule Packs** — 3 manuell (Sprint 4a) + 18 per Multi-Model-Komitee (Sprint 5): ARCHITECTURE_AGENT_v3.md, SECURITY_AGENT_FINAL.md, OBSERVABILITY_AGENT_v3.md, CODE_STYLE_AGENT.md, ERROR_HANDLING_AGENT.md, DATABASE_AGENT.md, DEPENDENCIES_AGENT.md, GIT_GOVERNANCE_AGENT.md, BACKUP_DR_AGENT.md, TESTING_AGENT.md, PERFORMANCE_AGENT.md, PLATFORM_AGENT.md, API_AGENT.md, COST_AWARENESS_AGENT.md, SCALABILITY_AGENT.md, ACCESSIBILITY_AGENT.md, DESIGN_SYSTEM_AGENT.md, CONTENT_AGENT.md, LEGAL_AGENT.md, AI_INTEGRATION_AGENT.md, ANALYTICS_AGENT.md |
 | `src/lib/agents/agent-catalog.ts` | AgentDefinition-Interface + AGENT_CATALOG mit allen 21 Agenten (id, name, filename, version, categoryIds, themes, ruleCount, status, lastNormalized) — Sprint 5b: alle 18 Komitee-Agenten aktiv |

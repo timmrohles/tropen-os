@@ -238,9 +238,31 @@ Die Brücke zu externen Systemen war als **Karten-Typ + Agenten-Trigger** modell
 | WordPress | ausgehend | Posts/Pages erstellen |
 | Custom API | bidirektional | REST-API mit Auth |
 
-**Warum das wertvoll bleibt:** Connectors sind die Substanz für KMU-Workflow-Automatisierung. n8n ist als bevorzugter Workflow-Runner identifiziert (Hetzner Frankfurt, Self-hosted Community Edition).
+**Warum das wertvoll bleibt:** Connectors sind die Substanz für KMU-Workflow-Automatisierung.
 
 **Code-Substanz heute:** `connections`-Tabelle. n8n-Integration nicht gebaut.
+
+### Workflow-Engine — Entscheidung offen für Phase 2
+
+Die Wahl des Workflow-Runners (n8n vs. Windmill) ist **nicht abschließend getroffen** und muss in Phase 2 neu entschieden werden.
+
+**Bisheriger Stand:**
+
+| Option | ADR | Begründung |
+|--------|-----|------------|
+| **Windmill** | ADR-018 (aktiv) | Self-hosted, TypeScript-native, stärkere Isolation pro Org |
+| **n8n** | (kein aktiver ADR — ADR-006b war Duplikat, gelöscht BP5) | Größeres Ökosystem, einfachere UI für KMU-Nutzer |
+
+**Warum die Entscheidung in Phase 2 liegt:**
+
+- Im Solo-MVP wird keine Workflow-Engine gebraucht — kein Cron außer den eigenen Vercel-Crons
+- ADR-018 hat Windmill gewählt, aber die Begründung ist auf KMU-Kontext ausgelegt (Multi-Org-Isolation)
+- Wenn Phase 2 kommt, könnte sich der Markt anders verhalten: n8n ist für KMU-Nutzer erklärbarer, Windmill ist für Power-User besser
+- Die Entscheidung hängt auch davon ab, wer in Phase 2 die Engine bedient: Timm (→ Windmill) oder KMU-Kunden selbst (→ n8n)
+
+**Was heute existiert:** `src/lib/workflow/`-Adapter-Layer mit `WindmillAdapter` + `N8nAdapter` (Stub). Der Adapter-Layer ist die richtige Architektur — die Entscheidung welchen Adapter zu aktivieren ist austauschbar ohne Code-Umbau.
+
+**Was Phase 2 klären muss:** Wer bedient die Workflow-Engine? Timm als Operator (→ Windmill bleibt) oder KMU-Admins selbst (→ n8n als No-Code-Option evaluieren).
 
 ### Community-Marktplatz
 

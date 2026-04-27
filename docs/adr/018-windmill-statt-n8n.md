@@ -2,6 +2,9 @@
 
 **Status:** Accepted
 **Datum:** 2026-03-26
+**Letzte Bestätigung:** 2026-04-27 (Tag 4.5 Doku-Hygiene)
+**Supersedes:** ADR-006b (inhaltlich identisch, nie committed, gelöscht in BP5)
+**Relevant für:** Phase 2 — im MVP nicht aktiv (Custom Agents eingefroren, siehe Anhang C)
 **Kontext:** Workflow-Automatisierung / Externe Integrationen
 
 ## Entscheidung

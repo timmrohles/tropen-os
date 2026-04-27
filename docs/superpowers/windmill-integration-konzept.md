@@ -1,7 +1,18 @@
+> **Status: Active (Phase 2)**
+>
+> Dieses Dokument beschreibt die geltende Workflow-Engine-Strategie.
+> Begründung: ADR-018 (Windmill statt n8n).
+> Vorgänger-Konzept (n8n): `docs/superpowers/n8n-integration-konzept.md` (SUPERSEDED).
+>
+> **Im MVP nicht aktiv:** Workflow-Automatisierung ist Phase-2-Thema
+> (Custom Agents sind in `docs/synthese/anhang-c-kill-und-einfrier-liste.md` eingefroren).
+
+---
+
 # Windmill Integration — Konzept
 ## Tropen OS × Windmill
 
-> **Status:** Konzept Maerz 2026 — ersetzt n8n-Konzept (siehe ADR-006)
+> **Status:** Konzept Maerz 2026 — ersetzt n8n-Konzept (siehe ADR-018)
 > **Entschieden:** Windmill CE self-hosted, Toro generiert TypeScript Scripts, User sieht keinen Editor
 > **Phase 2:** Windmill Community Edition auf Hetzner VPS (~$5-10/Monat)
 > **Phase 3:** Erweiterte Flows, Workspace-Karten-Integration
