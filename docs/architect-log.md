@@ -6,6 +6,54 @@
 
 ---
 
+### 2026-04-27 — phase-2-vision.md + feature-bestand.md angelegt (Timms Aufgaben)
+**Ampel:** 🟢
+**Prompt:** Tag 4.5 Abschluss
+**Entscheidung:** `docs/phase-2-vision.md` (5 Pfeiler KMU-Substanz) + `docs/product/feature-bestand.md` (39 Features mit Status-Markern) von Timm erstellt und ins Projekt eingebracht. CLAUDE.md-Referenz auf phase-2-vision.md aktualisiert. Tag-4.5-Phase ist damit vollständig abgeschlossen.
+**Offene Punkte:** L1 (SQL-Queries usage_logs), L2 (Vibe-Coder-Outreach) — Timms Aufgaben.
+
+---
+
+### 2026-04-27 — Fix-Engine deaktiviert (BP4)
+**Ampel:** 🟢
+**Prompt:** BP4 (Tag 4.5)
+**Entscheidung:** Fix-Engine via NEXT_PUBLIC_FIX_ENGINE_ENABLED=false deaktiviert. Code bleibt im Repo. Fix-Prompt-Export bleibt aktiv und unberührt. 8 Stellen in src/ geschützt: useDeepFix.ts (Früh-Return in trigger()), DeepFixButton.tsx (null-Return), 4 API-Routes (/apply, /generate, /consensus, /batch-generate) geben 410 Gone. .env.example dokumentiert. pnpm tsc --noEmit grün.
+**Anpassungen gegenüber ursprünglichem Plan:** keine
+**Offene Punkte nach dem Build:** Sprint-4-Entscheidung — transformieren in Veredler oder entfernen
+**Neue Lernmuster:** Feature-Flag-Pattern als reversible Stilllegung statt destruktiver Code-Entfernung.
+
+---
+
+### 2026-04-27 — A17 Tier-Feld in rule-registry.ts (BP3)
+**Ampel:** 🟢
+**Prompt:** BP3 (Tag 4.5)
+**Entscheidung:** `AuditTier = 'code' | 'metric' | 'compliance'` in types.ts ergänzt. Bestehendes `tier?: RuleTier` (maturity) zu `maturityTier?: RuleTier` umbenannt. Neues `tier?: AuditTier` zu AuditRule hinzugefügt (optional, da 183+ Rules vorhanden). 176 inline Rules + 7 explizite manual()-Aufrufe mit korrektem Tier klassifiziert. Restliche manual()-Aufrufe defaulten auf 'code'. pnpm tsc --noEmit grün.
+**Anpassungen gegenüber ursprünglichem Plan:** (1) Feld-Name-Konflikt: bestehendes `tier?: RuleTier` → `maturityTier?: RuleTier`, neues `tier?: AuditTier` statt Neuname. (2) Datei hat 183+ Rules, nicht ~70 wie in Instruction angenommen — Verteilung proportional korrekt. (3) Feld optional statt required, weil manual()-Default ausreicht und Pflicht erzwingen alle 183 Signaturen ändern würde.
+**Offene Punkte nach dem Build:** Sprint 1 UI-Umbau: separate Ansichten per tier nutzen.
+**Neue Lernmuster:** Naming conflicts bei bestehenden Feldern: immer erst prüfen ob name bereits vergeben, dann umbenennen statt überschreiben.
+
+---
+
+### 2026-04-27 — CLAUDE.md aktualisiert nach Tag-4-Synthese (BP2)
+**Ampel:** 🟢
+**Prompt:** BP2 (Tag 4.5)
+**Entscheidung:** Drei-Rollen-Aufteilung als neue Sektion vor "Wie dieses Dokument funktioniert" eingefügt. Strategische ADRs 020–023 im Tech Stack ergänzt. Veredler-Substanz-Notiz nach AI-Modelle hinzugefügt. Library-System als TRANSFORMATION umetikettiert mit explizitem Status-Marker. Feature-Dokumentation-Verweis auf feature-bestand.md aktualisiert. Neue Code-Regel: Roadmap-Konformität vor jedem Feature prüfen. Referenzdokumentation um synthese-Dateien + ADR-023 erweitert.
+**Anpassungen gegenüber ursprünglichem Plan:** Kein separater "Library-System (Capability + Outcome + Role + Skill)"-Abschnitt existierte in CLAUDE.md — neuer Abschnitt direkt nach Feature-Dokumentation eingefügt.
+**Offene Punkte nach dem Build:** feature-bestand.md (Umbenennung + Status-Marker) ist Timms Aufgabe; phase-2-vision.md ist Timms Aufgabe
+**Neue Lernmuster:** CLAUDE.md-Updates folgen dem Governance-Block strikt — kein Entfernen, nur Ergänzen.
+
+---
+
+### 2026-04-27 — ARCHITECT.md aktualisiert nach Tag-4-Synthese
+**Ampel:** 🟢
+**Prompt:** BP1 (Tag 4.5)
+**Entscheidung:** ADR-020/021/022/023 als Pflicht-Lektüre (Items 10–13) verankert. Bestehende Nummern 10–22 auf 14–26 verschoben. Faustregel entsprechend aktualisiert + neue Zeile "Strategie-relevant?". Drei-Rollen-Aufteilung als neue Sektion zwischen Architektur-Übersicht und Governance-Entscheidungen eingefügt. Bekannte Fallstricke um "Drei-Visionen-Drift" ergänzt. Bauplan-Sektion auf Sprint-Sequenz aus Anhang A umgestellt. Tag-4-Inventur in ✅ Abgeschlossen aufgenommen. docs/synthese/ mit allen 4 Anhang-Dateien angelegt.
+**Anpassungen gegenüber ursprünglichem Plan:** Faustregel-Nummern 21–22 auf 25–26 korrigiert (konsistent mit Renummerierung). Offene Architektur-Fragen: bestehende Einträge (Geteilte Chats, Agenten) behalten, neue Einträge vorangestellt.
+**Offene Punkte nach dem Build:** A19 Prompt-Reihenfolge, Multi-Modell-Review-Entscheidung
+**Neue Lernmuster:** Strategie-Updates an ARCHITECT.md sind klein und additiv möglich, ohne bestehende Struktur zu brechen.
+
+---
+
 ## 2026-04-22 — 5 Strukturelle Checker-Probleme behoben (Dogfooding-Insights)
 
 **Ampel:** 🟢

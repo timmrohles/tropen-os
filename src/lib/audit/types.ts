@@ -34,6 +34,12 @@ export type FixType = 'code-fix' | 'code-gen' | 'refactoring' | 'manual'
 /** Which maturity tier this rule belongs to */
 export type RuleTier = 'starter' | 'production' | 'enterprise'
 
+/**
+ * Semantic category of what a rule checks.
+ * code = concrete code fix; metric = value/score measurement; compliance = regulatory requirement
+ */
+export type AuditTier = 'code' | 'metric' | 'compliance'
+
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
   message: string
@@ -81,7 +87,9 @@ export interface AuditRule {
   /** How findings from this rule should be fixed */
   fixType?: FixType
   /** Maturity tier — rules only apply if user tier >= rule tier. Default: starter */
-  tier?: RuleTier
+  maturityTier?: RuleTier
+  /** Semantic tier: code (fix it), metric (track it), compliance (prove it). Added 2026-04-27. */
+  tier?: AuditTier
 }
 
 export interface PackageJson {

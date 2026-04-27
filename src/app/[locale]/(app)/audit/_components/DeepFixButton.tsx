@@ -10,8 +10,12 @@ interface Props {
   runId: string
 }
 
+const FIX_ENGINE_ENABLED = process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED === 'true'
+
 export default function DeepFixButton({ findingId, runId }: Props) {
   const { state, data, errorMessage, expanded, trigger } = useDeepFix(findingId, runId)
+
+  if (!FIX_ENGINE_ENABLED) return null
 
   const isLoading = state === 'checking' || state === 'generating'
 

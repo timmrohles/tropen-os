@@ -15,6 +15,13 @@ const log = createLogger('api:audit:fix:generate')
 const REPO_ROOT = path.resolve(process.cwd())
 
 export async function POST(request: Request) {
+  if (process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED !== 'true') {
+    return NextResponse.json(
+      { error: 'fix_engine_disabled', message: 'Fix-Engine ist temporär deaktiviert. Nutze stattdessen den Fix-Prompt-Export.', documentation: 'docs/synthese/anhang-c-kill-und-einfrier-liste.md#k1' },
+      { status: 410 }
+    )
+  }
+
   // Auth check (nur admin)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

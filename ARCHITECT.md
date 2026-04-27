@@ -58,7 +58,7 @@ Alle Pfade sind relativ zum Projekt-Root.
 2. CLAUDE.md                                       ← Stack, Konventionen, Schema
 3. docs/phase2-plans.md                            ← Build-Reihenfolge Plan C–J
 4. docs/project-state.md                           ← aktueller Projektstatus
-5. docs/tropen-os-architektur.md                   ← Gesamtarchitektur v0.5
+5. docs/synthese/tag4-master-synthese.md           ← Strategie-Synthese (ersetzt tropen-os-architektur.md)
 ```
 
 ### Web Application Manifest Framework (immer)
@@ -69,47 +69,56 @@ Alle Pfade sind relativ zum Projekt-Root.
 9. docs/webapp-manifest/audit-report-2026-03-15.md ← Letzter Audit-Stand
 ```
 
+### Strategische ADRs (immer)
+```
+10. docs/adr/020-six-layer-knowledge-architecture.md   ← Sechs-Schichten-Wissens-Modell
+11. docs/adr/021-prompt-veredler-architecture.md       ← Drei-Tiefen-Veredler
+12. docs/adr/022-markdown-format-obsidian-bridge.md    ← Markdown + YAML + Wikilinks
+13. docs/adr/023-interface-strategy.md                 ← CLI-First + Pull-MCP
+```
+
 ### Design-Standards (bei jedem Feature mit UI)
 ```
-10. CLAUDE.md → Abschnitt "Komponenten-Patterns"   ← verbindliche Klassen
-11. CLAUDE.md → Abschnitt "Code-Regeln"            ← Farb-Variablen, Inline-Styles
-12. CLAUDE.md → Abschnitt "Content-Breiten"        ← .content-max etc.
-13. CLAUDE.md → Abschnitt "Drawer-System"          ← Drawer-Konventionen
-14. CLAUDE.md → Abschnitt "⚠️ VOR JEDEM UI-BUILD"  ← Pflichtcheck
+14. CLAUDE.md → Abschnitt "Komponenten-Patterns"   ← verbindliche Klassen
+15. CLAUDE.md → Abschnitt "Code-Regeln"            ← Farb-Variablen, Inline-Styles
+16. CLAUDE.md → Abschnitt "Content-Breiten"        ← .content-max etc.
+17. CLAUDE.md → Abschnitt "Drawer-System"          ← Drawer-Konventionen
+18. CLAUDE.md → Abschnitt "⚠️ VOR JEDEM UI-BUILD"  ← Pflichtcheck
 ```
 
 ### Produkt & Strategie (bei neuen Features)
 ```
-15. docs/product/                                  ← Produktdokumente
-16. docs/superpowers/plans/                        ← Detaillierte Plan-Dokumente
-17. docs/plans/                                    ← ältere Feature-Pläne
+19. docs/product/                                  ← Produktdokumente
+20. docs/superpowers/plans/                        ← Detaillierte Plan-Dokumente
+21. docs/plans/                                    ← ältere Feature-Pläne
 ```
 
 ### Compliance & Risiko (bei AI-Features)
 ```
-18. docs/AI Act Risk Navigator Hochrisiko.pdf      ← Hochrisiko-Klassifikation
-19. docs/AI Act Risk Navigator Minimal Risiko.pdf  ← Minimal-Risiko-Klassifikation
-20. docs/tuev-ai-matrix-mapping-tropen.docx        ← TÜV-Matrix Tropen-Mapping
+22. docs/AI Act Risk Navigator Hochrisiko.pdf      ← Hochrisiko-Klassifikation
+23. docs/AI Act Risk Navigator Minimal Risiko.pdf  ← Minimal-Risiko-Klassifikation
+24. docs/tuev-ai-matrix-mapping-tropen.docx        ← TÜV-Matrix Tropen-Mapping
 ```
 
 ### Migrations-Stand (immer)
 ```
-21. supabase/migrations/ → letzte 3 Dateien        ← aktueller DB-Stand
+25. supabase/migrations/ → letzte 3 Dateien        ← aktueller DB-Stand
 ```
 
 ### Architect Log (immer)
 ```
-22. docs/architect-log.md                          ← bisherige Entscheidungen
+26. docs/architect-log.md                          ← bisherige Entscheidungen
 ```
 
 ---
 
 > **Faustregel:**
-> - Nur UI gebaut? → 1–3 + 10–14 + 21–22
-> - Nur Backend/API? → 1–9 + 21–22
-> - Neues AI-Feature? → 1–22 vollständig
-> - Neue Tabellen? → 1–9 + 21–22
-> - Compliance-relevant? → 1–9 + 18–22
+> - Nur UI gebaut? → 1–3 + 14–18 + 25–26
+> - Nur Backend/API? → 1–9 + 25–26
+> - Neues AI-Feature? → 1–26 vollständig
+> - Neue Tabellen? → 1–9 + 25–26
+> - Compliance-relevant? → 1–9 + 22–26
+> - Strategie-relevant? → 10–13 + 1–9 + 25–26
 
 ---
 
@@ -504,6 +513,20 @@ Superadmin (Timm)
 
 ---
 
+## Drei-Rollen-Aufteilung
+
+Tropen OS hat drei verschiedene Dokumenten-Rollen, die nicht vermischt werden dürfen:
+
+| Dokument | Rolle | Konsequenz |
+|----------|-------|------------|
+| `roadmap-2026-q2.md` | **Normative Strategie-Quelle** | Was wir bauen, wann, was nicht. Bei Konflikt gewinnt die Roadmap. |
+| `user-story-idea-to-production.md` | **Marketing- und Onboarding-Narrativ** | Wie wir das Produkt erklären. Vorlage für Landing, Verkaufs-Material. |
+| `feature-bestand.md` (vormals feature-registry.md) | **Wartungs-Doku des technischen Bestands** | Was *ist*, nicht was sein soll. Status-Marker pro Feature. |
+
+Bei Strategie-Konflikten: Roadmap gewinnt. Bei Bestands-Fragen: feature-bestand.md ist Quelle. Bei Erklärungsbedarf: User-Story.
+
+---
+
 ## Governance-Entscheidungen
 
 | Entscheidung | Begründung | Stand |
@@ -581,6 +604,12 @@ Immer prüfen bevor gebaut wird:
     Fix: Jeden Inline-SVG durch passendes Phosphor-Icon ersetzen.
     Ausnahme: ParrotIcon.tsx (Brand-SVG, in IGNORE-Liste des CI-Linters).
     CI-Check: lint-design-system.mjs prüft auf <svg> in .tsx-Komponenten außerhalb IGNORE.
+
+⚠️  Drei-Visionen-Drift
+    Vor dem Pivot waren KMU-Plattform-Konzepte (Library, Workspaces, Custom Agents)
+    aktiv. Sie sind jetzt EINGEFROREN (siehe Anhang C der Tag-4-Synthese).
+    Fix: Bei neuen Features prüfen, ob sie zur Roadmap-MVP-Vision passen.
+    Wenn nicht: explizit als Phase-2-Vorbereitung markieren oder ablehnen.
 ```
 
 ---
@@ -607,13 +636,13 @@ Immer prüfen bevor gebaut wird:
 
 ---
 
-## Aktueller Bauplan (Stand 2026-03-17)
+## Aktueller Bauplan (Stand 2026-04-27)
 
 ### ✅ Abgeschlossen
 
 ```
 Migrations 001–033       DB-Fundament
-Chat-System (Dify)       → wird für neue Features durch Anthropic direkt ersetzt
+Chat-System (Dify)       → durch Anthropic direkt ersetzt
 Projekte CRUD + Gedächtnis
 Superadmin Tool
 Marketing-Paket (Agenten + Chips)
@@ -628,32 +657,46 @@ Plan 1:  Capability + Outcome System + Guided Workflows (Migrationen 039–041)
 Plan D:  Chat & Context Integration (ai-chat workflow_plan, project-context, chat/stream Auth-Fix)
 Plan E:  Transformations-Engine (analyze → preview → execute)
 Plan F:  UI — Projekte Memory-Badge+Tab, Workspaces-Liste
+Tag-4-Inventur (2026-04-27)    → docs/synthese/tag4-master-synthese.md
+                                  + Anhänge A (Roadmap), B (Migrations), C (Kill+Einfrier)
 ```
 
-### ⬜ Nächste Pläne (in dieser Reihenfolge)
+### ⬜ Nächste Pläne (Sprint-Sequenz aus Anhang A)
 
 ```
-Plan J1: Feeds autonom — Run-History, konfigurierbare Outputs   🔴 Nächster Schritt
-Plan J2a: skills-Tabelle + RLS + Seed, agent_skills, skill-resolver  (nach J1)
-Plan J2b: agents ALTER + agent_runs + agent-engine              (nach J2a)
-Plan J2c: Scheduled Trigger (Cron), Webhook, Paket-Seeds        (nach J2b)
-Plan K:  Geteilte Chats + Team-Antwort
-Phase 3: Prompt-Bibliothek
-Phase 3: Wissenschafts-Paket
+Tag 4.5: Hygiene + Validierung      🔴 LÄUFT
+Sprint 1: Audit-Tier-Umbau          → Anhang A
+Sprint 2: Landing + Audit-Polish    → Anhang A
+Sprint 3: Inbox + Templates         → Anhang A
+Sprint 4: Veredler + Onboarding     → Anhang A
+Sprint 5: Distribution              → Anhang A
 ```
-
-> **Plan J = "Produktion" (Feeds autonom + Agenten scheduled)**
-> Sub-Pläne: J1 (Feeds), J2a/J2b/J2c (Agenten-System)
-> **Plan K = Geteilte Chats + Team-Antwort** (früher fälschlich "Plan J" in ARCHITECT.md)
 
 ---
 
-## Offene Architektur-Fragen (Stand 2026-03-17)
+## Offene Architektur-Fragen (Stand 2026-04-27)
 
 ```
 ✅ Dify vollständig abgelöst (2026-03-17)
    jungle-order läuft auf Anthropic direkt (claude-haiku-4-5-20251001).
    DIFY_API_KEY und DIFY_API_URL können aus Supabase Edge Function Secrets entfernt werden.
+
+✅ Drei-Visionen-Spannung aufgelöst (2026-04-27)
+   Roadmap normativ, User-Story Marketing, Feature-Bestand technisch.
+   Siehe Drei-Rollen-Aufteilung oben.
+
+✅ A17 Findings-Tier-Modell entschieden (2026-04-27)
+   Drei Tiers strikt getrennt: Code-Finding / Metrik / Compliance
+   Implementierung: Sprint 0 (Klassifizierung) + Sprint 1 (UI-Umbau)
+
+❓ A19 Prompt-Qualität pro Rule
+   Status: erkannt als Multiplikator-Aufgabe
+   Frage: Reihenfolge der ~70 Rules — nach Häufigkeit oder nach Severity?
+   Entscheidung: vor Sprint 2
+
+❓ Multi-Modell-Review im MVP oder Premium?
+   Status: aktuell EINGEFROREN als Premium-Kandidat
+   Entscheidung: vor Sprint 4
 
 ❓ Geteilte Chats (Plan K)
    Status: geplant, noch nicht gestartet
@@ -666,10 +709,6 @@ Phase 3: Wissenschafts-Paket
    J3: Cron-Runner → Empfehlung Supabase pg_cron
    J4: Marketing-Agents scope='package' → Empfehlung Ja
    J5: Toro-Vorschlag opt-in DEFAULT false → Empfehlung Ja
-
-❓ Architecture Decision Records (ADR)
-   Status: docs/adr/ leer
-   Frage: Wann starten wir mit ADRs?
 ```
 
 ---
@@ -689,7 +728,7 @@ CLAUDE.md             ← Hauptreferenz für Claude Code
 architect-log.md           ← Entscheidungsprotokoll (neu)
 phase2-plans.md            ← Build-Reihenfolge Plan C–J (alle aktuell)
 project-state.md           ← Projektstatus
-tropen-os-architektur.md   ← Gesamtarchitektur v0.5
+tropen-os-architektur.md   ← SUPERSEDED → docs/_archive/2026-04-pre-pivot/
 email-setup.md             ← E-Mail / Resend Setup
 dify-jungle-order-setup.md ← Dify Jungle Order
 github-secrets.md          ← GitHub Secrets Dokumentation

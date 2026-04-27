@@ -23,6 +23,8 @@ export interface ConsensusFixData {
 
 export type DeepFixState = 'idle' | 'checking' | 'generating' | 'ready' | 'error'
 
+const FIX_ENGINE_ENABLED = process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED === 'true'
+
 export function useDeepFix(findingId: string, runId: string) {
   const [state, setState] = useState<DeepFixState>('idle')
   const [data, setData] = useState<ConsensusFixData | null>(null)
@@ -30,6 +32,10 @@ export function useDeepFix(findingId: string, runId: string) {
   const [expanded, setExpanded] = useState(false)
 
   const trigger = useCallback(async () => {
+    if (!FIX_ENGINE_ENABLED) {
+      console.warn('Fix-Engine deaktiviert. Verwende Fix-Prompt-Export.')
+      return
+    }
     if (!findingId || !runId) return
 
     // Toggle if already loaded

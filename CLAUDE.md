@@ -48,6 +48,24 @@ Schritt AI-2  cat docs/tuev-ai-matrix-mapping-tropen.docx
 
 ---
 
+## Drei-Rollen-Aufteilung der Strategie-Dokumente
+
+Drei Dokumente erzählen drei verschiedene Geschichten von Tropen OS.
+Sie sind nicht widersprüchlich, sondern ergänzen sich:
+
+| Dokument | Rolle | Bei Konflikt |
+|----------|-------|--------------|
+| `docs/product/roadmap-2026-q2.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
+| `docs/product/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
+| `docs/product/feature-bestand.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
+
+Wenn ein neues Feature vorgeschlagen wird, erste Frage: passt es zur Roadmap-MVP-Vision?
+- Ja → bauen
+- Nein, aber zur Phase-2-Vision (siehe `docs/phase-2-vision.md`) → ablehnen mit Verweis "Phase 2"
+- Nein → ablehnen
+
+---
+
 ## Wie dieses Dokument funktioniert
 
 CLAUDE.md ist ein lebendes Dokument. Claude Code darf und soll es aktuell halten —
@@ -149,7 +167,7 @@ Kein einziger Punkt ist optional.
 [ ] Icons ohne sichtbaren Text haben aria-label oder aria-hidden="true"?
 [ ] Section-Tag (Monospace, grün, mit Linie) über jeder Section-Headline?
 [ ] Nummerierte Listen (01/02/03) statt drei gleiche Icon-Karten mit farbiger Border links?
-[ ] Score-Farbe korrekt: grün (var(--accent)) für Production/Stable, amber (#E5A000) für Risky, rot (var(--error)) für Prototype?
+[ ] Score-Farbe korrekt: grün (var(--accent)) für Production/Stable, amber (var(--status-risky)) für Risky, rot (var(--error)) für Prototype?
 [ ] Maximal 3 dunkle Sections (var(--active-bg)) pro Seite — nie zwei direkt hintereinander?
 [ ] Section-Padding: 80px Desktop, 48px Mobile?
 [ ] Display-Headlines (H1, H2) in var(--font-display) = Plus Jakarta Sans, fontWeight 700/800?
@@ -227,7 +245,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
 | nodemailer | ^8 | SMTP-Adapter für Self-Hosting |
 | pnpm | — | Package Manager |
 | pptxgenjs | ^3 | PowerPoint-Export für Präsentations-Artifacts (`/api/artifacts/export-pptx`) |
-| lighthouse | ^13 | **devDependency** — lokal + CI only, nie auf Vercel (kein Chrome). `pnpm exec lighthouse <url>` via `external-tools-checker.ts`. Audit-Dashboard URL-Feld auf Vercel deaktiviert. |
+| lighthouse | ^13 | **devDependency** — lokal + CI only, nie auf Vercel (kein Chrome). `pnpm exec lighthouse <url>` via `external-tools-checker.ts`. Audit-Dashboard URL-Feld auf Vercel deaktiviert. **WICHTIG: Lighthouse immer gegen `pnpm start` (Prod-Build) testen, nie gegen Dev-Server** — Dev-Build ist ~10× größer (kein Minify, HMR), produziert irreführend hohe TTI-Werte. |
 | next-intl | ^4.9.1 | i18n — Locales: `en` (default), `de`; messages in `messages/*.json`; config in `src/i18n/`; alle App-Seiten + Settings + Superadmin + ArtifactRenderer externalisiert (2026-04-21) |
 
 **i18n Namespace-Konvention (Stand 2026-04-21 — TODO: vereinheitlichen)**
@@ -245,6 +263,12 @@ Aktueller Stand ist **Feature-zentrisch** (Ziel), aber noch nicht konsistent:
 | ignore | ^7 | .gitignore parsing für File Discovery in src/lib/repo-map/ |
 | @ai-sdk/openai | ^1.x | GPT-5.4 via Vercel AI Gateway (Multi-Model Review Pipeline) |
 | @ai-sdk/google | ^1.x | Gemini 2.5 Pro via Vercel AI Gateway (Multi-Model Review Pipeline) |
+
+**Strategische ADRs (Pflicht-Lektüre vor Build):**
+- ADR-020 (Sechs-Schichten-Wissens-Modell)
+- ADR-021 (Prompt-Veredler)
+- ADR-022 (Markdown + YAML + Wikilinks)
+- ADR-023 (Interface-Strategie: CLI-First + Pull-MCP)
 
 ### DB-Zugriff — kritische Constraint
 
@@ -275,6 +299,12 @@ SDK: **AI SDK** (`ai` + `@ai-sdk/anthropic`) — Provider-Instanz via `@/lib/llm
 Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` oder `streamText()`.
 Multi-Model Review: plain `"provider/model"` Strings → automatisch über Vercel AI Gateway geroutet. Auth: `AI_GATEWAY_API_KEY` oder `VERCEL_OIDC_TOKEN`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
+
+**Veredler-Substanz (im Aufbau, ADR-021):**
+~1.840 Zeilen existieren bereits in `src/lib/library-resolver.ts`,
+`capability-resolver.ts`, `skill-resolver.ts`, `chat/complexity-detector.ts`,
+`audit/prompt-export/template-engine.ts`. Diese werden in Sprint 4 zum
+Veredler transformiert (TRANSFORMATION-Status, nicht WEGFALL).
 
 ### CLI Scripts
 
@@ -368,6 +398,7 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 | `var(--accent-light)` | `#D4EDDE` | Chip active, Highlights |
 | `var(--active-bg)` | `#1A2E23` | Aktive Pill, Selected State |
 | `var(--border)` | `rgba(26,23,20,0.08)` | Standard-Border |
+| `var(--status-risky)` | `#E5A000` | Score-Farbe Risky (60–79%), Risk-Badges, moderate Warn-Zustände |
 
 **Das alte Dunkelgrün-Theme (`#0d1f16`, `#134e3a`, `#a3b554`) ist abgelöst — nie verwenden.**
 
@@ -637,6 +668,7 @@ Klick [···]:  Umbenennen / Bearbeiten
 - Dateien > 300 Zeilen sind eine Warnung, > 500 Zeilen eine Verletzung
 - Jedes neue Feature braucht Tests
 - Neue Env-Variablen immer in `.env.example` dokumentieren — Secrets nie in `.env.local` committen
+- Bei neuen Features: zuerst prüfen, ob sie zur Roadmap-MVP-Vision passen. Bei Zweifel: Timm fragen, nicht selbst entscheiden.
 
 ### Error-Handling
 
@@ -677,6 +709,7 @@ Klick [···]:  Umbenennen / Bearbeiten
     /ui                 # Primitive Komponenten
     /layout             # Strukturelle Komponenten (AppShell, Sidebar, TopBar, BottomNav)
     /workspace          # Workspace-Feature-Komponenten (Canvas, ChatPanel, DetailPanel)
+                        # CodeBlock.tsx — lazy-loaded SyntaxHighlighter wrapper (import via dynamic() — nie statisch importieren)
     /workspaces         # Workspace-Liste-Komponenten (CardTile, WorkspacesList)
     /ws                 # Canvas-Ansicht-Komponenten
   /db                   # Drizzle Schema (nur Typen + Migrations-Referenz, keine Queries)
@@ -1081,9 +1114,23 @@ Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extra
 ### Feature-Dokumentation
 
 Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
-→ **`docs/product/feature-registry.md`**
+→ **`docs/product/feature-bestand.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
 
 Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
+
+### Library-System (Capability + Outcome + Role + Skill)
+
+> **Status (2026-04-27):** TRANSFORMATION zur Veredler-Vorform.
+> Die Resolver-Code-Substanz wird in Sprint 4 in den Veredler integriert (ADR-021).
+> UI-Verwaltung ist EINGEFROREN für Phase 2.
+> Schema bleibt erhalten.
+
+Die Library besteht aus: `capabilities`, `outcomes`, `roles`, `skills`, `agent_skills` + Resolver-Code in `src/lib/`.
+Resolver: `capability-resolver.ts`, `skill-resolver.ts`, `library-resolver.ts`.
+API-Routes für library/role-CRUD bleiben aktiv für Veredler-Integration.
+
+**Hinweis:** Die Library-UI (`/library/*`) wird in Sprint 4 Feature-Flag-deaktiviert.
+Backend-Routes bleiben aktiv für Veredler-Integration.
 
 ### Perspectives — Parallele KI-Perspektiven (Stand 2026-03-23)
 
@@ -1130,7 +1177,7 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 
 **Automatisierung:** Erst ab 10 Beta-Usern. Dann: "Finding falsch?"-Button im Produkt + Supabase-Tabelle.
 
-### Audit Checker-Stack (Stand 2026-04-21)
+### Audit Checker-Stack (Stand 2026-04-22)
 
 242 Regeln (178 automatisiert, 64 manuell), 26 Kategorien, 29 Agenten.
 Vollstaendige Coverage-Tabelle: `docs/audit-reports/checker-coverage-2026-04-15.md`
@@ -1147,6 +1194,27 @@ Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGEN
 - **SELECT*-Exclusion**: `perspectives/transformations` ausgenommen (user-owned, kein PII)
 - **globals.css**: von Hex-Color-Check ausgenommen (IS die Token-Definition)
 - Alle 11 verbleibenden Score-3-Regeln sind echte Issues (kein Kalibrierungsbedarf)
+
+**Checker-Fixes 2026-04-22 (False-Positive-Bereinigung + Infrastruktur):**
+- **`checkSoftDeletePattern`** (`agent-committee-checker.ts`): Zwei Bugs behoben — (1) `\b` matcht `_` nicht als Wortgrenze → `(^|_)(fix|seed|cleanup|demo|test)_`; (2) naive `allContent`-Zählung → per-file-Analyse + Statement-Split, sodass jede Datei einzeln ausgewertet wird
+- **`checkConsoleLogs`** (`agent-observability-checker.ts`): `src/lib/audit/checkers/` zu Exclusion-Liste hinzugefügt — Checker enthalten Regex-Patterns als Quelltext und scannen sich sonst selbst
+- **`finding-recommendations.ts`**: Zwei explizite Einträge mit `matchRuleIds: ['architecture']` bzw. `['performance']` vor dem `god-component`-Eintrag ergänzt — verhindert dass Agent-Summary-Findings (rule_id='architecture'/'performance') fälschlicherweise die God-Component-Recommendation matchen (erzeugte Duplikat-Karte)
+- **`ConsensusFixResult.tsx`**: `RISK_COLOR.moderate` von `'#E5A000'` auf `'var(--status-risky)'` geändert — Hex-Werte in Komponenten verboten
+- **`distributor.ts`** + **`cron/feed-process/route.ts`**: N+1-Queries beseitigt — DB-Calls aus Loop entfernt, stattdessen Batch-Insert/-Upsert nach dem Loop
+- **`external-tools-checker.ts`** `run()`-Funktion: `stdio: ['pipe', 'pipe', 'pipe']` — Chrome-EPERM-Fehler beim Temp-Cleanup leaken nicht mehr ans Terminal (Windows-Fix)
+
+**Checker-Fixes 2026-04-23 (Dogfeeding-Session — False-Positive-Bereinigung):**
+- **`isExemptFile()`** (`repo-map-checker.ts`): `src/scripts/` zu Ausnahmen hinzugefügt — CLI-Scripts sind Infrastruktur, kein App-Code. Konsistent mit CC-Ausschluss in `ast-quality-checker.ts:41`
+- **`checkEmptyCatchBlocks()`** (`agent-committee-checker.ts`): `commentOnlyPattern` (`/catch\s*\([^)]*\)\s*\{\s*\/\//g`) entfernt — zu breit, hat Catch-Blöcke geflagged die mit Kommentar beginnen aber echten Code enthalten. Ersetzt durch `commentOnlyBlockPattern` (`/catch\s*\([^)]*\)\s*\{\s*\/\*[^*]*\*\/\s*\}/g`) — matcht nur wirklich leere Block-Kommentar-Catches
+- **DB-Bereinigung**: ~1.400 stale Findings dismissed + ~100 Fixes rejected. Alle cat-3-rule-23 (postMessage), cat-3-rule-25 (missing-auth-in-route), cat-2-rule-7 (empty-catch FPs), cat-25-rule-1 (Naming stale), cat-3-rule-2 (validateBody GET), cat-7-rule-6 (pagination single-item), cat-3-rule-15 (cron Bearer-Token) — alle waren stale aus vor bestehenden Checker-Fixes
+
+**Lighthouse Finding-Format (Stand 2026-04-22):**
+- `extractLighthouseFindings`: `message = "${title} — ${displayValue}"` wenn `displayValue` vorhanden (z.B. "Largest Contentful Paint — 2.4 s"), sonst nur `title`
+- `suggestion` = erste Satz von `description` mit Markdown-Links entfernt — kein langer Fließtext mehr
+- Summary-Card entfernt: Kein `"Lighthouse Performance: 84/100 (17 issues)"` als eigenes Finding mehr — Score steht im `reason`-Feld des RuleResult
+- `lhScore < 0.9` Gate: Granulare Findings nur bei Kategorie-Score < 90/100; bei Grün wird `findings: []` zurückgegeben
+- **LH-Findings Klassifizierung (Stand 2026-04-23):** 57 LH-Findings dismissed mit drei strukturierten Kategorien: **Phantom** (axe-core/syntax-highlighter — stale, nie geladen), **Architektur-Backlog** (Unused CSS/JS — bewusst zurückgestellt), **Plattform-Grenze** (Server Latency/Render Blocking/bfcache — nicht im Code lösbar). Pro Run werden diese ~57 Findings neu entstehen und dismissed werden bis Ansatz C implementiert ist.
+- **Ansatz C Sprint-Plan:** `docs/plans/ansatz-c-lh-finding-types.md` — LH-Typen (Metric/Opportunity/Diagnostic) strukturell trennen. ~1,5 Sessions C-eng. Nächster Sprint nach Dogfeeding.
 
 **Checker-Dateien:**
 | Datei | Regeln | Kategorien |
@@ -1357,6 +1425,10 @@ Details: `memory/project_pending_ui_tasks.md`
 | Parallel Tabs | ✅ gebaut | `detect-parallel-intent.ts` (Keyword-Erkennung); Confirmation-Bubble in ChatArea (Lightbulb + accent-light); `openNewTabWithConversation` in useChatTabs; POST /api/conversations/create; WorkspaceLayout `handleOpenParallelTabs` (2026-03-30) |
 | Modell-Vergleich-Tabs (Plan M) | ✅ gebaut | `ModelComparePopover.tsx` + `Modal.tsx`; Scales-Icon; 2–4 Checkboxen; `handleModelCompare` in ChatArea; `overrideClientPrefs` in sendDirectToNewConv; capabilities JSONB in model_catalog (Mig 094); `detectTaskCategory()` in detect-parallel-intent.ts; capability-basierte Vorauswahl + "Empfohlen"-Badge im Modal (2026-03-30) |
 | Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
+| Redirect Chain (multiple redirects) | ✅ behoben | `middleware.ts`: Auth-Check bei `pathname === '/'` → authentifizierte User direkt zu `/{locale}/dashboard` (1 statt 2 Hops); `NEXT_LOCALE`-Cookie für Locale-Detection (2026-04-23) |
+| Not-Found Links ohne Locale | ✅ behoben | `app/[locale]/not-found.tsx` (neu, locale-aware Link via `@/i18n/navigation`) fängt locale-Pfad-404s ab; root `app/not-found.tsx` auf `'use client'` + `usePathname()` für locale-korrekten Link (2026-04-23) |
+| Bundle-Optimierung (TTI) | ✅ behoben | `react-syntax-highlighter` (~170kB) lazy via `CodeBlock.tsx` + `dynamic()`; `@tremor/react` AreaChart lazy via `dynamic()` in audit/page + settings; Build-OOM gefixt: `NODE_OPTIONS=--max-old-space-size=4096` in package.json build-script (2026-04-23) |
+| Sentry Browser Tracing Bundle | ✅ behoben | `tracesSampleRate: 0` in `src/instrumentation-client.ts` gesetzt — spart ~124kB gz im shared bundle. Re-enable auf `0.1` wenn Sentry Performance-Tab aktiv genutzt wird. (2026-04-23) |
 | Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
 | Hydration-Fehler TopBar + ChatHeaderStrip | ✅ behoben | TopBar `mounted` guard (kein SSR); Bell+Account als CSS-Klassen; ChatHeaderStrip portalt in `#topbar-chat-slot` statt fixed overlay (2026-03-26) |
 | Chat Auto-Scroll während Streaming | ✅ gebaut | `lastMsgContent`-Effect in `useWorkspaceState.ts` mit `behavior: 'instant'` — scrollt bei jedem Streaming-Chunk (2026-03-26) |
@@ -1390,8 +1462,8 @@ eslint src/           # keine Fehler
 |----------|--------|
 | `docs/webapp-manifest/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
 | `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
-| `docs/product/architecture.md` | Phase-2-Architektur, DB-Hierarchie, Kontroll-Spektrum |
-| `docs/product/architecture-navigation.md` | Produkt-Nordstern: Navigation, Workspace-Konzept, Live/Agenten/Community |
+| `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/phase-2-vision.md` |
+| `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/phase-2-vision.md` |
 | `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne (alt) |
 | `docs/product/roadmap-2026-q2.md` | **Aktuelle Roadmap Q2/Q3 2026** — Production Readiness Guide für Vibe-Coders, 3 MVP-Features, User-Typen, Kill-the-Darlings, GTM |
 | `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
@@ -1400,8 +1472,13 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-018) |
-| `docs/product/feature-registry.md` | Feature-Dokumentation: Guided Workflows, Workspaces, Skills, Agents, Library, Transformationen |
+| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-023) |
+| `docs/product/feature-bestand.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) — umbenannt von feature-registry.md |
+| `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
+| `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
+| `docs/synthese/anhang-b-migrations.md` | DB-Migrations-Block für Sprint 1+ |
+| `docs/synthese/anhang-c-kill-und-einfrier-liste.md` | Kill- und Einfrier-Liste mit Wieder-Anschalten-Bedingungen |
+| `docs/phase-2-vision.md` | Phase-2-Backup-Konzept (KMU-Substanz konzentriert) — 5 Pfeiler: Drei-Ebenen-Modell, Kontroll-Spektrum, Karten-Aggregatzustände, Aufbau/Produktion, Wissens-Hierarchie |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/superpowers/n8n-integration-konzept.md` | n8n Integration: Toro generiert Workflows, kein Editor, Hetzner VPS Frankfurt, N8nClient API, Phase 2–4 |
 | `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
