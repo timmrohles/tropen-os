@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export interface AppTabDef {
   id: string
@@ -19,6 +20,7 @@ interface AppTabsProps {
 }
 
 export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState(activeTabId ?? tabs[0]?.id ?? '')
 
   // Sync when server re-renders with a different activeTabId (URL-based navigation)
@@ -66,7 +68,11 @@ export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
           aria-disabled={tab.comingSoon}
           href={tab.comingSoon ? undefined : (tab.href ?? `#${tab.sectionId ?? tab.id}`)}
           className={`app-tab${!tab.comingSoon && activeTab === tab.id ? ' app-tab--active' : ''}${tab.comingSoon ? ' app-tab--coming-soon' : ''}`}
-          onClick={tab.comingSoon ? (e => e.preventDefault()) : (tab.href ? undefined : (e => {
+          onClick={tab.comingSoon ? (e => e.preventDefault()) : (tab.href ? (e => {
+            e.preventDefault()
+            setActiveTab(tab.id)
+            router.push(tab.href!, { scroll: false })
+          }) : (e => {
             e.preventDefault()
             setActiveTab(tab.id)
             document.getElementById(tab.sectionId ?? tab.id)?.scrollIntoView({ behavior: 'smooth' })
