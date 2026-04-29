@@ -133,7 +133,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               >
                 <td>
                   <span className={`severity-dot ${SEV_DOT[group.severity] ?? 'severity-dot--info'}`}
-                    title={group.severity} aria-label={group.severity} />
+                    role="img" title={group.severity} aria-label={`Schweregrad: ${group.severity}`} />
                 </td>
                 <td>
                   <span style={{ fontSize: 13, fontWeight: isExpanded ? 600 : 400, color: 'var(--text-primary)' }}>
@@ -151,7 +151,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
                 <td className="app-table-mono" style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {primaryFile ?? '—'}
                 </td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--secondary)' }}>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
                   {scoreGain}
                 </td>
               </tr>
