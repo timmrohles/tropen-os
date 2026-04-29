@@ -93,7 +93,7 @@ function buildFixSection(
   } else if (finding.suggestion) {
     lines.push('', '**Vorgehensweise:**', finding.suggestion)
   } else {
-    lines.push('', 'Fixe das Problem.')
+    lines.push('Fixe das Problem.')
   }
 
   if (tool === 'claude-code' && finding.filePath) {
