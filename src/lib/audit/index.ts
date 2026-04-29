@@ -80,7 +80,7 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
           }
         }
         // Tier filtering: skip rules above user's maturity level
-        const ruleTierLevel = TIER_ORDER[rule.tier ?? 'starter'] ?? 0
+        const ruleTierLevel = TIER_ORDER[rule.maturityTier ?? 'starter'] ?? 0
         if (ruleTierLevel > userTier) {
           return {
             ruleId: rule.id,

@@ -2372,6 +2372,38 @@ export const FINDING_RECOMMENDATIONS: FindingRecommendation[] = [
         'Jeder Tag hat eine aussagekräftige Message. ' +
         '`git show v0.1.0` zeigt den korrekten Commit.',
     },
+
+  // ── Enterprise: SBOM ──────────────────────────────────────────────────────
+  {
+    id: 'sbom-missing',
+    matchRuleIds: ['cat-24-rule-1'],
+    matchMessagePatterns: [/sbom|syft|cyclonedx|software.*bill.*of.*materials/i],
+    title: 'SBOM fehlt — Abhängigkeiten nicht dokumentiert',
+    problem:
+      'Kein Software Bill of Materials (SBOM) vorhanden. Ein SBOM listet alle Bibliotheken und Versionen, ' +
+      'die dein Produkt enthält — Voraussetzung für Enterprise-Kunden, Regulierung (z.B. EU Cyber Resilience Act) ' +
+      'und automatisiertes Vulnerability-Monitoring. Ohne SBOM ist unklar, welche Abhängigkeiten im Einsatz sind.',
+    impact:
+      'Enterprise-Kunden fordern SBOMs vor Vertragsschluss. Der EU Cyber Resilience Act macht SBOMs ab 2027 ' +
+      'für viele Software-Produkte verpflichtend. Ohne SBOM sind Supply-Chain-Angriffe schwerer zu erkennen.',
+    strategy:
+      'Syft (Open Source, von Anchore) generiert SBOMs aus dem Repository oder Container-Image in Minuten. ' +
+      'CycloneDX und SPDX sind die Standard-Formate — CycloneDX für Security-fokussierte Workflows empfohlen.',
+    firstStep:
+      "Cursor-Prompt: 'Füge einen SBOM-Generierungsschritt in die CI/CD-Pipeline ein. " +
+      "Installiere syft (brew install syft oder GitHub Action anchore/sbom-action), " +
+      "führe `syft . -o cyclonedx-json > sbom.json` aus und committe das Ergebnis. " +
+      "Ergänze in package.json ein Script: `\"sbom\": \"syft . -o cyclonedx-json > sbom.json\"`.'",
+    fixApproach: 'config-change',
+    manualSteps: [
+      'syft installieren: `brew install syft` (lokal) oder GitHub Action `anchore/sbom-action` (CI)',
+      'SBOM generieren: `syft . -o cyclonedx-json > sbom.json`',
+      'Script in package.json ergänzen: `"sbom": "syft . -o cyclonedx-json > sbom.json"`',
+      'CI-Step hinzufügen: SBOM bei jedem Release automatisch generieren und als Artifact speichern',
+      'sbom.json in .gitignore oder committen — je nach Policy (Snapshot vs. versioniert)',
+    ],
+    verification: '`sbom.json` vorhanden und enthält mind. 10 Pakete. CI generiert SBOM bei Releases.',
+  },
 ]
 
 /**
