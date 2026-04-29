@@ -115,6 +115,11 @@ import {
 import {
   checkAiContextFile, checkPrdPresent, checkReadmeDrift, checkCursorrulesHasStack,
 } from './checkers/spec-checker'
+import {
+  checkRlsOnUserTables, checkNoServiceRoleInFrontend, checkAnonKeyNoWriteWildcard,
+  checkStorageBucketPolicies, checkEdgeFunctionsNoServiceRoleInUserContext,
+  checkDbBackupStrategyDocumented,
+} from './checkers/db-security-checker'
 
 function manual(
   id: string,
@@ -524,6 +529,36 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-26-rule-3', categoryId: 26, name: 'Keine Überkommentierung (Kommentar-Ratio <40%)', weight: 1, checkMode: 'repo-map', automatable: true, check: checkOvercommenting, agentSource: 'slop', enforcement: 'advisory', fixType: 'code-fix', tier: 'metric', domain: 'code-quality' },
   { id: 'cat-26-rule-4', categoryId: 26, name: 'Keine Placeholder-Credentials im Sourcecode', weight: 3, checkMode: 'repo-map', automatable: true, check: checkPlaceholderCredentials, agentSource: 'slop', enforcement: 'reviewed', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-26-rule-5', categoryId: 26, name: 'Konsistente Kommentar-Sprache', weight: 1, checkMode: 'repo-map', automatable: true, check: checkMixedCommentLanguage, agentSource: 'slop', enforcement: 'advisory', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
+
+  // ── DB-Sicherheit (sec-db) — ADR-025 Tab-Sprint Phase 1, 2026-04-29 ────────
+  { id: 'sec-db-01', categoryId: 3, name: 'RLS auf User-Daten-Tabellen aktiviert', weight: 3,
+    checkMode: 'cli' as const, automatable: true, check: checkRlsOnUserTables,
+    agentSource: 'security' as const, enforcement: 'blocked' as const, fixType: 'code-gen' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  { id: 'sec-db-02', categoryId: 3, name: 'Service-Role-Key nicht im Frontend-Code', weight: 3,
+    checkMode: 'repo-map' as const, automatable: true, check: checkNoServiceRoleInFrontend,
+    agentSource: 'security' as const, enforcement: 'blocked' as const, fixType: 'code-fix' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  { id: 'sec-db-03', categoryId: 3, name: 'Anon-Key ohne Wildcard-Schreibzugriff', weight: 2,
+    checkMode: 'cli' as const, automatable: true, check: checkAnonKeyNoWriteWildcard,
+    agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-fix' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  manual('sec-db-04', 3, 'Public-Schema: kein PII ohne RLS', 3, 'code-gen', 'code', undefined, 'security'),
+  manual('sec-db-05', 3, 'RLS-Policies aktiviert (nicht nur definiert)', 2, 'code-fix', 'code', undefined, 'security'),
+  manual('sec-db-06', 3, 'Auth-Tabellen strenger als Daten-Tabellen', 2, 'code-fix', 'code', undefined, 'security'),
+  { id: 'sec-db-07', categoryId: 3, name: 'Storage-Buckets haben Zugriffs-Policies', weight: 2,
+    checkMode: 'cli' as const, automatable: true, check: checkStorageBucketPolicies,
+    agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-gen' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  { id: 'sec-db-08', categoryId: 3, name: 'Edge Functions: kein Service-Role im User-Context', weight: 3,
+    checkMode: 'repo-map' as const, automatable: true, check: checkEdgeFunctionsNoServiceRoleInUserContext,
+    agentSource: 'security' as const, enforcement: 'blocked' as const, fixType: 'code-fix' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  manual('sec-db-09', 3, 'Realtime-Subscriptions serverseitig gefiltert', 2, 'code-fix', 'code', undefined, 'security'),
+  { id: 'sec-db-10', categoryId: 3, name: 'Backup-Strategie dokumentiert (PITR-Status)', weight: 2,
+    checkMode: 'documentation' as const, automatable: true, check: checkDbBackupStrategyDocumented,
+    agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-gen' as const,
+    tier: 'code' as const, domain: 'security' as const },
 ]
 
 export function getRulesForCategory(categoryId: number): AuditRule[] {
