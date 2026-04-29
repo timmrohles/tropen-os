@@ -11,22 +11,28 @@ import {
   fetchAuditCategoryScores,
   fetchAuditFindings,
   fetchScanProjects,
-  fetchAuditTasks,
 } from '@/lib/audit/page-data'
 import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { computeQuickWins } from '@/lib/audit/quick-wins'
 import { getPercentileRank } from '@/lib/audit/score-percentile'
+import { getTierCounts, getFindingsByTier } from '@/lib/audit/tier-filter'
+import { complianceFrameworks, getFrameworkScore } from '@/lib/audit/compliance-mapping'
 import BetaFeedbackButton from './_components/BetaFeedbackButton'
 import QuickWinsCard from './_components/QuickWinsCard'
 import ScoreHero from './_components/ScoreHero'
+import ScoreBar from './_components/ScoreBar'
 import CategoryBreakdown from './_components/CategoryBreakdown'
-import ScoreTrend from './_components/ScoreTrend'
+import ScoreTrend from './_components/ScoreTrendLazy'
 import FindingsTable from './_components/FindingsTable'
-import TaskList from './_components/TaskList'
 import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
 import AuditTabs from './_components/AuditTabs'
+import AuditTierTabs from './_components/AuditTierTabs'
+import { AppTabs } from '@/components/app-ui/AppTabs'
+import { AppSection } from '@/components/app-ui/AppSection'
+import FindingsTableApp from './_components/FindingsTableApp'
+import ComplianceStatus from './_components/ComplianceStatus'
 
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
@@ -75,18 +81,12 @@ export default async function AuditPage({
   let findings: unknown[] = []
   let delta: number | null = null
 
-  let auditTasks: unknown[] = []
-
   if (selectedRunId) {
     ;[runDetail, categories, findings] = await Promise.all([
       fetchAuditRunDetail(selectedRunId),
       fetchAuditCategoryScores(selectedRunId),
       fetchAuditFindings(selectedRunId),
     ])
-
-    if (orgId) {
-      auditTasks = await fetchAuditTasks(orgId, activeScanProjectId)
-    }
 
     if (runDetail && runList.length > 1) {
       const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
@@ -96,12 +96,6 @@ export default async function AuditPage({
       }
     }
   }
-
-  type RawTask = { id: string; finding_id: string | null; [key: string]: unknown }
-  const initialTaskMap: Record<string, string> = {}
-  ;(auditTasks as RawTask[]).forEach((t) => {
-    if (t.finding_id) initialTaskMap[t.finding_id] = t.id
-  })
 
   // Enrich findings with fixType from rule registry (server-side only — rule-registry uses Node.js)
   const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
@@ -163,7 +157,8 @@ export default async function AuditPage({
   }
 
   // Quick wins + percentile (server-side computation)
-  const { quickWins } = computeQuickWins(allFindings as unknown as Parameters<typeof computeQuickWins>[0])
+  const codeFindings = getFindingsByTier(allFindings, 'code')
+  const { quickWins } = computeQuickWins(codeFindings as unknown as Parameters<typeof computeQuickWins>[0])
   const percentileRank = runDetail ? getPercentileRank(runDetail.percentage as number) : null
 
   return (
@@ -214,92 +209,145 @@ export default async function AuditPage({
       )}
 
       {/* ── Run data ────────────────────────────────────────────────────── */}
-      {hasRuns && runDetail && (
-        <>
-          {/* 1. Score Hero — compact */}
-          <ScoreHero
-            percentage={runDetail.percentage as number}
-            status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
-            delta={delta}
-            lastRunAt={runDetail.created_at as string}
-            projectName={runDetail.project_name as string}
-            reviewType={runDetail.review_type as string | null ?? null}
-            reviewCostEur={runDetail.review_cost_eur as number | null ?? null}
-            openFindings={openFindings}
-            highOpenFindings={highOpenFindings}
-            criticalOpenFindings={criticalOpenFindings}
-            isFirstRun={isFirstRun}
-            hasExternalTools={hasLighthouseData}
-          />
+      {hasRuns && runDetail && (() => {
+        const tierCounts = getTierCounts(allFindings)
+        const complianceHasDanger = complianceFrameworks.some(fw =>
+          getFrameworkScore(fw, allFindings).hasOpen
+        )
+        const complianceFindings = getFindingsByTier(allFindings, 'compliance')
+        const metricFindings = getFindingsByTier(allFindings, 'metric')
 
-          {/* fixType stats + percentile + lighthouse indicator */}
-          {allFindings.length > 0 && (
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 0, marginTop: -8 }}>
-              {t('fixTypeStats', {
-                codeFix: fixTypeStats['code-fix'],
-                codeGen: fixTypeStats['code-gen'],
-                refactoring: fixTypeStats.refactoring,
-                manual: fixTypeStats.manual,
-              })}
-              {percentileRank !== null && (
-                <span style={{ marginLeft: 12 }}>
-                  · {t('scorePercentile', { rank: percentileRank })}
-                </span>
-              )}
-              {hasLighthouseData && (
-                <span style={{
-                  marginLeft: 12,
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-                  color: 'var(--accent)',
-                  borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 500,
-                }}>
-                  Mit Lighthouse-Analyse
-                </span>
-              )}
-            </p>
-          )}
-
-          {/* Tab-based layout */}
-          <AuditTabs
-            findingsCount={allFindings.length}
-            categoryCount={(categories as unknown[]).length}
-            runCount={runList.length}
-            findingsContent={
-              <div>
-                {quickWins.length > 0 && (
-                  <QuickWinsCard quickWins={quickWins} />
-                )}
-                <FindingsTable
-                  key={selectedRunId ?? 'none'}
-                  findings={allFindings as unknown as Parameters<typeof FindingsTable>[0]['findings']}
-                  runId={selectedRunId ?? undefined}
-                  statusFilter={status}
-                  severityFilter={severity}
-                  agentFilter={agent}
-                  initialTaskMap={initialTaskMap}
-                  isExternalProject={activeScanProjectId !== null}
-                  deepReviewBadges={deepReviewBadges}
-                />
-              </div>
-            }
-            categoriesContent={
-              <CategoryBreakdown
-                categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
-                findings={allFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
-                isExternalProject={activeScanProjectId !== null}
+        return (
+          <>
+            {/* Score-Block kompakt — Tabellen-Welt-Stil */}
+            <div id="audit-score-hero">
+              <ScoreBar
+                percentage={runDetail.percentage as number}
+                status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
+                delta={delta}
+                lastRunAt={runDetail.created_at as string}
+                projectName={runDetail.project_name as string}
+                isFirstRun={isFirstRun}
                 hasExternalTools={hasLighthouseData}
               />
-            }
-            historyContent={
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <ScoreTrend runs={runList} />
-                <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
+            </div>
+
+            {/* ── Sticky Tier-Tab-Bar (App-Welt-Stil) ────────────────────── */}
+            <AppTabs tabs={[
+              { id: 'findings',   label: 'Findings',   count: tierCounts.code,       sectionId: 'findings' },
+              { id: 'metrics',    label: 'Metriken',   count: tierCounts.metric,     sectionId: 'metrics' },
+              { id: 'compliance', label: 'Compliance', count: tierCounts.compliance, sectionId: 'compliance', hasDanger: complianceHasDanger },
+            ]} />
+
+            {/* ── TIER 1: FINDINGS ───────────────────────────────────────── */}
+            <section id="findings" className="audit-tier-section">
+
+              {/* Quick Wins — Limette-Tint-Header */}
+              {quickWins.length > 0 && (
+                <AppSection
+                  header={`⚡ Quick Wins · ${quickWins.length} schnelle Fixes`}
+                  accent
+                  style={{ marginBottom: 16 }}
+                >
+                  <FindingsTableApp
+                    findings={quickWins as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                    statusFilter="open"
+                    isQuickWins
+                  />
+                </AppSection>
+              )}
+
+              {/* Alle Findings — Tabellen-Welt */}
+              <AppSection
+                header={`Findings · ${tierCounts.code} offen`}
+              >
+                <FindingsTableApp
+                  findings={codeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                  statusFilter={status}
+                />
+              </AppSection>
+
+              {/* Kategorien + Verlauf als Sekundär-Akkordeon */}
+              <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
+                <details style={{ flex: '1 1 400px' }}>
+                  <summary style={{
+                    padding: '10px 16px', background: 'var(--surface-warm)',
+                    border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
+                    fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--accent)',
+                  }}>
+                    Kategorien ({(categories as unknown[]).length})
+                  </summary>
+                  <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 4px 4px', background: '#fff' }}>
+                    <CategoryBreakdown
+                      categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
+                      findings={allFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
+                      isExternalProject={activeScanProjectId !== null}
+                      hasExternalTools={hasLighthouseData}
+                    />
+                  </div>
+                </details>
+
+                <details style={{ flex: '1 1 400px' }}>
+                  <summary style={{
+                    padding: '10px 16px', background: 'var(--surface-warm)',
+                    border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
+                    fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--accent)',
+                  }}>
+                    Verlauf ({runList.length} Runs)
+                  </summary>
+                  <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 4px 4px', background: '#fff', padding: 16 }}>
+                    <ScoreTrend runs={runList} />
+                    <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
+                  </div>
+                </details>
               </div>
-            }
-          />
-        </>
-      )}
+            </section>
+
+            {/* ── TIER 2: METRIKEN ───────────────────────────────────────── */}
+            <section id="metrics" className="audit-tier-section">
+
+              <AppSection header={`Metriken · ${tierCounts.metric} offen`}>
+                {metricFindings.length > 0 ? (
+                  <FindingsTableApp
+                    findings={metricFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                    statusFilter={status}
+                  />
+                ) : (
+                  <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
+                      Noch keine Metrik-Findings.
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                      Lighthouse-URL eintragen um Ladezeit + Core Web Vitals zu messen.
+                    </p>
+                  </div>
+                )}
+              </AppSection>
+
+            </section>
+
+            {/* ── TIER 3: COMPLIANCE ─────────────────────────────────────── */}
+            <section id="compliance" className="audit-tier-section">
+              <h2 className="audit-tier-heading">Was Pflicht ist</h2>
+
+              {complianceFindings.length > 0 || complianceHasDanger ? (
+                <ComplianceStatus findings={allFindings} />
+              ) : (
+                <div className="card" style={{ padding: '32px 24px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--status-success)', marginBottom: 4 }}>
+                    Alle Pflichten erfüllt.
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    Nichts zu tun.
+                  </p>
+                </div>
+              )}
+            </section>
+          </>
+        )
+      })()}
 
       {/* ── Run selected but not found ───────────────────────────────────── */}
       {hasRuns && !runDetail && selectedRunId && (
