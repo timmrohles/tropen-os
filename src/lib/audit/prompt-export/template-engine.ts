@@ -129,7 +129,10 @@ function buildValidationSection(finding: PromptFinding, rec: ReturnType<typeof f
     checks.push('[ ] Kein Rollback-Risiko geprüft')
   }
 
-  checks.push('[ ] TypeScript kompiliert ohne Fehler (`tsc --noEmit`)')
+  checks.push('[ ] App baut noch ohne Fehler')
+  if (finding.agentSource && ['code-style', 'architecture', 'database', 'api'].includes(finding.agentSource)) {
+    checks.push('[ ] Keine neuen Linter-Warnings eingeführt')
+  }
 
   if (finding.agentSource === 'security' || finding.agentSource === 'security-scan') {
     checks.push('[ ] Security-relevant: manuell im Browser / Postman verifizieren')
