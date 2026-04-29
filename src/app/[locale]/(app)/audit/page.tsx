@@ -94,12 +94,19 @@ export default async function AuditPage({
 
   // Enrich findings server-side: fixType (Node.js only) + recommendation title/problem
   // _recTitle / _recProblem prevent finding-recommendations.ts from entering the client bundle.
+  // Memoize per ruleId — most findings share the same ruleId, avoiding O(n×m) regex scans.
+  const recCache = new Map<string, { title: string; problem: string } | null>()
   const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
     f.fix_type = getFixType(f.rule_id as string)
-    const rec = findRecommendation(f.rule_id as string, f.message as string)
-    if (rec) {
-      f._recTitle = rec.title
-      f._recProblem = rec.problem
+    const ruleId = f.rule_id as string
+    if (!recCache.has(ruleId)) {
+      const rec = findRecommendation(ruleId, f.message as string)
+      recCache.set(ruleId, rec ? { title: rec.title, problem: rec.problem } : null)
+    }
+    const cached = recCache.get(ruleId)
+    if (cached) {
+      f._recTitle = cached.title
+      f._recProblem = cached.problem
     }
     return f
   })
