@@ -58,10 +58,10 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
           Fix-Prompt
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={{ ...BTN_STYLE, opacity: 0.6 }}>
+          <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={BTN_STYLE}>
             Ausblenden
           </button>
-          <button onClick={copy} style={BTN_STYLE}>
+          <button onClick={copy} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)' }}>
             {copied
               ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
               : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
