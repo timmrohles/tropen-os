@@ -157,7 +157,31 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               </tr>
               {isExpanded && (
                 <tr key={`${key}-expanded`}>
-                  <td colSpan={4} style={{ padding: 0, background: 'var(--bg-base)' }}>
+                  <td colSpan={4} style={{ padding: 0 }}>
+                    {/* Context panel — Coach-Erklärung + betroffene Dateien */}
+                    <div style={{ padding: '12px 16px', background: 'var(--surface-warm)', borderTop: '1px solid var(--border)' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                        {recommendation?.problem ?? group.baseMessage}
+                      </p>
+                      {group.findings.length > 1 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {group.findings.slice(0, 8).map(f => f.file_path).filter(Boolean).map(p => (
+                            <span key={p} style={{
+                              fontSize: 11, fontFamily: 'var(--font-mono)', padding: '1px 7px',
+                              background: 'var(--bg-base)', border: '1px solid var(--border)',
+                              borderRadius: 3, color: 'var(--text-secondary)',
+                            }}>
+                              {p!.split('/').slice(-2).join('/')}
+                            </span>
+                          ))}
+                          {group.findings.length > 8 && (
+                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', padding: '1px 4px' }}>
+                              +{group.findings.length - 8} weitere
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <PromptBox group={group} />
                   </td>
                 </tr>
