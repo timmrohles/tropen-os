@@ -92,8 +92,6 @@ function buildFixSection(
     lines.push('', '**Erster Schritt:**', rec.firstStep)
   } else if (finding.suggestion) {
     lines.push('', '**Vorgehensweise:**', finding.suggestion)
-  } else {
-    lines.push('', 'Analysiere das Problem und behebe es gemäß den Projekt-Konventionen.')
   }
 
   if (tool === 'claude-code' && finding.filePath) {
@@ -130,7 +128,6 @@ function buildValidationSection(finding: PromptFinding, rec: ReturnType<typeof f
   }
 
   checks.push('[ ] TypeScript kompiliert ohne Fehler (`tsc --noEmit`)')
-  checks.push('[ ] Bestehende Tests laufen noch (`pnpm test`)')
 
   if (finding.agentSource === 'security' || finding.agentSource === 'security-scan') {
     checks.push('[ ] Security-relevant: manuell im Browser / Postman verifizieren')
@@ -196,7 +193,7 @@ export function buildFixPrompt(
   // Refactoring warning
   if (fixType === 'refactoring') {
     sections.push('')
-    sections.push('## Hinweis\n⚠️ Dieses Refactoring sollte schrittweise durchgeführt werden. Prüfe nach jeder Änderung ob die Tests grün sind.')
+    sections.push('## Hinweis\n⚠️ Dieses Refactoring schrittweise durchführen — nach jedem Schritt `tsc --noEmit` prüfen.')
   }
 
   const why = buildWhySection(rec)
