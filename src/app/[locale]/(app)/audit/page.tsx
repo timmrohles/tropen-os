@@ -12,6 +12,7 @@ import {
 } from '@/lib/audit/page-data'
 import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
+import { findRecommendation } from '@/lib/audit/finding-recommendations'
 import { computeQuickWins } from '@/lib/audit/quick-wins'
 import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
 import type { AuditDomain } from '@/lib/audit/types'
@@ -91,9 +92,15 @@ export default async function AuditPage({
     }
   }
 
-  // Enrich findings with fixType from rule registry (server-side only — rule-registry uses Node.js)
+  // Enrich findings server-side: fixType (Node.js only) + recommendation title/problem
+  // _recTitle / _recProblem prevent finding-recommendations.ts from entering the client bundle.
   const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
-    (f as Record<string, unknown>).fix_type = getFixType(f.rule_id as string)
+    f.fix_type = getFixType(f.rule_id as string)
+    const rec = findRecommendation(f.rule_id as string, f.message as string)
+    if (rec) {
+      f._recTitle = rec.title
+      f._recProblem = rec.problem
+    }
     return f
   })
 

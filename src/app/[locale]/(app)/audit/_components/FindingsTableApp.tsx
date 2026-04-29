@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Copy, Check } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 import type { FindingGroup, AuditFinding } from '@/lib/audit/group-findings'
 import { groupFindings } from '@/lib/audit/group-findings'
-import { buildFixPrompt } from '@/lib/audit/prompt-export'
-import { findRecommendation } from '@/lib/audit/finding-recommendations'
-import type { PromptFinding } from '@/lib/audit/prompt-export/types'
+
+// No import from finding-recommendations or prompt-export — those are server-only bundles.
+// Fix prompts are fetched via /api/audit/fix-prompt on demand.
 
 interface FindingsTableAppProps {
   findings: AuditFinding[]
@@ -31,20 +31,35 @@ const BTN_STYLE: React.CSSProperties = {
 }
 
 function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void }) {
+  const [prompt, setPrompt] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const firstFinding = group.findings[0]
-  const pf: PromptFinding = {
-    ruleId: group.ruleId.split('::')[0],
-    severity: group.severity,
-    message: group.baseMessage,
-    filePath: firstFinding?.file_path ?? null,
-    agentSource: group.agentSource ?? null,
-    fixType: firstFinding?.fix_type ?? null,
-    affectedFiles: group.findings.map(f => f.file_path).filter((p): p is string => !!p),
-  }
-  const prompt = buildFixPrompt(pf, 'generic').content
+
+  useEffect(() => {
+    const uniqueFiles = [...new Set(group.findings.map(f => f.file_path).filter(Boolean))]
+    fetch('/api/audit/fix-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ruleId: group.ruleId,
+        message: group.baseMessage,
+        severity: group.severity,
+        filePath: firstFinding?.file_path ?? null,
+        affectedFiles: uniqueFiles,
+        agentSource: group.agentSource ?? null,
+        fixType: firstFinding?.fix_type ?? null,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => setPrompt(data.prompt ?? 'Fixe das Problem.'))
+      .catch(() => setPrompt('Fixe das Problem.'))
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group.ruleId])
 
   function copy() {
+    if (!prompt) return
     void navigator.clipboard.writeText(prompt).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -57,12 +72,16 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 10 }}>
           Fix-Prompt
         </span>
-        <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
-          {prompt}
-        </pre>
+        {loading ? (
+          <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Wird geladen…</p>
+        ) : (
+          <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
+            {prompt}
+          </pre>
+        )}
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '10px 16px', background: 'rgba(0,0,0,0.15)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={copy} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)' }}>
+        <button onClick={copy} disabled={loading} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)', opacity: loading ? 0.5 : 1 }}>
           {copied
             ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
             : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
@@ -114,10 +133,13 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         {groups.map(group => {
           const key = group.ruleId
           const isExpanded = expandedKey === key
-          const recommendation = findRecommendation(group.ruleId, group.baseMessage)
           const primaryFile = group.findings[0]?.file_path ?? null
-          const scoreGain = recommendation ? `+${(group.findings.length * 0.3).toFixed(1)}` : null
           const uniqueFiles = [...new Set(group.findings.map(f => f.file_path).filter((p): p is string => !!p))]
+          // Title and problem come from the server via the pre-enriched finding fields
+          const title = (group.findings[0] as unknown as Record<string, unknown>)?._recTitle as string | undefined
+          const problem = (group.findings[0] as unknown as Record<string, unknown>)?._recProblem as string | undefined
+          const hasRec = !!title
+          const scoreGain = hasRec ? `+${(group.findings.length * 0.3).toFixed(1)}` : null
 
           return (
             <React.Fragment key={key}>
@@ -132,7 +154,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
                 </td>
                 <td>
                   <span style={{ fontSize: 13, fontWeight: isExpanded ? 600 : 400, color: 'var(--text-primary)' }}>
-                    {recommendation?.title ?? group.baseMessage}
+                    {title ?? group.baseMessage}
                   </span>
                   {group.findings.length > 1 && (
                     <span
@@ -153,10 +175,9 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               {isExpanded && (
                 <tr key={`${key}-expanded`}>
                   <td colSpan={4} style={{ padding: 0, textAlign: 'left' }}>
-                    {/* Context panel — Coach-Erklärung + betroffene Dateien */}
                     <div style={{ padding: '12px 16px', background: 'var(--surface-warm)', borderTop: '1px solid var(--border)' }}>
                       <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                        {recommendation?.problem ?? group.baseMessage}
+                        {problem ?? group.baseMessage}
                       </p>
                       {uniqueFiles.length > 1 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
