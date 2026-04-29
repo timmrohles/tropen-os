@@ -59,9 +59,9 @@ export async function checkCognitiveComplexity(ctx: AuditContext): Promise<RuleR
     const medThreshold = isTsx ? 35 : 25
     for (const fn of analysis.functions) {
       if (fn.cognitiveComplexity > highThreshold) {
-        violations.push({ severity: 'high', message: `Function "${fn.name}" has CC=${fn.cognitiveComplexity} — very hard to maintain`, filePath: file.path, line: fn.startLine, suggestion: `Cursor-Prompt: 'Refactor ${fn.name} in ${file.path.split('/').pop()} — extract helper functions to reduce complexity below ${medThreshold}'` })
+        violations.push({ severity: 'high', message: `${fn.name} hat CC=${fn.cognitiveComplexity} — zu komplex zum Lesen und Warten`, filePath: file.path, line: fn.startLine, suggestion: `Cursor-Prompt: 'Refactor ${fn.name} in ${file.path.split('/').pop()} — extract helper functions to reduce complexity below ${medThreshold}'` })
       } else if (fn.cognitiveComplexity > medThreshold) {
-        violations.push({ severity: 'medium', message: `Function "${fn.name}" has CC=${fn.cognitiveComplexity} — consider simplifying`, filePath: file.path, line: fn.startLine, suggestion: `Cursor-Prompt: 'Simplify ${fn.name} in ${file.path.split('/').pop()} — reduce nesting and extract conditions'` })
+        violations.push({ severity: 'medium', message: `${fn.name} hat CC=${fn.cognitiveComplexity} — vereinfachen lohnt sich`, filePath: file.path, line: fn.startLine, suggestion: `Cursor-Prompt: 'Simplify ${fn.name} in ${file.path.split('/').pop()} — reduce nesting and extract conditions'` })
       }
     }
   }

@@ -58,8 +58,8 @@ export async function checkSupabasePITR(ctx: AuditContext): Promise<RuleResult> 
 
   return fail('cat-13-rule-9', 3, 'Supabase detected — verify PITR status', [{
     severity: 'info',
-    message: 'Supabase detected — Point-in-Time-Recovery (PITR) is only active on Pro plan. Check: Dashboard → Database → Backups',
-    suggestion: "Add to README: 'Backup: Supabase [free/pro] — PITR [enabled/disabled]'",
+    message: 'Supabase PITR nur im Pro-Plan aktiv — regelmäßige Backups fehlen ohne Upgrade',
+    suggestion: "Cursor-Prompt: 'Add README note: Backup-Status — Supabase [free/pro], PITR [enabled/disabled]'",
   }])
 }
 
@@ -197,23 +197,10 @@ export async function checkOfflineFallback(ctx: AuditContext): Promise<RuleResul
 
 // ── cat-23: Infrastructure ──────────────────────────────────────────────────
 
-export async function checkHealthEndpoint(ctx: AuditContext): Promise<RuleResult> {
-  const has = ctx.filePaths.some(k =>
-    k.includes('/api/health') || k.includes('/healthz') || k.includes('/health/route')
-  )
-
-  if (has) return pass('cat-23-rule-3', 5, 'Health check endpoint found')
-  return fail('cat-23-rule-3', 3, 'No health check', [{
-    severity: 'info',
-    message: 'No /api/health endpoint — monitoring tools cannot check app status',
-    suggestion: "Cursor-Prompt: 'Create app/api/health/route.ts returning { status: ok, timestamp } with HTTP 200'",
-  }])
-}
-
 export async function checkDeploymentDocs(ctx: AuditContext): Promise<RuleResult> {
   const deps = { ...ctx.packageJson.dependencies, ...ctx.packageJson.devDependencies }
   const isNextJs = 'next' in deps
-  if (!isNextJs) return pass('cat-23-rule-4', 5, 'Not a Next.js project — deployment docs not checked')
+  if (!isNextJs) return pass('cat-23-rule-6', 5, 'Not a Next.js project — deployment docs not checked')
 
   // File existence check via shared utility (see docs/checker-design-patterns.md P1)
   const rootVercel = fileExistsInAnyOf(ctx.rootPath, ['vercel.json', 'vercel.ts', 'Dockerfile', 'fly.toml'])
@@ -226,10 +213,10 @@ export async function checkDeploymentDocs(ctx: AuditContext): Promise<RuleResult
   const hasClaudeDeployDocs = claudeMd.includes('deploy') || claudeMd.includes('supabase db push') || claudeMd.includes('vercel')
 
   if (rootVercel || hasDeployDocs || hasClaudeDeployDocs) {
-    return pass('cat-23-rule-4', 5, 'Deployment setup documented')
+    return pass('cat-23-rule-6', 5, 'Deployment setup documented')
   }
 
-  return fail('cat-23-rule-4', 3, 'No deployment documentation', [{
+  return fail('cat-23-rule-6', 3, 'No deployment documentation', [{
     severity: 'info',
     message: 'No deployment setup documented — unclear how the project is deployed',
     suggestion: "Cursor-Prompt: 'Add deployment section to README.md for Vercel: npx vercel deploy'",

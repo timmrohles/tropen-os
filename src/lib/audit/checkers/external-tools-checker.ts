@@ -302,10 +302,10 @@ export async function checkBundleSizes(ctx: AuditContext): Promise<RuleResult> {
 
   const score = totalKb < 200 ? 5 : totalKb < 400 ? 4 : totalKb < 600 ? 3 : totalKb < 1024 ? 2 : 1
   const findings: Finding[] = totalKb >= 400
-    ? [{ severity: totalKb >= 1024 ? 'high' : 'medium', message: `Initial client JS: ${totalKb} KB (target: < 400 KB)`, suggestion: 'Use dynamic imports and tree-shaking to reduce bundle size', agentSource: 'performance' as AgentSource }]
+    ? [{ severity: totalKb >= 1024 ? 'high' : 'medium', message: `Initial JS ${totalKb} KB — Ziel <400 KB. Tree-Shaking und Dynamic Imports helfen`, suggestion: 'Use dynamic imports and tree-shaking to reduce bundle size', agentSource: 'performance' as AgentSource }]
     : []
 
-  return { ruleId: 'cat-7-rule-2', score, reason: `Initial client JS: ${totalKb} KB (framework + main + polyfills + webpack)`, findings, automated: true }
+  return { ruleId: 'cat-7-rule-2', score, reason: `Initial JS ${totalKb} KB (framework + main + polyfills + webpack)`, findings, automated: true }
 }
 
 // ── 4. ESLint detailed (per-violation findings) ───────────────────────────────

@@ -142,9 +142,9 @@ export async function checkPropDrilling(ctx: AuditContext): Promise<RuleResult> 
         : `forwards ${forwardedProps.length} props unchanged (${forwardedProps.slice(0, 3).join(', ')}${forwardedProps.length > 3 ? '...' : ''})`
       violations.push({
         severity,
-        message: `${componentName} ${what} — consider React Context or Zustand`,
+        message: `${componentName} leitet ${what} durch — React Context oder Zustand vereinfachen das`,
         filePath: file.path,
-        suggestion: `Cursor-Prompt: 'Refactor ${componentName} in ${file.path.split('/').pop()} to use React Context instead of drilling props to children'`,
+        suggestion: `Cursor-Prompt: 'Refactor ${componentName} in ${file.path.split('/').pop()} — move shared state to React Context or Zustand store'`,
       })
     }
   }
