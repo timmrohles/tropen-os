@@ -30,10 +30,11 @@ const BTN_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-mono)', background: 'transparent',
 }
 
-function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void }) {
+function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: () => void; onDismiss: () => void }) {
   const [prompt, setPrompt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
   const firstFinding = group.findings[0]
 
   useEffect(() => {
@@ -66,6 +67,21 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
     })
   }
 
+  async function dismiss() {
+    setDismissing(true)
+    await Promise.allSettled(
+      group.findings.map(f =>
+        fetch(`/api/audit/findings/${f.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'dismissed' }),
+        })
+      )
+    )
+    setDismissing(false)
+    onDismiss()
+  }
+
   return (
     <div style={{ background: 'var(--active-bg)', borderTop: '1px solid var(--border)' }}>
       <div style={{ padding: '14px 16px' }}>
@@ -88,6 +104,14 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
         </button>
         <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={BTN_STYLE}>
           Ausblenden
+        </button>
+        <button
+          onClick={dismiss}
+          disabled={dismissing}
+          title="Dauerhaft als 'Nicht relevant' markieren — erscheint im Tab Behoben/Nicht relevant, nicht mehr in Offen"
+          style={{ ...BTN_STYLE, opacity: dismissing ? 0.5 : 1, marginLeft: 'auto' }}
+        >
+          {dismissing ? 'Wird gespeichert…' : 'Nicht relevant'}
         </button>
       </div>
     </div>
@@ -199,6 +223,9 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
                       )}
                     </div>
                     <PromptBox group={group} onHide={() => {
+                      setHiddenKeys(prev => new Set(prev).add(key))
+                      setExpandedKey(null)
+                    }} onDismiss={() => {
                       setHiddenKeys(prev => new Set(prev).add(key))
                       setExpandedKey(null)
                     }} />
