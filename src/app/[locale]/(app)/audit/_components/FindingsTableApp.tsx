@@ -187,5 +187,23 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         })}
       </tbody>
     </table>
+    <div style={{
+      display: 'flex', gap: 16, flexWrap: 'wrap',
+      padding: '8px 16px', borderTop: '1px solid var(--border)',
+      background: 'var(--surface-warm)',
+    }}>
+      {([
+        ['critical', 'Kritisch'],
+        ['high',     'Hoch'],
+        ['medium',   'Mittel'],
+        ['low',      'Niedrig'],
+        ['info',     'Info'],
+      ] as const).map(([sev, label]) => (
+        <span key={sev} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+          <span className={`severity-dot ${SEV_DOT[sev]}`} role="img" aria-label={label} />
+          {label}
+        </span>
+      ))}
+    </div>
   )
 }
