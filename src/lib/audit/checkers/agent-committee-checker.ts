@@ -868,10 +868,10 @@ export async function checkAiProviderAbstraction(ctx: AuditContext): Promise<Rul
 export async function checkSignedBuilds(ctx: AuditContext): Promise<RuleResult> {
   const workflowDir = join(ctx.rootPath, '.github', 'workflows')
   if (!fs.existsSync(workflowDir)) {
-    return fail('cat-24-rule-5', 0, 'No GitHub Actions workflows — signed builds not configured', [{
+    return fail('cat-24-rule-5', 0, 'Keine GitHub Actions Workflows — Build-Signierung nicht konfiguriert', [{
       severity: 'low',
-      message: 'No CI workflow found to configure build provenance/signing',
-      suggestion: 'Add GitHub Actions workflow with SLSA provenance or cosign for signed builds',
+      message: 'Keine CI-Workflow-Datei gefunden — Build-Provenance und Signierung nicht konfiguriert',
+      suggestion: 'GitHub Actions Workflow mit SLSA-Provenance oder cosign für signierte Builds einrichten',
     }])
   }
 
@@ -886,10 +886,10 @@ export async function checkSignedBuilds(ctx: AuditContext): Promise<RuleResult> 
   if (hasProvenance) {
     return pass('cat-24-rule-5', 5, 'Build provenance/signing configured in CI workflow')
   }
-  return fail('cat-24-rule-5', 0, 'No signed build / provenance configuration found in CI', [{
+  return fail('cat-24-rule-5', 0, 'Keine Build-Signierung oder Provenance in CI gefunden', [{
     severity: 'low',
-    message: 'CI workflows do not configure build provenance or signing',
-    suggestion: 'Add SLSA provenance generation or cosign signing to CI pipeline',
+    message: 'CI-Workflows konfigurieren keine Build-Provenance und keine Signierung',
+    suggestion: 'SLSA-Provenance-Generierung oder cosign-Signierung in die CI-Pipeline einbauen',
   }])
 }
 

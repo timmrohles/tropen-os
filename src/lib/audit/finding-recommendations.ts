@@ -2373,6 +2373,36 @@ export const FINDING_RECOMMENDATIONS: FindingRecommendation[] = [
         '`git show v0.1.0` zeigt den korrekten Commit.',
     },
 
+  // ── Supply Chain: Build Provenance ───────────────────────────────────────
+  {
+    id: 'build-provenance-missing',
+    matchRuleIds: ['cat-24-rule-5'],
+    matchMessagePatterns: [/provenance|signing.*CI|CI.*signing|slsa|cosign|sigstore/i],
+    title: 'Build-Provenance fehlt — Herkunft der Artefakte nicht nachweisbar',
+    problem:
+      'Die CI-Pipeline generiert keine Build-Provenance und signiert keine Artefakte. ' +
+      'Ohne Signierung kann nicht verifiziert werden, dass ein veröffentlichtes Artefakt tatsächlich aus dem Repository stammt — ' +
+      'Supply-Chain-Angriffe (wie der SolarWinds-Hack) nutzen genau diese Lücke.',
+    impact:
+      'Enterprise-Kunden und öffentliche Verzeichnisse (npm, Docker Hub) verlangen zunehmend signierte Artefakte. ' +
+      'Der EU Cyber Resilience Act wird Build-Provenance für Software-Produkte verpflichtend machen.',
+    strategy:
+      'SLSA (Supply-chain Levels for Software Artifacts) ist der empfohlene Standard. ' +
+      'GitHub Actions bietet `actions/attest-build-provenance` als einfachen Einstieg ohne eigene Schlüsselverwaltung.',
+    firstStep:
+      "Cursor-Prompt: 'Füge in die GitHub Actions CI-Workflow-Datei einen Build-Provenance-Schritt ein: " +
+      "nach dem Build-Schritt `actions/attest-build-provenance@v1` mit dem Artefakt-Pfad aufrufen. " +
+      "Alternativ: `slsa-framework/slsa-github-generator` Action für SLSA Level 3.'",
+    fixApproach: 'config-change',
+    manualSteps: [
+      'GitHub Actions Workflow öffnen (`.github/workflows/`)',
+      'Nach dem Build-Schritt einfügen: `uses: actions/attest-build-provenance@v1` mit `subject-path`',
+      'Alternativ für SLSA L3: `slsa-framework/slsa-github-generator` verwenden',
+      'Für npm-Pakete: `npm publish --provenance` (erfordert GitHub Actions Umgebung)',
+    ],
+    verification: 'CI-Workflow enthält `attest-build-provenance` oder `slsa-generator`. Artefakte haben `.sigstore`-Attestierung.',
+  },
+
   // ── Enterprise: SBOM ──────────────────────────────────────────────────────
   {
     id: 'sbom-missing',
