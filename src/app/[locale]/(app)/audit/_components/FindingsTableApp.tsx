@@ -23,6 +23,13 @@ const SEV_DOT: Record<string, string> = {
   info:     'severity-dot--info',
 }
 
+const BTN_STYLE: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 4,
+  border: '1px solid var(--secondary)', borderRadius: 4, padding: '3px 8px',
+  fontSize: 11, color: 'var(--secondary)', cursor: 'pointer',
+  fontFamily: 'var(--font-mono)', background: 'transparent',
+}
+
 function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void }) {
   const [copied, setCopied] = useState(false)
   const firstFinding = group.findings[0]
@@ -35,8 +42,7 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
     fixType: firstFinding?.fix_type ?? null,
     affectedFiles: group.findings.map(f => f.file_path).filter((p): p is string => !!p),
   }
-  const generated = buildFixPrompt(pf, 'generic')
-  const prompt = generated.content
+  const prompt = buildFixPrompt(pf, 'generic').content
 
   function copy() {
     void navigator.clipboard.writeText(prompt).then(() => {
@@ -46,52 +52,23 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
   }
 
   return (
-    <div style={{
-      background: 'var(--active-bg)',
-      borderTop: '1px solid var(--border)',
-      padding: '14px 16px',
-    }}>
+    <div style={{ background: 'var(--active-bg)', borderTop: '1px solid var(--border)', padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
-          textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)',
-        }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
           Fix-Prompt
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={onHide}
-            title="Temporär ausblenden — beim nächsten Reload wieder sichtbar"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: 'transparent', border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 4, padding: '3px 8px',
-              fontSize: 11, color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
+          <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={{ ...BTN_STYLE, opacity: 0.6 }}>
             Ausblenden
           </button>
-          <button
-            onClick={copy}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 4, padding: '3px 8px',
-            fontSize: 11, color: 'rgba(255,255,255,0.7)', cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
-          }}
-        >
-          {copied
-            ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
-            : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
+          <button onClick={copy} style={BTN_STYLE}>
+            {copied
+              ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
+              : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
           </button>
         </div>
       </div>
-      <pre style={{
-        margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7,
-        color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto',
-      }}>
+      <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
         {prompt}
       </pre>
     </div>
