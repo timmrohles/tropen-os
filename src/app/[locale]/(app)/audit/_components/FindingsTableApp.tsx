@@ -157,7 +157,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               </tr>
               {isExpanded && (
                 <tr key={`${key}-expanded`}>
-                  <td colSpan={4} style={{ padding: 0 }}>
+                  <td colSpan={4} style={{ padding: 0, textAlign: 'left' }}>
                     {/* Context panel — Coach-Erklärung + betroffene Dateien */}
                     <div style={{ padding: '12px 16px', background: 'var(--surface-warm)', borderTop: '1px solid var(--border)' }}>
                       <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
