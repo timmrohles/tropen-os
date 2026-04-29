@@ -24,6 +24,7 @@ import { AppSection } from '@/components/app-ui/AppSection'
 import FindingsTableApp from './_components/FindingsTableApp'
 import { DsgvoTab } from './_components/DsgvoTab'
 import { KiActTab } from './_components/KiActTab'
+import { PerformanceTab } from './_components/PerformanceTab'
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
 interface PageProps {
@@ -236,6 +237,13 @@ export default async function AuditPage({
                   findings={activeFindings as unknown as Parameters<typeof DsgvoTab>[0]['findings']}
                   projectId={activeScanProjectId}
                   statusFilter={status}
+                />
+              ) : activeTab === 'performance' ? (
+                <PerformanceTab
+                  findings={activeFindings as unknown as Parameters<typeof PerformanceTab>[0]['findings']}
+                  statusFilter={status}
+                  lighthouseUrl={initialLighthouseUrl}
+                  hasLighthouseData={hasLighthouseData}
                 />
               ) : activeTab === 'ki-act' ? (
                 <KiActTab
