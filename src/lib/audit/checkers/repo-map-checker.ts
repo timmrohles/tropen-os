@@ -100,6 +100,8 @@ function isExemptFile(filePath: string): boolean {
     || /src[\\/]lib[\\/]audit[\\/]/.test(filePath)
     // Edge Functions are separate backend infrastructure — not subject to app file-size rules
     || /supabase[\\/]functions[\\/]/.test(filePath)
+    // CLI scripts are one-off tooling, not app code — consistent with CC exclusion in ast-quality-checker.ts
+    || /src[\\/]scripts[\\/]/.test(filePath)
 }
 
 export async function checkFileSizes(ctx: AuditContext): Promise<RuleResult> {
@@ -373,7 +375,7 @@ export async function checkNamingConventions(ctx: AuditContext): Promise<RuleRes
       if (!/^use[A-Z]/.test(nameWithoutExt) && !/^use-[a-z]/.test(nameWithoutExt)) {
         findings.push({
           severity: 'medium',
-          message: `Hook file missing 'use' prefix: ${filePath}`,
+          message: `Hook-Datei ohne 'use'-Prefix: ${filePath}`,
           filePath,
           suggestion: `Rename to use${nameWithoutExt.charAt(0).toUpperCase() + nameWithoutExt.slice(1)}.ts`,
         })

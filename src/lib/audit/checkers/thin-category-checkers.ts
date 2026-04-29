@@ -88,7 +88,7 @@ export async function checkGitignoreCompleteness(ctx: AuditContext): Promise<Rul
   if (!gitignore) {
     return fail('cat-19-rule-5', 0, 'No .gitignore found', [{
       severity: 'high',
-      message: 'No .gitignore — node_modules, .env, and build artifacts could be committed',
+      message: 'Kein .gitignore — node_modules, .env und Build-Artefakte könnten eingecheckt werden',
       suggestion: "Cursor-Prompt: 'Create .gitignore for a Next.js project with node_modules, .next, .env*, dist, coverage'",
     }])
   }
@@ -136,7 +136,7 @@ export async function checkDeploymentConfig(ctx: AuditContext): Promise<RuleResu
 
   return fail('cat-23-rule-5', 2, 'No deployment configuration found', [{
     severity: 'info',
-    message: 'No deployment config (Dockerfile, vercel.json, fly.toml) — unclear how to deploy',
+    message: 'Keine Deployment-Konfiguration (Dockerfile, vercel.json, fly.toml) — Deploy-Prozess unklar',
     suggestion: "Cursor-Prompt: 'Create vercel.json or Dockerfile for deployment configuration'",
   }])
 }
@@ -167,7 +167,7 @@ export async function checkNextFontDisplayMode(ctx: AuditContext): Promise<RuleR
 
   return fail('cat-15-rule-8', 3, 'next/font uses display: "optional" — fallback metrics not generated', [{
     severity: 'medium',
-    message: 'next/font with display: "optional" skips auto-generated size-adjust/ascent-override on the fallback font — layout shift is visible on font swap. Use display: "swap" instead.',
+    message: 'next/font mit display:"optional" — auto-generierte Fallback-Anpassungen werden unterdrückt. display:"swap" verwenden',
     filePath: layoutPath,
     suggestion: `Replace display: 'optional' with display: 'swap' in the next/font config. Next.js automatically generates an adjusted Arial fallback (size-adjust, ascent-override, descent-override) that makes the swap visually imperceptible.`,
     fixType: 'code-fix',
@@ -187,7 +187,7 @@ export async function checkTestFrameworkInstalled(ctx: AuditContext): Promise<Ru
 
   return fail('cat-10-rule-7', 0, 'No test framework installed', [{
     severity: 'high',
-    message: 'No test framework (vitest, jest, playwright) — no automated testing possible',
+    message: 'Kein Test-Framework (vitest, jest, playwright) — automatische Tests nicht möglich',
     suggestion: "Cursor-Prompt: 'Add vitest: pnpm add -D vitest @testing-library/react and create vitest.config.ts'",
   }])
 }

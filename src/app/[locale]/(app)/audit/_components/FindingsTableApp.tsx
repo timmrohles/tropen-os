@@ -117,6 +117,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
           const recommendation = findRecommendation(group.ruleId, group.baseMessage)
           const primaryFile = group.findings[0]?.file_path ?? null
           const scoreGain = recommendation ? `+${(group.findings.length * 0.3).toFixed(1)}` : null
+          const uniqueFiles = [...new Set(group.findings.map(f => f.file_path).filter((p): p is string => !!p))]
 
           return (
             <React.Fragment key={key}>
@@ -157,20 +158,20 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
                       <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
                         {recommendation?.problem ?? group.baseMessage}
                       </p>
-                      {group.findings.length > 1 && (
+                      {uniqueFiles.length > 1 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {group.findings.slice(0, 8).map(f => f.file_path).filter(Boolean).map(p => (
+                          {uniqueFiles.slice(0, 8).map(p => (
                             <span key={p} style={{
                               fontSize: 11, fontFamily: 'var(--font-mono)', padding: '1px 7px',
                               background: 'var(--bg-base)', border: '1px solid var(--border)',
                               borderRadius: 3, color: 'var(--text-secondary)',
                             }}>
-                              {p!.split('/').slice(-2).join('/')}
+                              {p.split('/').slice(-2).join('/')}
                             </span>
                           ))}
-                          {group.findings.length > 8 && (
+                          {uniqueFiles.length > 8 && (
                             <span style={{ fontSize: 11, color: 'var(--text-tertiary)', padding: '1px 4px' }}>
-                              +{group.findings.length - 8} weitere
+                              +{uniqueFiles.length - 8} weitere
                             </span>
                           )}
                         </div>

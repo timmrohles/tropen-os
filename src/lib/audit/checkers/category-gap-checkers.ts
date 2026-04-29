@@ -63,7 +63,7 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
   if (lodashInDeps && !/"lodash-es"\s*:/.test(pkgContent ?? '')) {
     violations.push({
       severity: 'info',
-      message: 'Full lodash imported — adds ~70KB to bundle. Use lodash-es or specific imports',
+      message: 'Vollständiges lodash importiert — ~70KB Overhead. lodash-es oder spezifische Imports nutzen',
       filePath: 'package.json',
       suggestion: "Cursor-Prompt: 'Replace import _ from lodash with specific imports like import pick from lodash/pick'",
     })
@@ -135,7 +135,7 @@ export async function checkCIPipelineExists(ctx: AuditContext): Promise<RuleResu
 
   return fail('cat-11-rule-7', 0, 'No CI/CD pipeline found', [{
     severity: 'high',
-    message: 'No CI pipeline — broken code can be deployed without any automated checks',
+    message: 'Keine CI-Pipeline — fehlerhafter Code kann ohne automatische Prüfung deployt werden',
     suggestion: "Cursor-Prompt: 'Create .github/workflows/ci.yml with install, type-check (tsc --noEmit), lint, and test steps'",
     fixHint: 'Create .github/workflows/ci.yml',
   }])
@@ -171,7 +171,7 @@ export async function checkCIHasTypeCheck(ctx: AuditContext): Promise<RuleResult
 
   return fail('cat-11-rule-8', 2, 'CI pipeline exists but has no type-check step', [{
     severity: 'medium',
-    message: 'CI pipeline runs without TypeScript type checking — type errors slip into production',
+    message: 'CI-Pipeline ohne TypeScript Type-Check — Typ-Fehler gelangen unbemerkt in Produktion',
     suggestion: "Add 'npx tsc --noEmit' step to your CI workflow before the build step",
   }])
 }

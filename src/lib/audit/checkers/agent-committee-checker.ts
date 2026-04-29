@@ -47,23 +47,27 @@ export async function checkEmptyCatchBlocks(ctx: AuditContext): Promise<RuleResu
   )
 
   const findings: Finding[] = []
+  // Only match truly empty catch blocks: catch(e) {} or catch(e) { /* comment only */ }
+  // Removed commentOnlyPattern: catch(e) { // comment ... } was flagging blocks that have
+  // real code below the opening comment (e.g. fire-and-forget routes with log.error calls)
   const emptyCatchPattern = /catch\s*\([^)]*\)\s*\{\s*\}/g
-  const commentOnlyPattern = /catch\s*\([^)]*\)\s*\{\s*\/\//g
+  const commentOnlyBlockPattern = /catch\s*\([^)]*\)\s*\{\s*\/\*[^*]*\*\/\s*\}/g
 
   for (const file of srcFiles.slice(0, 200)) {
     const content = readFile(ctx.rootPath, file.path)
     if (!content) continue
-    if (emptyCatchPattern.test(content) || commentOnlyPattern.test(content)) {
+    emptyCatchPattern.lastIndex = 0
+    commentOnlyBlockPattern.lastIndex = 0
+    if (emptyCatchPattern.test(content) || commentOnlyBlockPattern.test(content)) {
       findings.push({
         severity: 'high',
-        message: `Potential empty catch block in ${file.path}`,
+        message: `Leerer catch-Block in ${file.path} — Fehler werden stillschweigend ignoriert`,
         filePath: file.path,
         suggestion: 'Log the error or re-throw it — never silently swallow exceptions',
       })
     }
-    // reset regex state
     emptyCatchPattern.lastIndex = 0
-    commentOnlyPattern.lastIndex = 0
+    commentOnlyBlockPattern.lastIndex = 0
   }
 
   if (findings.length === 0) return pass('cat-2-rule-7', 5, 'No empty catch blocks detected in source files')
@@ -93,7 +97,7 @@ export async function checkCommentedOutCode(ctx: AuditContext): Promise<RuleResu
     if (codeComments.length > 0) {
       findings.push({
         severity: 'low',
-        message: `Commented-out code block in ${file.path} (${codeComments.length} block(s))`,
+        message: `Auskommentierter Code in ${file.path} (${codeComments.length} Block(e))`,
         filePath: file.path,
         suggestion: 'Remove commented-out code — version control preserves history',
       })
@@ -130,7 +134,7 @@ export async function checkLegalPages(ctx: AuditContext): Promise<RuleResult> {
   if (!hasDatenschutz) missing.push('Datenschutzerklärung')
   return fail('cat-4-rule-7', 0, `Missing legal pages: ${missing.join(', ')}`, missing.map((m) => ({
     severity: 'high' as const,
-    message: `${m} page not found — required by German law (TMG)`,
+    message: `${m}-Seite fehlt — gesetzlich verpflichtend (TMG/DSGVO)`,
     suggestion: `Create src/app/${m.toLowerCase()}/page.tsx`,
   })))
 }
@@ -141,7 +145,7 @@ export async function checkVVTPresent(ctx: AuditContext): Promise<RuleResult> {
   if (!fs.existsSync(docsDir)) {
     return fail('cat-4-rule-8', 0, 'docs/ directory not found — no VVT possible', [{
       severity: 'medium',
-      message: 'No docs directory found for VVT (Verarbeitungsverzeichnis)',
+      message: 'Kein VVT-Verzeichnis im docs/-Ordner — DSGVO Art. 30 schreibt Verarbeitungsverzeichnis vor',
       suggestion: 'Create docs/dsgvo/vvt.md documenting data processing activities',
     }])
   }
@@ -176,7 +180,7 @@ export async function checkVVTPresent(ctx: AuditContext): Promise<RuleResult> {
   }
   return fail('cat-4-rule-8', 0, 'No VVT (Verarbeitungsverzeichnis) found in docs/', [{
     severity: 'high',
-    message: 'VVT required by DSGVO Art. 30 — not found',
+    message: 'VVT (Verarbeitungsverzeichnis) nach DSGVO Art. 30 nicht gefunden',
     suggestion: 'Create docs/dsgvo/vvt.md with a record of all data processing activities',
   }])
 }
@@ -206,7 +210,7 @@ export async function checkCookieConsent(ctx: AuditContext): Promise<RuleResult>
   }
   return fail('cat-4-rule-9', 0, 'No cookie consent implementation found', [{
     severity: 'high',
-    message: 'Cookie consent required by DSGVO/ePrivacy — none detected',
+    message: 'Cookie-Consent fehlt — DSGVO/ePrivacy verlangt Opt-In vor Tracking',
     suggestion: 'Add a cookie consent banner before setting any non-essential cookies',
   }])
 }
@@ -234,7 +238,7 @@ export async function checkAnalyticsPiiSeparation(ctx: AuditContext): Promise<Ru
     if (piiFound.length > 0) {
       findings.push({
         severity: 'high',
-        message: `Potential PII in analytics event: ${file.path} (fields: ${piiFound.join(', ')})`,
+        message: `Mögliche Personendaten im Analytics-Event: ${file.path} (Felder: ${piiFound.join(', ')})`,
         filePath: file.path,
         suggestion: 'Hash or anonymize PII before sending to analytics — DSGVO requirement',
       })
@@ -290,14 +294,14 @@ export async function checkSoftDeletePattern(ctx: AuditContext): Promise<RuleRes
     }
     return fail('cat-5-rule-7', 3, 'deleted_at column exists but some migrations use hard DELETE', [{
       severity: 'medium',
-      message: `Inconsistent: deleted_at column exists but ${deleteCount} migrations contain DELETE FROM`,
+      message: `Inkonsistent: deleted_at-Spalte vorhanden, aber ${deleteCount} Migration(en) nutzen DELETE FROM statt Soft-Delete`,
       suggestion: 'Standardize on soft-delete — replace DELETE FROM with UPDATE SET deleted_at = NOW()',
     }])
   }
   if (!hasSoftDeleteColumn && deleteCount >= 3) {
     return fail('cat-5-rule-7', 0, 'No soft-delete pattern (deleted_at column) found in migrations', [{
       severity: 'medium',
-      message: `Tables lack deleted_at column for soft-delete support (${deleteCount} DELETE statements found)`,
+      message: `Tabellen ohne deleted_at-Spalte — ${deleteCount} DELETE-Statements ohne Soft-Delete-Muster gefunden`,
       suggestion: 'Add deleted_at TIMESTAMPTZ DEFAULT NULL to all user-data tables',
     }])
   }
@@ -332,13 +336,13 @@ export async function checkMigrationNaming(ctx: AuditContext): Promise<RuleResul
   if (consistency >= 0.7) {
     return fail('cat-5-rule-8', 3, `Migration naming mostly consistent: ${maxMatch}/${total} (${Math.round(consistency * 100)}%)`, [{
       severity: 'low',
-      message: 'Some migrations use inconsistent naming',
+      message: 'Migrations-Dateien: inkonsistente Namenskonventionen',
       suggestion: 'Use sequential numbers (001_, 002_) for all migration filenames',
     }])
   }
   return fail('cat-5-rule-8', 1, `Inconsistent migration naming: only ${Math.round(consistency * 100)}% follow a pattern`, [{
     severity: 'medium',
-    message: 'Migration files have inconsistent naming conventions',
+    message: 'Migrations-Dateien nutzen inkonsistente Namenskonventionen',
     suggestion: 'Standardize on sequential (001_name.sql) or timestamp (20260101120000_name.sql)',
   }])
 }
@@ -364,7 +368,7 @@ export async function checkWebhookSignatureValidation(ctx: AuditContext): Promis
     if (!hasValidation) {
       findings.push({
         severity: 'high',
-        message: `Webhook route without signature validation: ${file.path}`,
+        message: `Webhook-Route ohne Signatur-Validierung: ${file.path}`,
         filePath: file.path,
         suggestion: 'Validate HMAC signature on all incoming webhook requests before processing',
       })
@@ -410,7 +414,7 @@ export async function checkTimeoutRetryPatterns(ctx: AuditContext): Promise<Rule
     return fail('cat-6-rule-7', 1, `${hasFetchWithoutTimeout.length} files with fetch() calls lack explicit timeout`, [
       {
         severity: 'medium',
-        message: `${hasFetchWithoutTimeout.length} file(s) with fetch() have no timeout/AbortController`,
+        message: `${hasFetchWithoutTimeout.length} Datei(en) nutzen fetch() ohne Timeout oder AbortController`,
         suggestion: 'Add AbortController with a timeout to all external fetch() calls',
         affectedFiles: hasFetchWithoutTimeout.map((f) => f.path),
         fixHint: 'Wrap each fetch() call with AbortController: const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 10000); fetch(url, { signal: ctrl.signal })',
@@ -440,7 +444,7 @@ export async function checkGlobalMutableState(ctx: AuditContext): Promise<RuleRe
     if (mutableGlobalPattern.test(content)) {
       findings.push({
         severity: 'medium',
-        message: `Module-level mutable state detected: ${file.path}`,
+        message: `Mutabler State auf Modul-Ebene in ${file.path} — kann Race Conditions verursachen`,
         filePath: file.path,
         suggestion: 'Avoid module-level let — use singletons with proper initialization or dependency injection',
       })
@@ -524,7 +528,7 @@ export async function checkStagingEnvironment(ctx: AuditContext): Promise<RuleRe
 
   return fail('cat-11-rule-6', 0, 'No staging environment configuration found', [{
     severity: 'medium',
-    message: 'No staging/preview environment configuration detected',
+    message: 'Keine Staging/Preview-Umgebung konfiguriert — Änderungen landen direkt in Produktion',
     suggestion: 'Configure Vercel preview deployments or add a staging workflow in .github/workflows/',
   }])
 }
@@ -578,7 +582,7 @@ export async function checkCodeownersPresent(ctx: AuditContext): Promise<RuleRes
   }
   return fail('cat-14-rule-5', 0, 'No CODEOWNERS file found', [{
     severity: 'medium',
-    message: 'CODEOWNERS not found — no automatic PR review assignment',
+    message: 'CODEOWNERS fehlt — kein automatisches PR-Review-Assignment',
     suggestion: 'Create .github/CODEOWNERS to assign reviewers based on file paths',
   }])
 }
@@ -589,7 +593,7 @@ export async function checkKiDependencyReviewDocs(ctx: AuditContext): Promise<Ru
   if (!fs.existsSync(docsDir)) {
     return fail('cat-14-rule-6', 0, 'docs/ not found — no KI dependency review process documented', [{
       severity: 'low',
-      message: 'No documentation for AI-assisted dependency review process',
+      message: 'KI-unterstützter Dependency-Review-Prozess nicht dokumentiert',
       suggestion: 'Document the KI dependency review process in docs/engineering-process.md',
     }])
   }
@@ -617,7 +621,7 @@ export async function checkKiDependencyReviewDocs(ctx: AuditContext): Promise<Ru
   }
   return fail('cat-14-rule-6', 2, 'No KI dependency review documentation found', [{
     severity: 'low',
-    message: 'AI-assisted dependency review process not documented',
+    message: 'KI-unterstützter Dependency-Review-Prozess nicht dokumentiert',
     suggestion: 'Add docs/engineering-process.md with dependency review procedure',
   }])
 }
@@ -655,7 +659,7 @@ export async function checkHardcodedColors(ctx: AuditContext): Promise<RuleResul
     if (matches.length > 0) {
       findings.push({
         severity: 'medium',
-        message: `Hardcoded hex color(s) in ${file.path}: ${[...new Set(matches)].slice(0, 5).join(', ')}`,
+        message: `Hardcodierte Hex-Farbe(n) in ${file.path}: ${[...new Set(matches)].slice(0, 5).join(', ')}`,
         filePath: file.path,
         suggestion: 'Replace hex values with CSS variables (e.g. var(--accent), var(--text-primary))',
       })
@@ -686,7 +690,7 @@ export async function checkCssVariablesFile(ctx: AuditContext): Promise<RuleResu
     if (varCount >= 3)  return pass('cat-15-rule-6', 3, `CSS file found at ${c} but only ${varCount} CSS variables`)
     return fail('cat-15-rule-6', 2, `${c} exists but has < 3 CSS custom properties`, [{
       severity: 'low',
-      message: 'CSS file has very few CSS custom properties',
+      message: 'CSS-Datei hat kaum Custom Properties — Design-Token fehlen',
       suggestion: 'Define all design tokens (colors, spacing, typography) as CSS custom properties',
     }])
   }
