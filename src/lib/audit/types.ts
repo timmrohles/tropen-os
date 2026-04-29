@@ -40,6 +40,14 @@ export type RuleTier = 'starter' | 'production' | 'enterprise'
  */
 export type AuditTier = 'code' | 'metric' | 'compliance'
 
+export type AuditDomain =
+  | 'code-quality'    // allgemeine Code-Hygiene, Architektur, Tests
+  | 'performance'     // Lighthouse, Bundle, Core Web Vitals
+  | 'security'        // OWASP, Auth, Injection, Secrets, DB-Sicherheit
+  | 'accessibility'   // WCAG, ARIA, BFSG
+  | 'dsgvo'           // DSGVO-Pflichten, Cookie-Consent, Datenexport
+  | 'ki-act'          // EU AI Act, Risiko-Klassifizierung
+
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
   message: string
@@ -90,6 +98,8 @@ export interface AuditRule {
   maturityTier?: RuleTier
   /** Semantic tier: code (fix it), metric (track it), compliance (prove it). Added 2026-04-27. */
   tier?: AuditTier
+  /** Domain-Tab in dem diese Rule erscheint. Added 2026-04-29 (ADR-025). */
+  domain?: AuditDomain
 }
 
 export interface PackageJson {
