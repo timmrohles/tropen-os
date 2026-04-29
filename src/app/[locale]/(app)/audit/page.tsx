@@ -241,6 +241,18 @@ export default async function AuditPage({
               ) : (
                 <DomainEmptyState domain={activeTab} hasRun={hasRuns} />
               )}
+
+              {activeFindings.filter(f => (f as Record<string, unknown>).status === 'fixed').length > 0 && (
+                <AppSection
+                  header={`Behoben · ${activeFindings.filter(f => (f as Record<string, unknown>).status === 'fixed').length}`}
+                  style={{ marginTop: 16 }}
+                >
+                  <FindingsTableApp
+                    findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                    statusFilter="fixed"
+                  />
+                </AppSection>
+              )}
             </section>
           </>
         )
