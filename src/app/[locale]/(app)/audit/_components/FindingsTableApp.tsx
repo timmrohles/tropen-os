@@ -109,7 +109,7 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
           onClick={dismiss}
           disabled={dismissing}
           title="Dauerhaft als 'Nicht relevant' markieren — erscheint im Tab Behoben/Nicht relevant, nicht mehr in Offen"
-          style={{ ...BTN_STYLE, opacity: dismissing ? 0.5 : 1, marginLeft: 'auto' }}
+          style={{ ...BTN_STYLE, opacity: dismissing ? 0.5 : 1 }}
         >
           {dismissing ? 'Wird gespeichert…' : 'Nicht relevant'}
         </button>
