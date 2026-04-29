@@ -30,9 +30,15 @@ export async function checkAuthGuardConsistency(ctx: AuditContext): Promise<Rule
   const apiRoutes = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/app/api/') && f.path.endsWith('route.ts')
   )
-  const nonPublicRoutes = apiRoutes.filter(
-    (f) => !publicPrefixes.some((p) => f.path.replace('src/app', '').includes(p))
-  )
+  const nonPublicRoutes = apiRoutes.filter((f) => {
+    if (publicPrefixes.some((p) => f.path.replace('src/app', '').includes(p))) return false
+    // Exclude routes that only return 4xx/5xx (deprecated/gone/stub routes — no data access)
+    const content = ctx.fileContents?.get(f.path) ?? ''
+    const hasOnlyErrorResponses = content.length > 0
+      && /status:\s*[45]\d\d/.test(content)
+      && !/\.from\s*\(|supabase|getUser|createClient|fetch\s*\(/.test(content)
+    return !hasOnlyErrorResponses
+  })
   if (nonPublicRoutes.length === 0) {
     return pass('cat-3-rule-15', 3, 'No non-public API routes to check')
   }
