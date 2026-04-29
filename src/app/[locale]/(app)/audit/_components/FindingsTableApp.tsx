@@ -100,6 +100,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
   }
 
   return (
+    <>
     <table className="app-table">
       <thead>
         <tr>
@@ -205,5 +206,6 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         </span>
       ))}
     </div>
+    </>
   )
 }
