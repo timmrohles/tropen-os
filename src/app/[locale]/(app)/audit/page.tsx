@@ -168,7 +168,7 @@ export default async function AuditPage({
         const domainLabel = (d: AuditDomain): string => ({
           'code-quality': 'Code-Qualität', 'performance': 'Performance',
           'security': 'Sicherheit', 'accessibility': 'Barrierefreiheit',
-          'dsgvo': 'DSGVO', 'ki-act': 'KI-Act',
+          'dsgvo': 'DSGVO', 'ki-act': 'KI-Act', 'documentation': 'Doku-Hygiene',
         }[d])
 
         const tabHref = (domain: AuditDomain): string => {
@@ -208,6 +208,8 @@ export default async function AuditPage({
                 href: tabHref('dsgvo'), hasDanger: hasDsgvoDanger },
               { id: 'ki-act',        label: 'KI-Act',         count: domainCounts['ki-act'],
                 href: tabHref('ki-act'), hasDanger: hasKiActDanger },
+              { id: 'documentation', label: 'Doku',           count: domainCounts['documentation'],
+                href: tabHref('documentation') },
             ]} />
 
             {/* ── Domain Content ──────────────────────────────────────────── */}

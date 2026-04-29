@@ -361,14 +361,14 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('cat-17-rule-3', 17, 'Locale-sensitive Formatierung', 2),
 
   // ── Category 18: Dokumentation (weights: 2,2,2,1) ────────────────────────
-  { id: 'cat-18-rule-1', categoryId: 18, name: 'README vollstaendig und aktuell', weight: 2, checkMode: 'documentation', automatable: true, check: checkReadmePresent, fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
+  { id: 'cat-18-rule-1', categoryId: 18, name: 'README vollstaendig und aktuell', weight: 2, checkMode: 'documentation', automatable: true, check: checkReadmePresent, fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
   {
     id: 'cat-18-rule-2', categoryId: 18, name: 'ADRs vorhanden', weight: 2, checkMode: 'documentation', automatable: true,
     check: async (ctx: AuditContext) => { const r = await checkADRsPresent(ctx); return { ...r, ruleId: 'cat-18-rule-2' } },
-    fixType: 'code-gen', domain: 'code-quality' as AuditDomain,
+    fixType: 'code-gen', domain: 'documentation' as AuditDomain,
   },
-  manual('cat-18-rule-3', 18, 'API-Dokumentation generiert', 2, 'code-gen'),
-  manual('cat-18-rule-4', 18, 'Onboarding < 30 Minuten erreichbar', 1, 'code-gen'),
+  manual('cat-18-rule-3', 18, 'API-Dokumentation generiert', 2, 'code-gen', 'code', undefined, 'documentation'),
+  manual('cat-18-rule-4', 18, 'Onboarding < 30 Minuten erreichbar', 1, 'code-gen', 'code', undefined, 'documentation'),
   { id: 'cat-18-rule-5', categoryId: 18, name: 'Lighthouse SEO', weight: 1, checkMode: 'external-tool', automatable: true, check: checkLighthouseSeo, agentSource: 'lighthouse-seo', fixType: 'code-fix', tier: 'metric', domain: 'code-quality' },
 
   // ── Category 19: Git Governance (weights: 3,1,2) ──────────────────────────
@@ -499,8 +499,8 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-13-rule-9', categoryId: 13, name: 'Supabase PITR-Status verifiziert', weight: 1, checkMode: 'repo-map', automatable: true, check: checkSupabasePITR, agentSource: 'backup-dr', fixType: 'manual' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-8-rule-6', categoryId: 8, name: 'API-Routes mit externen Calls haben Timeout', weight: 2, checkMode: 'repo-map', automatable: true, check: checkAPITimeouts, agentSource: 'scalability', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-8-rule-7', categoryId: 8, name: 'Datenbank-Queries haben Limit/Pagination', weight: 2, checkMode: 'repo-map', automatable: true, check: checkUnlimitedQueries, agentSource: 'scalability', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
-  { id: 'cat-18-rule-7', categoryId: 18, name: 'README vollstaendig', weight: 2, checkMode: 'repo-map', automatable: true, check: checkReadmeQuality, agentSource: 'content', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
-  { id: 'cat-18-rule-8', categoryId: 18, name: 'CHANGELOG vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkChangelog, agentSource: 'content', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
+  { id: 'cat-18-rule-7', categoryId: 18, name: 'README vollstaendig', weight: 2, checkMode: 'repo-map', automatable: true, check: checkReadmeQuality, agentSource: 'content', fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
+  { id: 'cat-18-rule-8', categoryId: 18, name: 'CHANGELOG vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkChangelog, agentSource: 'content', fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
   { id: 'cat-21-rule-5', categoryId: 21, name: 'Web App Manifest vorhanden', weight: 1, checkMode: 'repo-map', automatable: true, check: checkWebManifest, fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-21-rule-6', categoryId: 21, name: 'Offline-Fallback (Service Worker)', weight: 1, checkMode: 'repo-map', automatable: true, check: checkOfflineFallback, fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
   // cat-23-rule-2 (Health Check) already exists via file-system-checker
@@ -517,10 +517,10 @@ export const AUDIT_RULES: AuditRule[] = [
   // ── SPEC_AGENT — cat-18 extensions (Sprint 11) ───────────────────────────
   // Context quality checks: are AI context files meaningful? Is there a PRD?
   // DISTINCT from cat-18-rule-1 (README exists) and cat-18-rule-7 (README length).
-  { id: 'cat-18-rule-9',  categoryId: 18, name: 'KI-Kontext-Datei vorhanden und vollstaendig', weight: 2, checkMode: 'file-system', automatable: true, check: checkAiContextFile, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
-  { id: 'cat-18-rule-10', categoryId: 18, name: 'PRD oder Requirements-Dokument vorhanden', weight: 1, checkMode: 'file-system', automatable: true, check: checkPrdPresent, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
-  { id: 'cat-18-rule-11', categoryId: 18, name: 'README-Implementation-Drift', weight: 1, checkMode: 'repo-map', automatable: true, check: checkReadmeDrift, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
-  { id: 'cat-18-rule-12', categoryId: 18, name: '.cursorrules enthaelt Tech-Stack', weight: 1, checkMode: 'file-system', automatable: true, check: checkCursorrulesHasStack, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
+  { id: 'cat-18-rule-9',  categoryId: 18, name: 'KI-Kontext-Datei vorhanden und vollstaendig', weight: 2, checkMode: 'file-system', automatable: true, check: checkAiContextFile, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
+  { id: 'cat-18-rule-10', categoryId: 18, name: 'PRD oder Requirements-Dokument vorhanden', weight: 1, checkMode: 'file-system', automatable: true, check: checkPrdPresent, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
+  { id: 'cat-18-rule-11', categoryId: 18, name: 'README-Implementation-Drift', weight: 1, checkMode: 'repo-map', automatable: true, check: checkReadmeDrift, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-gen' , tier: 'code', domain: 'documentation' },
+  { id: 'cat-18-rule-12', categoryId: 18, name: '.cursorrules enthaelt Tech-Stack', weight: 1, checkMode: 'file-system', automatable: true, check: checkCursorrulesHasStack, agentSource: 'spec', enforcement: 'advisory', fixType: 'code-fix' , tier: 'code', domain: 'documentation' },
 
   // ── Category 26: KI-Code-Hygiene (SLOP_DETECTION_AGENT, Sprint 11) ─────────
   // Detects patterns common in unreviewed AI-generated code. Non-judgmental: awareness only.

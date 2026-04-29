@@ -1,5 +1,5 @@
 // src/lib/audit/domain-filter.ts
-// Domain-based finding filter for the 6-tab audit UI (ADR-025).
+// Domain-based finding filter for the 7-tab audit UI (ADR-025 + ADR-026).
 // Replaces tier-based filtering (getFindingsByTier) for UI purposes.
 // tier still exists for internal scoring; domain is for display.
 
@@ -13,6 +13,7 @@ export const ALL_DOMAINS: AuditDomain[] = [
   'accessibility',
   'dsgvo',
   'ki-act',
+  'documentation',
 ]
 
 export function getDomainForRule(ruleId: string): AuditDomain {
@@ -38,6 +39,7 @@ export function getDomainCounts(
     'accessibility': 0,
     'dsgvo': 0,
     'ki-act': 0,
+    'documentation': 0,
   }
   for (const f of open) {
     const domain = getDomainForRule(f.rule_id as string)

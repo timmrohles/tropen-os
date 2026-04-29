@@ -33,6 +33,11 @@ const DOMAIN_COPY: Record<AuditDomain, { headline: string; description: string; 
     description: 'Keine offenen KI-Act-Pflichten. Pflichten werden aktiv wenn KI-Features erkannt werden.',
     tools: [],
   },
+  'documentation': {
+    headline: 'Doku-Hygiene — alles aktuell',
+    description: 'README, ADRs, CHANGELOG und KI-Kontext sind vollständig. Doku-Drift ist das unsichtbare Tech Debt.',
+    tools: [],
+  },
 }
 
 interface Props {

@@ -47,6 +47,7 @@ export type AuditDomain =
   | 'accessibility'   // WCAG, ARIA, BFSG
   | 'dsgvo'           // DSGVO-Pflichten, Cookie-Consent, Datenexport
   | 'ki-act'          // EU AI Act, Risiko-Klassifizierung
+  | 'documentation'   // README-Drift, ADRs, Changelog, KI-Kontext (ADR-026)
 
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
