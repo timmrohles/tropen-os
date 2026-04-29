@@ -27,8 +27,6 @@ import ScoreTrend from './_components/ScoreTrendLazy'
 import FindingsTable from './_components/FindingsTable'
 import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
-import AuditTabs from './_components/AuditTabs'
-import AuditTierTabs from './_components/AuditTierTabs'
 import { AppTabs } from '@/components/app-ui/AppTabs'
 import { AppSection } from '@/components/app-ui/AppSection'
 import FindingsTableApp from './_components/FindingsTableApp'
@@ -220,7 +218,7 @@ export default async function AuditPage({
         return (
           <>
             {/* Score-Block kompakt — Tabellen-Welt-Stil */}
-            <div id="audit-score-hero">
+            <div id="audit-score-hero" style={{ position: 'sticky', top: 0, zIndex: 21, background: 'var(--bg-base)' }}>
               <ScoreBar
                 percentage={runDetail.percentage as number}
                 status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
