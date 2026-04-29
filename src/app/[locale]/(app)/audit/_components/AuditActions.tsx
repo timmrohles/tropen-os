@@ -151,24 +151,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <input
-          suppressHydrationWarning
-          type="url"
-          value={lighthouseUrl}
-          onChange={(e) => handleUrlChange(e.target.value)}
-          placeholder={isVercelEnv ? 'Lighthouse (nur lokal)' : t('lighthousePlaceholder')}
-          disabled={isAuditRunning || isVercelEnv}
-          title={isVercelEnv ? 'Lighthouse-Analyse nur lokal verfügbar — pnpm exec tsx src/scripts/run-audit.ts --with-tools --lighthouse-url URL' : undefined}
-          aria-label={t('lighthousePlaceholder')}
-          aria-disabled={isVercelEnv}
-          style={{
-            height: 36, padding: '0 12px', borderRadius: 8, fontSize: 13,
-            border: '1px solid var(--border)', background: 'var(--bg-surface-solid)',
-            color: 'var(--text-primary)', outline: 'none', width: 300,
-            opacity: (isAuditRunning || isVercelEnv) ? 0.45 : 1,
-            cursor: isVercelEnv ? 'not-allowed' : 'text',
-          }}
-        />
         <button
           className="btn btn-primary"
           onClick={handleTrigger}

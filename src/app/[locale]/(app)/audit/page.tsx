@@ -242,7 +242,8 @@ export default async function AuditPage({
                 <PerformanceTab
                   findings={activeFindings as unknown as Parameters<typeof PerformanceTab>[0]['findings']}
                   statusFilter={status}
-                  lighthouseUrl={initialLighthouseUrl}
+                  initialLighthouseUrl={initialLighthouseUrl}
+                  scanProjectId={activeScanProjectId}
                   hasLighthouseData={hasLighthouseData}
                 />
               ) : activeTab === 'ki-act' ? (
