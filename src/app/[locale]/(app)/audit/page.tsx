@@ -203,7 +203,7 @@ export default async function AuditPage({
               { id: 'security',      label: 'Sicherheit',     count: domainCounts['security'],
                 href: tabHref('security') },
               { id: 'accessibility', label: 'Barrierefrei.',  count: domainCounts['accessibility'],
-                href: tabHref('accessibility'), comingSoon: true },
+                href: tabHref('accessibility') },
               { id: 'dsgvo',         label: 'DSGVO',          count: domainCounts['dsgvo'],
                 href: tabHref('dsgvo'), hasDanger: hasDsgvoDanger },
               { id: 'ki-act',        label: 'KI-Act',         count: domainCounts['ki-act'],
