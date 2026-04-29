@@ -6,43 +6,39 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import {
   fetchUserOrgId,
   fetchAuditRuns,
-  fetchAuditReviewRuns,
   fetchAuditRunDetail,
-  fetchAuditCategoryScores,
   fetchAuditFindings,
   fetchScanProjects,
 } from '@/lib/audit/page-data'
 import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { computeQuickWins } from '@/lib/audit/quick-wins'
-import { getPercentileRank } from '@/lib/audit/score-percentile'
-import { getTierCounts, getFindingsByTier } from '@/lib/audit/tier-filter'
-import { complianceFrameworks, getFrameworkScore } from '@/lib/audit/compliance-mapping'
+import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
+import type { AuditDomain } from '@/lib/audit/types'
+import { DomainEmptyState } from './_components/DomainEmptyState'
 import BetaFeedbackButton from './_components/BetaFeedbackButton'
-import QuickWinsCard from './_components/QuickWinsCard'
-import ScoreHero from './_components/ScoreHero'
 import ScoreBar from './_components/ScoreBar'
-import CategoryBreakdown from './_components/CategoryBreakdown'
-import ScoreTrend from './_components/ScoreTrendLazy'
-import FindingsTable from './_components/FindingsTable'
-import RunHistory from './_components/RunHistory'
 import AuditActions from './_components/AuditActions'
 import { AppTabs } from '@/components/app-ui/AppTabs'
 import { AppSection } from '@/components/app-ui/AppSection'
 import FindingsTableApp from './_components/FindingsTableApp'
-import ComplianceStatus from './_components/ComplianceStatus'
-
 export const metadata = { title: 'Code Audit — Tropen OS' }
 
 interface PageProps {
-  searchParams: Promise<{ runId?: string; status?: string; severity?: string; agent?: string; project?: string }>
+  searchParams: Promise<{
+    runId?: string; status?: string; severity?: string; agent?: string; project?: string
+    tab?: string  // ← domain tab
+  }>
 }
 
 export default async function AuditPage({
   searchParams }: PageProps) {
   const locale = await getLocale()
-  const { runId: requestedRunId, status: statusParam, severity, agent, project: projectParam } = await searchParams
+  const { runId: requestedRunId, status: statusParam, project: projectParam, tab: tabParam } = await searchParams
   const status = statusParam ?? 'open'
+  const activeTab: AuditDomain = (ALL_DOMAINS as string[]).includes(tabParam ?? '')
+    ? (tabParam as AuditDomain)
+    : 'code-quality'
 
   const t = await getTranslations('audit')
   const supabase = await createClient()
@@ -64,25 +60,22 @@ export default async function AuditPage({
   const activeScanProjectId = projectParam ?? null
 
   // ── Runs list ─────────────────────────────────────────────────────────────
-  const [runList, reviewRunList] = orgId
+  const [runList] = orgId
     ? await Promise.all([
         fetchAuditRuns(orgId, activeScanProjectId === null ? undefined : activeScanProjectId),
-        fetchAuditReviewRuns(orgId),
       ])
-    : [[], []]
+    : [[]]
 
   const selectedRunId = requestedRunId ?? runList[0]?.id ?? null
 
   // ── Selected run details ──────────────────────────────────────────────────
   let runDetail: Record<string, unknown> | null = null
-  let categories: unknown[] = []
   let findings: unknown[] = []
   let delta: number | null = null
 
   if (selectedRunId) {
-    ;[runDetail, categories, findings] = await Promise.all([
+    ;[runDetail, findings] = await Promise.all([
       fetchAuditRunDetail(selectedRunId),
-      fetchAuditCategoryScores(selectedRunId),
       fetchAuditFindings(selectedRunId),
     ])
 
@@ -101,39 +94,6 @@ export default async function AuditPage({
     return f
   })
 
-  // Compute deep review badge info server-side — consensus_level does not survive React flight serialization.
-  // When the selected run is a plain automated scan, fall back to the most recent multi_model run so
-  // badges remain visible after a fresh automated re-scan.
-  const deepReviewBadges: Record<string, { level: string; count: number }> = {}
-  function collectBadges(src: Array<Record<string, unknown>>) {
-    for (const f of src) {
-      if (f.consensus_level) {
-        const key = `${(f.rule_id as string) || 'unknown'}::${(f.agent_source as string) ?? 'core'}`
-        if (!deepReviewBadges[key]) {
-          deepReviewBadges[key] = {
-            level: f.consensus_level as string,
-            count: ((f.models_flagged as string[]) ?? []).length,
-          }
-        }
-      }
-    }
-  }
-  collectBadges(findings as Array<Record<string, unknown>>)
-
-  // Fallback: if current run has no deep review findings, pull badges from the latest multi_model run
-  if (Object.keys(deepReviewBadges).length === 0 && selectedRunId) {
-    const latestReviewRun = runList.find(
-      (r) => (r as { id: string; review_type?: string | null }).review_type === 'multi_model' && r.id !== selectedRunId
-    )
-    if (latestReviewRun) {
-      const reviewFindings = await fetchAuditFindings(latestReviewRun.id)
-      collectBadges(reviewFindings as Array<Record<string, unknown>>)
-    }
-  }
-
-  const openFindings = allFindings.filter((f) => f.status === 'open').length
-  const criticalOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'critical').length
-  const highOpenFindings = allFindings.filter((f) => f.status === 'open' && f.severity === 'high').length
   const isFirstRun = runList.length === 1
   const hasRuns = runList.length > 0
 
@@ -147,17 +107,9 @@ export default async function AuditPage({
   const hasLighthouseData = (findings as { agent_source?: string }[]).some(
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
-  // fixType stats for display
-  const fixTypeStats = { 'code-fix': 0, 'code-gen': 0, refactoring: 0, manual: 0 }
-  for (const f of allFindings) {
-    const ft = getFixType(f.rule_id as string)
-    fixTypeStats[ft]++
-  }
-
-  // Quick wins + percentile (server-side computation)
-  const codeFindings = getFindingsByTier(allFindings, 'code')
+  // Quick wins (server-side computation)
+  const codeFindings = getFindingsByDomain(allFindings, 'code-quality')
   const { quickWins } = computeQuickWins(codeFindings as unknown as Parameters<typeof computeQuickWins>[0])
-  const percentileRank = runDetail ? getPercentileRank(runDetail.percentage as number) : null
 
   return (
     <div className="content-max">
@@ -208,12 +160,24 @@ export default async function AuditPage({
 
       {/* ── Run data ────────────────────────────────────────────────────── */}
       {hasRuns && runDetail && (() => {
-        const tierCounts = getTierCounts(allFindings)
-        const complianceHasDanger = complianceFrameworks.some(fw =>
-          getFrameworkScore(fw, allFindings).hasOpen
-        )
-        const complianceFindings = getFindingsByTier(allFindings, 'compliance')
-        const metricFindings = getFindingsByTier(allFindings, 'metric')
+        const domainCounts = getDomainCounts(allFindings)
+        const activeFindings = getFindingsByDomain(allFindings, activeTab)
+        const hasDsgvoDanger = domainCounts['dsgvo'] > 0
+        const hasKiActDanger = domainCounts['ki-act'] > 0
+
+        const domainLabel = (d: AuditDomain): string => ({
+          'code-quality': 'Code-Qualität', 'performance': 'Performance',
+          'security': 'Sicherheit', 'accessibility': 'Barrierefreiheit',
+          'dsgvo': 'DSGVO', 'ki-act': 'KI-Act',
+        }[d])
+
+        const tabHref = (domain: AuditDomain): string => {
+          const params = new URLSearchParams()
+          params.set('tab', domain)
+          if (selectedRunId) params.set('runId', selectedRunId)
+          if (activeScanProjectId) params.set('project', activeScanProjectId)
+          return `?${params.toString()}`
+        }
 
         return (
           <>
@@ -230,18 +194,27 @@ export default async function AuditPage({
               />
             </div>
 
-            {/* ── Sticky Tier-Tab-Bar (App-Welt-Stil) ────────────────────── */}
+            {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}
             <AppTabs tabs={[
-              { id: 'findings',   label: 'Findings',   count: tierCounts.code,       sectionId: 'findings' },
-              { id: 'metrics',    label: 'Metriken',   count: tierCounts.metric,     sectionId: 'metrics' },
-              { id: 'compliance', label: 'Compliance', count: tierCounts.compliance, sectionId: 'compliance', hasDanger: complianceHasDanger },
+              { id: 'code-quality',  label: 'Code-Qualität',  count: domainCounts['code-quality'],
+                href: tabHref('code-quality') },
+              { id: 'performance',   label: 'Performance',    count: domainCounts['performance'],
+                href: tabHref('performance') },
+              { id: 'security',      label: 'Sicherheit',     count: domainCounts['security'],
+                href: tabHref('security') },
+              { id: 'accessibility', label: 'Barrierefrei.',  count: domainCounts['accessibility'],
+                href: tabHref('accessibility'), comingSoon: true },
+              { id: 'dsgvo',         label: 'DSGVO',          count: domainCounts['dsgvo'],
+                href: tabHref('dsgvo'), hasDanger: hasDsgvoDanger },
+              { id: 'ki-act',        label: 'KI-Act',         count: domainCounts['ki-act'],
+                href: tabHref('ki-act'), hasDanger: hasKiActDanger },
             ]} />
 
-            {/* ── TIER 1: FINDINGS ───────────────────────────────────────── */}
-            <section id="findings" className="audit-tier-section">
+            {/* ── Domain Content ──────────────────────────────────────────── */}
+            <section id="domain-content" className="audit-tier-section">
 
-              {/* Quick Wins — Limette-Tint-Header */}
-              {quickWins.length > 0 && (
+              {/* Quick Wins only in code-quality tab */}
+              {activeTab === 'code-quality' && quickWins.length > 0 && (
                 <AppSection
                   header={`⚡ Quick Wins · ${quickWins.length} schnelle Fixes`}
                   accent
@@ -250,97 +223,21 @@ export default async function AuditPage({
                   <FindingsTableApp
                     findings={quickWins as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
                     statusFilter="open"
-                    isQuickWins
                   />
                 </AppSection>
               )}
 
-              {/* Alle Findings — Tabellen-Welt */}
-              <AppSection
-                header={`Findings · ${tierCounts.code} offen`}
-              >
-                <FindingsTableApp
-                  findings={codeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
-                  statusFilter={status}
-                />
-              </AppSection>
-
-              {/* Kategorien + Verlauf als Sekundär-Akkordeon */}
-              <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
-                <details style={{ flex: '1 1 400px' }}>
-                  <summary style={{
-                    padding: '10px 16px', background: 'var(--surface-warm)',
-                    border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
-                    fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--accent)',
-                  }}>
-                    Kategorien ({(categories as unknown[]).length})
-                  </summary>
-                  <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 4px 4px', background: '#fff' }}>
-                    <CategoryBreakdown
-                      categories={categories as Parameters<typeof CategoryBreakdown>[0]['categories']}
-                      findings={allFindings as unknown as Parameters<typeof CategoryBreakdown>[0]['findings']}
-                      isExternalProject={activeScanProjectId !== null}
-                      hasExternalTools={hasLighthouseData}
-                    />
-                  </div>
-                </details>
-
-                <details style={{ flex: '1 1 400px' }}>
-                  <summary style={{
-                    padding: '10px 16px', background: 'var(--surface-warm)',
-                    border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
-                    fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', color: 'var(--accent)',
-                  }}>
-                    Verlauf ({runList.length} Runs)
-                  </summary>
-                  <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 4px 4px', background: '#fff', padding: 16 }}>
-                    <ScoreTrend runs={runList} />
-                    <RunHistory runs={runList} reviewRuns={reviewRunList} selectedRunId={selectedRunId ?? undefined} />
-                  </div>
-                </details>
-              </div>
-            </section>
-
-            {/* ── TIER 2: METRIKEN ───────────────────────────────────────── */}
-            <section id="metrics" className="audit-tier-section">
-
-              <AppSection header={`Metriken · ${tierCounts.metric} offen`}>
-                {metricFindings.length > 0 ? (
+              {activeFindings.length > 0 ? (
+                <AppSection
+                  header={`${domainLabel(activeTab)} · ${domainCounts[activeTab]} offen`}
+                >
                   <FindingsTableApp
-                    findings={metricFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                    findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
                     statusFilter={status}
                   />
-                ) : (
-                  <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
-                      Noch keine Metrik-Findings.
-                    </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-                      Lighthouse-URL eintragen um Ladezeit + Core Web Vitals zu messen.
-                    </p>
-                  </div>
-                )}
-              </AppSection>
-
-            </section>
-
-            {/* ── TIER 3: COMPLIANCE ─────────────────────────────────────── */}
-            <section id="compliance" className="audit-tier-section">
-              <h2 className="audit-tier-heading">Was Pflicht ist</h2>
-
-              {complianceFindings.length > 0 || complianceHasDanger ? (
-                <ComplianceStatus findings={allFindings} />
+                </AppSection>
               ) : (
-                <div className="card" style={{ padding: '32px 24px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--status-success)', marginBottom: 4 }}>
-                    Alle Pflichten erfüllt.
-                  </p>
-                  <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-                    Nichts zu tun.
-                  </p>
-                </div>
+                <DomainEmptyState domain={activeTab} hasRun={hasRuns} />
               )}
             </section>
           </>
