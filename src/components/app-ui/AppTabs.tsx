@@ -14,10 +14,17 @@ export interface AppTabDef {
 
 interface AppTabsProps {
   tabs: AppTabDef[]
+  /** When provided (URL-based routing), overrides internal active state. */
+  activeTabId?: string
 }
 
-export function AppTabs({ tabs }: AppTabsProps) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? '')
+export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
+  const [activeTab, setActiveTab] = useState(activeTabId ?? tabs[0]?.id ?? '')
+
+  // Sync when server re-renders with a different activeTabId (URL-based navigation)
+  useEffect(() => {
+    if (activeTabId) setActiveTab(activeTabId)
+  }, [activeTabId])
 
   // ResizeObserver — hält --score-header-height dynamisch aktuell
   useEffect(() => {
@@ -32,8 +39,9 @@ export function AppTabs({ tabs }: AppTabsProps) {
     return () => ro.disconnect()
   }, [])
 
-  // IntersectionObserver — aktiver Tab folgt sichtbarer Section
+  // IntersectionObserver — aktiver Tab folgt sichtbarer Section (nur ohne href-Routing)
   useEffect(() => {
+    if (activeTabId) return  // URL-based routing handles active state
     const observers: IntersectionObserver[] = []
     tabs.forEach(tab => {
       const el = document.getElementById(tab.sectionId ?? tab.id)
@@ -46,7 +54,7 @@ export function AppTabs({ tabs }: AppTabsProps) {
       observers.push(observer)
     })
     return () => observers.forEach(o => o.disconnect())
-  }, [tabs])
+  }, [tabs, activeTabId])
 
   return (
     <div className="app-tabs" role="tablist">

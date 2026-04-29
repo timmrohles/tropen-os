@@ -195,7 +195,7 @@ export default async function AuditPage({
             </div>
 
             {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}
-            <AppTabs tabs={[
+            <AppTabs activeTabId={activeTab} tabs={[
               { id: 'code-quality',  label: 'Code-Qualität',  count: domainCounts['code-quality'],
                 href: tabHref('code-quality') },
               { id: 'performance',   label: 'Performance',    count: domainCounts['performance'],
