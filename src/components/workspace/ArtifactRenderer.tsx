@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { FloppyDisk, ArrowsOut, Code, FileText, Table, ListBullets, Atom, Play, ChatCircle, ArrowSquareOut, ProjectorScreen, CaretLeft, CaretRight, DownloadSimple, ChartBar, Warning, ArrowClockwise } from '@phosphor-icons/react'
+
+const CodeBlock = dynamic(() => import('./CodeBlock'), { ssr: false })
 import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
 
 interface ArtifactActionEvent {
@@ -103,7 +104,7 @@ function buildChartIframeHtml(config: object): string {
   <script>
     var chart = echarts.init(document.getElementById('chart'), null, { renderer: 'canvas' })
     // eslint-disable-next-line -- hex color palette injected into iframe JS (CSS vars unavailable in iFrame)
-    var defaultColor = ['#2D7A50','#4A9E72','#86C9A4','#D4EDDE','#1a5c37','#5ab882']
+    var defaultColor = ['#3F4A55','#5A6872','#8A9AA8','#EEF2DD','#A8B852','#7A8E3A']
     var option = ${JSON.stringify(config)}
     if (!option.color) option.color = defaultColor
     if (!option.backgroundColor) option.backgroundColor = 'transparent'
@@ -483,14 +484,9 @@ export default function ArtifactRenderer({
         </>
       ) : (
         <div className="artifact-code">
-          <SyntaxHighlighter
-            style={oneDark}
-            language={codeLanguage(artifact)}
-            PreTag="div"
-            customStyle={{ borderRadius: 0, fontSize: 13, margin: 0 }}
-          >
+          <CodeBlock language={codeLanguage(artifact)} customStyle={{ borderRadius: 0, margin: 0 }}>
             {artifact.content}
-          </SyntaxHighlighter>
+          </CodeBlock>
         </div>
       )}
     </div>

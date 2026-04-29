@@ -81,7 +81,7 @@ function YoutubeCard({ src }: { src: SearchSource }) {
 }
 
 // eslint-disable-next-line -- hex color palette for domain badges (CSS vars not applicable in JS arrays)
-const DOMAIN_COLORS: [string, string][] = [['#e8f4f0', '#2D7A50'], ['#f0e8f4', '#7A2D6E'], ['#f4f0e8', '#7A5A2D'], ['#e8eef4', '#2D4E7A'], ['#f4e8e8', '#7A2D2D'], ['#e8f4f4', '#2D7A7A']] // eslint-disable
+const DOMAIN_COLORS: [string, string][] = [['#e8eaec', '#3F4A55'], ['#f0e8f4', '#7A2D6E'], ['#f4f0e8', '#7A5A2D'], ['#e8eef4', '#2D4E7A'], ['#f4e8e8', '#7A2D2D'], ['#e8f4f4', '#2D7A7A']] // eslint-disable
 
 function domainColor(domain: string): [string, string] {
   let h = 0

@@ -136,8 +136,17 @@ export default function RecommendationCard({
             background: SEV_COLOR[group.severity], flexShrink: 0,
           }} aria-hidden="true" />
 
-          {/* Agent badge */}
-          {group.agentSource && group.agentSource !== 'core' && (
+          {/* Pflicht-Tag für Compliance-Findings, normales Badge für alle anderen */}
+          {group.agentSource === 'dsgvo' && (
+            <span className="duty-tag duty-tag--dsgvo" style={{ flexShrink: 0 }}>DSGVO-Pflicht</span>
+          )}
+          {group.agentSource === 'bfsg' && (
+            <span className="duty-tag duty-tag--bfsg" style={{ flexShrink: 0 }}>BFSG-Pflicht</span>
+          )}
+          {group.agentSource === 'ai-act' && (
+            <span className="duty-tag duty-tag--ai-act" style={{ flexShrink: 0 }}>EU-AI-Act-Pflicht</span>
+          )}
+          {group.agentSource && !['core', 'dsgvo', 'bfsg', 'ai-act'].includes(group.agentSource) && (
             <span style={{
               fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 3,
               border: '1px solid var(--border)', color: 'var(--text-tertiary)',
@@ -282,7 +291,7 @@ export default function RecommendationCard({
                       <div style={{
                         display: 'flex', gap: 8, alignItems: 'flex-start',
                         padding: '8px 10px', borderRadius: 5,
-                        background: 'rgba(45,122,80,0.06)', border: '1px solid rgba(45,122,80,0.2)',
+                        background: 'rgba(45,122,80,0.06)', border: '1px solid rgba(63,74,85,0.2)',
                         marginBottom: 12,
                       }}>
                         <SealCheck size={14} weight="fill" color="var(--accent)" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />

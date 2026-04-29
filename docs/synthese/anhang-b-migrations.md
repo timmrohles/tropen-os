@@ -28,6 +28,7 @@ Pro Sprint die zugehörigen Migrations. Reihenfolge **wichtig**, weil viele Migr
 | **Sprint 0** | Hygiene | Migrations-Nummerierung-Kollision auflösen | niedrig |
 | **Sprint 0** | Hygiene | Fix-Engine-Tabellen mit Feature-Flag | niedrig |
 | **Sprint 1** | UI-only | (keine Migrations) | — |
+| **Sprint 1** | Tasks-Schicht | BP6 — Schreibzugriff entzogen am 2026-04-28. Route + API 410. DROP TABLE audit_tasks folgt in Sprint 4. | niedrig |
 | **Sprint 2** | UI-only | (keine Migrations) | — |
 | **Sprint 3** | Membership | Membership-Cluster konsolidieren | mittel |
 | **Sprint 3** | PW | PW-Cluster konsolidieren | hoch (APPEND ONLY) |

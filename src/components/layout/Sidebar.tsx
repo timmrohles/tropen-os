@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
-  CaretLeft, CaretRight, GearSix, House, ClipboardText, ListChecks,
+  CaretLeft, CaretRight, GearSix, House, ClipboardText,
 } from '@phosphor-icons/react'
 
 
@@ -105,7 +105,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems: NavItem[] = [
     { href: '/dashboard', icon: <House size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
     { href: '/audit',     icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
-    { href: '/tasks',     icon: <ListChecks size={18} weight="bold" aria-hidden="true" />, label: 'Tasks', matchPrefix: '/tasks' },
   ]
 
   const userName = user?.user_metadata?.full_name as string | undefined ?? user?.email ?? 'Account'

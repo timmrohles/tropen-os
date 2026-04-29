@@ -1,4 +1,4 @@
-# ADR-007: Prompt-Veredler-Architektur
+# ADR-021: Prompt-Veredler-Architektur
 
 **Status:** Proposed
 **Datum:** 2026-04-27

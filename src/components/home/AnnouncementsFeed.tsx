@@ -27,7 +27,7 @@ export default function AnnouncementsFeed({ announcements, orgName }: Props) {
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '2px 6px',
                 borderRadius: 4,
-                background: a.source === 'tropen' ? 'var(--accent)' : 'var(--active-bg)',
+                background: a.source === 'tropen' ? 'var(--accent)' : 'var(--accent)',
                 color: 'var(--text-inverse)', whiteSpace: 'nowrap', flexShrink: 0,
               }}>
                 {a.source === 'tropen' ? 'Tropen' : orgName}

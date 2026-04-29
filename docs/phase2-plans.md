@@ -2,6 +2,21 @@
 > Detaillierte Pläne für Phase 2. Vollständige Plan-Dokumente: `docs/superpowers/plans/`
 > Stand: 2026-03-17
 
+> ⚠️ **STATUS: Eingefroren seit 2026-04-27** (Tag-4-Pivot)
+>
+> Diese Pläne (A–L) gehören zur **Phase-2-Vision (KMU-Phase)**.
+> Die Vision wurde am 2026-04-27 zugunsten der MVP-Phase
+> (Production-Readiness-Tool) zurückgestellt.
+>
+> Die hier beschriebenen Features (Chat, Workspaces, Feeds, Agenten,
+> Perspectives, Library-System) sind im Code vorhanden, aber nicht
+> aktiver Bestandteil der MVP-Strategie.
+>
+> Aktive Roadmap: `docs/product/roadmap-2026-q2.md`
+> Phase-2-Backup: `docs/phase-2-vision.md`
+>
+> Wieder-Aktivierungs-Bedingungen: siehe `docs/synthese/anhang-c-kill-und-einfrier-liste.md`
+
 ---
 
 ## Governance-Regel: Feature-Parität mit Claude.ai

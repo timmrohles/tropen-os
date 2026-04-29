@@ -1,4 +1,4 @@
-# ADR-001: Supabase als Auth- und Datenbank-Plattform
+# ADR-003: Supabase als Auth- und Datenbank-Plattform
 
 **Datum:** 2026-03-07 (initiale Entscheidung) — dokumentiert 2026-03-19
 **Status:** Entschieden

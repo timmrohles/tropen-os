@@ -1,4 +1,4 @@
-# ADR-011: Artifact-System — iFrame-Sandbox mit Sucrase-Transformation
+# ADR-009: Artifact-System — iFrame-Sandbox mit Sucrase-Transformation
 
 **Datum:** 2026-03 — dokumentiert 2026-03-26
 **Status:** Entschieden

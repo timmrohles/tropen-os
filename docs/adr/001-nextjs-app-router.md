@@ -1,4 +1,4 @@
-# ADR-007: Next.js 16 mit App Router als Web-Framework
+# ADR-001: Next.js 16 mit App Router als Web-Framework
 
 **Datum:** 2026-02 (initiale Entscheidung) — dokumentiert 2026-03-26
 **Status:** Entschieden

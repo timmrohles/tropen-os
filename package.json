@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 next build",
     "security:scan": "gitleaks detect --config .gitleaks.toml --verbose",
     "start": "next start",
     "lint": "eslint src",
@@ -23,7 +23,8 @@
     "lint:design": "node scripts/ci/lint-design-system.mjs",
     "lint:deps": "depcruise src --config .dependency-cruiser.cjs",
     "lint:features": "node scripts/ci/check-feature-guards.mjs",
-    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features",
+    "lint:rule-ids": "node scripts/ci/check-rule-id-consistency.mjs",
+    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features && pnpm lint:rule-ids",
     "analyze": "ANALYZE=true pnpm build"
   },
   "dependencies": {

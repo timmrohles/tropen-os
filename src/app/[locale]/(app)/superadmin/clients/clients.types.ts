@@ -40,7 +40,7 @@ export const onboardingDone = (org: OrgRow) =>
 export const planStyle: Record<string, React.CSSProperties> = {
   free:       { background: '#4a5568', color: '#ffffff' },
   pro:        { background: 'var(--accent)', color: '#ffffff' },
-  enterprise: { background: 'var(--active-bg)', color: '#ffffff', border: '1px solid var(--accent)' },
+  enterprise: { background: 'var(--accent)', color: '#ffffff', border: '1px solid var(--accent)' },
 }
 
 export const s: Record<string, React.CSSProperties> = {

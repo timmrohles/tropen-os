@@ -1,4 +1,4 @@
-# ADR-009: Schnittstellen-Strategie zwischen Tropen OS und Bau-Tools
+# ADR-023: Schnittstellen-Strategie zwischen Tropen OS und Bau-Tools
 
 **Status:** Proposed
 **Datum:** 2026-04-27

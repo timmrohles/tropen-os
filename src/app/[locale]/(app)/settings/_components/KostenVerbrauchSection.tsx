@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import {
@@ -11,8 +12,8 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@tremor/react'
-import CostChart from '@/app/[locale]/(app)/dashboard/CostChart'
-import Co2Card from '@/app/[locale]/(app)/dashboard/Co2Card'
+const CostChart = dynamic(() => import('@/app/[locale]/(app)/dashboard/CostChart'), { ssr: false })
+const Co2Card  = dynamic(() => import('@/app/[locale]/(app)/dashboard/Co2Card'),   { ssr: false })
 
 type Period = 'today' | 'week' | 'month'
 
@@ -118,7 +119,7 @@ export function KostenVerbrauchSection() {
             </div>
             <div className="card" style={{ padding: '16px 20px' }}>
               <p style={labelStyle}>{t('kosten.topModel')}</p>
-              <p style={{ ...metricStyle, fontSize: 18, color: 'var(--active-bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ ...metricStyle, fontSize: 18, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {data.topModel}
               </p>
             </div>
@@ -169,7 +170,7 @@ export function KostenVerbrauchSection() {
                         <TableRow key={i}>
                           <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{ws.name}</TableCell>
                           <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{ws.requests}</TableCell>
-                          <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                          <TableCell style={{ color: 'var(--accent)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
                             {fmt(ws.cost)}
                           </TableCell>
                           <TableCell>
@@ -213,7 +214,7 @@ export function KostenVerbrauchSection() {
                         <TableRow key={i}>
                           <TableCell style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.name}</TableCell>
                           <TableCell style={{ color: 'var(--text-secondary)', textAlign: 'right' }}>{u.requests}</TableCell>
-                          <TableCell style={{ color: 'var(--active-bg)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
+                          <TableCell style={{ color: 'var(--accent)', textAlign: 'right', fontFamily: 'monospace', fontSize: 13 }}>
                             {fmt(u.cost)}
                           </TableCell>
                           <TableCell style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{u.lastActive}</TableCell>

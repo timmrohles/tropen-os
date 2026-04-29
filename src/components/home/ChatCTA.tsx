@@ -50,7 +50,7 @@ export default function ChatCTA({ workspaceId }: { workspaceId: string | null })
     >
       <div
         className="card"
-        style={{ background: 'var(--active-bg)', border: 'none' }}
+        style={{ background: 'var(--accent)', border: 'none' }}
       >
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',

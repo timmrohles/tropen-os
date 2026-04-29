@@ -1,4 +1,4 @@
-# ADR-005: Chart-Bibliotheken
+# ADR-008: Chart-Bibliotheken
 
 > **Status:** Entschieden — März 2026
 > **Entscheider:** Timm

@@ -1,4 +1,4 @@
-# ADR-009: Vercel als Deployment-Plattform
+# ADR-002: Vercel als Deployment-Plattform
 
 **Datum:** 2026-02 (initiale Entscheidung) — dokumentiert 2026-03-26
 **Status:** Entschieden

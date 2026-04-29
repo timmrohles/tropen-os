@@ -1,0 +1,3189 @@
+{
+  "project": "tropen-os",
+  "date": "2026-04-23",
+  "rootPath": "C:\\Users\\timmr\\tropenOS",
+  "categories": [
+    {
+      "categoryId": 1,
+      "name": "Architektur",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-1-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-1-rule-2",
+          "score": 4,
+          "reason": "730 exported symbols in src/lib/ vs 620 in API routes (54% in lib/)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-3",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-1-rule-4",
+          "score": 4,
+          "reason": "49 large file(s) (0 violations over 500 lines)",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "scripts/migrate-projects.ts has 471 lines — approaching limit",
+              "filePath": "scripts/migrate-projects.ts",
+              "suggestion": "Cursor-Prompt: 'Split migrate-projects.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/actions/feeds.ts has 448 lines — approaching limit",
+              "filePath": "src/actions/feeds.ts",
+              "suggestion": "Cursor-Prompt: 'Split feeds.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/actions/workspaces.ts has 442 lines — approaching limit",
+              "filePath": "src/actions/workspaces.ts",
+              "suggestion": "Cursor-Prompt: 'Split workspaces.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/admin/branding/page.tsx has 391 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/admin/branding/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/admin/models/page.tsx has 420 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/admin/models/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/admin/todos/todoDataConcepts.ts has 398 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/admin/todos/todoDataConcepts.ts",
+              "suggestion": "Cursor-Prompt: 'Split todoDataConcepts.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/admin/todos/todoDataFeatures.ts has 355 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/admin/todos/todoDataFeatures.ts",
+              "suggestion": "Cursor-Prompt: 'Split todoDataFeatures.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/admin/todos/todoDataOps.ts has 434 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/admin/todos/todoDataOps.ts",
+              "suggestion": "Cursor-Prompt: 'Split todoDataOps.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/artifacts/page.tsx has 442 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/artifacts/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/AuditActions.tsx has 309 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/AuditActions.tsx",
+              "suggestion": "Cursor-Prompt: 'Split AuditActions.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/BetaFeedbackButton.tsx has 333 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/BetaFeedbackButton.tsx",
+              "suggestion": "Cursor-Prompt: 'Split BetaFeedbackButton.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/CategoryRowItem.tsx has 306 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/CategoryRowItem.tsx",
+              "suggestion": "Cursor-Prompt: 'Split CategoryRowItem.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/FindingsTable.tsx has 410 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FindingsTable.tsx",
+              "suggestion": "Cursor-Prompt: 'Split FindingsTable.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/FixPreview.tsx has 458 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FixPreview.tsx",
+              "suggestion": "Cursor-Prompt: 'Split FixPreview.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx has 475 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx",
+              "suggestion": "Cursor-Prompt: 'Split RecommendationCard.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/_components/ScoreHero.tsx has 368 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/_components/ScoreHero.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ScoreHero.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/audit/page.tsx has 321 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/audit/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/chat/ChatPageClient.tsx has 431 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/chat/ChatPageClient.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ChatPageClient.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/dashboard/page.tsx has 371 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/dashboard/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/feeds/SourcesView.tsx has 429 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/feeds/SourcesView.tsx",
+              "suggestion": "Cursor-Prompt: 'Split SourcesView.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/feeds/new/page.tsx has 316 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/feeds/new/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/feeds/page.tsx has 464 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/feeds/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/knowledge/page.tsx has 402 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/knowledge/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/superadmin/announcements/page.tsx has 358 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/superadmin/announcements/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/superadmin/beta/page.tsx has 331 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/superadmin/beta/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/superadmin/clients/page.tsx has 481 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/superadmin/clients/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/superadmin/perspectives/page.tsx has 461 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/superadmin/perspectives/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/tasks/_components/TasksClient.tsx has 470 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/tasks/_components/TasksClient.tsx",
+              "suggestion": "Cursor-Prompt: 'Split TasksClient.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/workspaces/[id]/CanvasClient.tsx has 327 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/workspaces/[id]/CanvasClient.tsx",
+              "suggestion": "Cursor-Prompt: 'Split CanvasClient.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/(app)/workspaces/page.tsx has 327 lines — approaching limit",
+              "filePath": "src/app/[locale]/(app)/workspaces/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/beta/page.tsx has 360 lines — approaching limit",
+              "filePath": "src/app/[locale]/beta/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/page.tsx has 448 lines — approaching limit",
+              "filePath": "src/app/[locale]/page.tsx",
+              "suggestion": "Cursor-Prompt: 'Split page.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/[locale]/welcome/_components/WelcomeClient.tsx has 351 lines — approaching limit",
+              "filePath": "src/app/[locale]/welcome/_components/WelcomeClient.tsx",
+              "suggestion": "Cursor-Prompt: 'Split WelcomeClient.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/app/api/projects/scan/route.ts has 301 lines — approaching limit",
+              "filePath": "src/app/api/projects/scan/route.ts",
+              "suggestion": "Cursor-Prompt: 'Split route.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/hooks/useWorkspaceState.ts has 451 lines — approaching limit",
+              "filePath": "src/hooks/useWorkspaceState.ts",
+              "suggestion": "Cursor-Prompt: 'Split useWorkspaceState.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/agent-engine.ts has 395 lines — approaching limit",
+              "filePath": "src/lib/agent-engine.ts",
+              "suggestion": "Cursor-Prompt: 'Split agent-engine.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/agents/agent-catalog.ts has 342 lines — approaching limit",
+              "filePath": "src/lib/agents/agent-catalog.ts",
+              "suggestion": "Cursor-Prompt: 'Split agent-catalog.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/fix-engine/applier.ts has 475 lines — approaching limit",
+              "filePath": "src/lib/fix-engine/applier.ts",
+              "suggestion": "Cursor-Prompt: 'Split applier.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/fix-engine/consensus-generator.ts has 371 lines — approaching limit",
+              "filePath": "src/lib/fix-engine/consensus-generator.ts",
+              "suggestion": "Cursor-Prompt: 'Split consensus-generator.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/workspace-chat.ts has 447 lines — approaching limit",
+              "filePath": "src/lib/workspace-chat.ts",
+              "suggestion": "Cursor-Prompt: 'Split workspace-chat.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/workspace-context.ts has 330 lines — approaching limit",
+              "filePath": "src/lib/workspace-context.ts",
+              "suggestion": "Cursor-Prompt: 'Split workspace-context.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/lib/workspace-types.ts has 325 lines — approaching limit",
+              "filePath": "src/lib/workspace-types.ts",
+              "suggestion": "Cursor-Prompt: 'Split workspace-types.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/agent-gen-defs.ts has 389 lines — approaching limit",
+              "filePath": "src/scripts/agent-gen-defs.ts",
+              "suggestion": "Cursor-Prompt: 'Split agent-gen-defs.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/committee-review.ts has 366 lines — approaching limit",
+              "filePath": "src/scripts/committee-review.ts",
+              "suggestion": "Cursor-Prompt: 'Split committee-review.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/generate-agents.ts has 388 lines — approaching limit",
+              "filePath": "src/scripts/generate-agents.ts",
+              "suggestion": "Cursor-Prompt: 'Split generate-agents.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/generate-deep-agents.ts has 460 lines — approaching limit",
+              "filePath": "src/scripts/generate-deep-agents.ts",
+              "suggestion": "Cursor-Prompt: 'Split generate-deep-agents.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/review-agents.ts has 318 lines — approaching limit",
+              "filePath": "src/scripts/review-agents.ts",
+              "suggestion": "Cursor-Prompt: 'Split review-agents.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/review-repo-map.ts has 450 lines — approaching limit",
+              "filePath": "src/scripts/review-repo-map.ts",
+              "suggestion": "Cursor-Prompt: 'Split review-repo-map.ts into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/scripts/update-agents-from-reviews.ts has 455 lines — approaching limit",
+              "filePath": "src/scripts/update-agents-from-reviews.ts",
+              "suggestion": "Cursor-Prompt: 'Split update-agents-from-reviews.ts into smaller modules, each under 300 lines'"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-5",
+          "score": 5,
+          "reason": "20 ADRs in docs/adr/ — excellent documentation",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-6",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-1-rule-7",
+          "score": 5,
+          "reason": "No forbidden or ambiguous folder names found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-8",
+          "score": 5,
+          "reason": "All src/ top-level directories follow standard structure",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-10",
+          "score": 3,
+          "reason": "67 oversized component(s)",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/admin/announcements/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 391 lines, 14 hooks",
+              "filePath": "src/app/[locale]/(app)/admin/branding/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/admin/branding/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 420 lines, 13 hooks",
+              "filePath": "src/app/[locale]/(app)/admin/models/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/admin/models/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 13 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/admin/qa/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/agenten/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 442 lines, 22 hooks",
+              "filePath": "src/app/[locale]/(app)/artifacts/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 10 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/artifacts/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 309 lines, 12 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/AuditActions.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/audit/_components/AuditActions.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 333 lines, 7 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/BetaFeedbackButton.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 410 lines, 16 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FindingsTable.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 458 lines, 12 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FixPreview.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 12 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FixPreview.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 475 lines, 6 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/RecommendationCard.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 368 lines, 9 hooks",
+              "filePath": "src/app/[locale]/(app)/audit/_components/ScoreHero.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 431 lines, 14 hooks",
+              "filePath": "src/app/[locale]/(app)/chat/ChatPageClient.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 10 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/chat/ChatPageClient.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 14 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/feeds/DataView.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 429 lines, 20 hooks",
+              "filePath": "src/app/[locale]/(app)/feeds/SourcesView.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 16 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/feeds/SourcesView.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 8 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/feeds/_components/DistributionsPanel.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 316 lines, 16 hooks",
+              "filePath": "src/app/[locale]/(app)/feeds/new/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 15 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/feeds/new/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 464 lines, 26 hooks",
+              "filePath": "src/app/[locale]/(app)/feeds/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 15 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/feeds/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 402 lines, 15 hooks",
+              "filePath": "src/app/[locale]/(app)/knowledge/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/knowledge/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 8 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/perspectives/_components/AvatarFormDrawer.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 8 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/perspectives/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/projects/_components/OverviewTab.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 11 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/projects/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/settings/_components/ProfileSection.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 358 lines, 11 hooks",
+              "filePath": "src/app/[locale]/(app)/superadmin/announcements/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/superadmin/announcements/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 481 lines, 22 hooks",
+              "filePath": "src/app/[locale]/(app)/superadmin/clients/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 19 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/superadmin/clients/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 461 lines, 11 hooks",
+              "filePath": "src/app/[locale]/(app)/superadmin/perspectives/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/superadmin/perspectives/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 470 lines, 12 hooks",
+              "filePath": "src/app/[locale]/(app)/tasks/_components/TasksClient.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 327 lines, 16 hooks",
+              "filePath": "src/app/[locale]/(app)/workspaces/[id]/CanvasClient.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 11 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/workspaces/[id]/CanvasClient.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/workspaces/[id]/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 327 lines, 18 hooks",
+              "filePath": "src/app/[locale]/(app)/workspaces/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 12 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/(app)/workspaces/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 360 lines, 7 hooks",
+              "filePath": "src/app/[locale]/beta/page.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 19 state hooks — consider useReducer",
+              "filePath": "src/app/[locale]/onboarding/page.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 326 lines, 16 hooks",
+              "filePath": "src/components/layout/TopBar.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/components/layout/TopBar.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 495 lines, 17 hooks",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 13 state hooks — consider useReducer",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 472 lines, 11 hooks",
+              "filePath": "src/components/workspace/ChatArea.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 346 lines, 18 hooks",
+              "filePath": "src/components/workspace/ChatHeaderStrip.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 9 state hooks — consider useReducer",
+              "filePath": "src/components/workspace/ChatHeaderStrip.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 402 lines, 8 hooks",
+              "filePath": "src/components/workspace/ChatMessage.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 375 lines, 14 hooks",
+              "filePath": "src/components/workspace/MemorySaveModal.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 11 state hooks — consider useReducer",
+              "filePath": "src/components/workspace/MemorySaveModal.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 301 lines, 10 hooks",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 336 lines, 7 hooks",
+              "filePath": "src/components/workspace/SessionPanel.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 366 lines, 18 hooks",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 14 state hooks — consider useReducer",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 471 lines, 10 hooks",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 10 state hooks — consider useReducer",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 11 state hooks — consider useReducer",
+              "filePath": "src/components/workspaces/MembersList.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            },
+            {
+              "severity": "medium",
+              "message": "Large component: 338 lines, 12 hooks",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx",
+              "suggestion": "Extract logic into custom hooks"
+            },
+            {
+              "severity": "medium",
+              "message": "Component has 8 state hooks — consider useReducer",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx",
+              "suggestion": "Consolidate state with useReducer or a state machine"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-1-rule-11",
+          "score": 5,
+          "reason": "No circular imports detected",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 52,
+      "weightedMax": 60,
+      "automatedPercentage": 86.7,
+      "automatedRuleCount": 7,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 2,
+      "name": "Code-Qualität",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-2-rule-1",
+          "score": 5,
+          "reason": "TypeScript strict mode is enabled in tsconfig.json",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-2",
+          "score": 5,
+          "reason": "ESLint configured: eslint.config.mjs",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-3",
+          "score": 5,
+          "reason": "Prettier configured: .prettierrc",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-9",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-7",
+          "score": 5,
+          "reason": "No empty catch blocks detected in source files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-8",
+          "score": 5,
+          "reason": "No large commented-out code blocks detected",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-10",
+          "score": 5,
+          "reason": "No loose equality operators detected in source files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-11",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-2-rule-12",
+          "score": 3,
+          "reason": "49 function(s) exceed CC threshold",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "Function \"triggerFetch\" has CC=26 — consider simplifying",
+              "filePath": "src/actions/feeds.ts",
+              "line": 363,
+              "suggestion": "Cursor-Prompt: 'Simplify triggerFetch in feeds.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"AgentenPage\" has CC=37 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/agenten/page.tsx",
+              "line": 36,
+              "suggestion": "Cursor-Prompt: 'Simplify AgentenPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ArtifactsPageInner\" has CC=38 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/artifacts/page.tsx",
+              "line": 134,
+              "suggestion": "Cursor-Prompt: 'Simplify ArtifactsPageInner in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"AuditActions\" has CC=60 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/audit/_components/AuditActions.tsx",
+              "line": 19,
+              "suggestion": "Cursor-Prompt: 'Simplify AuditActions in AuditActions.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"FindingsTable\" has CC=38 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FindingsTable.tsx",
+              "line": 73,
+              "suggestion": "Cursor-Prompt: 'Simplify FindingsTable in FindingsTable.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"FixPreview\" has CC=50 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/audit/_components/FixPreview.tsx",
+              "line": 18,
+              "suggestion": "Cursor-Prompt: 'Simplify FixPreview in FixPreview.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"TaskList\" has CC=59 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/audit/_components/TaskList.tsx",
+              "line": 41,
+              "suggestion": "Cursor-Prompt: 'Simplify TaskList in TaskList.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"AuditPage\" has CC=65 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/audit/page.tsx",
+              "line": 38,
+              "suggestion": "Cursor-Prompt: 'Simplify AuditPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ChatListClient\" has CC=38 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/chat/ChatPageClient.tsx",
+              "line": 36,
+              "suggestion": "Cursor-Prompt: 'Simplify ChatListClient in ChatPageClient.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"DataView\" has CC=43 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/feeds/DataView.tsx",
+              "line": 10,
+              "suggestion": "Cursor-Prompt: 'Simplify DataView in DataView.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "high",
+              "message": "Function \"SourcesView\" has CC=72 — very hard to maintain",
+              "filePath": "src/app/[locale]/(app)/feeds/SourcesView.tsx",
+              "line": 31,
+              "suggestion": "Cursor-Prompt: 'Refactor SourcesView in SourcesView.tsx — extract helper functions to reduce complexity below 35'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"NewFeedPage\" has CC=38 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/feeds/new/page.tsx",
+              "line": 37,
+              "suggestion": "Cursor-Prompt: 'Simplify NewFeedPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"FeedsPage\" has CC=56 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/feeds/page.tsx",
+              "line": 35,
+              "suggestion": "Cursor-Prompt: 'Simplify FeedsPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"KnowledgePage\" has CC=64 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/knowledge/page.tsx",
+              "line": 58,
+              "suggestion": "Cursor-Prompt: 'Simplify KnowledgePage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ProjectsPage\" has CC=37 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/projects/page.tsx",
+              "line": 22,
+              "suggestion": "Cursor-Prompt: 'Simplify ProjectsPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ClientsPage\" has CC=54 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/superadmin/clients/page.tsx",
+              "line": 11,
+              "suggestion": "Cursor-Prompt: 'Simplify ClientsPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "high",
+              "message": "Function \"TasksClient\" has CC=73 — very hard to maintain",
+              "filePath": "src/app/[locale]/(app)/tasks/_components/TasksClient.tsx",
+              "line": 35,
+              "suggestion": "Cursor-Prompt: 'Refactor TasksClient in TasksClient.tsx — extract helper functions to reduce complexity below 35'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"WorkspacesPage\" has CC=51 — consider simplifying",
+              "filePath": "src/app/[locale]/(app)/workspaces/page.tsx",
+              "line": 11,
+              "suggestion": "Cursor-Prompt: 'Simplify WorkspacesPage in page.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=27 — consider simplifying",
+              "filePath": "src/app/api/artifacts/export-pptx/route.ts",
+              "line": 78,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=35 — consider simplifying",
+              "filePath": "src/app/api/audit/trigger/route.ts",
+              "line": 41,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=29 — consider simplifying",
+              "filePath": "src/app/api/chat/stream/route.ts",
+              "line": 16,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"GET\" has CC=26 — consider simplifying",
+              "filePath": "src/app/api/cron/feed-process/route.ts",
+              "line": 54,
+              "suggestion": "Cursor-Prompt: 'Simplify GET in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=33 — consider simplifying",
+              "filePath": "src/app/api/feeds/data-sources/[id]/fetch/route.ts",
+              "line": 34,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=38 — consider simplifying",
+              "filePath": "src/app/api/onboarding/complete/route.ts",
+              "line": 21,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"POST\" has CC=26 — consider simplifying",
+              "filePath": "src/app/api/projects/scan/route.ts",
+              "line": 93,
+              "suggestion": "Cursor-Prompt: 'Simplify POST in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"GET\" has CC=42 — consider simplifying",
+              "filePath": "src/app/api/usage/stats/route.ts",
+              "line": 48,
+              "suggestion": "Cursor-Prompt: 'Simplify GET in route.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ToroChatWidget\" has CC=39 — consider simplifying",
+              "filePath": "src/components/ToroChatWidget.tsx",
+              "line": 55,
+              "suggestion": "Cursor-Prompt: 'Simplify ToroChatWidget in ToroChatWidget.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"TopBar\" has CC=38 — consider simplifying",
+              "filePath": "src/components/layout/TopBar.tsx",
+              "line": 19,
+              "suggestion": "Cursor-Prompt: 'Simplify TopBar in TopBar.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ArtifactRenderer\" has CC=62 — consider simplifying",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx",
+              "line": 159,
+              "suggestion": "Cursor-Prompt: 'Simplify ArtifactRenderer in ArtifactRenderer.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"ChatArea\" has CC=47 — consider simplifying",
+              "filePath": "src/components/workspace/ChatArea.tsx",
+              "line": 83,
+              "suggestion": "Cursor-Prompt: 'Simplify ChatArea in ChatArea.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "high",
+              "message": "Function \"ChatMessage\" has CC=76 — very hard to maintain",
+              "filePath": "src/components/workspace/ChatMessage.tsx",
+              "line": 42,
+              "suggestion": "Cursor-Prompt: 'Refactor ChatMessage in ChatMessage.tsx — extract helper functions to reduce complexity below 35'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"PerspectivesBottomSheet\" has CC=68 — consider simplifying",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx",
+              "line": 29,
+              "suggestion": "Cursor-Prompt: 'Simplify PerspectivesBottomSheet in PerspectivesBottomSheet.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"stream\" has CC=39 — consider simplifying",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx",
+              "line": 57,
+              "suggestion": "Cursor-Prompt: 'Simplify stream in PerspectivesBottomSheet.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"TemplateDrawer\" has CC=54 — consider simplifying",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx",
+              "line": 22,
+              "suggestion": "Cursor-Prompt: 'Simplify TemplateDrawer in TemplateDrawer.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"WorkspaceBriefing\" has CC=46 — consider simplifying",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx",
+              "line": 66,
+              "suggestion": "Cursor-Prompt: 'Simplify WorkspaceBriefing in WorkspaceBriefing.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"WorkspacesList\" has CC=37 — consider simplifying",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx",
+              "line": 148,
+              "suggestion": "Cursor-Prompt: 'Simplify WorkspacesList in WorkspacesList.tsx — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"useParallelTabs\" has CC=54 — consider simplifying",
+              "filePath": "src/hooks/useParallelTabs.ts",
+              "line": 21,
+              "suggestion": "Cursor-Prompt: 'Simplify useParallelTabs in useParallelTabs.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"handleParallelConfirm\" has CC=26 — consider simplifying",
+              "filePath": "src/hooks/useParallelTabs.ts",
+              "line": 30,
+              "suggestion": "Cursor-Prompt: 'Simplify handleParallelConfirm in useParallelTabs.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"handleModelCompare\" has CC=28 — consider simplifying",
+              "filePath": "src/hooks/useParallelTabs.ts",
+              "line": 94,
+              "suggestion": "Cursor-Prompt: 'Simplify handleModelCompare in useParallelTabs.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"useWorkspaceState\" has CC=46 — consider simplifying",
+              "filePath": "src/hooks/useWorkspaceState.ts",
+              "line": 20,
+              "suggestion": "Cursor-Prompt: 'Simplify useWorkspaceState in useWorkspaceState.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"parseArtifacts\" has CC=34 — consider simplifying",
+              "filePath": "src/lib/chat/parse-artifacts.ts",
+              "line": 44,
+              "suggestion": "Cursor-Prompt: 'Simplify parseArtifacts in parse-artifacts.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"distributeItem\" has CC=27 — consider simplifying",
+              "filePath": "src/lib/feeds/distributor.ts",
+              "line": 17,
+              "suggestion": "Cursor-Prompt: 'Simplify distributeItem in distributor.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"applyDiffs\" has CC=37 — consider simplifying",
+              "filePath": "src/lib/fix-engine/applier.ts",
+              "line": 43,
+              "suggestion": "Cursor-Prompt: 'Simplify applyDiffs in applier.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"buildFixContext\" has CC=28 — consider simplifying",
+              "filePath": "src/lib/fix-engine/context-builder.ts",
+              "line": 90,
+              "suggestion": "Cursor-Prompt: 'Simplify buildFixContext in context-builder.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "high",
+              "message": "Function \"createChatActions\" has CC=230 — very hard to maintain",
+              "filePath": "src/lib/workspace-chat.ts",
+              "line": 30,
+              "suggestion": "Cursor-Prompt: 'Refactor createChatActions in workspace-chat.ts — extract helper functions to reduce complexity below 25'"
+            },
+            {
+              "severity": "high",
+              "message": "Function \"doSend\" has CC=158 — very hard to maintain",
+              "filePath": "src/lib/workspace-chat.ts",
+              "line": 33,
+              "suggestion": "Cursor-Prompt: 'Refactor doSend in workspace-chat.ts — extract helper functions to reduce complexity below 25'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"doSendWithConvId\" has CC=53 — consider simplifying",
+              "filePath": "src/lib/workspace-chat.ts",
+              "line": 247,
+              "suggestion": "Cursor-Prompt: 'Simplify doSendWithConvId in workspace-chat.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"createJungleActions\" has CC=35 — consider simplifying",
+              "filePath": "src/lib/workspace-jungle.ts",
+              "line": 39,
+              "suggestion": "Cursor-Prompt: 'Simplify createJungleActions in workspace-jungle.ts — reduce nesting and extract conditions'"
+            },
+            {
+              "severity": "medium",
+              "message": "Function \"proxy\" has CC=44 — consider simplifying",
+              "filePath": "src/proxy.ts",
+              "line": 74,
+              "suggestion": "Cursor-Prompt: 'Simplify proxy in proxy.ts — reduce nesting and extract conditions'"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-16",
+          "score": 5,
+          "reason": "Error handling looks solid",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-13",
+          "score": 5,
+          "reason": "Minimal any usage",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-2-rule-17",
+          "score": 5,
+          "reason": "Error boundaries found (error.tsx + global-error)",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 86,
+      "weightedMax": 90,
+      "automatedPercentage": 95.6,
+      "automatedRuleCount": 10,
+      "manualRuleCount": 5
+    },
+    {
+      "categoryId": 3,
+      "name": "Sicherheit",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-3-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-2",
+          "score": 5,
+          "reason": "136/136 mutation API routes have body validation (100%)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-3",
+          "score": null,
+          "reason": "cli checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-7",
+          "score": null,
+          "reason": "cli checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-8",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-9",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-10",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-11",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-12",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-13",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-14",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-3-rule-15",
+          "score": 5,
+          "automated": true,
+          "reason": "182/182 API routes import auth (100%)",
+          "findings": []
+        },
+        {
+          "ruleId": "cat-3-rule-16",
+          "score": 5,
+          "automated": true,
+          "reason": "RLS enabled on 105/104 tables (101%)",
+          "findings": []
+        },
+        {
+          "ruleId": "cat-3-rule-17",
+          "score": 5,
+          "reason": "Rate limiting: @upstash/ratelimit installed + wired into gateway",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-18",
+          "score": 5,
+          "reason": "CORS / security headers configuration found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-19",
+          "score": 5,
+          "reason": "No error leakage patterns in API routes",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-26",
+          "score": 5,
+          "reason": "3 upload route(s) — validation patterns found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-20",
+          "score": 5,
+          "reason": "Keine Injection (SQL/Cmd/Path/SSRF/XSS) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-21",
+          "score": 5,
+          "reason": "Keine Authentication (Secrets/Token-Storage/Crypto) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-22",
+          "score": 5,
+          "reason": "Keine Data Exposure (Debug/Stack-Trace/Over-fetch) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-23",
+          "score": 5,
+          "reason": "Keine Client-Side (eval/Prototype-Pollution/innerHTML) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-24",
+          "score": 5,
+          "reason": "Keine Cryptography (Weak-Hash/Static-IV/HTTP) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-25",
+          "score": 5,
+          "reason": "Keine Business Logic (Mass-Assignment/IDOR/Auth-Guard) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-3-rule-30",
+          "score": 5,
+          "reason": "No hardcoded secrets detected",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 175,
+      "weightedMax": 175,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 14,
+      "manualRuleCount": 13
+    },
+    {
+      "categoryId": 4,
+      "name": "Datenschutz & Compliance",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-4-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-6",
+          "score": 5,
+          "reason": "AI Act classification documentation found in docs/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-7",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-8",
+          "score": 5,
+          "reason": "VVT / Verarbeitungsverzeichnis documentation found in docs/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-10",
+          "score": 4,
+          "reason": "No analytics files found to check for PII separation",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-12",
+          "score": 4,
+          "reason": "Cookie-Consent-Komponente gefunden: src/components/CookieBanner.tsx",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-13",
+          "score": 5,
+          "reason": "Kein unbedingtes Tracking in Root-Layout gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-14",
+          "score": 5,
+          "reason": "Auth-Provider (Supabase/NextAuth/Clerk) übernimmt Passwort-Hashing (DSGVO Art. 32)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-15",
+          "score": 5,
+          "reason": "HSTS Header konfiguriert in C:\\Users\\timmr\\tropenOS\\next.config.ts (DSGVO Art. 32)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-16",
+          "score": 5,
+          "reason": "Content-Security-Policy konfiguriert in C:\\Users\\timmr\\tropenOS\\next.config.ts",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-4-rule-17",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-18",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-20",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-21",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-4-rule-22",
+          "score": 5,
+          "reason": "No checkout components found — button text rule not applicable",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 86,
+      "weightedMax": 90,
+      "automatedPercentage": 95.6,
+      "automatedRuleCount": 9,
+      "manualRuleCount": 10
+    },
+    {
+      "categoryId": 5,
+      "name": "Datenbank",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-5-rule-1",
+          "score": 5,
+          "reason": "FK constraints found in migrations (REFERENCES + ON DELETE CASCADE)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-2",
+          "score": 5,
+          "reason": "157 indexes defined in migrations — strong index strategy",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-3",
+          "score": 5,
+          "reason": "Migrations tool active: 121 migration file(s) in supabase/migrations/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-5-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-5-rule-6",
+          "score": 5,
+          "reason": "supabaseAdmin service key not found in client-side code",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-7",
+          "score": 5,
+          "reason": "Soft-delete pattern via deleted_at column found — no hard DELETEs in migrations",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-8",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-5-schema-drift",
+          "score": 5,
+          "reason": "Supabase erkannt — Schema Drift Check empfohlen (Code-Only-Scan kann Live-DB-Zustand nicht prüfen).",
+          "findings": [
+            {
+              "severity": "info",
+              "message": "Schema Drift Check empfohlen (Supabase)",
+              "suggestion": "Führe diese Queries in Supabase SQL Editor aus und vergleiche das Ergebnis mit deinen Migrations:\n\n```sql\n-- 1. Alle Tabellen mit RLS-Status\nSELECT schemaname, tablename, rowsecurity\nFROM pg_tables\nWHERE schemaname = 'public'\nORDER BY tablename;\n\n-- 2. Alle aktiven Policies\nSELECT schemaname, tablename, policyname, permissive, cmd, qual\nFROM pg_policies\nWHERE schemaname = 'public'\nORDER BY tablename, policyname;\n\n-- 3. Tabellen OHNE RLS (kritisch!)\nSELECT tablename FROM pg_tables\nWHERE schemaname = 'public' AND rowsecurity = false;\n\n-- 4. Tabellen ohne jegliche Policy\nSELECT t.tablename\nFROM pg_tables t\nLEFT JOIN pg_policies p ON t.tablename = p.tablename\nWHERE t.schemaname = 'public' AND p.policyname IS NULL;\n```\n\nCheckliste:\n[ ] Jede Tabelle hat RLS aktiviert (rowsecurity = true)\n[ ] Jede Tabelle hat mindestens eine Policy\n[ ] Keine Tabelle existiert die nicht in deinen Migrations vorkommt\n[ ] Policies matchen die Logik in deinen Migrations-Dateien",
+              "agentSource": "database",
+              "agentRuleId": "schema-drift",
+              "fixHint": "Führe den Schema Drift Check in deinem Supabase-Dashboard aus"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-20",
+          "score": 5,
+          "reason": "No unlabeled affiliate links detected",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-5-rule-15",
+          "score": 5,
+          "reason": "No N+1 query patterns detected",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 85,
+      "weightedMax": 85,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 8,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 6,
+      "name": "API-Design",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-6-rule-1",
+          "score": null,
+          "reason": "No public API detected — internal Next.js routes are exempt from versioning",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-2",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-6-rule-3",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-6-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-6-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-6-rule-6",
+          "score": 5,
+          "reason": "All 1 webhook route(s) appear to validate signatures",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-7",
+          "score": 5,
+          "reason": "External calls use AbortController (timeout) and retry patterns",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-6-rule-8",
+          "score": 5,
+          "reason": "All promise chains have error handling",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 35,
+      "weightedMax": 35,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 5
+    },
+    {
+      "categoryId": 7,
+      "name": "Performance",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-7-rule-1",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-2",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-7-rule-6",
+          "score": 5,
+          "reason": "15/18 GET endpoints have pagination",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-7-rule-7",
+          "score": 5,
+          "reason": "Performance basics look good",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 15,
+      "weightedMax": 15,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 5
+    },
+    {
+      "categoryId": 8,
+      "name": "Skalierbarkeit",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-8-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-8-rule-2",
+          "score": 4,
+          "reason": "2 cron job(s) configured in vercel.json",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-8-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-8-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-8-rule-5",
+          "score": 5,
+          "reason": "No module-level mutable state detected in src/lib/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-8-rule-6",
+          "score": 5,
+          "reason": "API routes have timeout handling",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-8-rule-7",
+          "score": 5,
+          "reason": "Queries have limits or pagination",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 38,
+      "weightedMax": 40,
+      "automatedPercentage": 95,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 9,
+      "name": "State Management",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-9-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-9-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-9-rule-5",
+          "score": 4,
+          "reason": "No uncached fetch-in-useEffect patterns",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-9-rule-6",
+          "score": 3,
+          "reason": "7 component(s) with prop drilling",
+          "findings": [
+            {
+              "severity": "info",
+              "message": "ColHead forwards 3 props unchanged (col, sortKey, sortAsc) — consider React Context or Zustand",
+              "filePath": "src/app/[locale]/(app)/superadmin/agents/_components/AgentTable.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor ColHead in AgentTable.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "info",
+              "message": "ArtifactsView forwards 3 props unchanged (conversationId, organizationId, onSendDirect) — consider React Context or Zustand",
+              "filePath": "src/components/workspace/ArtifactsView.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor ArtifactsView in ArtifactsView.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "high",
+              "message": "ChatArea forwards 20 props unchanged (input, sending, userInitial...) — consider React Context or Zustand",
+              "filePath": "src/components/workspace/ChatArea.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor ChatArea in ChatArea.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "info",
+              "message": "FocusedFlow forwards 4 props unchanged (input, setInput, sending...) — consider React Context or Zustand",
+              "filePath": "src/components/workspace/FocusedFlow.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor FocusedFlow in FocusedFlow.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "info",
+              "message": "SplitArtifactPanel forwards 4 props unchanged (artifact, conversationId, organizationId...) — consider React Context or Zustand",
+              "filePath": "src/components/workspace/SplitArtifactPanel.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor SplitArtifactPanel in SplitArtifactPanel.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "info",
+              "message": "CardMenu forwards 5 props unchanged (ws, onDelete, onArchive...) — consider React Context or Zustand",
+              "filePath": "src/components/workspaces/WorkspaceCard.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor CardMenu in WorkspaceCard.tsx to use React Context instead of drilling props to children'"
+            },
+            {
+              "severity": "info",
+              "message": "WorkspaceCard forwards 5 props unchanged (ws, onDelete, onArchive...) — consider React Context or Zustand",
+              "filePath": "src/components/workspaces/WorkspaceCard.tsx",
+              "suggestion": "Cursor-Prompt: 'Refactor WorkspaceCard in WorkspaceCard.tsx to use React Context instead of drilling props to children'"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-9-rule-7",
+          "score": 5,
+          "reason": "No store files found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-9-rule-4",
+          "score": 5,
+          "reason": "All data-fetching components handle loading state",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 26,
+      "weightedMax": 30,
+      "automatedPercentage": 86.7,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 10,
+      "name": "Testing",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-10-rule-1",
+          "score": null,
+          "reason": "cli checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-10-rule-2",
+          "score": 5,
+          "reason": "6 integration test files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-3",
+          "score": 5,
+          "reason": "E2E tests present: 3 spec file(s), playwright configured",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-4",
+          "score": 5,
+          "reason": "Tests found in CI pipeline (vitest/jest step detected)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-5",
+          "score": 3,
+          "reason": "Coverage thresholds configured but < 80%",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-6",
+          "score": 5,
+          "reason": "vitest coverage thresholds configured with coverage provider",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-10-rule-7",
+          "score": 5,
+          "reason": "Test framework installed: vitest",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 56,
+      "weightedMax": 60,
+      "automatedPercentage": 93.3,
+      "automatedRuleCount": 6,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 11,
+      "name": "CI/CD",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-11-rule-1",
+          "score": 5,
+          "reason": "CI pipeline present: 6 workflow file(s)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-11-rule-3",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-4",
+          "score": 3,
+          "reason": "vercel.json present (partial IaC — no Terraform/Pulumi)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-11-rule-6",
+          "score": 4,
+          "reason": "Vercel project configured — preview deployments available automatically",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-7",
+          "score": 5,
+          "reason": "CI pipeline found: 6 workflow(s)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-11-rule-8",
+          "score": 5,
+          "reason": "CI includes type checking",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 69,
+      "weightedMax": 75,
+      "automatedPercentage": 92,
+      "automatedRuleCount": 6,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 12,
+      "name": "Observability",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-12-rule-1",
+          "score": 5,
+          "reason": "Logger abstraction: 157/423 lib/api files use createLogger; 0 direct console calls",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-2",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-12-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-12-rule-4",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-12-rule-5",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-12-rule-6",
+          "score": 5,
+          "reason": "No console.* calls in application code",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-7",
+          "score": 5,
+          "reason": "Trace/request ID pattern found in middleware.ts",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-8",
+          "score": 5,
+          "reason": "No obvious PII fields in logger calls",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-9",
+          "score": 4,
+          "reason": "No analytics files found — schema not applicable",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-12-rule-10",
+          "score": 5,
+          "reason": "Error monitoring active: @sentry/nextjs",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 64,
+      "weightedMax": 65,
+      "automatedPercentage": 98.5,
+      "automatedRuleCount": 6,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 13,
+      "name": "Backup & Disaster Recovery",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-13-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-13-rule-4",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-5",
+          "score": 5,
+          "reason": "Rollback and DR runbooks present in docs/runbooks/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-6",
+          "score": 5,
+          "reason": "3 incident/runbook docs found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-7",
+          "score": 5,
+          "reason": "Restore test procedure documented in docs/disaster-recovery.md",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-8",
+          "score": 5,
+          "reason": "Backup/DR documentation found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-13-rule-9",
+          "score": 3,
+          "reason": "Supabase detected — verify PITR status",
+          "findings": [
+            {
+              "severity": "info",
+              "message": "Supabase detected — Point-in-Time-Recovery (PITR) is only active on Pro plan. Check: Dashboard → Database → Backups",
+              "suggestion": "Add to README: 'Backup: Supabase [free/pro] — PITR [enabled/disabled]'"
+            }
+          ],
+          "automated": true
+        }
+      ],
+      "weightedScore": 53,
+      "weightedMax": 55,
+      "automatedPercentage": 96.4,
+      "automatedRuleCount": 6,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 14,
+      "name": "Dependency Management",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-14-rule-1",
+          "score": 5,
+          "reason": "Lockfile present: pnpm-lock.yaml",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-2",
+          "score": 5,
+          "reason": "Vulnerability scan step found in CI",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-3",
+          "score": 5,
+          "reason": "Automated dependency updates configured: Dependabot",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-4",
+          "score": 5,
+          "reason": "Node version pinned: .nvmrc",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-6",
+          "score": 5,
+          "reason": "KI dependency review process documented in docs/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-7",
+          "score": 5,
+          "reason": ".env.example exists (36 env vars used)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-14-rule-8",
+          "score": 5,
+          "reason": "Core dependencies are up to date",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 65,
+      "weightedMax": 65,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 7,
+      "manualRuleCount": 0
+    },
+    {
+      "categoryId": 15,
+      "name": "Design System",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-15-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-15-rule-5",
+          "score": 5,
+          "reason": "No hardcoded hex colors detected in TSX/CSS source files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-15-rule-6",
+          "score": 5,
+          "reason": "CSS variables file found: src/app/globals.css (134 vars)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-15-rule-7",
+          "score": 5,
+          "reason": "No conflicting icon libraries",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-15-rule-8",
+          "score": 5,
+          "reason": "next/font display mode is not \"optional\"",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 30,
+      "weightedMax": 30,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 16,
+      "name": "Accessibility",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-16-rule-1",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-3",
+          "score": 4,
+          "reason": "491 component/page files found — aria attribute coverage estimated (content scan required for exact count)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-16-rule-4",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-5",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-6",
+          "score": null,
+          "reason": "Not applicable for project profile",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-16-rule-7",
+          "score": 5,
+          "reason": "HTML lang attribute set in src/app/layout.tsx (WCAG 2.1 SC 3.1.1)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-16-rule-8",
+          "score": 5,
+          "reason": "Skip-Navigation-Link in src/components/layout/AppShell.tsx gefunden (WCAG 2.1 SC 2.4.1)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-16-rule-9",
+          "score": 5,
+          "reason": "ARIA-Live-Regionen in 3 Komponente(n) gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-16-rule-10",
+          "score": 5,
+          "reason": "All <img> elements have alt attributes",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 39,
+      "weightedMax": 40,
+      "automatedPercentage": 97.5,
+      "automatedRuleCount": 5,
+      "manualRuleCount": 5
+    },
+    {
+      "categoryId": 17,
+      "name": "Internationalisierung",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-17-rule-1",
+          "score": 5,
+          "reason": "i18n framework found: next-intl",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-17-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-17-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-17-rule-4",
+          "score": 5,
+          "reason": "Strings properly internationalized",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 15,
+      "weightedMax": 15,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 2
+    },
+    {
+      "categoryId": 18,
+      "name": "Dokumentation",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-18-rule-1",
+          "score": 5,
+          "reason": "README.md present with 124 lines — comprehensive",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-2",
+          "score": 5,
+          "reason": "20 ADRs in docs/adr/ — excellent documentation",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-18-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-18-rule-5",
+          "score": null,
+          "reason": "external-tool checks skipped",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-18-rule-6",
+          "score": 5,
+          "reason": "No untracked TODOs",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-7",
+          "score": 5,
+          "reason": "README.md exists (4226 chars)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-8",
+          "score": 5,
+          "reason": "CHANGELOG found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-9",
+          "score": 5,
+          "reason": "AI context file found and substantive: CLAUDE.md (93103 chars)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-10",
+          "score": 5,
+          "reason": "PRD/spec document found: docs/PRD.md",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-11",
+          "score": 5,
+          "reason": "README package references match package.json",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-18-rule-12",
+          "score": 5,
+          "reason": "No .cursorrules — stack-keyword check skipped",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 65,
+      "weightedMax": 65,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 9,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 19,
+      "name": "Git Governance",
+      "weight": 3,
+      "ruleResults": [
+        {
+          "ruleId": "cat-19-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-19-rule-2",
+          "score": 5,
+          "reason": "100% of commits follow Conventional Commits",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-19-rule-3",
+          "score": 5,
+          "reason": "Semantic versioning active: v1.0.0",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-19-rule-4",
+          "score": 5,
+          "reason": "CODEOWNERS found at .github/CODEOWNERS",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-19-rule-5",
+          "score": 5,
+          "reason": ".gitignore covers essential patterns",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 35,
+      "weightedMax": 35,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 20,
+      "name": "Cost Awareness",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-20-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-20-rule-2",
+          "score": 5,
+          "reason": "Budget enforcement: 11/12 LLM routes check budget",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-20-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-20-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-20-rule-5",
+          "score": 5,
+          "reason": "Budget alerts documented and budget enforcement library present",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-20-rule-6",
+          "score": 5,
+          "reason": "All LLM calls have token limits",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-20-rule-7",
+          "score": 5,
+          "reason": "AI routes protected by middleware-level rate limiting",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 40,
+      "weightedMax": 40,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 4,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 21,
+      "name": "PWA & Resilience",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-21-rule-1",
+          "score": 5,
+          "reason": "PWA manifest found in public/",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-2",
+          "score": 5,
+          "reason": "Service worker found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-21-rule-4",
+          "score": 5,
+          "reason": "404 (not-found.tsx) and error.tsx pages present",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-5",
+          "score": 5,
+          "reason": "Web app manifest found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-21-rule-6",
+          "score": 5,
+          "reason": "Service worker or PWA plugin found",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 40,
+      "weightedMax": 40,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 5,
+      "manualRuleCount": 1
+    },
+    {
+      "categoryId": 22,
+      "name": "AI Integration",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-22-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-22-rule-2",
+          "score": 5,
+          "reason": "Token limits (maxOutputTokens) found in LLM configuration",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-22-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-22-rule-5",
+          "score": 5,
+          "reason": "No system-prompt interpolation patterns found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-6",
+          "score": 5,
+          "reason": "LLM output validation found in 5/9 structured AI files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-7",
+          "score": 5,
+          "reason": "AI provider abstraction layer present, no direct SDK imports in API routes",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-8",
+          "score": 5,
+          "reason": "Keine AI Security (Prompt-Injection/Output-Eval/Token-Limit) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-9",
+          "score": 5,
+          "reason": "AI Act Risiko-Klassifizierung dokumentiert: C:\\Users\\timmr\\tropenOS\\docs\\adr\\005-append-only-tables.md",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-10",
+          "score": 5,
+          "reason": "KI-Transparenz-Hinweis in 78 UI-Komponente(n) gefunden (AI Act Art. 50)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-11",
+          "score": 4,
+          "reason": "KI-Logging-Code in src/app/[locale]/(app)/admin/logs/page.tsx gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-12",
+          "score": 5,
+          "reason": "KI-Einsatzzweck dokumentiert: C:\\Users\\timmr\\tropenOS\\docs\\agents\\AI_ACT_AGENT.md",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-13",
+          "score": 5,
+          "reason": "Keine verbotenen KI-Praktiken (Art. 5) im Code gefunden",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-14",
+          "score": 5,
+          "reason": "AI transparency disclosure found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-22-rule-15",
+          "score": 4,
+          "reason": "AI content labeling present (assistant avatar or disclosure page)",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 122,
+      "weightedMax": 125,
+      "automatedPercentage": 97.6,
+      "automatedRuleCount": 12,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 23,
+      "name": "Infrastructure",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-23-rule-1",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-2",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-23-rule-6",
+          "score": 5,
+          "reason": "Deployment setup documented",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-23-rule-5",
+          "score": 4,
+          "reason": "Next.js project — likely auto-deployed via Vercel",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 9,
+      "weightedMax": 10,
+      "automatedPercentage": 90,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 24,
+      "name": "Supply Chain Security",
+      "weight": 2,
+      "ruleResults": [
+        {
+          "ruleId": "cat-24-rule-1",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-24-rule-2",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-24-rule-3",
+          "score": 5,
+          "reason": "Lockfile present: pnpm-lock.yaml",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-24-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-24-rule-5",
+          "score": null,
+          "reason": "Rule tier exceeds project maturity level",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-24-rule-6",
+          "score": 5,
+          "reason": "Keine Supply Chain (Unpinned-Deps/Git-URLs/Postinstall) Patterns gefunden",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 20,
+      "weightedMax": 20,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 2,
+      "manualRuleCount": 4
+    },
+    {
+      "categoryId": 25,
+      "name": "Namenskonventionen & Dateihygiene",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-25-rule-1",
+          "score": 5,
+          "reason": "Naming convention check: 0 violation(s) found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-2",
+          "score": 4,
+          "reason": "12 large file(s) (0 violations over 500 lines)",
+          "findings": [
+            {
+              "severity": "medium",
+              "message": "src/components/layout/TopBar.tsx has 326 lines — approaching limit",
+              "filePath": "src/components/layout/TopBar.tsx",
+              "suggestion": "Cursor-Prompt: 'Split TopBar.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/ArtifactRenderer.tsx has 495 lines — approaching limit",
+              "filePath": "src/components/workspace/ArtifactRenderer.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ArtifactRenderer.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/ChatArea.tsx has 472 lines — approaching limit",
+              "filePath": "src/components/workspace/ChatArea.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ChatArea.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/ChatHeaderStrip.tsx has 346 lines — approaching limit",
+              "filePath": "src/components/workspace/ChatHeaderStrip.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ChatHeaderStrip.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/ChatMessage.tsx has 402 lines — approaching limit",
+              "filePath": "src/components/workspace/ChatMessage.tsx",
+              "suggestion": "Cursor-Prompt: 'Split ChatMessage.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/MemorySaveModal.tsx has 375 lines — approaching limit",
+              "filePath": "src/components/workspace/MemorySaveModal.tsx",
+              "suggestion": "Cursor-Prompt: 'Split MemorySaveModal.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/PerspectivesBottomSheet.tsx has 301 lines — approaching limit",
+              "filePath": "src/components/workspace/PerspectivesBottomSheet.tsx",
+              "suggestion": "Cursor-Prompt: 'Split PerspectivesBottomSheet.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/SessionPanel.tsx has 336 lines — approaching limit",
+              "filePath": "src/components/workspace/SessionPanel.tsx",
+              "suggestion": "Cursor-Prompt: 'Split SessionPanel.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/TemplateDrawer.tsx has 366 lines — approaching limit",
+              "filePath": "src/components/workspace/TemplateDrawer.tsx",
+              "suggestion": "Cursor-Prompt: 'Split TemplateDrawer.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/WorkspaceBriefing.tsx has 471 lines — approaching limit",
+              "filePath": "src/components/workspace/WorkspaceBriefing.tsx",
+              "suggestion": "Cursor-Prompt: 'Split WorkspaceBriefing.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspace/WorkspaceLayout.tsx has 305 lines — approaching limit",
+              "filePath": "src/components/workspace/WorkspaceLayout.tsx",
+              "suggestion": "Cursor-Prompt: 'Split WorkspaceLayout.tsx into smaller modules, each under 300 lines'"
+            },
+            {
+              "severity": "medium",
+              "message": "src/components/workspaces/WorkspacesList.tsx has 338 lines — approaching limit",
+              "filePath": "src/components/workspaces/WorkspacesList.tsx",
+              "suggestion": "Cursor-Prompt: 'Split WorkspacesList.tsx into smaller modules, each under 300 lines'"
+            }
+          ],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-3",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-25-rule-4",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        },
+        {
+          "ruleId": "cat-25-rule-5",
+          "score": 5,
+          "reason": "Project structure follows standard (src/app, src/lib, src/components, docs)",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-25-rule-6",
+          "score": null,
+          "reason": "Manual rule — not automatable",
+          "findings": [],
+          "automated": false
+        }
+      ],
+      "weightedScore": 28,
+      "weightedMax": 30,
+      "automatedPercentage": 93.3,
+      "automatedRuleCount": 3,
+      "manualRuleCount": 3
+    },
+    {
+      "categoryId": 26,
+      "name": "KI-Code-Hygiene",
+      "weight": 1,
+      "ruleResults": [
+        {
+          "ruleId": "cat-26-rule-1",
+          "score": 5,
+          "reason": "No AI-style placeholder comments found",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-26-rule-2",
+          "score": 5,
+          "reason": "No AI tool fingerprints found in source files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-26-rule-3",
+          "score": 5,
+          "reason": "Comment density looks natural — no overcommenting detected",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-26-rule-4",
+          "score": 5,
+          "reason": "No unfilled placeholder values found in source files",
+          "findings": [],
+          "automated": true
+        },
+        {
+          "ruleId": "cat-26-rule-5",
+          "score": 5,
+          "reason": "Comment language is consistent across source files",
+          "findings": [],
+          "automated": true
+        }
+      ],
+      "weightedScore": 40,
+      "weightedMax": 40,
+      "automatedPercentage": 100,
+      "automatedRuleCount": 5,
+      "manualRuleCount": 0
+    }
+  ],
+  "automatedPercentage": 96.9,
+  "status": "production-grade",
+  "criticalFindings": [],
+  "automatedRuleCount": 142,
+  "manualRuleCount": 89,
+  "priorAudit": {
+    "date": "2026-04-23",
+    "percentage": 96.9,
+    "delta": 0
+  }
+}

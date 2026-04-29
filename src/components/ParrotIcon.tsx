@@ -8,7 +8,7 @@ interface ParrotIconProps {
 
 /**
  * Toro — Tropen OS mascot icon.
- * Brand colors: accent green (#2D7A50), white, dark (#1A1714).
+ * Brand colors: accent green (#3F4A55), white, dark (#1A1714).
  */
 export default function ParrotIcon({ size = 24, className, style }: ParrotIconProps) {
   return (
@@ -26,10 +26,10 @@ export default function ParrotIcon({ size = 24, className, style }: ParrotIconPr
       <path d="M18 4 C16 2, 13 2, 12 4 C11 6, 13 7, 14 6 C14 8, 16 8, 17 7 C17 9, 19 8, 18 6 Z" fill="#235f3e" />
 
       {/* Body */}
-      <ellipse cx="15" cy="18" rx="8" ry="9" fill="#2D7A50" />
+      <ellipse cx="15" cy="18" rx="8" ry="9" fill="#3F4A55" />
 
       {/* Head */}
-      <circle cx="19" cy="10" r="6" fill="#2D7A50" />
+      <circle cx="19" cy="10" r="6" fill="#3F4A55" />
 
       {/* Wing highlight */}
       <path d="M9 16 C7 18, 7 22, 9 24 C11 22, 12 19, 11 16 Z" fill="#235f3e" />
@@ -51,7 +51,7 @@ export default function ParrotIcon({ size = 24, className, style }: ParrotIconPr
 
       {/* Tail feathers */}
       <path d="M10 24 C8 26, 7 29, 9 30 C10 28, 12 27, 12 25 Z" fill="#235f3e" />
-      <path d="M13 25 C12 28, 12 31, 14 31 C14.5 29, 15 27, 15 25 Z" fill="#2D7A50" />
+      <path d="M13 25 C12 28, 12 31, 14 31 C14.5 29, 15 27, 15 25 Z" fill="#3F4A55" />
       <path d="M16 25 C16 28, 17 30, 19 30 C18.5 28, 18 26, 17 25 Z" fill="#235f3e" />
     </svg>
   )

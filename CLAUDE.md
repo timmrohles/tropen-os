@@ -707,16 +707,33 @@ Klick [···]:  Umbenennen / Bearbeiten
 
 Audit-Seite ist Domain-basiert geschnitten (ADR-025), nicht Tier-basiert.
 
-### Domain-Liste (verbindlich)
+### Domain-Liste (verbindlich — Stand 2026-04-29)
 
 | Tab | Domain-Code | Status | Datenquellen |
 |-----|-------------|--------|--------------|
 | Code-Qualität | `code-quality` | Aktiv | Eigene AuditEngine |
-| Performance | `performance` | Aktiv (Phase 4) | Lighthouse, eigene Bundle-Analyse |
-| Sicherheit | `security` | Aktiv (10 DB-Rules) | Eigene Rules, DB-Security-Checks |
-| Barrierefreiheit | `accessibility` | Coming Soon | Eigene Rules + (geplant: axe-core) |
-| DSGVO | `dsgvo` | Aktiv | Eigene Rules + User-Inputs |
-| KI-Act | `ki-act` | Aktiv | Eigene Rules + User-Inputs |
+| Performance | `performance` | Aktiv | Lighthouse (URL-Eingabe im Tab), Bundle-Analyse |
+| Sicherheit | `security` | Aktiv | Eigene Rules + 10 DB-Security-Rules (sec-db-01..10) |
+| Barrierefreiheit | `accessibility` | Aktiv | 9 cat-16-Rules (WCAG, ARIA, BFSG) |
+| DSGVO | `dsgvo` | Aktiv | Eigene Rules + ComplianceQuestion-Inline-Inputs |
+| KI-Act | `ki-act` | Aktiv | Eigene Rules + ComplianceQuestion-Inline-Inputs |
+| Doku-Hygiene | `documentation` | Aktiv | cat-18 Rules (README, ADR, CHANGELOG, KI-Kontext) |
+
+**7 Tabs total.** Alle aktiv — kein Coming-Soon mehr.
+
+**Neue Infrastruktur (Tab-Sprint 2026-04-29):**
+- `src/lib/audit/domain-filter.ts` — `getFindingsByDomain`, `getDomainCounts`, `ALL_DOMAINS`
+- `src/app/[locale]/(app)/audit/_components/DsgvoTab.tsx` — DSGVO-Findings + Inline-Fragen
+- `src/app/[locale]/(app)/audit/_components/KiActTab.tsx` — KI-Act-Findings + Inline-Fragen
+- `src/app/[locale]/(app)/audit/_components/PerformanceTab.tsx` — Lighthouse-Erklärung + URL-Input
+- `src/app/[locale]/(app)/audit/_components/ComplianceQuestion.tsx` — Inline-Compliance-Input
+- `src/app/api/audit/compliance-data/route.ts` — GET/POST Compliance-Antworten
+- `src/app/api/audit/fix-prompt/route.ts` — Server-seitige Prompt-Generierung (finding-recommendations CLIENT-FREI)
+- `supabase/migrations/20260429000115_project_compliance_data.sql` — project_compliance_data Tabelle
+
+**Fix-Prompt-Architektur:** `finding-recommendations.ts` (2400+ Zeilen) ist server-only. Client-Bundle von FindingsTableApp enthält keine Recommendation-Daten — Prompt wird via `/api/audit/fix-prompt` on-demand geladen.
+
+**maturityTier-Filter:** War gebrochen (`rule.tier` statt `rule.maturityTier`) — Enterprise-Rules (SBOM etc.) liefen immer. Gefixt in `src/lib/audit/index.ts`.
 
 ### Code-Regel: Domain-Pflichtfeld auf Rules
 
@@ -1081,15 +1098,21 @@ Letzte relevante Migrationen:
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
 
-Neue Sidebar-Struktur (alle Rollen):
+### Aktive Navigation (MVP, Stand 2026-04-29)
+
 - **Dashboard** → `/dashboard` (Projekt-Übersicht, Score-Cards, Onboarding-Hero)
 - **Audit** → `/audit` (Detail-Ansicht, Top-5-Findings, Score-Trend)
 - Admin-only: Budget, Logs, User, Branding, Department
 - Superadmin: zusätzlich interne Tools (QA, To-Dos, Design Ref)
 
-Eingefroren (Routen existieren, nicht in Nav):
+### Eingefrorene Navigation (Phase 2, eingefroren 2026-04-27)
+
+> ⚠️ Folgende Nav-Elemente sind im Code vorhanden, aber nicht aktiv im MVP.
+> Wieder-Aktivierung in Phase 2 möglich (siehe `docs/synthese/anhang-c-kill-und-einfrier-liste.md`).
+
 - `/chat`, `/projects`, `/artifacts`, `/workspaces`, `/feeds`, `/agenten`
 - "Neuer Chat"-Button entfernt aus Sidebar-Bottom
+- Alte KMU-Sidebar (member: Chat / Projekte / Artefakte / Workspaces / Feeds / Agenten)
 
 Dashboard (`/dashboard`):
 - Server Component mit `fetchScanProjects` + `fetchAuditRuns`

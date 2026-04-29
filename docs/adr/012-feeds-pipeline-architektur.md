@@ -1,4 +1,4 @@
-# ADR-014: Feeds-Pipeline-Architektur — Sources, Items, Runs, Distributions
+# ADR-012: Feeds-Pipeline-Architektur — Sources, Items, Runs, Distributions
 
 **Datum:** 2026-03-18 (Migrations 033, 036, 046) — dokumentiert 2026-03-26
 **Status:** Entschieden

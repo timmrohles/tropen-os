@@ -1,4 +1,4 @@
-# ADR-008: Vercel AI SDK als LLM-Abstraktionsschicht
+# ADR-006: Vercel AI SDK als LLM-Abstraktionsschicht
 
 **Datum:** 2026-03 — dokumentiert 2026-03-26
 **Status:** Entschieden

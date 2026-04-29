@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Prodify (formerly Tropen OS) are documented here.
+All notable changes to Tropen OS are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Score percentile rank against v7 benchmark data
 
 ### Changed
-- Produktname: **Prodify** (Committee decision 2026-04-13)
+- Produktname: **Prodify** (Idee, nicht beschlossen, Komitee-Diskussion 2026-04-13)
 - Score target for beta: 85% Production Grade
 - Findings list: all findings as RecommendationCards (removed table layout)
 - Finding actions simplified: "Erledigt" / "Nicht relevant" with undo

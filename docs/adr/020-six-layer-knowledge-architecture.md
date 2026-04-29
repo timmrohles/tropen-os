@@ -1,4 +1,4 @@
-# ADR-006: Sechs-Schichten-Wissens-Architektur
+# ADR-020: Sechs-Schichten-Wissens-Architektur
 
 **Status:** Proposed
 **Datum:** 2026-04-27

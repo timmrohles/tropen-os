@@ -23,20 +23,28 @@ const STATUS_LABEL: Record<ScoreStatus, string> = {
   prototype:        'Prototype',
 }
 
-// Score number color
+// Score number + progress text color — risky uses --warning (#8C5A00) for contrast
 const STATUS_COLOR: Record<ScoreStatus, string> = {
   production_grade: 'var(--accent)',
   stable:           'var(--accent)',
-  risky:            'var(--status-risky)',
+  risky:            'var(--warning)',
   prototype:        'var(--error)',
 }
 
-// Badge: solid bg + white text
+// Badge background
 const STATUS_BADGE_BG: Record<ScoreStatus, string> = {
   production_grade: 'var(--accent)',
   stable:           'var(--accent)',
-  risky:            'var(--status-risky)',
+  risky:            'var(--status-risky-bg)',
   prototype:        'var(--error)',
+}
+
+// Badge text — risky uses dark amber on light bg for contrast
+const STATUS_BADGE_TEXT: Record<ScoreStatus, string> = {
+  production_grade: '#fff',
+  stable:           '#fff',
+  risky:            'var(--warning)',
+  prototype:        '#fff',
 }
 
 function getNextStatus(status: ScoreStatus): { label: string; threshold: number } | null {
@@ -249,7 +257,7 @@ export default async function DashboardPage() {
             fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
             color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
           }}>
-            <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+            <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} />
             {t('yourProjects')}
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
@@ -289,7 +297,7 @@ export default async function DashboardPage() {
                       fontSize: 12, fontWeight: 600,
                       padding: '4px 10px', borderRadius: 4,
                       background: STATUS_BADGE_BG[p.status],
-                      color: '#fff',
+                      color: STATUS_BADGE_TEXT[p.status],
                       flexShrink: 0,
                     }}>
                       {STATUS_LABEL[p.status]}

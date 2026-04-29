@@ -307,7 +307,9 @@ export default function ScoreHero({
               {delta! > 0
                 ? <TrendUp size={13} weight="bold" aria-hidden="true" />
                 : <TrendDown size={13} weight="bold" aria-hidden="true" />}
-              {delta! > 0 ? '+' : ''}{delta!.toFixed(1)}%
+              {delta! > 0
+                ? t('deltaPositive', { delta: delta!.toFixed(1) })
+                : t('deltaNegative', { delta: delta!.toFixed(1) })}
             </span>
           )}
           {!hasDelta && delta !== null && (
@@ -330,6 +332,18 @@ export default function ScoreHero({
             </span>
           )}
         </div>
+
+        {/* Coach-Kommentar — kurze Einschätzung zur aktuellen Status-Lage */}
+        {!isFirstRun && (
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.5 }}>
+            {t(
+              status === 'production_grade' ? 'scoreComment_production'
+              : status === 'stable' ? 'scoreComment_stable'
+              : status === 'risky' ? 'scoreComment_risky'
+              : 'scoreComment_prototype'
+            )}
+          </p>
+        )}
 
         {/* Runtime Gap Badge */}
         <div style={{ marginBottom: 8 }}>

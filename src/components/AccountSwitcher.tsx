@@ -107,7 +107,7 @@ export function AccountSwitcher({ current, onChange }: AccountSwitcherProps) {
                     width: '100%', padding: '8px 12px', border: 'none', cursor: 'pointer',
                     borderRadius: 8, textAlign: 'left',
                     fontFamily: 'var(--font-sans, system-ui)',
-                    background: account.role === current ? 'var(--active-bg)' : 'transparent',
+                    background: account.role === current ? 'var(--accent)' : 'transparent',
                     color: account.role === current ? 'var(--active-text)' : 'var(--text-primary)',
                     transition: 'background var(--t-fast)',
                   }}

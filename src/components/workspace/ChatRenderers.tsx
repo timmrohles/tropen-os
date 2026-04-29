@@ -1,9 +1,8 @@
 'use client'
 import React from 'react'
+import dynamic from 'next/dynamic'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
   CheckCircle, Warning, Lightbulb, Leaf,
   ChartBar, Wrench, ArrowRight, FloppyDisk,
@@ -11,6 +10,8 @@ import {
 import { parseArtifacts } from '@/lib/chat/parse-artifacts'
 import ArtifactRenderer from './ArtifactRenderer'
 import WorkspaceActionCard from './WorkspaceActionCard'
+
+const CodeBlock = dynamic(() => import('./CodeBlock'), { ssr: false })
 
 // ─── Workspace action marker ──────────────────────────────────────────────
 
@@ -42,14 +43,9 @@ export function makeMdComponents(
 
       return isBlock ? (
         <div style={{ position: 'relative' }}>
-          <SyntaxHighlighter
-            style={oneDark}
-            language={language ?? undefined}
-            PreTag="div"
-            customStyle={{ borderRadius: 6, fontSize: 13, margin: '8px 0' }}
-          >
+          <CodeBlock language={language ?? undefined}>
             {codeContent}
-          </SyntaxHighlighter>
+          </CodeBlock>
           {onSaveArtifact && (
             <button
               onClick={() => onSaveArtifact(codeContent, language)}

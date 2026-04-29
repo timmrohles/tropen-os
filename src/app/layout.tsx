@@ -7,7 +7,7 @@ import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
   preload: true,
@@ -26,7 +26,7 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
   variable: '--font-mono',
   display: 'swap',
-  preload: true,
+  preload: false, // mono font used only in code blocks — not render-critical
 })
 
 export const metadata: Metadata = {
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#2D7A50', // eslint-disable-line -- browser meta tag, kein CSS-Var möglich
+  themeColor: '#3F4A55', // eslint-disable-line -- browser meta tag, kein CSS-Var möglich
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

@@ -591,11 +591,19 @@ import { HomeIcon } from '@heroicons/react/24/outline'  // verbotene Library
             { var: '--text-primary',  hex: '#1A1714',             label: 'Text Primary' },
             { var: '--text-secondary',hex: '#4A4540',             label: 'Text Secondary' },
             { var: '--text-tertiary', hex: '#6B6560',             label: 'Text Tertiary' },
-            { var: '--accent',        hex: '#2D7A50',             label: 'Akzent Grün' },
-            { var: '--accent-light',  hex: '#D4EDDE',             label: 'Akzent Hell' },
-            { var: '--active-bg',     hex: '#1A2E23',             label: 'Active / Selected' },
-            { var: '--error',         hex: '#C0392B',             label: 'Error' },
-            { var: '--warning',       hex: '#C07A2A',             label: 'Warning' },
+            { var: '--accent',         hex: '#3F4A55',  label: 'Schiefer — Primär (Buttons, CTAs)' },
+            { var: '--accent-hover',   hex: '#2D3640',  label: 'Schiefer Hover' },
+            { var: '--accent-light',   hex: '#E8EAEC',  label: 'Schiefer Hell — Highlights' },
+            { var: '--accent-dark',    hex: '#1E2530',  label: 'Schiefer Dunkel — Sidebar, Bubbles' },
+            { var: '--secondary',      hex: '#A8B852',  label: 'Limette — Trend, Progress' },
+            { var: '--secondary-light',hex: '#EEF2DD',  label: 'Limette Hell' },
+            { var: '--active-bg',      hex: '#1E2530',  label: 'Active/Selected (Schiefer-Dark)' },
+            { var: '--surface-warm',   hex: '#FAF7F2',  label: 'Surface Warm (Sektionen)' },
+            { var: '--surface-cool',   hex: '#F2F4F1',  label: 'Surface Cool (Sektionen)' },
+            { var: '--surface-tint',   hex: '#EBEEE5',  label: 'Surface Tint — Schiefer-getönt' },
+            { var: '--status-danger',  hex: '#C8553D',  label: 'Rot — Pflicht-Tags' },
+            { var: '--error',          hex: '#A8301E',  label: 'Error' },
+            { var: '--warning',        hex: '#8C5A00',  label: 'Warning Text' },
           ].map(({ var: v, hex, label }) => (
             <div key={v} style={{ display: 'flex', alignItems: 'center', gap: 10,
               padding: '8px 12px', background: 'var(--bg-surface)',
@@ -1092,7 +1100,7 @@ style={{ transition: 'transform 200ms ease-out' }}`}
               fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
               color: 'var(--accent)', marginBottom: 12, letterSpacing: '0.02em',
             }}>
-              <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+              <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} />
               Was wir finden
             </span>
             <h2 style={{ margin: 0, fontSize: 28, fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontWeight: 700 }}>
@@ -1100,88 +1108,74 @@ style={{ transition: 'transform 200ms ease-out' }}`}
             </h2>
           </div>
         </div>
-        <Code>{`{/* ✅ Section-Tag vor Headline — helles Layout */}
+        <Code>{`{/* ✅ Section-Tag — einzige Variante (helles Layout) */}
 <span style={{
   display: 'inline-flex', alignItems: 'center', gap: 12,
   fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
   color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
 }}>
-  <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+  <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} />
   Deine Projekte
 </span>
 
-{/* ✅ Section-Tag — dunkles Layout (auf var(--active-bg)) */}
-<span style={{
-  display: 'inline-flex', alignItems: 'center', gap: 12,
-  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
-  color: 'rgba(77,184,122,0.85)', marginBottom: 20, letterSpacing: '0.02em',
-}}>
-  <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
-  EU-Compliance
-</span>
-
 {/* ❌ FALSCH — Section ohne Tag */}
-<h2>Was wir finden</h2>`}
+<h2>Was wir finden</h2>
+
+{/* ❌ FALSCH — dunkle Variante (Pattern 21 abgelöst 2026-04-28) */}
+<span style={{ color: 'rgba(77,184,122,0.85)' }}>...</span>`}
         </Code>
       </Section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          21. DUNKLE SECTIONS (Hero / CTA-Bereiche)
+          21. SURFACE-SEKTIONEN (abgelöst Pattern 21 — dunkle Sections)
       ══════════════════════════════════════════════════════════════════ */}
-      <Section title="21. Dunkle Sections — Hero & CTA">
+      <Section title="21. Surface-Sektionen — Sanfte Sektion-Hierarchie">
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-body" style={{ padding: 16 }}>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>
-              Dunkle Sections verwenden <code className="t-mono">var(--active-bg)</code> (#1A2E23).
-              Volle Viewport-Breite mit negativem Margin-Trick. Maximal 3 dunkle Sections pro Seite.
-              Nie zwei dunkle Sections direkt hintereinander.
+              Dunkle Sections (<code className="t-mono">var(--active-bg)</code>) sind für Marketing-Sektionen
+              abgelöst (BP-Design-1, 2026-04-28). Stattdessen: Pastell Surface-Familie mit CSS-Klassen.
+              <code className="t-mono">--active-bg</code> bleibt für App-UI Active-States (list-row, bubble, etc.)
             </p>
             <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
               <tbody>
                 {[
-                  ['Hintergrund',  'var(--active-bg)   → #1A2E23'],
-                  ['Text',         '#ffffff'],
-                  ['Subtext',      'rgba(255,255,255,0.7)'],
-                  ['Tag-Farbe',    'rgba(77,184,122,0.85)'],
-                  ['Section-Pad',  '80px vertikal (Desktop), 48px (Mobile)'],
+                  ['.section-warm',          'var(--surface-warm)  — warmes Off-White'],
+                  ['.section-cool',          'var(--surface-cool)  — kühles Off-White'],
+                  ['.section-tint',          'var(--surface-tint)  — leichter Grün-Hauch'],
+                  ['.section-gradient-hero', 'var(--gradient-hero) — Hero-Verlauf'],
+                  ['.section-gradient-data', 'var(--gradient-data) — CTA-Verlauf'],
+                  ['.section-full-bleed',    'width: 100vw, margin-left: calc(-50vw + 50%)'],
+                  ['.section-pad',           '80px vertikal (Desktop), 48px (Mobile)'],
                 ].map(([k, v]) => (
                   <tr key={k} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '6px 12px 6px 0', fontWeight: 600, color: 'var(--text-secondary)', width: 140 }}>{k}</td>
-                    <td style={{ padding: '6px 0' }}><code className="t-mono" style={{ color: 'var(--accent)' }}>{v}</code></td>
+                    <td style={{ padding: '6px 12px 6px 0', fontWeight: 600, color: 'var(--text-secondary)', width: 200 }}><code className="t-mono">{k}</code></td>
+                    <td style={{ padding: '6px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>{v}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-        <Code>{`{/* ✅ Dunkle Section — volle Breite */}
-<section style={{
-  background: 'var(--active-bg)',
-  padding: '80px 0',
-  width: '100vw',
-  marginLeft: 'calc(-50vw + 50%)',
-}}>
+        <Code>{`{/* ✅ Surface-Sektion mit sanftem Wechsel */}
+<section className="section-tint section-pad">
   <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' }}>
-    {/* Section-Tag */}
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 12,
-      fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
-      color: 'rgba(77,184,122,0.85)', marginBottom: 20,
-    }}>
-      <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
-      EU-Compliance
-    </span>
-    <h2 style={{
-      fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)',
-      fontWeight: 800, color: '#ffffff',
-    }}>
-      Headline
-    </h2>
+    <h2 style={{ color: 'var(--text-primary)' }}>Headline</h2>
   </div>
 </section>
 
-{/* Streifenrhythmus: dunkel → hell → dunkel → hell → dunkel
-    Nie zwei dunkle Sections direkt hintereinander */}`}
+{/* ✅ CTA-Sektion mit Gradient */}
+<section className="section-gradient-data section-pad">
+  ...
+</section>
+
+{/* ❌ FALSCH — altes Pattern 21 (abgelöst) */}
+<section style={{ background: 'var(--active-bg)', color: '#fff' }}>
+  ...
+</section>
+
+{/* Empfohlener Sektion-Rhythmus auf einer Seite:
+    Hero (dark, BP-Design-2) → section-base → section-tint → section-base → section-gradient-data */}`}
         </Code>
       </Section>
 
@@ -1265,6 +1259,54 @@ const STATUS_COLOR = {
 <span style={{ fontSize: 40, fontWeight: 800, color: STATUS_COLOR[status], lineHeight: 1 }}>
   {score}%
 </span>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          24. PFLICHT-TAGS (BP-Design-1 Marken-Pivot)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="24. Pflicht-Tags — DSGVO / BFSG / EU AI Act">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              <span className="duty-tag duty-tag--dsgvo">DSGVO-Pflicht</span>
+              <span className="duty-tag duty-tag--bfsg">BFSG-Pflicht</span>
+              <span className="duty-tag duty-tag--ai-act">EU-AI-Act-Pflicht</span>
+              <span className="duty-tag duty-tag--security">Sicherheits-kritisch</span>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+              Pflicht-Tags kommen vor dem Finding-Titel in Compliance-Findings.
+              Rot für DSGVO/BFSG/AI-Act, Amber für Sicherheits-kritisch.
+              Mono-Font, uppercase, 11px.
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          25. DATEN-HIGHLIGHT (BP-Design-1 Marken-Pivot)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="25. Daten-Highlight — Mono-Display für Zahlen">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 24, display: 'flex', gap: 48, flexWrap: 'wrap' }}>
+            <div className="data-highlight">
+              <span className="data-highlight__number">183</span>
+              <span className="data-highlight__label">Regeln in 25 Kategorien</span>
+            </div>
+            <div className="data-highlight">
+              <span className="data-highlight__number">60s</span>
+              <span className="data-highlight__label">pro Audit</span>
+            </div>
+            <div className="data-highlight">
+              <span className="data-highlight__number">94%</span>
+              <span className="data-highlight__label">Production Grade</span>
+            </div>
+          </div>
+        </div>
+        <Code>{`<div className="data-highlight">
+  <span className="data-highlight__number">183</span>
+  <span className="data-highlight__label">Regeln in 25 Kategorien</span>
+</div>`}
         </Code>
       </Section>
 

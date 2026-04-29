@@ -1,4 +1,4 @@
-# ADR-001: Drizzle ORM nur fuer Schema-Definition, nicht fuer Queries
+# ADR-004: Drizzle ORM nur fuer Schema-Definition, nicht fuer Queries
 
 **Status:** Accepted
 **Datum:** 2026-03-15

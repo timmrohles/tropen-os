@@ -1,4 +1,4 @@
-# ADR-003: Library-System — Rolle, Capability, Skill, Outcome als vier eigenständige Entitäten
+# ADR-013: Library-System — Rolle, Capability, Skill, Outcome als vier eigenständige Entitäten
 
 **Datum:** 2026-03-19 (Migrations 052–056, library-resolver.ts)
 **Status:** Entschieden

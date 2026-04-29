@@ -1,4 +1,4 @@
-# ADR-008: Markdown-Format für Projektwissen mit Obsidian-Brücke
+# ADR-022: Markdown-Format für Projektwissen mit Obsidian-Brücke
 
 **Status:** Proposed
 **Datum:** 2026-04-27

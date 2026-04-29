@@ -202,7 +202,7 @@ const ChatHeaderStrip = forwardRef<ChatHeaderStripHandle, ChatHeaderStripProps>(
                   setMenuOpen(false)
                   setProjOpen(false)
                 }}
-                style={{ paddingLeft: 28, color: 'rgba(255,255,255,0.4)' }}
+                style={{ paddingLeft: 28, color: 'rgba(255,255,255,0.65)' }}
               >
                 <X size={12} weight="bold" aria-hidden="true" />
                 Aus Projekt lösen

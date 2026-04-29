@@ -4,7 +4,7 @@
 > **Letzte Aktualisierung:** 2026-04-29 (Tab-Sprint Domain-Architektur, ADR-025)
 > **Basis:** 5 Komitee-Reviews (€4.80 Gesamtkosten), Tiefe Wettbewerbsanalyse
 > **Positionierung:** "Dein Code, in Production-Reife." — Coach-Position (ADR-024)
-> **Produktname:** Prodify (Komitee 2026-04-13) — Domain sichern + Markenrecherche offen
+> **Produktname:** Tropen OS (Platzhalter) — Prodify wurde am 2026-04-13 als Idee diskutiert, nicht beschlossen. Naming-Sprint + Domain-Sicherung offen.
 > **Tab-Sprint:** ADR-025 accepted 2026-04-29. Sprint 1 (BP8–BP13) verschoben hinter Tab-Sprint.
 
 ## ⚠️ Pivot-Disziplin (Stand 2026-04-29)
@@ -513,3 +513,12 @@ Nach Tab-Sprint-Abschluss kann sofort kommuniziert werden:
 - "10 Supabase-Sicherheits-Checks gelauncht — RLS, Service-Role, Storage-Buckets"
 - Vibe-Coder-Outreach (L2): konkretes Tool zum Zeigen
 - Cursor/Lovable-Communities: "Lasst euer Repo durch unseren Sicherheits-Tab laufen"
+
+---
+
+## Offene Punkte
+
+- **Naming-Entscheidung:** Tropen OS ist Platzhalter-Name. Prodify wurde
+  2026-04-13 als Idee in einer Komitee-Diskussion erwähnt, nicht beschlossen.
+  Naming-Sprint erforderlich vor Beta-Outreach. Domain-Sicherung Voraussetzung.
+  Zuständigkeit: Timm. Kein Build-Prompt nötig — strategische Entscheidung.

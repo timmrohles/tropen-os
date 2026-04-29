@@ -1,4 +1,4 @@
-# ADR-002: Anthropic SDK direkt statt Dify
+# ADR-010: Anthropic SDK direkt statt Dify
 
 **Status:** Accepted
 **Datum:** 2026-03-17

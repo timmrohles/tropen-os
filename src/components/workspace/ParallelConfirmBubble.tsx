@@ -21,7 +21,7 @@ export default function ParallelConfirmBubble({ intent, loading, onConfirm, onDe
       <div className="cmsg-bubble-wrap">
         <div
           className="cmsg-bubble cmsg-bubble--assistant"
-          style={{ background: 'var(--accent-light)', border: '1px solid rgba(45,122,80,0.2)' }}
+          style={{ background: 'var(--accent-light)', border: '1px solid rgba(63,74,85,0.2)' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <Lightbulb size={15} weight="fill" color="var(--accent)" aria-hidden="true" />

@@ -1,4 +1,4 @@
-# ADR-010: Rollen-Architektur — Superadmin, OrgRole, WorkspaceRole
+# ADR-007: Rollen-Architektur — Superadmin, OrgRole, WorkspaceRole
 
 **Datum:** 2026-03 — dokumentiert 2026-03-26
 **Status:** Entschieden

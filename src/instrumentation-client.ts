@@ -3,8 +3,8 @@ import * as Sentry from '@sentry/nextjs'
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Tracing
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  // Tracing disabled — 124kB gz bundle savings; re-enable if Sentry Performance tab needed
+  tracesSampleRate: 0,
 
   // Session Replays (5% in Prod, 100% bei Fehlern)
   replaysSessionSampleRate: 0.05,

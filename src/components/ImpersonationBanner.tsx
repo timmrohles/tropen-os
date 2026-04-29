@@ -82,7 +82,7 @@ export default function ImpersonationBanner() {
   return (
     <div style={{
       position: 'fixed', top: 52, left: 0, right: 0, zIndex: 200,
-      background: 'var(--active-bg)', borderBottom: '1px solid var(--accent)',
+      background: 'var(--accent)', borderBottom: '1px solid var(--accent)',
       display: 'flex', alignItems: 'center', gap: 12, padding: '0 24px',
       height: 40, fontSize: 13,
     }}>

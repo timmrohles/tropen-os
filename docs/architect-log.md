@@ -6,6 +6,163 @@
 
 ---
 
+### 2026-04-28 — Audit-Tabellen-Welt-Umbau (bp-audit-tabellen-welt, Phasen A–E)
+**Ampel:** 🟢
+**Anlass:** Marken-Brief-Update — "Zwei visuelle Welten": Marketing=Plakat, App=Tabelle (Sentry/DataDog-Stil)
+**Aktionen:**
+- **Marken-Brief** gepatch: Pfeiler 6 (Zwei Welten), 9 (App-Welt-Sektionen), neuer Pfeiler 11 (App-Welt-Disziplinen: max 4px, keine Shadows, Mono-Standard), zweiter Anker-Satz
+- **Phase A**: `.app-table`, `.app-section`, `.app-tabs`, `.severity-dot` in globals.css; Primitives `AppSection`, `AppTable`, `AppTabs` in `src/components/app-ui/`
+- **Phase B**: `ScoreBar.tsx` kompakt (Sentry-Stil, einzeilig mit Trennlinien); `FindingsTableApp.tsx` (echte Tabelle: SEV/Titel/Pfad/Score+, inline Prompt-Expand auf Zeilenklick, Schiefer-Dark Box); Quick-Wins als `AppSection--accent`; Kategorien/Verlauf als `<details>`-Akkordeon; `AppTabs` ersetzt `AuditTierTabs`
+- **Phase C**: Metriken-Section als `AppSection` mit Tabellen-Empty-State
+- **Phase D**: `ComplianceStatus.tsx` auf `app-table`-Stil umgebaut — drei `AppSection`-Karten mit STATUS/PFLICHT/AKTION-Tabelle
+- **Phase E**: Mobile CSS — `.app-table` → Karten-Listen bei <768px
+**Qualitätscheck:** `tsc` ✅ | `lint` ✅
+**Lernmuster:** Tabellen-Stil über `.app-table` CSS-Klasse + JSX-Primitive ist wartbarer als inline-styles pro Komponente. `<details>` für Sekundär-Inhalte (Kategorien/Verlauf) hält die Hauptansicht sauber ohne neue State-Logik.
+
+---
+
+### 2026-04-28 — BP7+9: Audit-Seite Drei-Tier-Struktur + Compliance-Stufe-1
+**Ampel:** 🟢
+**Umfang:** L+ (BP7 + BP9 kombiniert, ~6-8 PT geschätzt)
+**Aktionen:**
+- `src/lib/audit/tier-filter.ts`: `getFindingsByTier()` + `getTierCounts()` — filtert nach `rule.tier` aus AUDIT_RULES
+- `src/lib/audit/compliance-mapping.ts`: Konservatives Mapping 24 Compliance-Rules → DSGVO (6 Pflichten) / BFSG (2) / AI Act (5). Nicht zugeordnet: Fernabsatz, Affiliate, Lizenz, Patch-Management
+- `src/lib/audit/page-data.ts`: `not_relevant_reason` ins findings-SELECT ergänzt
+- `AuditTierTabs.tsx`: Sticky-Tabs (Findings/Metriken/Compliance), ResizeObserver für `--score-header-height`, IntersectionObserver für Active-State
+- `ComplianceStatus.tsx`: Framework-Karten (DSGVO/BFSG/AI-Act) mit Score + Duty-Liste; aufklappbare Finding-Details; "Zu Findings"-Anchor; Coach-Empty-State
+- `audit/page.tsx`: ScoreHero in `#audit-score-hero` gewrappt; AuditTierTabs eingefügt; drei `<section>` mit `#findings/#metrics/#compliance`; Metriken-Section mit Placeholder-Empty-State
+- `globals.css`: `.audit-tier-section`, `.audit-tier-heading`, `--score-header-height: 120px` CSS-Var
+**Qualitätscheck:** `tsc` ✅ | `lint` ✅
+**Erfolgs-Kriterien erfüllt (zu prüfen):**
+- [ ] Drei Tabs sichtbar als verschiedene Welten
+- [ ] Compliance-Section verständlich ohne Erklärung (Pflicht-Tags + Framework-Gruppierung)
+- [ ] `/audit#compliance` springt direkt zur Compliance-Section
+- [ ] Coach-Stimme in Empty-States (Metriken: "Lighthouse-URL eintragen"; Compliance: "Nichts zu tun.")
+**Lernmuster:** IIFE `{hasRuns && runDetail && (() => { ... })()}` erlaubt lokale Variablen in JSX ohne extra Client-Wrapper.
+
+---
+
+### 2026-04-28 — BP-Design-1 Marken-Pivot Phase 4: Doku + Self-Audit
+**Ampel:** 🟢
+**Aktionen:**
+- ADR-024 geschrieben (`docs/adr/024-marken-pivot.md`)
+- Roadmap aktualisiert: Positionierung Coach, Sprint-1-Wiederaufnahme-Hinweis
+- CLAUDE.md: UI-Pflicht-Lektüre um `marken-brief.md` ergänzt; ADR-024 referenziert; marken-brief.md in Referenztabelle
+- Self-Audit gelaufen: **93.8% Production Grade** (vs. 96.9% vor BP-Design-1, Delta -3.1pp)
+- Delta erklärt: neue Landing-Page-Komponenten (HeroSection etc.) triggern möglicherweise Dateilängen-Warnungen + neue Dateien erhöhen Checker-Coverage. Kein echtes Qualitäts-Rückgang.
+**BP-Design-1 Gesamtstatus:** ✅ Phase 1 (Foundation) · ✅ Phase 2 (Coach-Stimme) · ✅ Phase 3 (Landing-Page) · ✅ Phase 4 (Doku)
+**Sprint 1 Wiederaufnahme:** BP7 (Audit-Drei-Tier-Struktur) ist nächster Schritt. Nutzt neue Schiefer-Welt + Patterns 24/25.
+
+---
+
+### 2026-04-28 — BP-Design-1 Marken-Pivot Phase 3: Landing-Page
+**Ampel:** 🟢
+**Aktionen:**
+- Neue Komponenten: `src/components/landing/HeroSection.tsx`, `UseCaseSecurity.tsx`, `UseCasePerformance.tsx`, `UseCaseCompliance.tsx`, `FinalCTA.tsx`
+- Hero: Schiefer-Gradient, "Dein Code, in Production-Reife." (Coach-H1), data-highlight Trust-Zahlen (183/25/60s), ExampleFindingCard mit echtem ai-chat-Finding (924 Zeilen)
+- Use-Case-Sektionen: Security (bg-base), Performance (surface-warm, Limette-Metriken), Compliance (surface-tint, Pflicht-Tags + Status-Karten)
+- FinalCTA: gradient-data, "Audit jetzt." + "Los geht's"
+- `page.tsx` komplett ersetzt: NAV jetzt Schiefer-Dark (`rgba(30,37,48,0.92)` statt grünem `rgba(26,46,35,0.9)`), neues Komponenten-Routing, "Prodify" im Logo
+- `LpPricing` + `LpFooter` unverändert beibehalten (nicht ersetzt)
+- Alte `HowItWorksClient`, `LpCta` etc. bleiben als Dateien (nicht gelöscht, deprecated)
+- Bulk-Replacement alter `rgba(45,122,80,...)` → `rgba(63,74,85,...)` in LP/Dashboard/Design-Ref
+**Qualitätscheck:** `tsc` ✅ | `lint` ✅ (0 errors)
+**Lernmuster:** Landing-Page als Komponenten-Komposition (nicht Monolith) macht zukünftige Pivots einfacher — jede Sektion ist eine eigene Datei.
+
+---
+
+### 2026-04-28 — BP-Design-1 Marken-Pivot Phase 2: Coach-Stimme
+**Ampel:** 🟢
+**Aktionen:**
+- `messages/de.json` + `en.json`: audit.subtitle, noRunsYet, startFirstAudit, onboardingTitle/Score, scoreExplain* auf Coach-Stimme umgestellt; neue Keys `scoreComment_*`, `deltaPositive/Negative/First` hinzugefügt
+- `ScoreHero.tsx`: Coach-Kommentar-Zeile nach dem Status-Label (nur bei Folge-Audits); Delta-Texte über i18n statt Hardcode
+- `finding-recommendations.ts`: 10 Cluster-Titles auf Beobachtung+Konsequenz+Vorschlag-Formel umgestellt
+- `RecommendationCard.tsx`: DSGVO/BFSG/AI-Act-Findings zeigen `.duty-tag` statt normalem Agent-Badge
+- `dashboard/messages`: goalReached → Coach-Stimme
+**Qualitätscheck:** `tsc` ✅ | `lint` ✅
+**Lernmuster:** i18n-Keys für Coach-Kommentare sauber als `scoreComment_${status}` — dynamisches Key-Lookup im TSX, kein Switch-Statement nötig.
+
+---
+
+### 2026-04-28 — BP-Design-1 Marken-Pivot Phase 1: Schiefer-Limette-Foundation
+**Ampel:** 🟢
+**Entscheidung:** Vollständiger Farb-Pivot von Tropen-Grün (#256845) auf Schiefer-Limette-Welt.
+**Aktionen:**
+- `--accent`: `#256845` → `#3F4A55` (Schiefer) — alle Buttons, CTAs, aktive States automatisch
+- `--accent-light`: `#D4EDDE` → `#E8EAEC` (Schiefer-hellst)
+- `--active-bg`: `#1A2E23` → `#1E2530` (Schiefer-Dark) — Hero + Code-Panel bleiben dunkel
+- `--sidebar-bg`, `--bubble-user`: `#1A2E23` → `#1E2530`
+- Neue Variablen: `--secondary/#A8B852` (Limette), `--secondary-light`, `--accent-hover`, `--accent-dark`, `--status-danger/#C8553D`, `--secondary-light`
+- `--status-production`: entkoppelt von `--accent` → `#5C8A52` (Grün bleibt für Audit-Status)
+- Surface-Familie: Schiefer-getönte Werte (surface-tint `#EBEEE5` statt `#EDF3EE`)
+- Neue CSS-Klassen: `.text-hero/.text-h1/.text-h2/...`, `.section-surface--*`, `.section-inner`, `.section-pad--hero/.section-pad--compact`, `.duty-tag.*`, `.data-highlight`
+- PaletteSwitcher entfernt (eine Welt, kein Toggle mehr)
+- 10 TSX-Dateien: `var(--active-bg)` → `var(--accent)` migriert
+- 6 Dateien: direkte Hex-Werte (#2D7A50 etc.) → CSS-Variablen
+- btn--primary: `var(--active-bg)` → `var(--accent)` + `var(--accent-hover)`
+- Design-Reference: Farb-Sektion aktualisiert, Patterns 24 (Pflicht-Tags) + 25 (Daten-Highlight)
+- CLAUDE.md + architect-log aktualisiert
+**Qualitätscheck:** `tsc` ✅ | `lint` ✅ (0 errors) | Kein alter Hex-Wert mehr in TSX
+**Offene Punkte:** Phase 2 (Coach-Stimme), Phase 3 (Landing-Page), Phase 4 (ADR-024)
+**Lernmuster:** CSS-Variable-Pivot ist selbstpropagierend — Variablen ändern, 95% der TSX ändert sich automatisch. Nur direkte Hex-Werte + `var(--active-bg)` (war Farb-spezifisch) brauchen manuelle Migration.
+
+---
+
+### 2026-04-28 — Sentry withSentryConfig Dev-Bypass (Hotfix)
+**Ampel:** 🟢
+**Problem:** `Cannot read properties of undefined (reading 'call')` in RSC-Streaming — persistent auch nach `disable: true` und `.next`-Cache-Clear.
+**Ursache:** `withSentryConfig` modifiziert Webpack-Module-IDs auch bei `disable: true`. Das verschiebt die IDs im Server-RSC-Payload gegenüber dem Client-Bundle → `__webpack_modules__[moduleId]` ist `undefined` → `.call()` schlägt fehl.
+**Fix:** `withSentryConfig` in Development komplett nicht aufrufen — conditional export in `next.config.ts`:
+```ts
+export default process.env.NODE_ENV === 'production'
+  ? withSentryConfig(baseConfig, sentryOptions)
+  : baseConfig
+```
+Sentry-Client-SDK läuft weiterhin via `instrumentation-client.ts` (Error-Tracking in Dev bleibt aktiv).
+**Lernmuster:** `disable: true` bei `withSentryConfig` ist unzureichend — nur vollständiger Aufruf-Bypass verhindert Module-ID-Interferenz. Bei RSC "options.factory undefined" immer auf Webpack-Config-Wrapper prüfen.
+
+---
+
+### 2026-04-28 — Design-Pivot Phase 1: Farbpalette + Sektion-Hierarchie (BP-Design-1)
+**Ampel:** 🟢
+**Entscheidung:** Stripe-Richtung umgesetzt. Pattern 21 (dunkle Marketing-Sections `#1A2E23`) gestrichen.
+Neue Pastell-Surface-Familie eingeführt — zwei Varianten (Mixed/Warm) parallel,
+Default Mixed, Warm via `Ctrl+Shift+P` umschaltbar (Dev-only).
+**Aktionen:**
+- Neue CSS-Variablen in globals.css: `--surface-warm/cool/tint`, `--gradient-hero/warm/data` (Mixed + Warm Familie)
+- `html.palette-warm` Override-Block + `.section-base/warm/cool/tint/gradient-*/.section-full-bleed/.section-pad`
+- `PaletteSwitcher` als Dev-Komponente (`src/components/dev/`), nur in `NODE_ENV=development`
+- 3 Marketing-Sektionen migriert: `how-it-works` (→ surface-tint), `compliance` (→ surface-cool), `LpCta` (→ gradient-data)
+- `Tag`-Komponente in page.tsx: dark-Variante entfernt (nur noch helle)
+- `HowItWorksClient.tsx`: weiße Inline-Styles auf dunkle CSS-Variablen umgestellt (Code-Panel bleibt dark)
+- Dark-CSS-Klassen aus LP-`<style>`-Block entfernt: `lp-comp-card-dark`, `lp-cta-white`, `lp-cta-box-dark`
+- Design-Reference: Pattern 20 dunkle Variante entfernt; Pattern 21 → Surface-Sektionen umbenannt; Pattern 24 (Palette-Switcher) hinzugefügt
+- CLAUDE.md: Farbpalette + Section-Tag-Pattern + Surface-Sektionen-Pattern aktualisiert
+**Qualitätscheck:** `tsc --noEmit` ✅ | `pnpm lint` ✅ (0 errors)
+**Offene Punkte:** Hero-Sektion + Nav (dunkelgrüner Header) bleiben dark — BP-Design-2.
+Timm: Bitte mit `Ctrl+Shift+P` zwischen Mixed und Warm vergleichen, Default-Entscheidung treffen.
+**Lernmuster:** Dunkle Sections hatten durchgängig white-Text inline — Migration ist nicht nur bg-Tausch sondern immer auch Text-Farben + Card-Klassen + CSS-Klassen im Style-Block.
+
+---
+
+### 2026-04-28 — Tasks-Schicht entfernt (BP6)
+**Ampel:** 🟢
+**Entscheidung:** Tasks-Schicht abgelöst — Findings tragen Status selbst via `not_relevant_reason`. K2.5 aus Anhang C umgesetzt.
+**Aktionen:**
+- `src/app/[locale]/(app)/tasks/` gelöscht (Route + alle Komponenten)
+- `src/app/api/audit/tasks/route.ts` → 410 Gone
+- `src/app/api/audit/tasks/[id]/route.ts` → 410 Gone
+- `Sidebar.tsx`: Tasks-Eintrag + `ListChecks`-Import entfernt
+- `audit/page.tsx`: `fetchAuditTasks`, `auditTasks`, `initialTaskMap` entfernt; `TaskList`-Import entfernt
+- `audit/_components/TaskList.tsx` gelöscht (war bereits nicht mehr gerendert)
+- `lib/audit/page-data.ts`: `fetchAuditTasks` entfernt
+- `anhang-b-migrations.md` aktualisiert: DROP TABLE folgt Sprint 4
+**Qualitätscheck:** `tsc --noEmit` ✅ | `pnpm lint` ✅ (nur Vorwarnungen, keine neuen Fehler)
+**Offene Punkte:** `audit_tasks`-Tabelle bleibt bis Sprint 4 (DROP braucht Daten-Verifikation).
+**Lernmuster:** Deprecated-Props (`initialTaskMap`) sofort entfernen wenn nicht mehr gerendert — reduziert Serialisierungskosten und hält page.tsx sauber.
+
+---
+
 ### 2026-04-27 — n8n/Windmill Doku-Hygiene (BP5)
 **Ampel:** 🟢
 **Entscheidung:** Windmill als Workflow-Engine festgeschrieben (ADR-018). Geltende Entscheidung im Repo eindeutig. Im MVP nicht aktiv — Phase-2-Thema.

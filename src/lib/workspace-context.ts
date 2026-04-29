@@ -10,7 +10,7 @@ import type { CardPlanC, WorkspacePlanC } from '@/types/workspace-plan-c.types'
 const log = createLogger('workspace-context')
 
 // eslint-disable-next-line -- hex colors required for Reveal.js iframe CSS (CSS vars unavailable in iFrame)
-const RC = { h: '#1A1714', a: '#2D7A50', bg: '#EAE9E5', t: '#4A4540' }
+const RC = { h: '#1A1714', a: '#3F4A55', bg: '#EAE9E5', t: '#4A4540' }
 
 // Raw DB row shapes (snake_case from Supabase)
 interface CardDbRow {

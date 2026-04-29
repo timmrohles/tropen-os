@@ -1,4 +1,4 @@
-# ADR-004: Smart Model Router — Multi-Provider mit Kundenhoheit und Kostenoptimierung
+# ADR-014: Smart Model Router — Multi-Provider mit Kundenhoheit und Kostenoptimierung
 
 **Datum:** 2026-03-20
 **Status:** Vorgeschlagen

@@ -43,21 +43,21 @@ export default function HowItWorksClient({ steps, badgeRules }: Props) {
               padding: '28px 0',
               background: 'transparent', border: 'none',
               borderBottomWidth: 1, borderBottomStyle: 'solid',
-              borderBottomColor: 'rgba(255,255,255,0.08)',
+              borderBottomColor: 'var(--border)',
               cursor: 'pointer',
               opacity: active === i ? 1 : 0.38,
               transition: 'opacity 400ms',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-              <span style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 28, color: 'rgba(255,255,255,0.15)', lineHeight: 1, flexShrink: 0, paddingTop: 3 }}>
+              <span style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 28, color: 'var(--text-tertiary)', lineHeight: 1, flexShrink: 0, paddingTop: 3 }}>
                 {s.n}
               </span>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', marginBottom: 8 }}>
+                <h3 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: 8 }}>
                   {s.title}
                 </h3>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65 }}>{s.desc}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{s.desc}</p>
                 {active === i && (
                   <div style={{ marginTop: 16, height: 1, background: 'rgba(26,23,20,0.08)', overflow: 'hidden' }}>
                     <div key={tick} style={{ height: '100%', background: 'var(--accent)', width: 0, animation: 'lp-progress 5s linear forwards' }} />
@@ -99,11 +99,11 @@ export default function HowItWorksClient({ steps, badgeRules }: Props) {
         </div>
 
         <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20, background: 'rgba(45,122,80,0.2)', color: 'var(--accent)', border: '1px solid rgba(45,122,80,0.3)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20, background: 'rgba(45,122,80,0.2)', color: 'var(--accent)', border: '1px solid rgba(63,74,85,0.3)' }}>
             {badgeRules}
           </span>
           {['Cursor', 'Claude Code', 'Windsurf'].map(t => (
-            <span key={t} style={{ fontSize: 11, padding: '4px 11px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <span key={t} style={{ fontSize: 11, padding: '4px 11px', borderRadius: 20, background: 'var(--bg-surface)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }}>
               {t}
             </span>
           ))}

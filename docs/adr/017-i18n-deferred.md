@@ -1,4 +1,4 @@
-# ADR-004: Internationalisierung aufgeschoben, Grundstruktur vorbereitet
+# ADR-017: Internationalisierung aufgeschoben, Grundstruktur vorbereitet
 
 **Status:** Accepted
 **Datum:** 2026-03-26

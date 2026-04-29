@@ -1,4 +1,5 @@
 import createMiddleware from 'next-intl/middleware'
+import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { routing } from '@/i18n/routing'
@@ -15,6 +16,26 @@ export async function middleware(request: NextRequest) {
     const response = await proxy(request)
     response.headers.set('x-request-id', requestId)
     return response
+  }
+
+  // Root path: skip the /de intermediate hop for authenticated users.
+  // Without this, authenticated users hit / → /de (next-intl) → /de/dashboard (page.tsx) = 2 redirects.
+  // With this, they go / → /de/dashboard = 1 redirect.
+  // Uses getSession() (cookie-only, no network round-trip) — the dashboard page validates the session properly.
+  if (pathname === '/') {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } }
+    )
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      const localeCookie = request.cookies.get('NEXT_LOCALE')?.value
+      const locale = routing.locales.includes(localeCookie as 'en' | 'de') ? localeCookie : routing.defaultLocale
+      const response = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url))
+      response.headers.set('x-request-id', requestId)
+      return response
+    }
   }
 
   // App routes: i18n routing + tracing headers

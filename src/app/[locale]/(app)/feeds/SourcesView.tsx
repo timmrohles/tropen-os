@@ -283,7 +283,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                     <span key={t.id} style={{
                       display: 'inline-flex', alignItems: 'center',
                       padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500,
-                      background: t.color ?? 'var(--active-bg)', color: 'var(--text-inverse)',
+                      background: t.color ?? 'var(--accent)', color: 'var(--text-inverse)',
                     }}>
                       {t.name}
                     </span>
@@ -393,7 +393,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
                       />
                       <span style={{
                         padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 500,
-                        background: assigned ? (t.color ?? 'var(--active-bg)') : 'var(--border)',
+                        background: assigned ? (t.color ?? 'var(--accent)') : 'var(--border)',
                         color: assigned ? 'var(--text-inverse)' : 'var(--text-secondary)',
                       }}>
                         {t.name}

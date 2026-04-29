@@ -45,6 +45,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Explizit Projekt-Root setzen — verhindert dass Next.js C:\Users\timmr\package-lock.json
+  // als Workspace-Root erkennt und Vendor-Chunks am falschen Ort schreibt.
+  outputFileTracingRoot: path.resolve('.'),
   webpack(config) {
     // Force all @opentelemetry/api-logs imports (including nested copies from
     // pnpm's virtual store) to resolve to the single top-level installation.
@@ -71,20 +74,20 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withNextIntl(withSentryConfig(withBundleAnalyzer(nextConfig), {
+const sentryOptions = {
   org: 'tropen',
   project: 'javascript-nextjs',
-
-  // Source Maps hochladen (nur in CI/Prod, nicht lokal)
   silent: !process.env.CI,
-
-  // Sentry-eigene Performance-Tracing Instrumentierung
   widenClientFileUpload: true,
   hideSourceMaps: true,
+}
 
-  // @sentry/webpack-plugin v5 injiziert Runtime-Hooks in das webpack-Modul-System,
-  // die mit Next.js 15.5 RSC-Streaming kollidieren ("options.factory undefined" auf
-  // Lazy-Chunks). In Dev nicht nötig — SDK in instrumentation-client.ts trackt Fehler
-  // weiterhin. In Prod bleibt alles aktiv (Source Maps + Instrumentation).
-  disable: process.env.NODE_ENV !== 'production',
-}))
+// withSentryConfig modifiziert Webpack-Module-IDs auch bei disable:true — das
+// desynchronisiert RSC-Payload-IDs vom Client-Bundle ("options.factory undefined").
+// In Dev wird withSentryConfig komplett übersprungen; Sentry-Client-SDK läuft
+// weiterhin via instrumentation-client.ts für Fehler-Tracking.
+const baseConfig = withNextIntl(withBundleAnalyzer(nextConfig))
+
+export default process.env.NODE_ENV === 'production'
+  ? withSentryConfig(baseConfig, sentryOptions)
+  : baseConfig

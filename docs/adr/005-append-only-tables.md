@@ -1,4 +1,4 @@
-# ADR-003: APPEND ONLY Tabellen fuer Audit-Trail und Historisierung
+# ADR-005: APPEND ONLY Tabellen fuer Audit-Trail und Historisierung
 
 **Status:** Accepted
 **Datum:** 2026-03-15

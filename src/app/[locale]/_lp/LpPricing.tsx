@@ -9,7 +9,7 @@ function C({ children }: { children: React.ReactNode }) {
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em' }}>
-      <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
+      <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} />
       {children}
     </span>
   )
@@ -46,7 +46,7 @@ export function LpPricing({ locale }: { locale: string }) {
           {pricing.plans.map((plan, idx) => (
             <div key={plan.id} className={idx === 1 ? 'lp-pricing-cell lp-pricing-cell-pop' : 'lp-pricing-cell'} style={{ position: 'relative' }}>
               {idx === 1 && (
-                <span style={{ position: 'absolute', top: -11, left: 24, background: 'var(--warning)', color: '#ffffff', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '3px 12px', letterSpacing: '0.07em' }}>
+                <span style={{ position: 'absolute', top: -11, left: 24, background: 'var(--secondary)', color: 'var(--text-primary)', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', padding: '3px 12px', letterSpacing: '0.07em' }}>
                   Most Popular
                 </span>
               )}

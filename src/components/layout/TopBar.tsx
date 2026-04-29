@@ -134,7 +134,7 @@ export default function TopBar() {
     await supabase.auth.signOut()
     document.cookie = 'onboarding_done=; max-age=0; path=/'
     document.cookie = 'is_superadmin=; max-age=0; path=/'
-    router.push('/login')
+    router.push('/')
   }
 
   const dropdownStyle: React.CSSProperties = {
@@ -235,7 +235,7 @@ export default function TopBar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
                 width: 32, height: 32, borderRadius: '50%',
-                background: 'var(--active-bg)', color: '#fff',
+                background: 'var(--accent)', color: '#fff',
                 fontSize: 13, fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
@@ -272,7 +272,7 @@ export default function TopBar() {
                         width: '100%', padding: '7px 10px', border: 'none', cursor: 'pointer',
                         borderRadius: 8, textAlign: 'left',
                         fontFamily: 'var(--font-sans, system-ui)',
-                        background: active ? 'var(--active-bg)' : 'transparent',
+                        background: active ? 'var(--accent)' : 'transparent',
                         color: active ? '#fff' : 'var(--text-primary)',
                         transition: 'background var(--t-fast)',
                       }}

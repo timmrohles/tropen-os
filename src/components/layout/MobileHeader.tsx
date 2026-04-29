@@ -79,7 +79,7 @@ export default function MobileHeader() {
     await supabase.auth.signOut()
     document.cookie = 'onboarding_done=; max-age=0; path=/'
     document.cookie = 'is_superadmin=; max-age=0; path=/'
-    router.push('/login')
+    router.push('/')
   }
 
   const logoUrl = branding?.logo_url
@@ -176,7 +176,7 @@ export default function MobileHeader() {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--active-bg)', color: '#fff',
+            background: 'var(--accent)', color: '#fff',
             fontSize: 12, fontWeight: 700,
             border: 'none', cursor: 'pointer',
           }}

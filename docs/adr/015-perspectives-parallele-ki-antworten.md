@@ -1,4 +1,4 @@
-# ADR-013: Perspectives — Parallele KI-Antworten mit Perspektiven-Avataren
+# ADR-015: Perspectives — Parallele KI-Antworten mit Perspektiven-Avataren
 
 **Datum:** 2026-03-22 (Migration 065) — dokumentiert 2026-03-26
 **Status:** Entschieden

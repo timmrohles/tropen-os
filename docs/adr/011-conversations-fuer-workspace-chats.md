@@ -1,4 +1,4 @@
-# ADR-002: Conversations-Tabelle für Workspace-Chats (conversation_type)
+# ADR-011: Conversations-Tabelle für Workspace-Chats (conversation_type)
 
 **Datum:** 2026-03-18 (Migration 049) — dokumentiert 2026-03-19
 **Status:** Entschieden

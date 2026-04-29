@@ -1,4 +1,4 @@
-# ADR-012: Web Search via Anthropic Server Tool
+# ADR-016: Web Search via Anthropic Server Tool
 
 **Datum:** 2026-03-24 (Migration 067) — dokumentiert 2026-03-26
 **Status:** Entschieden

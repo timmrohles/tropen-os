@@ -1,4 +1,4 @@
-# Product Requirements Document — Prodify
+# Product Requirements Document — Tropen OS (Arbeitsname; Prodify war Idee, nicht beschlossen)
 
 > **Version:** 1.0 | **Date:** 2026-04-21 | **Status:** Active
 > **Based on:** 5 committee reviews, competitive analysis, benchmark data
