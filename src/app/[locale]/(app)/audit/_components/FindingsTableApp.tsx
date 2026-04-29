@@ -35,7 +35,7 @@ function PromptBox({ group }: { group: FindingGroup }) {
     fixType: firstFinding?.fix_type ?? null,
     affectedFiles: group.findings.map(f => f.file_path).filter((p): p is string => !!p),
   }
-  const generated = buildFixPrompt(pf, 'cursor')
+  const generated = buildFixPrompt(pf, 'generic')
   const prompt = generated.content
 
   function copy() {
@@ -56,7 +56,7 @@ function PromptBox({ group }: { group: FindingGroup }) {
           fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
           textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)',
         }}>
-          Fix-Prompt für Cursor
+          Fix-Prompt
         </span>
         <button
           onClick={copy}
