@@ -285,7 +285,7 @@
 
 .severity-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .severity-dot--critical { background: var(--error-dark); }
-.severity-dot--high     { background: var(--status-risky); }
+.severity-dot--high     { background: #D4541A; }
 .severity-dot--medium   { background: #D9A93C; }
 .severity-dot--low      { background: var(--status-info-new, #5B7A95); }
 .severity-dot--info     { background: var(--border-strong); }
