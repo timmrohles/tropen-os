@@ -23,7 +23,7 @@ const SEV_DOT: Record<string, string> = {
   info:     'severity-dot--info',
 }
 
-function PromptBox({ group }: { group: FindingGroup }) {
+function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void }) {
   const [copied, setCopied] = useState(false)
   const firstFinding = group.findings[0]
   const pf: PromptFinding = {
@@ -58,8 +58,22 @@ function PromptBox({ group }: { group: FindingGroup }) {
         }}>
           Fix-Prompt
         </span>
-        <button
-          onClick={copy}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={onHide}
+            title="Temporär ausblenden — beim nächsten Reload wieder sichtbar"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 4, padding: '3px 8px',
+              fontSize: 11, color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            Ausblenden
+          </button>
+          <button
+            onClick={copy}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
@@ -71,7 +85,8 @@ function PromptBox({ group }: { group: FindingGroup }) {
           {copied
             ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
             : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
-        </button>
+          </button>
+        </div>
       </div>
       <pre style={{
         margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7,
@@ -86,6 +101,7 @@ function PromptBox({ group }: { group: FindingGroup }) {
 export default function FindingsTableApp({ findings, statusFilter = 'open' }: FindingsTableAppProps) {
   const t = useTranslations('audit')
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set())
 
   const filtered = findings.filter(f => {
     if (statusFilter === 'open') return f.status === 'open' || f.status === 'acknowledged'
@@ -94,7 +110,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
     return true
   })
 
-  const groups = groupFindings(filtered)
+  const groups = groupFindings(filtered).filter(g => !hiddenKeys.has(g.ruleId))
 
   if (groups.length === 0) {
     return (
@@ -182,7 +198,10 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
                         </div>
                       )}
                     </div>
-                    <PromptBox group={group} />
+                    <PromptBox group={group} onHide={() => {
+                      setHiddenKeys(prev => new Set(prev).add(key))
+                      setExpandedKey(null)
+                    }} />
                   </td>
                 </tr>
               )}
