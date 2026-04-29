@@ -1,10 +1,30 @@
 # Tropen OS → [Neuer Name] — Roadmap Q2/Q3 2026
 ## Production Readiness Guide für Vibe-Coders
 
-> **Letzte Aktualisierung:** 2026-04-10 (i18n done)
+> **Letzte Aktualisierung:** 2026-04-29 (Tab-Sprint Domain-Architektur, ADR-025)
 > **Basis:** 5 Komitee-Reviews (€4.80 Gesamtkosten), Tiefe Wettbewerbsanalyse
-> **Positionierung:** "Von der Idee zum production-reifen Produkt — mit EU-Compliance."
-> **Namenskandidaten:** GuideVibe, VibeMate, ReadyCheck (Entscheidung pending)
+> **Positionierung:** "Dein Code, in Production-Reife." — Coach-Position (ADR-024)
+> **Produktname:** Prodify (Komitee 2026-04-13) — Domain sichern + Markenrecherche offen
+> **Tab-Sprint:** ADR-025 accepted 2026-04-29. Sprint 1 (BP8–BP13) verschoben hinter Tab-Sprint.
+
+## ⚠️ Pivot-Disziplin (Stand 2026-04-29)
+
+In den Tagen vom 27.-29. April 2026 sind drei substantielle Pivots passiert:
+1. Marken-Pivot Größe C (Schiefer-Limette, Coach-Position)
+2. Audit-Tabellen-Welt-Umbau (Sentry-Stil)
+3. Tab-Sprint Domain-Architektur (ADR-025)
+
+Jeder Pivot war für sich legitim. Die Häufigkeit war problematisch — mehrere
+Hand-Overs ("tsc + lint grün") versteckten reale Bugs, weil zwischen den Pivots
+nicht stabilisiert wurde.
+
+**Disziplin-Regel ab 2026-04-29:**
+
+1. **Strategische Pivots brauchen ADR + 24h Wartezeit** — kein Pivot mehr ohne formales ADR.
+2. **Build-Prompts werden nicht mitten im Sprint umgeschrieben** — außer bei Bugs.
+3. **Sprint-Reihenfolge bleibt stabil bis Sprint-Abschluss** — keine Zwischenarbeit zwischen Phasen.
+4. **"tsc + lint grün" ist kein Funktionalitäts-Nachweis** — visueller Sweep nach jedem Sprint.
+5. **Self-Audit-Score validiert Code, nicht Produkt** — ergänzt, ersetzt nicht visuelle Validation.
 
 ---
 
@@ -406,3 +426,90 @@ hat und nicht schläft weil er nicht weiß ob alles sicher ist.
 
 10. **Ein Kanal, richtig gemacht.** Discord vor Forum vor
     Blog vor Newsletter.
+
+---
+
+## Sprint-Status (Stand 2026-04-29)
+
+### ✅ Abgeschlossen
+- BP6 — Tasks-Cleanup
+- BP1 — ARCHITECT.md Update
+- BP-Design-1 (Größe C) — Marken-Pivot inkl. Hero, Use-Cases, Coach-Stimme
+- BP7 — Audit-Tier-UI (Variante C-1, deployed)
+- Audit-Tabellen-Welt-Umbau (Sentry-Stil)
+- Bug-Fix-Runde Tabellen-Welt (Tier-Filter, Sticky-Tabs, Coach-Stimme-Migration)
+
+### 🔄 Aktuell aktiv
+- **Tab-Sprint Domain-Architektur** (ADR-025)
+  - Phase 1: Domain-Mapping AuditEngine + 10 DB-Security-Rules (~3-5 PT)
+  - Phase 2: Tab-Struktur 6 Domänen (~3-5 PT)
+  - Phase 3: Compliance-Inputs Variante D (~4-6 PT)
+  - Phase 4: Lighthouse-Integration Performance-Tab (~3-5 PT)
+  - Phase 5: Doku & Self-Audit (~1 PT)
+  - **Geschätzte Dauer:** 3-4 Wochen Solo-Founder-Arbeit
+
+### ⏸ Verschoben (warten auf Tab-Sprint-Abschluss)
+- BP8 — Bulk-Download (Findings als Markdown-Export)
+- BP9 — Compliance-Stufe-1 (teilweise in Tab-Sprint Phase 3 integriert)
+- BP10 — Cockpit→Projektboard
+- BP11 — UX-Polish A6/A9/A15/A18
+- BP12 — Fix-Prompt-Top-5-Optimierung
+- BP13 — Self-Audit-Roundtrip
+
+### 🆕 Neu hinzugefügt (durch ADR-025)
+- L2 — Vibe-Coder-Outreach (3 Calls in 1 Woche) — Trigger: nach Tab-Sprint
+- BP14 — Snyk-Integration (Sicherheits-Tab füllen) — Trigger: nach L2, ~5-7 PT
+- BP15 — axe-core-Integration (Barrierefreiheits-Tab füllen) — Trigger: nach BP14
+
+## Q2-Ziel-Anpassung (2026-04-29)
+
+**Ursprüngliches Q2-Ziel:** Sprint 1 + Sprint 2 abgeschlossen, MVP launchbereit
+
+**Realistisches Q2-Ziel nach Tab-Sprint:**
+- Tab-Sprint abgeschlossen (Ende Mai 2026)
+- L2 Vibe-Coder-Outreach durchgeführt
+- BP8/BP9/BP10 (verbleibender Sprint 1) abgeschlossen
+- BP14 (Snyk) optional, falls L2 positiv
+- **Sprint 2 fällt voraussichtlich in Q3** (Multi-Modell-Review, BP11-BP13)
+
+**Marketing-Versprechen kalibrieren:**
+- MVP-Launch-Datum: realistisch Ende Q2 / Anfang Q3 statt Mitte Q2
+- Aggregator-Versprechen: "Lighthouse heute, Snyk + axe-core in Vorbereitung"
+- Compliance-Versprechen: "Existenz-Check heute, Inhalts-Prüfung Q3+"
+
+## Drittanbieter-Integrations-Roadmap (ADR-025)
+
+| Tool | Domain | Sprint | Status | Aufwand | Pricing-Risiko |
+|------|--------|--------|--------|---------|----------------|
+| Lighthouse / PageSpeed Insights | Performance | Tab-Sprint Phase 4 | In Build | ~3-5 PT | Gratis bis Quota |
+| Snyk | Sicherheit | BP14 (Q2/Q3) | Geplant | ~5-7 PT | Pro-Plan kostenpflichtig |
+| axe-core | Barrierefreiheit | BP15 (Q3) | Geplant | ~5-7 PT | Open Source |
+| OWASP ZAP | Sicherheit | BP16+ (Q3/Q4) | Geplant | ~7-10 PT | Open Source, Setup-Komplex |
+| WAVE | Barrierefreiheit | BP17+ (Q4) | Optional | ~3-5 PT | API kostenpflichtig |
+| WebPageTest | Performance | BP18+ (Q4) | Optional | ~3-5 PT | API kostenpflichtig |
+| Pa11y | Barrierefreiheit | BP19+ (Q4) | Optional | ~3-5 PT | Open Source |
+
+## Backlog Q3+ — Datenbank-Sicherheit-Erweiterung
+
+Anlass: ADR-025-Update 2026-04-29. Phase-1-Erweiterung im Tab-Sprint deckt ~10 Supabase-Sicherheit-Rules ab.
+
+### BP-Sec-1 — DB-Sicherheit-Erweiterung
+**Trigger:** Nach Tab-Sprint-Abschluss + L2-Validierung | **Aufwand:** ~7-10 PT
+- Erweiterung auf weitere DB-Provider (Firebase, Drizzle, Prisma, Postgres direkt)
+- Connection-String-Sicherheit, API-Endpoint-Härtung, Rate-Limiting-Patterns
+
+### BP-Sec-2 — Marketing-Use-Case-Sektion DB-Sicherheit
+**Trigger:** Nach BP-Sec-1 | **Aufwand:** ~3-5 PT
+- Use-Case-Sektion Landing-Page: "Datenbank-Sicherheit für Vibe-Coder"
+- SEO: "supabase security audit", "rls vergessen", "vibe coder datenbank sichern"
+
+### BP-Sec-3 — Continuous DB-Sicherheits-Monitoring
+**Trigger:** Q3+, abhängig von Pricing-Modell | **Aufwand:** ~10-15 PT
+- DB-Sicherheit als wiederkehrender Check, Diff-Anzeige, Alerts bei CVEs
+- Premium-Tier-Kandidat
+
+### Marketing-Hebel sofort (kein Build nötig)
+Nach Tab-Sprint-Abschluss kann sofort kommuniziert werden:
+- "10 Supabase-Sicherheits-Checks gelauncht — RLS, Service-Role, Storage-Buckets"
+- Vibe-Coder-Outreach (L2): konkretes Tool zum Zeigen
+- Cursor/Lovable-Communities: "Lasst euer Repo durch unseren Sicherheits-Tab laufen"

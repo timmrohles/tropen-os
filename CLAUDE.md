@@ -3,6 +3,20 @@
 
 ---
 
+## ⚠️ Pivot-Disziplin (verbindlich seit 2026-04-29)
+
+Nach drei substantiellen Pivots in 48 Stunden (Marken-Pivot, Tabellen-Welt, Tab-Sprint) gilt:
+
+1. **Strategische Pivots brauchen ADR + 24h Wartezeit** — kein architektonischer Umbau ohne ADR.
+2. **Build-Prompts werden nicht mitten im Sprint umgeschrieben** — außer bei Bugs. Ideen → notieren für nach Sprint.
+3. **Sprint-Reihenfolge bleibt stabil bis Abschluss** — keine Zwischenarbeit zwischen Phasen.
+4. **"tsc + lint grün" ist kein Funktionalitäts-Nachweis** — visueller Sweep nach jedem Sprint Pflicht.
+5. **Self-Audit-Score validiert Code, nicht Produkt** — ergänzt visuelle Validation, ersetzt sie nicht.
+
+Diese fünf Regeln sind nicht-verhandelbar. Verstöße werden in `architect-log.md` dokumentiert.
+
+---
+
 # ⚠️ System-Architekt
 
 **Lies vor jedem Build zuerst: `ARCHITECT.md`**
@@ -36,8 +50,9 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 Bei UI-Änderungen zusätzlich:
 ```
 Schritt UI-1  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
-Schritt UI-2  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
-Schritt UI-3  CLAUDE.md → Abschnitt "Code-Regeln" lesen
+Schritt UI-2  Read docs/product/marken-brief.md  ← PFLICHT bei Design/Copy-Entscheidungen
+Schritt UI-3  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
+Schritt UI-4  CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
 
 Bei AI-Features zusätzlich:
@@ -56,6 +71,7 @@ Sie sind nicht widersprüchlich, sondern ergänzen sich:
 | Dokument | Rolle | Bei Konflikt |
 |----------|-------|--------------|
 | `docs/product/roadmap-2026-q2.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
+| `docs/product/marken-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
 | `docs/product/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
 | `docs/product/feature-bestand.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
 
@@ -136,7 +152,7 @@ Alle Dokumente liegen in `docs/webapp-manifest/`:
 | 60–79% | 🟠 Risky |
 | < 60% | 🔴 Prototype |
 
-**Letzter Audit:** 2026-04-21 — **95.2% Production Grade** (Report: `docs/audit-reports/2026-04-21-audit-report.md`)
+**Letzter Audit:** 2026-04-28 — **93.6% Production Grade** (Report: `docs/audit-reports/2026-04-28-audit-report.md`)
 
 Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
 
@@ -168,7 +184,7 @@ Kein einziger Punkt ist optional.
 [ ] Section-Tag (Monospace, grün, mit Linie) über jeder Section-Headline?
 [ ] Nummerierte Listen (01/02/03) statt drei gleiche Icon-Karten mit farbiger Border links?
 [ ] Score-Farbe korrekt: grün (var(--accent)) für Production/Stable, amber (var(--status-risky)) für Risky, rot (var(--error)) für Prototype?
-[ ] Maximal 3 dunkle Sections (var(--active-bg)) pro Seite — nie zwei direkt hintereinander?
+[ ] Marketing-Sektionen: var(--surface-warm/cool/tint) statt var(--active-bg) als Sektions-Hintergrund? (Pattern 21 abgelöst 2026-04-28 — active-bg nur noch für App-UI Active-States)
 [ ] Section-Padding: 80px Desktop, 48px Mobile?
 [ ] Display-Headlines (H1, H2) in var(--font-display) = Plus Jakarta Sans, fontWeight 700/800?
 ```
@@ -269,6 +285,7 @@ Aktueller Stand ist **Feature-zentrisch** (Ziel), aber noch nicht konsistent:
 - ADR-021 (Prompt-Veredler)
 - ADR-022 (Markdown + YAML + Wikilinks)
 - ADR-023 (Interface-Strategie: CLI-First + Pull-MCP)
+- `docs/adr/ADR-025-tab-architektur.md` — Tab-Architektur, Compliance-Strategie, Drittanbieter-Aggregator-Ziel
 
 ### DB-Zugriff — kritische Constraint
 
@@ -394,12 +411,23 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 | `var(--text-primary)` | `#1A1714` | Haupttext, H1-Icons |
 | `var(--text-secondary)` | `#4A4540` | Sekundärtext |
 | `var(--text-tertiary)` | `#6B6560` | Hilfstext, Labels |
-| `var(--accent)` | `#2D7A50` | CTAs, Status, aktive Zustände |
-| `var(--accent-light)` | `#D4EDDE` | Chip active, Highlights |
-| `var(--active-bg)` | `#1A2E23` | Aktive Pill, Selected State |
-| `var(--border)` | `rgba(26,23,20,0.08)` | Standard-Border |
-| `var(--status-risky)` | `#E5A000` | Score-Farbe Risky (60–79%), Risk-Badges, moderate Warn-Zustände |
+| `var(--accent)` | `#3F4A55` | **Schiefer** — Primär: CTAs, Buttons, aktive Zustände |
+| `var(--accent-hover)` | `#2D3640` | Schiefer Hover |
+| `var(--accent-light)` | `#E8EAEC` | Schiefer Hell — Subtle Highlights, Chip-Active |
+| `var(--accent-dark)` | `#1E2530` | Schiefer Dunkel — Sidebar, Chat-Bubble |
+| `var(--secondary)` | `#A8B852` | **Limette** — Trend-Indikatoren, Progress-Bars |
+| `var(--secondary-light)` | `#EEF2DD` | Limette Hell |
+| `var(--active-bg)` | `#1E2530` | Schiefer-Dark — Hero, Code-Panel, Active-States |
+| `var(--surface-warm)` | `#FAF7F2` | Sektion-Hintergrund warm |
+| `var(--surface-cool)` | `#F2F4F1` | Sektion-Hintergrund kühl (leicht limettig) |
+| `var(--surface-tint)` | `#EBEEE5` | Sektion-Hintergrund Schiefer-getönt |
+| `var(--gradient-hero)` | `135deg #FAF7F2→#EBEEE5` | Hero-Gradient |
+| `var(--gradient-data)` | `135deg #EEF2DD→#D6DF9A` | CTA/Data-Gradient (Limette-Hauch) |
+| `var(--status-danger)` | `#C8553D` | Rot — Pflicht-Tags (DSGVO/BFSG/AI-Act) |
+| `var(--border)` | `rgba(26,23,20,0.10)` | Standard-Border (leicht stärker) |
+| `var(--status-risky)` | `#E5A000` | Score-Farbe Risky (60–79%), Risk-Badges |
 
+**Altes Tropen-Grün (`#2D7A50`, `#256845`, `#1A2E23`) ist vollständig abgelöst (BP-Design-1 Marken-Pivot 2026-04-28).**
 **Das alte Dunkelgrün-Theme (`#0d1f16`, `#134e3a`, `#a3b554`) ist abgelöst — nie verwenden.**
 
 **Floating-Element-Regel (nicht verhandelbar):**
@@ -467,7 +495,7 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 
 #### Section-Tag (Eyebrow Label — vor jeder Section-Headline)
 ```tsx
-{/* Helles Layout */}
+{/* Einzige Variante — helles Layout (dunkle Variante abgelöst 2026-04-28) */}
 <span style={{
   display: 'inline-flex', alignItems: 'center', gap: 12,
   fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
@@ -476,39 +504,29 @@ Immer `className="card"` — nie eigene box-styles erfinden.
   <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)', flexShrink: 0 }} />
   Deine Projekte
 </span>
-
-{/* Dunkles Layout (auf var(--active-bg)) */}
-<span style={{
-  display: 'inline-flex', alignItems: 'center', gap: 12,
-  fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
-  color: 'rgba(77,184,122,0.85)', marginBottom: 20,
-}}>
-  <span style={{ width: 28, height: 1, background: 'rgba(77,184,122,0.3)', flexShrink: 0 }} />
-  EU-Compliance
-</span>
 ```
 - Monospace-Font, 12px, kein uppercase
-- Grün `var(--accent)` auf hellem, `rgba(77,184,122,0.85)` auf dunklem Hintergrund
+- Immer `var(--accent)` — `rgba(77,184,122,...)` ist abgelöst
 - Immer `marginBottom: 20` vor der Headline
 
-#### Dunkle Section (Hero / CTA)
+#### Surface-Sektionen (abgelöst Pattern 21 — dunkle Sections, 2026-04-28)
 ```tsx
-<section style={{
-  background: 'var(--active-bg)',
-  padding: '80px 0',
-  width: '100vw',
-  marginLeft: 'calc(-50vw + 50%)',
-}}>
+{/* ✅ Sanfte Sektion-Hierarchie */}
+<section className="section-tint section-pad">
   <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' }}>
-    <h2 style={{ fontFamily: 'var(--font-display, "Plus Jakarta Sans", sans-serif)', color: '#ffffff', fontWeight: 800 }}>
-      Headline
-    </h2>
+    <h2 style={{ color: 'var(--text-primary)' }}>Headline</h2>
   </div>
 </section>
+
+{/* ✅ CTA — gradient */}
+<section className="section-gradient-data section-pad">...</section>
+
+{/* ❌ FALSCH — Pattern 21 abgelöst */}
+<section style={{ background: 'var(--active-bg)', color: '#fff' }}>...</section>
 ```
-- Maximal 3 dunkle Sections pro Seite
-- Nie zwei dunkle Sections direkt hintereinander
-- Streifenmuster: dunkel → hell → dunkel → hell → dunkel
+- Klassen: `.section-warm`, `.section-cool`, `.section-tint`, `.section-gradient-hero`, `.section-gradient-data`
+- Sektion-Rhythmus: section-base → section-tint → section-base → section-gradient-data
+- Palette-Toggle (Dev): schwebendes Button unten rechts schaltet zwischen Mixed/Warm
 
 #### Nummerierte Feature-Liste (statt Icon-Karten)
 ```tsx
@@ -524,6 +542,37 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 ```
 - Statt drei gleiche Karten mit farbiger Border links ("KI-generiert"-Muster)
 - Nummer in `var(--text-tertiary)`, 14px, fontWeight 500
+
+#### App-Welt-Tabellen-Primitives (Post-Login, Sentry-Stil)
+
+**Zwei visuelle Welten:** Marketing (Plakat, Surface-Familie, Cards, 8-12px Radius) vs. App (Tabelle, Borders, Mono-Standard, max 4px Radius). Trennlinie ist der Login.
+
+```tsx
+{/* App-Section mit Header */}
+<AppSection header="FINDINGS · 12 OFFEN" headerRight="Top 15%">
+  <table className="app-table">
+    <thead><tr><th>SEV</th><th>Titel</th><th>Pfad</th></tr></thead>
+    <tbody>
+      <tr><td><span className="severity-dot severity-dot--high" /></td><td>...</td><td className="app-table-mono">src/...</td></tr>
+    </tbody>
+  </table>
+</AppSection>
+
+{/* AppSection mit Limette-Accent (Quick Wins) */}
+<AppSection header="⚡ QUICK WINS" accent>...</AppSection>
+
+{/* AppTabs (sticky, Sentry-Stil) */}
+<AppTabs tabs={[
+  { id: 'findings', label: 'Findings', count: 42, sectionId: 'findings' },
+  { id: 'compliance', label: 'Compliance', count: 3, hasDanger: true, sectionId: 'compliance' },
+]} />
+```
+
+**Komponenten:** `src/components/app-ui/AppSection.tsx`, `AppTable.tsx`, `AppTabs.tsx`
+**CSS-Klassen:** `.app-table`, `.app-section`, `.app-section__header`, `.app-section__header--accent`, `.app-tabs`, `.app-tab`, `.app-tab--active`, `.severity-dot--critical/high/medium/low`
+**App-Welt-Regeln:** max 4px Radius · keine Drop-Shadows · Borders statt Schatten · Mono als Daten-Standard · Surface-Wechsel nur --bg-base / --surface-warm
+
+**Anker-Frage für App-UI-Entscheidungen:** "Wie würde Sentry oder DataDog das anzeigen — funktional, klar, ohne Marketing-Polish, mit Tabellen statt Cards?"
 
 #### User-Bubble Struktur — NICHT ANFASSEN
 
@@ -596,7 +645,7 @@ codeSnippets?: Array<{ code: string; tool: string; language?: string }>
 - **Ausschließlich Phosphor Icons** (`@phosphor-icons/react`)
 - `weight="bold"` oder `weight="fill"` — nie andere weights
 - Größen: NavBar 18px · H1 22px · Cards/Listen 16px · Inline 14px
-- **Grün (`var(--accent)`) nur für Status, CTAs, aktive Zustände — nie in H1**
+- **`var(--accent)` (Schiefer) für CTAs, Buttons, aktive Zustände — nie in H1 als Textfarbe**
 - ❌ **Emoji als Icons verboten** — kein `📁`, `✅`, `🔔` o.ä. als funktionale UI-Icons
 - ❌ **Andere Icon-Libraries verboten** — kein Tailwind HeroIcons, Lucide, React Icons, Radix Icons
 - ❌ **Unicode-Zeichen als Icons verboten** — kein `→`, `×`, `✓` als interaktive Elemente
@@ -651,6 +700,111 @@ Klick [···]:  Umbenennen / Bearbeiten
 
 #### Body-Gradient
 `background-attachment: fixed` auf `body` — Page-Wrapper dürfen **kein `background`** setzen, damit der Radial-Gradient durchscheint.
+
+---
+
+## Audit-Tab-Architektur — sechs Domain-Tabs
+
+Audit-Seite ist Domain-basiert geschnitten (ADR-025), nicht Tier-basiert.
+
+### Domain-Liste (verbindlich)
+
+| Tab | Domain-Code | Status | Datenquellen |
+|-----|-------------|--------|--------------|
+| Code-Qualität | `code-quality` | Aktiv | Eigene AuditEngine |
+| Performance | `performance` | Aktiv (Phase 4) | Lighthouse, eigene Bundle-Analyse |
+| Sicherheit | `security` | Aktiv (10 DB-Rules) | Eigene Rules, DB-Security-Checks |
+| Barrierefreiheit | `accessibility` | Coming Soon | Eigene Rules + (geplant: axe-core) |
+| DSGVO | `dsgvo` | Aktiv | Eigene Rules + User-Inputs |
+| KI-Act | `ki-act` | Aktiv | Eigene Rules + User-Inputs |
+
+### Code-Regel: Domain-Pflichtfeld auf Rules
+
+```typescript
+type AuditDomain = 'code-quality' | 'performance' | 'security' | 'accessibility' | 'dsgvo' | 'ki-act'
+```
+
+- Mapping-Tabelle: `docs/audit/domain-mapping.md`
+- Bei unklarer Zuordnung: Default `code-quality`
+
+### Code-Regel: Domain-Filter statt Tier-Filter für UI
+
+```typescript
+// Korrekt für UI:
+import { getFindingsByDomain } from '@/lib/audit/domain-filter'
+const codeFindings = getFindingsByDomain(allFindings, 'code-quality')
+
+// tier bleibt bestehen für interne Klassifizierung — nicht für UI-Filterung
+```
+
+### Code-Regel: URL-basiertes Tab-Routing
+
+Tab-State via Query-Param `?tab=<domain>`. Kein Scroll-Modus mehr.
+
+---
+
+## Drittanbieter-Integration (Aggregator-Strategie)
+
+Tropen OS ist Aggregator-Tool (ADR-025). Drittanbieter werden domain-relevant integriert.
+
+### Code-Regel: Drittanbieter hinter Abstraktionsschicht
+
+Direkter Drittanbieter-API-Aufruf in UI-Komponenten ist verboten.
+
+```typescript
+// Struktur: src/lib/audit/integrations/lighthouse.ts
+export interface AuditIntegration {
+  name: string
+  domain: AuditDomain
+  isAvailable(): Promise<boolean>
+  run(input: IntegrationInput): Promise<Finding[]>
+}
+```
+
+Findings aus Drittanbietern werden in `Finding`-Format übersetzt mit korrekter `domain`-Zuordnung.
+Fehler-Handling: bei Ausfall Fallback-Hinweis statt leerem Tab.
+
+### Code-Regel: Drittanbieter-Konfiguration pro Projekt
+
+- `projects.lighthouse_url` — Lighthouse-URL
+- `projects.snyk_org_id` — Snyk-Organisation (Roadmap)
+- Keine globalen Drittanbieter-Konfigurationen
+
+### Roadmap (Kurzreferenz)
+
+| Tool | Domain | Status |
+|------|--------|--------|
+| Lighthouse/PageSpeed API | Performance | In Build (Tab-Sprint Phase 4) |
+| Snyk | Sicherheit | Geplant (BP14) |
+| axe-core | Barrierefreiheit | Geplant (BP15) |
+
+---
+
+## Compliance-Inputs (Variante D)
+
+Compliance-User-Inputs verteilt auf zwei Orte (ADR-025 Entscheidung 2):
+
+- **Stamm-Daten** → Projekt-Settings (`projects/[id]/settings/compliance/`)
+- **Detailfragen** → Inline in DSGVO/KI-Act-Tabs via `ComplianceQuestion`-Komponente
+
+DB: `project_compliance_data` (scope: 'master'|'detail', question_key, question_value JSONB)
+
+Compliance-Resolver (`src/lib/audit/compliance-resolver.ts`) berücksichtigt:
+1. Code-Existenz-Check (automatisch)
+2. Stamm-Daten aus Settings
+3. Detail-Antworten aus Tab-Inputs
+
+Pflicht-Status: `fulfilled` | `open` | `input-needed` | `not-applicable`
+
+---
+
+## Compliance-Tiefe — Stufen
+
+- **Stufe 1 (MVP, aktiv):** Existenz-Check — prüft ob Compliance-Dateien/Endpoints existieren
+- **Stufe 2 (Roadmap, Q3+):** Inhaltliche KI-Prüfung — Premium-Feature, sehr konservative Prompts
+- **Stufe 3 (nicht geplant):** Dialog-geführte Erstellung — Anwalts-Monopol verhindert das
+
+Jedes Compliance-Finding zeigt Disclaimer: "Tropen OS ersetzt keine Rechtsberatung durch einen Anwalt."
 
 ---
 
@@ -1472,7 +1626,8 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-023) |
+| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-024) |
+| `docs/product/marken-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
 | `docs/product/feature-bestand.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) — umbenannt von feature-registry.md |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
 | `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
