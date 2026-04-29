@@ -52,25 +52,25 @@ function PromptBox({ group, onHide }: { group: FindingGroup; onHide: () => void 
   }
 
   return (
-    <div style={{ background: 'var(--active-bg)', borderTop: '1px solid var(--border)', padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
+    <div style={{ background: 'var(--active-bg)', borderTop: '1px solid var(--border)' }}>
+      <div style={{ padding: '14px 16px' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 10 }}>
           Fix-Prompt
         </span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={BTN_STYLE}>
-            Ausblenden
-          </button>
-          <button onClick={copy} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)' }}>
-            {copied
-              ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
-              : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
-          </button>
-        </div>
+        <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
+          {prompt}
+        </pre>
       </div>
-      <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
-        {prompt}
-      </pre>
+      <div style={{ display: 'flex', gap: 6, padding: '10px 16px', background: 'rgba(0,0,0,0.15)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <button onClick={copy} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)' }}>
+          {copied
+            ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
+            : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
+        </button>
+        <button onClick={onHide} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={BTN_STYLE}>
+          Ausblenden
+        </button>
+      </div>
     </div>
   )
 }
