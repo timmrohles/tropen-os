@@ -57,6 +57,20 @@ interface RawFinding {
   fix_type?: FixType | null
 }
 
+interface RawGlobalFinding {
+  id: string
+  rule_id: string
+  category_id: number
+  severity: string
+  message: string
+  suggestion: string | null
+  file_path: string | null
+  line: number | null
+  status: string
+  fix_type?: FixType | null
+  _recTitle?: string
+}
+
 const SEVERITY_WEIGHT: Record<string, number> = {
   critical: 4,
   high: 3,
@@ -95,6 +109,7 @@ function effortMinutesForFixType(fixType: FixType): number {
     case 'code-fix':    return 15
     case 'refactoring': return 45
     case 'manual':      return 60
+    default:            return 60
   }
 }
 
@@ -114,23 +129,23 @@ function toQuickWin(f: RawFinding, fixType: FixType): QuickWinFinding {
 }
 
 function toGlobalQuickWin(
-  f: Record<string, unknown>,
+  f: RawGlobalFinding,
   fixType: FixType,
   domain: AuditDomain,
 ): GlobalQuickWinFinding {
   return {
-    id: f.id as string,
-    ruleId: f.rule_id as string,
-    severity: f.severity as string,
-    message: f.message as string,
-    title: (f._recTitle as string | undefined) ?? (f.message as string),
-    suggestion: f.suggestion as string | null,
-    filePath: f.file_path as string | null,
-    line: f.line as number | null,
-    categoryId: f.category_id as number,
+    id: f.id,
+    ruleId: f.rule_id,
+    severity: f.severity,
+    message: f.message,
+    title: f._recTitle ?? f.message,
+    suggestion: f.suggestion,
+    filePath: f.file_path,
+    line: f.line,
+    categoryId: f.category_id,
     fixType,
     domain,
-    estimatedScoreGain: estimateScoreGain(f.severity as string),
+    estimatedScoreGain: estimateScoreGain(f.severity),
     effortMinutes: effortMinutesForFixType(fixType),
   }
 }
@@ -197,20 +212,20 @@ export function getGlobalQuickWins(
   allFindings: Array<Record<string, unknown>>,
   limit = 5,
 ): GlobalQuickWinFinding[] {
-  const open = allFindings.filter((f) => f.status === 'open')
+  const open = allFindings.filter((f) => f.status === 'open') as unknown as RawGlobalFinding[]
 
   const enriched = open.map((f) => {
-    const fixType: FixType = (f.fix_type as FixType) ?? 'manual'
-    const domain = getDomainForRule(f.rule_id as string)
+    const fixType: FixType = f.fix_type ?? 'manual'
+    const domain = getDomainForRule(f.rule_id)
     return {
       raw: f,
       fixType,
       domain,
       score: quickWinScore({
-        severity: f.severity as string,
-        suggestion: f.suggestion as string | null,
+        severity: f.severity,
+        suggestion: f.suggestion,
         fixType,
-        categoryId: f.category_id as number,
+        categoryId: f.category_id,
       }),
     }
   })
@@ -222,7 +237,7 @@ export function getGlobalQuickWins(
 
   for (const item of enriched) {
     if (wins.length >= limit) break
-    const ruleId = item.raw.rule_id as string
+    const ruleId = item.raw.rule_id
     if (seenRuleIds.has(ruleId)) continue
     seenRuleIds.add(ruleId)
     wins.push(toGlobalQuickWin(item.raw, item.fixType, item.domain))
