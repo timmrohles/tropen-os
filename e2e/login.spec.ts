@@ -5,20 +5,20 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/en/login')
   })
 
   test('zeigt Login-Formular', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Tropen OS' })).toBeVisible()
     await expect(page.locator('#email')).toBeVisible()
     await expect(page.locator('#password')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
   })
 
   test('Submit-Button ist klickbar wenn Felder ausgefüllt', async ({ page }) => {
     await page.locator('#email').fill('test@example.com')
     await page.locator('#password').fill('testpassword')
-    const btn = page.getByRole('button', { name: 'Anmelden' })
+    const btn = page.getByRole('button', { name: 'Sign in' })
     await expect(btn).not.toBeDisabled()
   })
 
@@ -34,7 +34,7 @@ test.describe('Login Page', () => {
 
     await page.locator('#email').fill('wrong@example.com')
     await page.locator('#password').fill('wrongpassword')
-    await page.getByRole('button', { name: 'Anmelden' }).click()
+    await page.getByRole('button', { name: 'Sign in' }).click()
 
     await expect(page.getByText(/Invalid login credentials/i)).toBeVisible({ timeout: 5_000 })
   })
@@ -46,6 +46,6 @@ test.describe('Login Page', () => {
   })
 
   test('Link "Passwort vergessen" ist vorhanden', async ({ page }) => {
-    await expect(page.getByRole('link', { name: /Passwort vergessen/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Forgot password/i })).toBeVisible()
   })
 })
