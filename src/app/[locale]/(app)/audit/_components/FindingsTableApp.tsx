@@ -160,7 +160,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
     {/* Severity-Verteilungs-Zeile — Schiefer-Dunkel-Hintergrund */}
     <div style={{
       display: 'flex', alignItems: 'center', gap: 0,
-      padding: '7px 16px', borderBottom: '1px solid rgba(0,0,0,0.15)',
+      padding: '10px 20px', borderBottom: '1px solid rgba(0,0,0,0.15)',
       fontFamily: 'var(--font-mono)', fontSize: 11,
       flexWrap: 'wrap', rowGap: 4,
       background: 'var(--secondary)',
@@ -204,7 +204,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         )
       })}
 
-      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(30,37,48,0.4)' }}
+      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(30,37,48,0.75)' }}
         title="×N = N Stellen im Code mit diesem Problem — alle auf einmal beheben">
         ×N = Vorkommen
       </span>

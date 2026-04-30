@@ -168,9 +168,9 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
 
   if (!clusters.length) {
     return (
-      <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: '#fff', marginBottom: 16 }}>
-        <div className="app-section__header" style={{ background: 'var(--secondary)', color: 'var(--active-bg)' }}>
-          <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--active-bg)' }}>
+      <div style={{ borderRadius: 4, background: '#fff', marginBottom: 16, marginTop: 16, overflow: 'hidden' }}>
+        <div className="app-section__header" style={{ background: '#5c6b78', color: '#ffffff' }}>
+          <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ffffff' }}>
             <Lightning size={11} weight="fill" aria-hidden="true" />
             Dein nächster Sprint
           </span>
@@ -181,18 +181,18 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
   }
 
   return (
-    <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: '#fff', marginBottom: 16 }}>
+    <div style={{ borderRadius: 4, background: '#fff', marginBottom: 16, marginTop: 16, overflow: 'hidden' }}>
 
       {/* Header-Balken — Limette */}
-      <div className="app-section__header" style={{ background: 'var(--secondary)', color: 'var(--active-bg)' }}>
-        <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--active-bg)' }}>
+      <div className="app-section__header" style={{ background: '#5c6b78', color: '#ffffff' }}>
+        <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ffffff' }}>
           <Lightning size={11} weight="fill" aria-hidden="true" />
           Dein nächster Sprint
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--active-bg)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.85)' }}>
           {allFindings.length} Fixes · Score +{totalScoreGain.toFixed(1)}
           {uniqueFileCount > 0 && (
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)', background: 'rgba(30,37,48,0.12)', padding: '0 5px', borderRadius: 3, border: '1px solid rgba(30,37,48,0.2)' }}>
+            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.15)', padding: '0 5px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.25)' }}>
               {uniqueFileCount} {uniqueFileCount === 1 ? 'Datei' : 'Dateien'}
             </span>
           )}
@@ -250,16 +250,16 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
             <div key={cluster.filePath ?? '__no_file__'}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                padding: '5px 16px', background: 'var(--surface-warm)',
+                padding: '5px 16px', background: 'var(--accent-light)',
                 borderBottom: '1px solid var(--border)',
               }}>
-                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)', flexShrink: 0 }}>
                   {String(ci + 1).padStart(2, '0')}
                 </span>
-                <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                   {cluster.filePath ? shortPath(cluster.filePath) : '— globale Fixes'}
                 </span>
-                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--secondary)', flexShrink: 0 }}>
+                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', flexShrink: 0 }}>
                   +{cluster.totalScoreGain.toFixed(1)}
                 </span>
               </div>
@@ -280,7 +280,7 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
                     <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {w.title}
                     </span>
-                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--secondary)', flexShrink: 0, background: 'var(--secondary-light)', padding: '1px 6px', borderRadius: 3 }}>
+                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', flexShrink: 0, background: 'var(--accent-light)', padding: '1px 6px', borderRadius: 3 }}>
                       {DOMAIN_LABEL[w.domain]}
                     </span>
                   </button>

@@ -58,6 +58,11 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       '@opentelemetry/api-logs': path.resolve('node_modules/@opentelemetry/api-logs'),
     }
+    // Suppress known benign warning from @prisma/instrumentation dynamic requires
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      { module: /node_modules\/@prisma\/instrumentation/ },
+    ]
     return config
   },
   env: {

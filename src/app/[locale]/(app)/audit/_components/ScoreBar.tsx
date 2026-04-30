@@ -64,15 +64,15 @@ export default function ScoreBar({
     <AppSection
       header="Score"
       headerRight={
-        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11 }}>
           {projectName} · {formatRelative(lastRunAt)}
         </span>
       }
-      style={{ marginBottom: 0, borderBottom: 'none', borderRadius: '4px 4px 0 0' }}
-      headerStyle={{ background: 'var(--accent)', color: '#ffffff' }}
-      bodyStyle={{ background: 'var(--accent)' }}
+      style={{ marginBottom: 0, border: 'none', borderRadius: '4px 4px 0 0' }}
+      headerStyle={{ background: '#5c6b78', color: '#ffffff' }}
+      bodyStyle={{ background: '#ffffff' }}
     >
-      <div style={{ padding: '14px 16px' }}>
+      <div style={{ padding: '20px 24px' }}>
         {/* Kompakte Status-Bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap', marginBottom: 10 }}>
           <span style={{
@@ -84,18 +84,18 @@ export default function ScoreBar({
 
           <span style={{
             fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
-            color: 'rgba(255,255,255,0.7)', marginRight: 12, letterSpacing: '0.02em',
+            color: 'var(--text-secondary)', marginRight: 12, letterSpacing: '0.02em',
           }}>
             {STATUS_LABEL[status]}
           </span>
 
           {hasDelta && (
             <>
-              <span style={{ color: 'rgba(255,255,255,0.25)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span style={{ color: 'var(--text-secondary)', marginRight: 12, fontSize: 12 }}>│</span>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 fontSize: 12, fontWeight: 500, marginRight: 12,
-                color: delta! > 0 ? 'var(--secondary)' : '#ff9980',
+                color: 'var(--text-secondary)',
                 fontFamily: 'var(--font-mono)',
               }}>
                 {delta! > 0
@@ -108,11 +108,11 @@ export default function ScoreBar({
 
           {percentileRank !== null && percentileRank !== undefined && (
             <>
-              <span style={{ color: 'rgba(255,255,255,0.25)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span style={{ color: 'var(--text-secondary)', marginRight: 12, fontSize: 12 }}>│</span>
               <span
                 title="Vergleich mit 49 öffentlich geprüften Repos"
                 style={{
-                  fontSize: 11, color: 'var(--secondary)', fontFamily: 'var(--font-mono)',
+                  fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)',
                   marginRight: 12, cursor: 'help',
                 }}
               >
@@ -123,11 +123,11 @@ export default function ScoreBar({
 
           {isMultiModelReview && (
             <>
-              <span style={{ color: 'rgba(255,255,255,0.25)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span style={{ color: 'var(--border-strong)', marginRight: 12, fontSize: 12 }}>│</span>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 fontSize: 11, fontFamily: 'var(--font-mono)',
-                color: 'rgba(255,255,255,0.7)', marginRight: 12,
+                color: 'var(--accent)', marginRight: 12,
               }}>
                 <Checks size={12} weight="bold" aria-hidden="true" />
                 4 KI-Modelle geprüft
@@ -137,8 +137,8 @@ export default function ScoreBar({
 
           {!hasExternalTools && (
             <>
-              <span style={{ color: 'rgba(255,255,255,0.25)', marginRight: 12, fontSize: 12 }}>│</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: 'var(--border-strong)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                 {t('partialScore')}
               </span>
             </>
@@ -147,7 +147,7 @@ export default function ScoreBar({
 
         {/* Progress bar mit Threshold-Markierungen */}
         <div style={{ position: 'relative', marginBottom: 6 }}>
-          <div style={{ height: 6, borderRadius: 2, background: 'rgba(255,255,255,0.15)', overflow: 'visible' }}>
+          <div style={{ height: 6, borderRadius: 2, background: 'var(--border)', overflow: 'visible' }}>
             <div style={{
               height: '100%', width: `${Math.min(100, percentage)}%`,
               background: color, borderRadius: 2, transition: 'width 0.5s ease',
@@ -155,10 +155,10 @@ export default function ScoreBar({
           </div>
           {THRESHOLDS.map(({ pct, label }) => (
             <div key={pct} style={{ position: 'absolute', left: `${pct}%`, top: 0, transform: 'translateX(-50%)' }}>
-              <div style={{ width: 1, height: 6, background: 'rgba(255,255,255,0.3)' }} />
+              <div style={{ width: 1, height: 6, background: 'var(--border-medium)' }} />
               <span style={{
                 position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
-                fontSize: 9, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap',
+                fontSize: 9, color: 'var(--text-tertiary)', whiteSpace: 'nowrap',
                 fontFamily: 'var(--font-mono)',
               }}>{label}</span>
             </div>
@@ -167,12 +167,12 @@ export default function ScoreBar({
 
         {/* Coach-Kommentar — Plakat-Rest bewusst */}
         {!isFirstRun && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 16, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 16, lineHeight: 1.5 }}>
             {t(coachKey)}
           </p>
         )}
         {isFirstRun && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 16, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 16, lineHeight: 1.5 }}>
             {t('deltaFirst')}
           </p>
         )}
