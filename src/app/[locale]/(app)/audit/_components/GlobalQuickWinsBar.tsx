@@ -66,16 +66,65 @@ function shortPath(p: string): string {
 }
 
 export default function GlobalQuickWinsBar({ clusters, runId, projectId }: GlobalQuickWinsBarProps) {
-  const pathname = usePathname() // e.g. "/de/audit"
-  const auditBase = pathname.split('/').slice(0, 2).join('/') + '/audit' // "/de/audit"
+  usePathname() // kept for potential future locale use
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [session, setSession] = useState<{ prompt: string; fileCount: number } | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [expandedFinding, setExpandedFinding] = useState<string | null>(null)
+  const [findingPrompts, setFindingPrompts] = useState<Record<string, string>>({})
+  const [loadingFinding, setLoadingFinding] = useState<string | null>(null)
+  const [findingCopied, setFindingCopied] = useState<string | null>(null)
+  const [hiddenFindings, setHiddenFindings] = useState<Set<string>>(new Set())
+  const [dismissingFinding, setDismissingFinding] = useState<string | null>(null)
 
   const allFindings = clusters.flatMap(c => c.findings)
   const totalScoreGain = clusters.reduce((s, c) => s + c.totalScoreGain, 0)
+
+  async function toggleFindingPrompt(finding: QuickWinFinding) {
+    if (expandedFinding === finding.id) { setExpandedFinding(null); return }
+    setExpandedFinding(finding.id)
+    if (findingPrompts[finding.id]) return
+    setLoadingFinding(finding.id)
+    try {
+      const res = await fetch('/api/audit/fix-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleId: finding.ruleId, message: finding.title, severity: finding.severity, filePath: finding.filePath }),
+      })
+      const data = await res.json() as { prompt?: string }
+      setFindingPrompts(p => ({ ...p, [finding.id]: data.prompt ?? 'Kein Prompt verfügbar.' }))
+    } catch {
+      setFindingPrompts(p => ({ ...p, [finding.id]: 'Fehler beim Laden.' }))
+    } finally {
+      setLoadingFinding(null)
+    }
+  }
+
+  function copyFinding(id: string) {
+    void navigator.clipboard.writeText(findingPrompts[id] ?? '').then(() => {
+      setFindingCopied(id)
+      setTimeout(() => setFindingCopied(null), 2000)
+    })
+  }
+
+  function hideFinding(id: string) {
+    setHiddenFindings(prev => new Set(prev).add(id))
+    setExpandedFinding(null)
+  }
+
+  async function dismissFinding(id: string) {
+    setDismissingFinding(id)
+    await fetch(`/api/audit/findings/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'dismissed' }),
+    }).catch(() => null)
+    setDismissingFinding(null)
+    setHiddenFindings(prev => new Set(prev).add(id))
+    setExpandedFinding(null)
+  }
 
   async function startSession() {
     if (!allFindings.length) return
@@ -201,24 +250,55 @@ export default function GlobalQuickWinsBar({ clusters, runId, projectId }: Globa
                   +{cluster.totalScoreGain.toFixed(1)}
                 </span>
               </div>
-              {cluster.findings.map((w) => (
-                <a
-                  key={w.id}
-                  href={`${auditBase}?tab=${w.domain}${runId ? `&runId=${runId}` : ''}${projectId ? `&project=${projectId}` : ''}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '7px 16px 7px 36px', textDecoration: 'none',
-                    borderBottom: '1px solid var(--border)', background: '#fff',
-                  }}
-                >
-                  <span className={`severity-dot ${SEV_DOT[w.severity] ?? 'severity-dot--info'}`} role="img" aria-label={`Schweregrad: ${w.severity}`} />
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {w.title}
-                  </span>
-                  <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--secondary)', flexShrink: 0, background: 'var(--secondary-light)', padding: '1px 6px', borderRadius: 3 }}>
-                    {DOMAIN_LABEL[w.domain]}
-                  </span>
-                </a>
+              {cluster.findings.filter(w => !hiddenFindings.has(w.id)).map((w) => (
+                <div key={w.id}>
+                  <button
+                    onClick={() => void toggleFindingPrompt(w)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                      padding: '7px 16px 7px 36px', textAlign: 'left',
+                      borderBottom: expandedFinding === w.id ? 'none' : '1px solid var(--border)',
+                      background: expandedFinding === w.id ? 'var(--surface-warm)' : '#fff',
+                      border: 'none', borderTop: 'none', cursor: 'pointer',
+                      borderLeft: 'none', borderRight: 'none',
+                    }}
+                  >
+                    <span className={`severity-dot ${SEV_DOT[w.severity] ?? 'severity-dot--info'}`} role="img" aria-label={`Schweregrad: ${w.severity}`} />
+                    <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {w.title}
+                    </span>
+                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--secondary)', flexShrink: 0, background: 'var(--secondary-light)', padding: '1px 6px', borderRadius: 3 }}>
+                      {DOMAIN_LABEL[w.domain]}
+                    </span>
+                  </button>
+                  {expandedFinding === w.id && (
+                    <div style={{ background: 'var(--active-bg)', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ padding: '12px 16px 12px 36px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 8 }}>
+                          Fix-Prompt
+                        </span>
+                        {loadingFinding === w.id ? (
+                          <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Wird geladen…</p>
+                        ) : (
+                          <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.7, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>
+                            {findingPrompts[w.id]}
+                          </pre>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, padding: '8px 16px 8px 36px', background: 'rgba(0,0,0,0.15)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                        <button onClick={() => copyFinding(w.id)} disabled={!findingPrompts[w.id]} style={{ ...BTN, opacity: findingPrompts[w.id] ? 1 : 0.5 }}>
+                          {findingCopied === w.id ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</> : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
+                        </button>
+                        <button onClick={() => hideFinding(w.id)} title="Temporär ausblenden — beim nächsten Reload wieder sichtbar" style={BTN_GHOST}>
+                          Ausblenden
+                        </button>
+                        <button onClick={() => void dismissFinding(w.id)} disabled={dismissingFinding === w.id} title="Dauerhaft als 'Nicht relevant' markieren" style={{ ...BTN_GHOST, opacity: dismissingFinding === w.id ? 0.5 : 1 }}>
+                          {dismissingFinding === w.id ? 'Wird gespeichert…' : 'Nicht relevant'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           ))}
