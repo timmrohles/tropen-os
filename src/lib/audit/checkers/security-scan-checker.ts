@@ -520,7 +520,7 @@ const SUPPLY_CHAIN_PATTERNS: SecurityPattern[] = [
   },
   {
     id: 'typosquatting-risk',
-    severity: 'info',
+    severity: 'high', // high: Malware-Risiko, Supply-Chain-Angriff
     pattern: /"(?:lod4sh|lodahs|reaact-dom|react-d0m|nextjs|expresss|express\.js|reqwest|axois|c0rs|coers)"\s*:/i,
     fileGlob: ['.json'],
     excludePattern: /node_modules/,
@@ -639,7 +639,7 @@ export function runSecurityScanFromFiles(files: ProjectFile[]): SecurityScanFrom
     ...AI_SECURITY_PATTERNS,
     ...SUPPLY_CHAIN_PATTERNS,
   ]
-  const _ = all // consumed via individual calls below
+  void all // consumed via individual calls below
 
   return {
     injection:     makeResult('cat-3-rule-20', 'Injection', scanFilesFromProject(files, INJECTION_PATTERNS)),

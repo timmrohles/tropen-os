@@ -100,7 +100,7 @@ export async function checkTodoComments(ctx: AuditContext): Promise<RuleResult> 
 
   return fail('cat-18-rule-6', totalTodos > 10 ? 2 : 3,
     `${totalTodos} TODO/FIXME without ticket reference`, [{
-      severity: 'info',
+      severity: 'low', // low: Tech-Debt-Tracking, kein Sicherheits- oder Funktionsproblem
       message: `${totalTodos} open TODO/FIXME comments without ticket reference — technical debt that's easy to forget`,
       suggestion: "Cursor-Prompt: 'List all TODO and FIXME comments, create GitHub issues for each, then replace with issue numbers'",
       affectedFiles: filesWithTodos.slice(0, 10),

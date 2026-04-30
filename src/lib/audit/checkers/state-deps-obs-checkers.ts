@@ -173,7 +173,7 @@ export async function checkServerStateInStore(ctx: AuditContext): Promise<RuleRe
 
     if (/fetch\s*\(|axios\.|supabase\w*\.from|\.query\(/.test(content)) {
       violations.push({
-        severity: 'info',
+        severity: 'medium', // medium: Architektur-Antipattern, erschwert Caching + Fehlerbehandlung
         message: `Store file fetches API data — React Query/SWR handles server state better`,
         filePath: file.path,
         suggestion: `Cursor-Prompt: 'Move API calls from ${file.path.split('/').pop()} to React Query hooks, keep only UI state in the store'`,

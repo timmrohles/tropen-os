@@ -45,7 +45,7 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
     const imgNoLazy = content.match(/<img(?![^>]*loading\s*=)/g)
     if (imgNoLazy && imgNoLazy.length > 2) {
       violations.push({
-        severity: 'info',
+        severity: 'low', // low: Performance-Optimierung
         message: `${imgNoLazy.length} <img> tags without loading="lazy" — slows initial page load`,
         filePath: file.path,
         suggestion: 'Add loading="lazy" to images below the fold, or use next/image for automatic optimization',
@@ -62,7 +62,7 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
   )
   if (lodashInDeps && !/"lodash-es"\s*:/.test(pkgContent ?? '')) {
     violations.push({
-      severity: 'info',
+      severity: 'medium', // medium: 70KB Overhead
       message: 'Vollständiges lodash importiert — ~70KB Overhead. lodash-es oder spezifische Imports nutzen',
       filePath: 'package.json',
       suggestion: "Cursor-Prompt: 'Replace import _ from lodash with specific imports like import pick from lodash/pick'",
@@ -84,7 +84,7 @@ export async function checkPerformanceBasics(ctx: AuditContext): Promise<RuleRes
       }).length
       if (imgCount > 0) {
         violations.push({
-          severity: 'info',
+          severity: 'medium', // medium: Fehlende Image-Optimierung
           message: `Next.js project uses <img> but not next/image — missing automatic image optimization`,
           suggestion: "Cursor-Prompt: 'Replace all <img> tags with next/image Image component for automatic optimization'",
         })

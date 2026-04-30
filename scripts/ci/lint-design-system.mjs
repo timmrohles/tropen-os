@@ -27,6 +27,7 @@ const IGNORE = [
   // Ausnahmen: Dateien mit legitimem Hex-Einsatz
   'global-error.tsx',       // Error-Boundary — läuft vor CSS-Variablen
   'ParrotIcon.tsx',         // SVG Brand-Icon — CSS-Vars in fill nicht möglich
+  'offline/page.tsx', 'offline\\page.tsx',  // Offline-Fallback — benutzerdefiniertes Baum-Illustration-SVG
   '_DESIGN_REFERENCE.tsx',  // Zeigt bewusst verbotene Patterns als Negativbeispiele
   'db/schema.ts', 'db\\schema.ts',  // Drizzle-Schema — file-size ist strukturell bedingt
   'feeds/DataView.tsx', 'feeds\\DataView.tsx',  // Komplexe Feed-Datenansicht — Aufteilung Plan J1
@@ -34,6 +35,7 @@ const IGNORE = [
   // file-size: strukturell große Dateien — Aufteilung separates Ticket
   'todos/todoDataOps.ts', 'todos\\todoDataOps.ts',                          // Statische Todo-Daten
   'todos/todoDataFeatures.ts', 'todos\\todoDataFeatures.ts',                // Statische Todo-Daten
+  'todos/todoDataConcepts.ts', 'todos\\todoDataConcepts.ts',               // Statische Todo-Daten (hex in Beschreibungstext)
   'audit/_components/FindingsTable.tsx', 'audit\\_components\\FindingsTable.tsx',  // Komplexe Findings-UI
   'audit/_components/FixPreview.tsx', 'audit\\_components\\FixPreview.tsx',        // Fix-Vorschau-UI
   // file-size: Audit-Checker — Engine-Code, Aufteilung nach Architektur-Review

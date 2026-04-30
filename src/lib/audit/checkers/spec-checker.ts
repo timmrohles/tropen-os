@@ -104,7 +104,7 @@ export async function checkPrdPresent(ctx: AuditContext): Promise<RuleResult> {
   if (found) return pass('cat-18-rule-10', 5, `PRD/spec document found: ${found}`)
 
   return fail('cat-18-rule-10', 3, 'No PRD or requirements document found', [{
-    severity: 'info',
+    severity: 'low', // low: Nice-to-have Doku, kein Funktionsproblem
     message: 'No PRD or spec document (docs/PRD.md, docs/spec.md, SPEC.md) — without written requirements, AI generates what it guesses you want. README-implementation drift is the common result.',
     suggestion: "Cursor-Prompt: 'Create docs/PRD.md with: problem statement (1 sentence), target user (1 sentence), core features (5 bullets), out-of-scope (3 bullets)'",
     agentSource: 'spec',
@@ -161,7 +161,7 @@ export async function checkReadmeDrift(ctx: AuditContext): Promise<RuleResult> {
 
   const examples = driftPackages.slice(0, 3).join(', ')
   return fail('cat-18-rule-11', 3, `README mentions ${driftPackages.length} package(s) not in package.json`, [{
-    severity: 'info',
+    severity: 'low', // low: Veraltete Doku, kein Sicherheits- oder Funktionsproblem
     message: `README mentions ${driftPackages.length} packages not in package.json (e.g. ${examples}) — possibly outdated documentation`,
     suggestion: "Cursor-Prompt: 'Update README.md to match the current tech stack in package.json. Remove references to packages that are no longer used.'",
     agentSource: 'spec',

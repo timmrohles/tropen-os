@@ -57,7 +57,7 @@ export async function checkSupabasePITR(ctx: AuditContext): Promise<RuleResult> 
   }
 
   return fail('cat-13-rule-9', 3, 'Supabase detected — verify PITR status', [{
-    severity: 'info',
+    severity: 'high', // high: DSGVO Art.32 Backup-Pflicht, Datenverlust-Risiko
     message: 'Supabase PITR nur im Pro-Plan aktiv — regelmäßige Backups fehlen ohne Upgrade',
     suggestion: "Cursor-Prompt: 'Add README note: Backup-Status — Supabase [free/pro], PITR [enabled/disabled]'",
   }])
@@ -156,7 +156,7 @@ export async function checkChangelog(ctx: AuditContext): Promise<RuleResult> {
 
   if (has) return pass('cat-18-rule-8', 5, 'CHANGELOG found')
   return fail('cat-18-rule-8', 3, 'No CHANGELOG', [{
-    severity: 'info',
+    severity: 'low', // low: Nice-to-have Doku
     message: 'No CHANGELOG — changes between versions not traceable',
     suggestion: "Cursor-Prompt: 'Create CHANGELOG.md following keepachangelog.com format'",
   }])
@@ -173,7 +173,7 @@ export async function checkWebManifest(ctx: AuditContext): Promise<RuleResult> {
 
   if (inRepoMap || onDisk) return pass('cat-21-rule-5', 5, 'Web app manifest found')
   return fail('cat-21-rule-5', 3, 'No web manifest', [{
-    severity: 'info',
+    severity: 'low', // low: Optionales Feature
     message: 'No manifest.json — app cannot be installed as PWA',
     suggestion: "Cursor-Prompt: 'Create public/manifest.json with name, icons, start_url, display: standalone'",
   }])
@@ -189,7 +189,7 @@ export async function checkOfflineFallback(ctx: AuditContext): Promise<RuleResul
 
   if (hasSW || hasPWAPlugin) return pass('cat-21-rule-6', 5, 'Service worker or PWA plugin found')
   return fail('cat-21-rule-6', 3, 'No offline support', [{
-    severity: 'info',
+    severity: 'low', // low: Optionales Feature
     message: 'No service worker — app shows error page when offline',
     suggestion: "Cursor-Prompt: 'Add offline support: pnpm add next-pwa and configure in next.config.js'",
   }])
@@ -217,7 +217,7 @@ export async function checkDeploymentDocs(ctx: AuditContext): Promise<RuleResult
   }
 
   return fail('cat-23-rule-6', 3, 'No deployment documentation', [{
-    severity: 'info',
+    severity: 'low', // low: Nice-to-have Doku
     message: 'No deployment setup documented — unclear how the project is deployed',
     suggestion: "Cursor-Prompt: 'Add deployment section to README.md for Vercel: npx vercel deploy'",
   }])

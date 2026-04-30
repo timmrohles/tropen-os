@@ -33,7 +33,7 @@ export async function checkIconLibraryConsistency(ctx: AuditContext): Promise<Ru
 
   if (found.length === 0) return pass('cat-15-rule-7', 5, 'No conflicting icon libraries')
   return fail('cat-15-rule-7', 3, `${found.length} extra icon library(ies) installed`, found.map(pkg => ({
-    severity: 'info' as const,
+    severity: 'low' as const, // low: Stil-Inkonsistenz, kein Funktionsproblem
     message: `Multiple icon libraries: "${pkg}" installed alongside others — inconsistent icons`,
     filePath: 'package.json',
     suggestion: `Cursor-Prompt: 'Remove ${pkg} and replace its imports with your primary icon library'`,
@@ -68,7 +68,7 @@ export async function checkHardcodedStrings(ctx: AuditContext): Promise<RuleResu
 
     if (jsxTextLines.length > 5) {
       violations.push({
-        severity: 'info',
+        severity: 'low', // low: Nice-to-have i18n
         message: `${jsxTextLines.length} hardcoded strings in JSX — not using i18n translation function`,
         filePath: file.path,
         suggestion: `Cursor-Prompt: 'Replace hardcoded strings in ${file.path.split('/').pop()} with t() calls from the i18n library'`,
@@ -135,7 +135,7 @@ export async function checkDeploymentConfig(ctx: AuditContext): Promise<RuleResu
   }
 
   return fail('cat-23-rule-5', 2, 'No deployment configuration found', [{
-    severity: 'info',
+    severity: 'medium', // medium: Deploy-Prozess unklar, Ausfall-Risiko
     message: 'Keine Deployment-Konfiguration (Dockerfile, vercel.json, fly.toml) — Deploy-Prozess unklar',
     suggestion: "Cursor-Prompt: 'Create vercel.json or Dockerfile for deployment configuration'",
   }])
