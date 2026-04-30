@@ -84,6 +84,7 @@ import {
   checkCognitiveComplexity, checkGodComponents, checkErrorHandling,
   checkHardcodedSecrets, checkCircularImports, checkAnyUsage,
   checkNPlusOneQueries, checkErrorBoundary,
+  checkImportCasing, checkModuleLevelEnv,
 } from './checkers/ast-quality-checker'
 import {
   checkEnvExample, checkTodoComments, checkUnhandledPromises, checkLoadingStates,
@@ -476,6 +477,8 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-2-rule-13', categoryId: 2, name: 'Minimale any-Type-Nutzung', weight: 1, checkMode: 'repo-map', automatable: true, check: checkAnyUsage, agentSource: 'code-style', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-5-rule-15', categoryId: 5, name: 'Keine N+1 Queries (DB-Call in Schleife)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkNPlusOneQueries, agentSource: 'database', fixType: 'code-fix' , tier: 'code', domain: 'code-quality' },
   { id: 'cat-2-rule-17', categoryId: 2, name: 'Error Boundary vorhanden (error.tsx)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkErrorBoundary, agentSource: 'error-handling', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },
+  { id: 'cat-1-rule-12', categoryId: 1, name: 'Keine Import-Casing-Mismatches (bricht auf Linux/Vercel)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkImportCasing, agentSource: 'architecture', enforcement: 'blocked' as const, fixType: 'code-fix', tier: 'code', domain: 'code-quality' },
+  { id: 'cat-2-rule-18', categoryId: 2, name: 'Kein process.env auf Modul-Ebene in Hooks/Komponenten', weight: 2, checkMode: 'repo-map', automatable: true, check: checkModuleLevelEnv, agentSource: 'code-style', fixType: 'code-fix', tier: 'code', domain: 'code-quality' },
 
   // ── Gap Checks (from gap analysis 2026-04-15) ────────────────────────────
   { id: 'cat-14-rule-7', categoryId: 14, name: '.env.example vorhanden', weight: 2, checkMode: 'repo-map', automatable: true, check: checkEnvExample, agentSource: 'dependencies', fixType: 'code-gen' , tier: 'code', domain: 'code-quality' },

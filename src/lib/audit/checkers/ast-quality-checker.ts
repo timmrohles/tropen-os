@@ -293,6 +293,148 @@ export async function checkNPlusOneQueries(ctx: AuditContext): Promise<RuleResul
   return fail('cat-5-rule-15', score, `${violations.length} potential N+1 quer(ies)`, violations)
 }
 
+// ── B9: Import Casing Mismatch ──────────────────────────────────────────────
+
+export async function checkImportCasing(ctx: AuditContext): Promise<RuleResult> {
+  // Build a map: lowercase path → original path, for all .ts/.tsx files
+  const allPaths = ctx.repoMap.files
+    .filter((f) => (f.path.endsWith('.ts') || f.path.endsWith('.tsx')) && !f.path.includes('node_modules'))
+    .map((f) => f.path)
+
+  // lowercase → original (first occurrence wins when there are real dupes)
+  const lcToOriginal = new Map<string, string>()
+  for (const p of allPaths) {
+    const lc = p.toLowerCase()
+    if (!lcToOriginal.has(lc)) lcToOriginal.set(lc, p)
+  }
+
+  // Supported extensions in resolution order
+  const EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js']
+
+  /** Resolve an import specifier to a repo-map path, or null. */
+  function resolveSpecifier(specifier: string, fromFile: string): string | null {
+    // Compute the directory of the importing file
+    const fromDir = fromFile.includes('/') ? fromFile.substring(0, fromFile.lastIndexOf('/')) : ''
+
+    // Normalise: collapse ../ and ./
+    function joinPath(dir: string, rel: string): string {
+      const parts = dir ? dir.split('/') : []
+      for (const seg of rel.split('/')) {
+        if (seg === '..') parts.pop()
+        else if (seg !== '.') parts.push(seg)
+      }
+      return parts.join('/')
+    }
+
+    const base = joinPath(fromDir, specifier)
+
+    // 1. Specifier already has a recognised extension
+    if (EXTENSIONS.some((ext) => specifier.endsWith(ext))) {
+      return lcToOriginal.has(base.toLowerCase()) ? base : null
+    }
+
+    // 2. Try adding each extension
+    for (const ext of EXTENSIONS) {
+      const candidate = base + ext
+      if (lcToOriginal.has(candidate.toLowerCase())) return candidate
+    }
+
+    // 3. Try index file variants
+    for (const ext of EXTENSIONS) {
+      const candidate = base + '/index' + ext
+      if (lcToOriginal.has(candidate.toLowerCase())) return candidate
+    }
+
+    return null
+  }
+
+  const IMPORT_RE = /(?:from|import)\s*\(\s*['"](\.[^'"]+)['"]\s*\)|from\s+['"](\.[^'"]+)['"]/g
+
+  const findings: Finding[] = []
+
+  for (const file of getCodeFiles(ctx)) {
+    const content = readContent(ctx, file.path)
+    if (!content) continue
+
+    let match: RegExpExecArray | null
+    const re = new RegExp(IMPORT_RE.source, 'g')
+    while ((match = re.exec(content)) !== null) {
+      const specifier = match[1] ?? match[2]
+      if (!specifier) continue
+
+      const resolved = resolveSpecifier(specifier, file.path)
+      if (!resolved) continue
+
+      const lc = resolved.toLowerCase()
+      const canonical = lcToOriginal.get(lc)
+      if (!canonical) continue
+
+      // Case mismatch: resolved path (what the importer wrote) differs from canonical
+      if (resolved !== canonical) {
+        // Compute line number
+        const lineNum = content.substring(0, match.index).split('\n').length
+        findings.push({
+          severity: 'critical',
+          message: `Import casing mismatch: '${specifier}' resolves to '${resolved}' but file is '${canonical}'`,
+          filePath: file.path,
+          line: lineNum,
+          suggestion: `Change import to match exact filename casing: '${specifier.replace(/[^/]+$/, canonical.split('/').pop()!)}'`,
+        })
+      }
+    }
+  }
+
+  if (findings.length === 0) return pass('cat-1-rule-12', 5, 'No import casing mismatches found')
+  const score = findings.length >= 3 ? 1 : 2
+  return fail('cat-1-rule-12', score, `${findings.length} import casing mismatch(es) — will break on Linux/Vercel`, findings)
+}
+
+// ── B10: Module-Level process.env ───────────────────────────────────────────
+
+// Env vars that are safe at module level (build-time constants or well-known Next.js vars)
+const ALLOWED_MODULE_ENV = /^(NODE_ENV|NEXT_PUBLIC_[A-Z_]+(ENABLED|URL|KEY|BASE_URL))$/
+
+export async function checkModuleLevelEnv(ctx: AuditContext): Promise<RuleResult> {
+  const findings: Finding[] = []
+
+  for (const file of getCodeFiles(ctx)) {
+    // Only check files in src/hooks/ and src/components/
+    if (!file.path.includes('src/hooks/') && !file.path.includes('src/components/')) continue
+
+    const content = readContent(ctx, file.path)
+    if (!content) continue
+
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      // Module-level detection: line starts with const/let/var or export const/let/var
+      // AND contains process.env.SOMETHING
+      // Heuristic for module-level: no leading whitespace (indentation = 0 spaces/tabs)
+      const isModuleLevel = /^(?:export\s+)?(?:const|let|var)\s/.test(line)
+      if (!isModuleLevel) continue
+
+      const envMatch = line.match(/process\.env\.([A-Z_][A-Z0-9_]*)/)
+      if (!envMatch) continue
+
+      const envKey = envMatch[1]
+      if (ALLOWED_MODULE_ENV.test(envKey)) continue
+
+      findings.push({
+        severity: 'high',
+        message: `process.env.${envKey} read at module level — vi.stubEnv() won't work, tests become env-dependent`,
+        filePath: file.path,
+        line: i + 1,
+        suggestion: `Move into a function/hook: const get${envKey.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())} = () => process.env.${envKey} ?? ''`,
+      })
+    }
+  }
+
+  if (findings.length === 0) return pass('cat-2-rule-18', 5, 'No module-level process.env reads found')
+  const score = findings.length >= 3 ? 2 : 3
+  return fail('cat-2-rule-18', score, `${findings.length} module-level process.env read(s)`, findings)
+}
+
 // ── B8: Missing Error Boundary ──────────────────────────────────────────────
 
 export async function checkErrorBoundary(ctx: AuditContext): Promise<RuleResult> {
