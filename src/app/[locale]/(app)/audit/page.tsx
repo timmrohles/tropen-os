@@ -276,28 +276,21 @@ export default async function AuditPage({
                   statusFilter={status}
                 />
               ) : activeFindings.length > 0 ? (
-                <AppSection
-                  header={`${domainLabel(activeTab)} · ${domainCounts[activeTab]} offen`}
-                >
-                  <FindingsTableApp
-                    findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
-                    statusFilter={status}
-                  />
-                </AppSection>
+                <FindingsTableApp
+                  findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
+                  statusFilter={status}
+                />
               ) : (
                 <DomainEmptyState domain={activeTab} hasRun={hasRuns} />
               )}
 
               {activeFindings.filter(f => (f as Record<string, unknown>).status === 'fixed').length > 0 && (
-                <AppSection
-                  header={`Behoben · ${activeFindings.filter(f => (f as Record<string, unknown>).status === 'fixed').length}`}
-                  style={{ marginTop: 16 }}
-                >
+                <div style={{ marginTop: 8, borderTop: '2px solid var(--border)' }}>
                   <FindingsTableApp
                     findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
                     statusFilter="fixed"
                   />
-                </AppSection>
+                </div>
               )}
             </section>
             </div> {/* end Daten-Welt surface-cool wrapper */}

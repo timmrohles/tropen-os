@@ -231,9 +231,10 @@
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   text-transform: uppercase; font-size: 11px; font-weight: 600;
   letter-spacing: 0.05em; color: var(--accent);
-  background: var(--surface-warm); padding: 10px 16px;
-  text-align: left; border-bottom: 1px solid var(--border);
+  background: var(--bg-surface-solid); padding: 10px 16px;
+  text-align: left; border-bottom: 2px solid var(--border);
   white-space: nowrap;
+  position: sticky; top: 0; z-index: 2;
 }
 .app-table thead th:last-child { text-align: right; }
 .app-table tbody tr { border-bottom: 1px solid var(--border); transition: background 80ms ease; }
@@ -258,22 +259,23 @@
 
 .app-tabs {
   display: flex; border-bottom: 2px solid var(--border);
-  background: var(--surface-cool);
+  background: transparent;
 }
 .app-tab {
-  padding: 12px 20px;
+  padding: 10px 18px;
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
-  border: none; border-right: 1px solid var(--border); border-bottom: 2px solid transparent;
+  text-transform: uppercase; font-size: 11px; font-weight: 500; letter-spacing: 0.05em;
+  border: none; border-bottom: 2px solid transparent;
   cursor: pointer; background: transparent;
-  color: var(--text-tertiary); transition: color 80ms, background 80ms;
+  color: var(--text-tertiary); transition: color 80ms;
   display: flex; align-items: center; gap: 6px;
   text-decoration: none; white-space: nowrap;
 }
-.app-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.6); }
+.app-tab:hover { color: var(--text-secondary); }
 .app-tab--active {
-  color: var(--text-primary); background: #ffffff;
+  color: var(--text-primary); font-weight: 700;
   border-bottom-color: var(--accent); margin-bottom: -2px;
+  background: transparent;
 }
 .app-tab__count { font-size: 11px; color: var(--text-tertiary); }
 .app-tab--active .app-tab__count { color: var(--accent); }

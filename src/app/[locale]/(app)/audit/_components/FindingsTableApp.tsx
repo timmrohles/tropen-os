@@ -117,12 +117,11 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
   )
 }
 
-const SEV_FILTER_LABELS: Array<{ value: string; label: string }> = [
-  { value: 'all',      label: 'Alle' },
-  { value: 'critical', label: 'Kritisch' },
-  { value: 'high',     label: 'Hoch' },
-  { value: 'medium',   label: 'Mittel' },
-  { value: 'low',      label: 'Niedrig' },
+const SEV_DIST: Array<{ value: string; label: string }> = [
+  { value: 'critical', label: 'kritisch' },
+  { value: 'high',     label: 'hoch' },
+  { value: 'medium',   label: 'mittel' },
+  { value: 'low',      label: 'niedrig' },
 ]
 
 export default function FindingsTableApp({ findings, statusFilter = 'open' }: FindingsTableAppProps) {
@@ -158,34 +157,56 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
 
   return (
     <>
-    {/* Severity-Filter + ×N Hint */}
+    {/* Severity-Verteilungs-Zeile — kompakt, ein Streifen */}
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
-      borderBottom: '1px solid var(--border)', flexWrap: 'wrap',
+      display: 'flex', alignItems: 'center', gap: 0,
+      padding: '6px 16px', borderBottom: '1px solid var(--border)',
+      fontFamily: 'var(--font-mono)', fontSize: 11,
+      flexWrap: 'wrap', rowGap: 4,
     }}>
-      {SEV_FILTER_LABELS.map(({ value, label }) => {
-        const count = value === 'all' ? allGroups.length : (sevCounts[value] ?? 0)
-        if (value !== 'all' && count === 0) return null
+      {/* Gesamt — als "Alle"-Filter */}
+      <button
+        onClick={() => setSevFilter('all')}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: '2px 10px 2px 0',
+          fontSize: 11, fontFamily: 'var(--font-mono)',
+          color: sevFilter === 'all' ? 'var(--text-primary)' : 'var(--text-secondary)',
+          fontWeight: sevFilter === 'all' ? 700 : 400,
+          borderRight: '1px solid var(--border)', marginRight: 10,
+        }}
+      >
+        {allGroups.length} Findings
+      </button>
+
+      {/* Severity-Punkte als Filter */}
+      {SEV_DIST.map(({ value, label }) => {
+        const count = sevCounts[value] ?? 0
+        const isActive = sevFilter === value
         return (
           <button
             key={value}
-            onClick={() => setSevFilter(value)}
+            onClick={() => setSevFilter(isActive ? 'all' : value)}
+            title={`Nur ${label} anzeigen`}
             style={{
-              fontSize: 11, padding: '2px 8px', borderRadius: 3, cursor: 'pointer',
-              border: '1px solid',
-              borderColor: sevFilter === value ? 'var(--accent)' : 'var(--border)',
-              background: sevFilter === value ? 'var(--accent-light)' : 'transparent',
-              color: sevFilter === value ? 'var(--accent)' : 'var(--text-secondary)',
-              fontFamily: 'var(--font-mono)',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              border: 'none', cursor: 'pointer',
+              padding: '2px 8px', borderRadius: 3,
+              fontSize: 11, fontFamily: 'var(--font-mono)',
+              color: isActive ? 'var(--text-primary)' : count === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)',
+              fontWeight: isActive ? 700 : 400,
+              background: isActive ? 'var(--accent-light)' : 'transparent',
+              opacity: count === 0 ? 0.4 : 1,
             }}
           >
-            {label} {count > 0 && <span style={{ opacity: 0.7 }}>{count}</span>}
+            <span className={`severity-dot ${SEV_DOT[value] ?? ''}`} role="img" aria-label={label} style={{ width: 7, height: 7 }} />
+            {count} {label}
           </button>
         )
       })}
-      <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}
+
+      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)' }}
         title="×N = N Stellen im Code mit diesem Problem — alle auf einmal beheben">
-        ×N = Anzahl Vorkommen
+        ×N = Vorkommen
       </span>
     </div>
 
