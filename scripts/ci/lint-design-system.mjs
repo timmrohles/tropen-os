@@ -40,6 +40,9 @@ const IGNORE = [
   'checkers/agent-committee-checker.ts', 'checkers\\agent-committee-checker.ts',
   'checkers/agent-regulatory-checker.ts', 'checkers\\agent-regulatory-checker.ts',
   'checkers/security-scan-checker.ts', 'checkers\\security-scan-checker.ts',
+  // file-size: Audit-Engine — server-only, Aufteilung separates Ticket
+  'audit/finding-recommendations.ts', 'audit\\finding-recommendations.ts',
+  'audit/rule-registry.ts', 'audit\\rule-registry.ts',
 ]
 
 // Verbotene Hex-Farben (hardcodiert statt CSS-Variable)

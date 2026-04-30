@@ -28,7 +28,7 @@ export function PaletteSwitcher() {
         position: 'fixed', bottom: 16, right: 16, zIndex: 9999,
         padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)',
         background: isWarm ? '#EFEAE0' : '#EDF3EE',
-        color: '#1A1714', fontSize: 11, fontWeight: 600,
+        color: 'var(--text-primary)', fontSize: 11, fontWeight: 600,
         cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         fontFamily: 'monospace', lineHeight: 1,
       }}
