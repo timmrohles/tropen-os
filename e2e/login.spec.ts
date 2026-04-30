@@ -36,7 +36,7 @@ test.describe('Login Page', () => {
     await page.locator('#password').fill('wrongpassword')
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page.getByText(/Invalid login credentials/i)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/Login failed/i)).toBeVisible({ timeout: 5_000 })
   })
 
   test.skip('leitet nach erfolgreichem Login auf /chat weiter', async ({ page }) => {

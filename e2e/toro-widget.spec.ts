@@ -2,7 +2,11 @@ import { test, expect } from '@playwright/test'
 
 // ─── Toro Chat Widget (Startseite, öffentlich – kein Login nötig) ──────────────
 
+// Toro-Widget wurde beim Marken-Pivot (2026-04-28) von der öffentlichen Landing Page entfernt.
+// Tests werden übersprungen bis das Widget in neuer Form wieder vorhanden ist.
 test.describe('Toro Chat Widget', () => {
+  test.skip(true, 'Toro-Widget nach Marken-Pivot entfernt — Tests bis zur Neuimplementierung übersprungen')
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
   })
