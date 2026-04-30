@@ -45,13 +45,13 @@ describe('AUDIT_RULES', () => {
 })
 
 describe('Category 1 (Architektur)', () => {
-  it('has exactly 10 rules', () => {
-    expect(getRulesForCategory(1)).toHaveLength(10)
+  it('has exactly 11 rules', () => {
+    expect(getRulesForCategory(1)).toHaveLength(11)
   })
 
-  it('has correct weights [3, 3, 2, 1, 2, 2, 1, 1, 2, 2]', () => {
+  it('has correct weights [3, 3, 2, 1, 2, 2, 1, 1, 2, 2, 3]', () => {
     const weights = getRulesForCategory(1).map((r) => r.weight)
-    expect(weights).toEqual([3, 3, 2, 1, 2, 2, 1, 1, 2, 2])
+    expect(weights).toEqual([3, 3, 2, 1, 2, 2, 1, 1, 2, 2, 3])
   })
 })
 
