@@ -13,7 +13,8 @@ import {
 import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { findRecommendation } from '@/lib/audit/finding-recommendations'
-import { computeQuickWins } from '@/lib/audit/quick-wins'
+import { getGlobalQuickWins } from '@/lib/audit/quick-wins'
+import GlobalQuickWinsBar from './_components/GlobalQuickWinsBar'
 import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
 import type { AuditDomain } from '@/lib/audit/types'
 import { DomainEmptyState } from './_components/DomainEmptyState'
@@ -125,8 +126,7 @@ export default async function AuditPage({
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
   // Quick wins (server-side computation)
-  const codeFindings = getFindingsByDomain(allFindings, 'code-quality')
-  const { quickWins } = computeQuickWins(codeFindings as unknown as Parameters<typeof computeQuickWins>[0])
+  const globalQuickWins = getGlobalQuickWins(allFindings)
 
   return (
     <div className="content-max">
@@ -211,6 +211,13 @@ export default async function AuditPage({
               />
             </div>
 
+            {/* ── Global Quick-Wins Bar ───────────────────────────────────── */}
+            <GlobalQuickWinsBar
+              wins={globalQuickWins}
+              runId={selectedRunId}
+              projectId={activeScanProjectId}
+            />
+
             {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}
             <AppTabs activeTabId={activeTab} tabs={[
               { id: 'code-quality',  label: 'Code-Qualität',  count: domainCounts['code-quality'],
@@ -231,20 +238,6 @@ export default async function AuditPage({
 
             {/* ── Domain Content ──────────────────────────────────────────── */}
             <section id="domain-content" className="audit-tier-section">
-
-              {/* Quick Wins only in code-quality tab */}
-              {activeTab === 'code-quality' && quickWins.length > 0 && (
-                <AppSection
-                  header={`⚡ Quick Wins · ${quickWins.length} schnelle Fixes`}
-                  accent
-                  style={{ marginBottom: 16 }}
-                >
-                  <FindingsTableApp
-                    findings={quickWins as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
-                    statusFilter="open"
-                  />
-                </AppSection>
-              )}
 
               {activeTab === 'dsgvo' ? (
                 <DsgvoTab
