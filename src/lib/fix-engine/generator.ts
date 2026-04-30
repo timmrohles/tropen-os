@@ -34,7 +34,7 @@ function buildPrompt(ctx: FixContext): string {
   if (f.affectedFiles && f.affectedFiles.length > 0) {
     parts.push(``)
     parts.push(`## Affected Files (${f.affectedFiles.length} files)`)
-    f.affectedFiles.forEach((fp) => parts.push(`- ${fp}`))
+    for (const fp of f.affectedFiles) parts.push(`- ${fp}`)
   }
 
   if (ctx.affectedFilesContent) {

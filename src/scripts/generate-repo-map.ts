@@ -22,7 +22,7 @@ const OUTPUT_DIR = path.resolve(__dirname, '../../docs/repo-map')
 async function main() {
   // Parse --budget flag
   const budgetArg = process.argv.indexOf('--budget')
-  const tokenBudget = budgetArg !== -1 ? parseInt(process.argv[budgetArg + 1], 10) : 4096
+  const tokenBudget = budgetArg === -1 ? 4096 : parseInt(process.argv[budgetArg + 1], 10)
   if (isNaN(tokenBudget) || tokenBudget < 256) {
     console.error('Error: --budget requires a numeric value ≥ 256')
     process.exit(1)
@@ -63,9 +63,9 @@ async function main() {
 
   // Top 10 symbols
   console.log('Top 10 symbols by rank:')
-  repoMap.rankedSymbols.slice(0, 10).forEach((s, i) => {
+  for (const [i, s] of repoMap.rankedSymbols.slice(0, 10).entries()) {
     console.log(`  ${i + 1}. ${s.filePath}::${s.name} (rank: ${s.rankScore.toFixed(3)}, refs: ${s.referenceCount})`)
-  })
+  }
   console.log()
 
   // Write outputs

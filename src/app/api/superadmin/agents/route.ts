@@ -40,14 +40,14 @@ export async function GET() {
       const src = f.agent_source as string | null
       if (!src) continue
       const existing = agentStats.get(src)
-      if (!existing) {
-        agentStats.set(src, { count: 1, lastCheckAt: f.created_at })
-      } else {
+      if (existing) {
         existing.count++
         // keep the most recent
         if (!existing.lastCheckAt || f.created_at > existing.lastCheckAt) {
           existing.lastCheckAt = f.created_at
         }
+      } else {
+        agentStats.set(src, { count: 1, lastCheckAt: f.created_at })
       }
     }
   }

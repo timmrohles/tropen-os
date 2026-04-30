@@ -244,7 +244,7 @@ export default function PerspectivesPage() {
           ))}
         </div>
         <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
-          {filtered.length} Avatar{filtered.length !== 1 ? 'e' : ''}
+          {filtered.length} Avatar{filtered.length === 1 ? '' : 'e'}
         </span>
       </div>
 

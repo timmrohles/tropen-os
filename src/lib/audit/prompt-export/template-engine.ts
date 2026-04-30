@@ -60,7 +60,7 @@ function buildWhereSection(finding: PromptFinding, tool: ToolTarget): string {
     if (extras.length > 0) {
       allFiles.push(...extras)
       lines.push('**Weitere betroffene Dateien:**')
-      extras.forEach((f) => lines.push(`- ${formatFileRef(f, tool)}`))
+      for (const f of extras) lines.push(`- ${formatFileRef(f, tool)}`)
     }
   }
   if (finding.fixHint) {
@@ -103,7 +103,7 @@ function buildFixSection(
   if (repoCtx && repoCtx.symbolLines.length > 0) {
     lines.push('', '**Relevante Symbole in der betroffenen Datei:**')
     lines.push('```')
-    repoCtx.symbolLines.forEach((l) => lines.push(l))
+    for (const l of repoCtx.symbolLines) lines.push(l)
     lines.push('```')
   }
   if (repoCtx && repoCtx.importedBy.length > 0) {

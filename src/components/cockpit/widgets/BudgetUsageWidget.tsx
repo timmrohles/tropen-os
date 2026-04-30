@@ -62,7 +62,7 @@ export function BudgetUsageWidget() {
 
       <div className="widget-budget-detail">
         <span>€{(budget?.usedEur ?? 0).toFixed(2)} von</span>
-        <span>{budget?.limitEur != null ? `€${budget.limitEur.toFixed(2)}` : 'kein Limit'}</span>
+        <span>{budget?.limitEur == null ? 'kein Limit' : `€${budget.limitEur.toFixed(2)}`}</span>
       </div>
 
       <Link href="/settings#kosten" className="widget-more-link">Details →</Link>

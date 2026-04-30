@@ -18,7 +18,7 @@ export default function ShareLinkPanel({ workspaceId, initial }: {
   const [copied, setCopied] = useState(false)
 
   const shareUrl = share.share_token
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/shared/${share.share_token}`
+    ? `${typeof window === 'undefined' ? '' : window.location.origin}/shared/${share.share_token}`
     : null
 
   async function toggle(active: boolean) {

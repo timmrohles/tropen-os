@@ -10,7 +10,7 @@ vi.mock('node:dns/promises', () => ({
 import dns from 'node:dns/promises'
 import { isSafeUrl } from '@/lib/feeds/ssrf-guard'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const mockDns = dns as unknown as { resolve4: ReturnType<typeof vi.fn>; resolve6: ReturnType<typeof vi.fn> }
 
 beforeEach(() => {

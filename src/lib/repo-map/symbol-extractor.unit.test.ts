@@ -78,9 +78,9 @@ describe('extractSymbols — simple-class.ts', () => {
   it('generates unique ids with file path prefix', () => {
     const { filePath, content, parsed } = loadFixture('simple-class.ts')
     const symbols = extractSymbols(parsed, filePath, content)
-    symbols.forEach((s) => {
+    for (const s of symbols) {
       expect(s.id).toContain(filePath)
       expect(s.id).toContain(s.name)
-    })
+    }
   })
 })

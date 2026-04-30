@@ -269,7 +269,7 @@ export default function WorkspaceBriefing({ workspace, onComplete, onSkip }: Pro
               disabled={creating || selected.size === 0}
               aria-busy={creating}
             >
-              {creating ? 'Erstelle Karten…' : `${selected.size} Karte${selected.size !== 1 ? 'n' : ''} anlegen`}
+              {creating ? 'Erstelle Karten…' : `${selected.size} Karte${selected.size === 1 ? '' : 'n'} anlegen`}
             </button>
             <button
               type="button"

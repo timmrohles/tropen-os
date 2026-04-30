@@ -46,7 +46,7 @@ export function OrgHealthSection({ stats }: OrgHealthSectionProps) {
               aria-hidden="true"
             />
           }
-          value={stats.budgetUsedPercent !== null ? `${stats.budgetUsedPercent}%` : '—'}
+          value={stats.budgetUsedPercent === null ? '—' : `${stats.budgetUsedPercent}%`}
           label="Budget genutzt"
         />
       </div>

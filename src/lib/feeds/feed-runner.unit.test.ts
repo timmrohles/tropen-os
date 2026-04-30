@@ -27,7 +27,7 @@ import { runFeedSource } from './feed-runner'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function makeChain(returnValue: unknown) {
-  const chain = {
+  return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     neq: vi.fn().mockReturnThis(),
@@ -37,7 +37,6 @@ function makeChain(returnValue: unknown) {
     single: vi.fn().mockResolvedValue(returnValue),
     maybeSingle: vi.fn().mockResolvedValue(returnValue),
   }
-  return chain
 }
 
 const mockFrom = vi.mocked(supabaseAdmin.from)
@@ -105,7 +104,7 @@ describe('runFeedSource', () => {
     })
 
     vi.mocked(triggerFetch).mockResolvedValue({ itemsFound: 3, itemsSaved: 2, errors: [] })
-    vi.mocked(distributeItem).mockResolvedValue(undefined)
+    vi.mocked(distributeItem).mockResolvedValue()
 
     const result = await runFeedSource('src-1', 'manual')
 

@@ -75,7 +75,7 @@ export function DataSourceHistory({ source, records, loading, onClose }: Props) 
                         : <span style={{ color: 'var(--accent)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={13} weight="bold" />OK</span>}
                     </td>
                     <td style={{ padding: '8px 0 8px 10px', color: 'var(--text-tertiary)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      {rec.fetchDurationMs != null ? `${rec.fetchDurationMs}ms` : '—'}
+                      {rec.fetchDurationMs == null ? '—' : `${rec.fetchDurationMs}ms`}
                     </td>
                   </tr>
                 ))}

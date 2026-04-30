@@ -22,8 +22,8 @@ export function normalizeFindings(raw: unknown[]): ProviderFinding[] {
         ? (severity as ProviderFinding['severity'])
         : 'info',
       message,
-      filePath: f.filePath != null ? String(f.filePath) : undefined,
-      suggestion: f.suggestion != null ? String(f.suggestion) : undefined,
+      filePath: f.filePath == null ? undefined : String(f.filePath),
+      suggestion: f.suggestion == null ? undefined : String(f.suggestion),
       confidence: clamp(Number(f.confidence ?? 0.7), 0, 1),
     }]
   })

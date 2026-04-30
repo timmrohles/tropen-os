@@ -258,11 +258,11 @@ async function main() {
   // Step 3: Validate
   console.log('\n[Step 3] Validating output…')
   const { valid, errors } = validateAgentDoc(finalContent)
-  if (!valid) {
+  if (valid) {
+    console.log('✓ Validation passed')
+  } else {
     console.warn(`⚠ Validation issues:\n  ${errors.join('\n  ')}`)
     console.warn('  Saving anyway — review and fix manually')
-  } else {
-    console.log('✓ Validation passed')
   }
 
   // Step 4: Save

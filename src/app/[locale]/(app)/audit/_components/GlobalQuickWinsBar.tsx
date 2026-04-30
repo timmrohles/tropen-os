@@ -83,7 +83,7 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
   const allFindings = clusters.flatMap(c => c.findings)
   const totalScoreGain = clusters.reduce((s, c) => s + c.totalScoreGain, 0)
   const uniqueFileCount = new Set(clusters.map(c => c.filePath).filter(Boolean)).size
-  const targetScore = currentScore != null ? Math.min(100, currentScore + totalScoreGain) : null
+  const targetScore = currentScore == null ? null : Math.min(100, currentScore + totalScoreGain)
 
   async function toggleFindingPrompt(finding: QuickWinFinding) {
     if (expandedFinding === finding.id) { setExpandedFinding(null); return }
@@ -206,9 +206,9 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
         borderBottom: (open || session) ? '1px solid var(--border)' : 'none',
       }}>
         <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1, minWidth: 160 }}>
-          {targetScore != null
-            ? <>Wenn du diese {allFindings.length} fixt, springst du auf <strong style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{targetScore.toFixed(1)}%</strong></>
-            : 'Höchster Impact, nach Datei geclustert — eine Datei nach der anderen.'
+          {targetScore == null
+            ? 'Höchster Impact, nach Datei geclustert — eine Datei nach der anderen.'
+            : <>Wenn du diese {allFindings.length} fixt, springst du auf <strong style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{targetScore.toFixed(1)}%</strong></>
           }
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>

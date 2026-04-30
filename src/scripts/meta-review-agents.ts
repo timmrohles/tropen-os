@@ -185,7 +185,7 @@ async function main() {
     .filter((s): s is AgentSummary => s !== null)
 
   console.log(`Found ${summaries.length} agents:`)
-  summaries.forEach((s) => console.log(`  ${s.id}: ${s.ruleCount} rules`))
+  for (const s of summaries) console.log(`  ${s.id}: ${s.ruleCount} rules`)
   console.log()
 
   // 2. Build prompt

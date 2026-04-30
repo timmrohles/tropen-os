@@ -89,9 +89,7 @@ export async function POST(
     clearTimeout(timeout)
     httpStatus = response.status
 
-    if (!response.ok) {
-      fetchError = `HTTP ${response.status} ${response.statusText}`
-    } else {
+    if (response.ok) {
       const json = await response.json()
       rawData = src.schema_path ? applyJsonPath(json, src.schema_path as string) : json
       if (Array.isArray(rawData)) {
@@ -99,6 +97,8 @@ export async function POST(
       } else if (rawData !== null && typeof rawData === 'object') {
         recordCount = 1
       }
+    } else {
+      fetchError = `HTTP ${response.status} ${response.statusText}`
     }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)

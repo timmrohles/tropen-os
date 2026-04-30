@@ -70,7 +70,7 @@ export function LpPricing({ locale }: { locale: string }) {
               <Link
                 href="/login"
                 className={idx === 1 ? 'lp-cta-accent' : undefined}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px 0', border: idx !== 1 ? '1px solid rgba(26,23,20,0.2)' : undefined, fontSize: 14, color: idx !== 1 ? 'var(--text-primary)' : '#ffffff', textDecoration: 'none', fontWeight: idx === 1 ? 600 : 500 }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px 0', border: idx === 1 ? undefined : '1px solid rgba(26,23,20,0.2)', fontSize: 14, color: idx === 1 ? '#ffffff' : 'var(--text-primary)', textDecoration: 'none', fontWeight: idx === 1 ? 600 : 500 }}
               >
                 {plan.cta}
                 <ArrowRight size={14} weight="bold" aria-hidden="true" />

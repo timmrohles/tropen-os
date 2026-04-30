@@ -151,7 +151,7 @@ export default function ProjectProfileStep({ detectedStack, onConfirm, onBack }:
             <button className={`chip${isPublic ? ' chip--active' : ''}`} onClick={() => setIsPublic(true)}>
               Ja
             </button>
-            <button className={`chip${!isPublic ? ' chip--active' : ''}`} onClick={() => setIsPublic(false)}>
+            <button className={`chip${isPublic ? '' : ' chip--active'}`} onClick={() => setIsPublic(false)}>
               Nein, intern / lokal
             </button>
           </div>
@@ -186,7 +186,7 @@ export default function ProjectProfileStep({ detectedStack, onConfirm, onBack }:
             <button className={`chip${isLive ? ' chip--active' : ''}`} onClick={() => setIsLive(true)}>
               Ja, live
             </button>
-            <button className={`chip${!isLive ? ' chip--active' : ''}`} onClick={() => setIsLive(false)}>
+            <button className={`chip${isLive ? '' : ' chip--active'}`} onClick={() => setIsLive(false)}>
               Noch in Entwicklung
             </button>
           </div>

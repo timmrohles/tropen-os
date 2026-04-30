@@ -47,8 +47,8 @@ export async function discoverFiles(options: DiscoverOptions): Promise<string[]>
 
 function buildAllowedExtensions(languages: ('typescript' | 'javascript')[]): Set<string> {
   const exts = new Set<string>()
-  if (languages.includes('typescript')) TS_EXTENSIONS.forEach((e) => exts.add(e))
-  if (languages.includes('javascript')) JS_EXTENSIONS.forEach((e) => exts.add(e))
+  if (languages.includes('typescript')) for (const e of TS_EXTENSIONS) exts.add(e)
+  if (languages.includes('javascript')) for (const e of JS_EXTENSIONS) exts.add(e)
   return exts
 }
 

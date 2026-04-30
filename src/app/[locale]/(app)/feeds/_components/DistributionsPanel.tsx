@@ -119,7 +119,7 @@ export default function DistributionsPanel({ sourceId, projects, workspaces }: P
                 {targetIcon(d.targetType)}
                 <span style={{ color: 'var(--text-primary)' }}>
                   {TARGET_TYPE_LABEL[d.targetType]}
-                  {target ? `: ${target.name}` : d.targetType !== 'notification' ? ` (ID: ${d.targetId.slice(0, 8)}…)` : ''}
+                  {target ? `: ${target.name}` : d.targetType === 'notification' ? '' : ` (ID: ${d.targetId.slice(0, 8)}…)`}
                 </span>
                 <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>ab Score {d.minScore}</span>
                 <button

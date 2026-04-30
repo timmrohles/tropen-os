@@ -14,9 +14,9 @@ function padRight(str: string, len: number): string {
 
 function formatCategoryRow(cat: CategoryScore): string {
   const name = padRight(cat.name, 30)
-  const pct = cat.automatedPercentage !== null
-    ? `${cat.automatedPercentage.toFixed(1)}%`
-    : 'manual'
+  const pct = cat.automatedPercentage === null
+    ? 'manual'
+    : `${cat.automatedPercentage.toFixed(1)}%`
   const pctPad = padRight(pct, 8)
   const automated = `${cat.automatedRuleCount} auto / ${cat.manualRuleCount} manual`
   return `  ${name} ${pctPad} [${automated}]`
@@ -77,7 +77,7 @@ export function formatReportMarkdown(report: AuditReport): string {
   lines.push('', '## Category Results', '', '| Category | Automated % | Auto Rules | Manual Rules |', '|----------|-------------|------------|--------------|')
 
   for (const cat of report.categories) {
-    const pct = cat.automatedPercentage !== null ? `${cat.automatedPercentage.toFixed(1)}%` : '-'
+    const pct = cat.automatedPercentage === null ? '-' : `${cat.automatedPercentage.toFixed(1)}%`
     lines.push(`| ${cat.name} | ${pct} | ${cat.automatedRuleCount} | ${cat.manualRuleCount} |`)
   }
 

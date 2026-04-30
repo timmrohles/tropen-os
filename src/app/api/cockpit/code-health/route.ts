@@ -41,9 +41,9 @@ export async function GET() {
       .limit(1)
       .maybeSingle()
 
-    const scoreChange = prevRun != null
-      ? Math.round((latestRun.percentage - prevRun.percentage) * 10) / 10
-      : null
+    const scoreChange = prevRun == null
+      ? null
+      : Math.round((latestRun.percentage - prevRun.percentage) * 10) / 10
 
     // Open findings grouped by severity
     const { data: openFindings } = await supabaseAdmin

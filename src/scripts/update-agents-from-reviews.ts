@@ -329,11 +329,11 @@ async function updateAgent(update: AgentUpdate): Promise<UpdateResult> {
     )
     totalCost += calcCost('Judge (Opus)', judgeResult.inputTokens, judgeResult.outputTokens)
 
-    if (!judgeResult.text) {
+    if (judgeResult.text) {
+      finalContent = judgeResult.text
+    } else {
       console.warn(`    ⚠ Judge fehlgeschlagen — besten Draft verwenden`)
       finalContent = drafts[0].text
-    } else {
-      finalContent = judgeResult.text
     }
   }
 

@@ -44,9 +44,9 @@ export default function AuditTierTabs({
     const sections = ['findings', 'metrics', 'compliance']
     const observers: IntersectionObserver[] = []
 
-    sections.forEach(id => {
+    for (const id of sections) {
       const el = document.getElementById(id)
-      if (!el) return
+      if (!el) continue
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) setActiveTab(id)
@@ -55,8 +55,8 @@ export default function AuditTierTabs({
       )
       observer.observe(el)
       observers.push(observer)
-    })
-    return () => observers.forEach(o => o.disconnect())
+    }
+    return () => { for (const o of observers) o.disconnect() }
   }, [])
 
   const tabs: TierTab[] = [

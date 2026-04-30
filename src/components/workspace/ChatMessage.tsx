@@ -100,7 +100,7 @@ export default function ChatMessage({
 
   // Hooks must be declared before any early returns (Rules of Hooks)
   const isUser = msg.role === 'user'
-  const suggestionsMatch = !isUser ? msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/) : null
+  const suggestionsMatch = isUser ? null : msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/)
   const suggestions: string[] = React.useMemo(() => {
     if (!suggestionsMatch) return []
     try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }

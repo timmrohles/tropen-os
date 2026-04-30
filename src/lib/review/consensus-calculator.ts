@@ -74,7 +74,7 @@ export function calculateConsensus(
   const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
   results.sort((a, b) => {
     const sd = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
-    return sd !== 0 ? sd : b.modelsFlagged.length - a.modelsFlagged.length
+    return sd === 0 ? b.modelsFlagged.length - a.modelsFlagged.length : sd
   })
 
   return results

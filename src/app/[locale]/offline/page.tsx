@@ -16,7 +16,7 @@ export default function OfflinePage() {
       padding: 24,
       textAlign: 'center',
     }}>
-      {/* eslint-disable-next-line -- custom brand illustration, no Phosphor equivalent */}
+      { }
       <svg width="64" height="64" viewBox="0 0 32 32" fill="none" aria-hidden="true">
         <path d="M18 4 C16 2, 13 2, 12 4 C11 6, 13 7, 14 6 C14 8, 16 8, 17 7 C17 9, 19 8, 18 6 Z" fill="#235f3e"/>
         <ellipse cx="15" cy="18" rx="8" ry="9" fill="var(--accent)"/>

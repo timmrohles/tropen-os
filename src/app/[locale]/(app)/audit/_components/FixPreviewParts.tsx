@@ -95,7 +95,7 @@ export function DiffHunkView({ hunk }: { hunk: DiffHunk }) {
           <div key={i} style={{ display: 'flex', background: bg }}>
             <span style={{
               width: 20, flexShrink: 0, textAlign: 'center',
-              color, fontWeight: type !== ' ' ? 700 : 400,
+              color, fontWeight: type === ' ' ? 400 : 700,
             }}>
               {type === '+' ? '+' : type === '-' ? '-' : ' '}
             </span>
@@ -130,7 +130,7 @@ export function FileDiffView({ diff }: { diff: FileDiff }) {
         <Code size={13} weight="bold" color="var(--text-tertiary)" aria-hidden="true" />
         <code style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1 }}>{diff.filePath}</code>
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-          {diff.hunks.length} Hunk{diff.hunks.length !== 1 ? 's' : ''}
+          {diff.hunks.length} Hunk{diff.hunks.length === 1 ? '' : 's'}
         </span>
       </button>
       {expanded && (

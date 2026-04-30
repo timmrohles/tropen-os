@@ -155,7 +155,7 @@ export function renderAssistantContent(
   const segments = parseArtifacts(content)
   const result: React.ReactNode[] = []
 
-  segments.forEach((seg, i) => {
+  for (const [i, seg] of segments.entries()) {
     if (seg.segType === 'text') {
       result.push(...renderLines(seg.content, mdComponents, `seg${i}-`))
     } else {
@@ -172,7 +172,7 @@ export function renderAssistantContent(
         />
       )
     }
-  })
+  }
 
   return result
 }
