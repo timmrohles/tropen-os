@@ -7,6 +7,7 @@ import { resolveNodeCli } from '../utils/platform-utils'
 
 export type RunCommand = (cmd: string, args: string[], cwd: string) => string
 export type ReadFile = (path: string, encoding: BufferEncoding) => string
+export type BinaryCheck = (name: string) => boolean
 
 function defaultRunCommand(cmd: string, args: string[], cwd: string): string {
   const [execCmd, execArgs] = process.platform === 'win32'
@@ -35,7 +36,7 @@ function gitleaksInstallHint(): string {
   return 'install via: brew install gitleaks  OR  https://github.com/gitleaks/gitleaks#installing'
 }
 
-export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile: ReadFile = defaultReadFile) {
+export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile: ReadFile = defaultReadFile, binaryCheck: BinaryCheck = isBinaryAvailable) {
   async function checkDependencyVulnerabilities(ctx: AuditContext): Promise<RuleResult> {
     const pnpmBin = resolveNodeCli('pnpm', ctx.rootPath)
     let raw: string
@@ -89,7 +90,7 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile
   }
 
   async function checkNoSecretsInRepo(ctx: AuditContext): Promise<RuleResult> {
-    if (!isBinaryAvailable('gitleaks')) {
+    if (!binaryCheck('gitleaks')) {
       return nullResult('cat-3-rule-3', `gitleaks not found — ${gitleaksInstallHint()}`)
     }
 

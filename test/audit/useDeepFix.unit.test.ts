@@ -28,7 +28,12 @@ function makeFetch(status: number, body: unknown) {
 }
 
 beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_FIX_ENGINE_ENABLED', 'true')
   vi.restoreAllMocks()
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('useDeepFix', () => {

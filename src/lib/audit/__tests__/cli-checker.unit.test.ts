@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { AuditContext } from '../types'
 import { createCliChecks } from '../checkers/cli-checker'
-import type { RunCommand, ReadFile } from '../checkers/cli-checker'
+import type { RunCommand, ReadFile, BinaryCheck } from '../checkers/cli-checker'
 
 function makeCtx(): AuditContext {
   return {
@@ -70,17 +70,18 @@ describe('checkDependencyVulnerabilities', () => {
 describe('checkNoSecretsInRepo', () => {
   it('returns score 5 when gitleaks finds no secrets', async () => {
     const runner: RunCommand = vi.fn().mockReturnValue('{"findings":[]}')
-    const { checkNoSecretsInRepo } = createCliChecks(runner)
+    const binaryCheck: BinaryCheck = vi.fn().mockReturnValue(true)
+    const { checkNoSecretsInRepo } = createCliChecks(runner, undefined, binaryCheck)
     const result = await checkNoSecretsInRepo(makeCtx())
     expect(result.score).toBe(5)
   })
 
   it('returns score null when gitleaks not installed', async () => {
-    const runner: RunCommand = vi.fn().mockImplementation(() => { throw new Error('gitleaks: command not found') })
-    const { checkNoSecretsInRepo } = createCliChecks(runner)
+    const binaryCheck: BinaryCheck = vi.fn().mockReturnValue(false)
+    const { checkNoSecretsInRepo } = createCliChecks(undefined, undefined, binaryCheck)
     const result = await checkNoSecretsInRepo(makeCtx())
     expect(result.score).toBeNull()
-    expect(result.reason).toContain('not installed')
+    expect(result.reason).toContain('not found')
   })
 })
 
