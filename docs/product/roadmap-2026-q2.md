@@ -22,6 +22,8 @@
 - BP8 — Quick-Wins-Box global + Fix-Session-Bundle ✅ 2026-04-30
 - BP12 — durch BP8 obsolet
 - BP13 — Sprint-Abschluss (Cleanup, Docs, Commit) ⏳ folgt
+- BP-Audit-Coverage-1 — nach BP13 ⏳
+- BP-E2E-Hygiene-1 — nach BP-Audit-Coverage-1 ⏳
 
 **Phase 2 — Audit-Design verbessern + Aufräumen**
 - Visueller Sweep nach BP8
