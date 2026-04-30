@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
           latencyMs: Date.now() - callStart,
           status: 'success',
         })
-      } catch (err) {
+      } catch {
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: 'Stream-Fehler' })}\n\n`)
         )

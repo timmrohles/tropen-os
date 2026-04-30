@@ -156,12 +156,10 @@ export async function POST(request: Request) {
     const enrichedFindings = allFindings as EnrichedFinding[]
     let newFindings = enrichedFindings
     let skippedCount = 0
-    let inheritedCount = 0
     try {
       const result = await deduplicateFindings(enrichedFindings, runId, profile.organization_id)
       newFindings = result.newFindings
       skippedCount = result.skipped.length
-      inheritedCount = result.inherited.length
     } catch (dedupErr) {
       log.warn('Deduplication failed — proceeding with all findings', { error: String(dedupErr) })
     }

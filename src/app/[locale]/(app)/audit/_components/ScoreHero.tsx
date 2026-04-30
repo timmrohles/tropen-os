@@ -159,12 +159,8 @@ const STATUS_COLOR: Record<Status, string> = {
   prototype: 'var(--status-prototype)',
 }
 
-const STATUS_BG: Record<Status, string> = {
-  production_grade: 'var(--status-production-bg)',
-  stable: 'var(--status-stable-bg)',
-  risky: 'var(--status-risky-bg)',
-  prototype: 'var(--status-prototype-bg)',
-}
+// STATUS_BG kept for future use
+// const STATUS_BG: Record<Status, string> = { ... }
 
 const THRESHOLDS = [
   { pct: 60, label: 'Risky' },
@@ -230,9 +226,9 @@ function ScoreExplainPopover({ t }: { t: ReturnType<typeof useTranslations<'audi
 export default function ScoreHero({
   percentage, status, delta, lastRunAt, projectName,
   reviewType, reviewCostEur,
-  openFindings = 0, highOpenFindings = 0, criticalOpenFindings = 0,
+  openFindings: _openFindings = 0, highOpenFindings: _highOpenFindings = 0, criticalOpenFindings: _criticalOpenFindings = 0,
   isFirstRun = false,
-  codeOnlyMode = true,
+  codeOnlyMode: _codeOnlyMode = true,
   hasSchemaDriftFinding = false,
   hasExternalTools,
 }: ScoreHeroProps) {
@@ -328,7 +324,7 @@ export default function ScoreHero({
               background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
               color: 'var(--accent)', letterSpacing: '0.03em',
             }}>
-              Deep{reviewCostEur != null ? ` · €${reviewCostEur.toFixed(3)}` : ''}
+              Deep{reviewCostEur == null ? '' : ` · €${reviewCostEur.toFixed(3)}`}
             </span>
           )}
         </div>

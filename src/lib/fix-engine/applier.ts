@@ -18,7 +18,6 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
-import os from 'node:os'
 import { createLogger } from '@/lib/logger'
 import type { FileDiff, DiffHunk } from './types'
 

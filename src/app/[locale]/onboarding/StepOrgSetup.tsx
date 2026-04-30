@@ -26,7 +26,7 @@ interface StepOrgSetupProps {
 
 export default function StepOrgSetup({
   orgId, orgName, setOrgName,
-  logoUrl, setLogoUrl, logoPreview, setLogoPreview,
+  logoUrl: _logoUrl, setLogoUrl, logoPreview, setLogoPreview,
   primaryColor, setPrimaryColor,
   guideName, setGuideName,
   error, setError, uploading, setUploading,

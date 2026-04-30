@@ -6,14 +6,8 @@ import {
   checkCircularDependencies,
   checkFileSizes,
   checkInputValidationCoverage,
-  checkLoggerAbstraction,
-  checkVendorAbstraction,
   checkServiceKeyInFrontend,
-  checkBudgetEnforcement,
-  checkBusinessLogicSeparation,
   checkNamingConventions,
-  checkAriaAttributes,
-  checkTokenLimitsConfigured,
 } from '../checkers/repo-map-checker'
 
 function makeFile(path: string, lineCount: number, overrides: Partial<RepoFile> = {}): RepoFile {

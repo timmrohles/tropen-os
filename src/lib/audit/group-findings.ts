@@ -95,7 +95,6 @@ export function groupFindings(findings: AuditFinding[]): FindingGroup[] {
 
   const groups: FindingGroup[] = []
   for (const [compositeKey, items] of map) {
-    const ruleId = compositeKey.split('::')[0]
     const uniqueFileCount = new Set(
       items.map((f) => f.file_path).filter(Boolean)
     ).size

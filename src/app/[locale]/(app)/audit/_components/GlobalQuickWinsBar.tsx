@@ -65,7 +65,7 @@ function shortPath(p: string): string {
   return parts.length > 2 ? parts.slice(-2).join('/') : p
 }
 
-export default function GlobalQuickWinsBar({ clusters, runId, projectId }: GlobalQuickWinsBarProps) {
+export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId: _projectId }: GlobalQuickWinsBarProps) {
   usePathname() // kept for potential future locale use
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)

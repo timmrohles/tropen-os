@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Robot, MagnifyingGlass, Funnel } from '@phosphor-icons/react'
+import { Robot, MagnifyingGlass } from '@phosphor-icons/react'
 import { AgentTable } from './_components/AgentTable'
 import { AgentDetailDrawer } from './_components/AgentDetailDrawer'
 import type { AgentTableRow } from './agents.types'

@@ -1,5 +1,5 @@
 // Fixture: a file that imports from both utility and simple-class
-import { formatDate, MAX_RETRIES } from './utility'
+import { MAX_RETRIES } from './utility'
 import { EventLogger } from './simple-class'
 
 export function createLogger(): EventLogger {

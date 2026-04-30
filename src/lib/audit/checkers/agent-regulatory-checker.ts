@@ -50,17 +50,6 @@ function walkFiles(dir: string, ext: string[]): string[] {
   return results
 }
 
-/** Search content of multiple files for a regex pattern */
-function grepFiles(files: string[], pattern: RegExp): { file: string; match: string }[] {
-  const hits: { file: string; match: string }[] = []
-  for (const file of files) {
-    const content = readFile(file)
-    const m = pattern.exec(content)
-    if (m) hits.push({ file, match: m[0] })
-  }
-  return hits
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // DSGVO AGENT
 // ═══════════════════════════════════════════════════════════════════════════

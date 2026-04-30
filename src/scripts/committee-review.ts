@@ -323,7 +323,7 @@ async function main() {
   const args = process.argv.slice(2)
   const runAll = args.includes('--all')
   const configIdx = args.indexOf('--config')
-  const configArg = configIdx !== -1 ? args[configIdx + 1] : null
+  const configArg = configIdx === -1 ? null : args[configIdx + 1]
 
   if (!runAll && !configArg) {
     console.error('Usage: committee-review.ts --config <path> | --all')
@@ -333,7 +333,6 @@ async function main() {
 
   const configPaths = runAll ? ALL_CONFIGS : [configArg!]
 
-  let totalCost = 0
   for (const configPath of configPaths) {
     const fullPath = join(ROOT, 'src', 'scripts', configPath)
     let mod: { config: CommitteeReviewConfig }

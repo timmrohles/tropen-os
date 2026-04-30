@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { X, ArrowSquareOut, FileText, Tag, Robot, Lightning } from '@phosphor-icons/react'
+import { X, FileText, Tag, Robot, Lightning } from '@phosphor-icons/react'
 import { AgentHealthBadge, type AgentStatus } from './AgentHealthBadge'
 import type { AgentTableRow } from '../agents.types'
 

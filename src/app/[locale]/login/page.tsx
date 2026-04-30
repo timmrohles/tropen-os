@@ -28,13 +28,6 @@ export default function LoginPage() {
       return
     }
 
-    const { data: membership } = await supabase
-      .from('department_members')
-      .select('workspace_id')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-
     router.push('/audit')
   }
 

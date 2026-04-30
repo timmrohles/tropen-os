@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ notifications: data ?? [] })
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(_request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

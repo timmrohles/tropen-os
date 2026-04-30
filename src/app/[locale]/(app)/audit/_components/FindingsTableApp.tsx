@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Copy, Check } from '@phosphor-icons/react'
-import { useTranslations } from 'next-intl'
 import type { FindingGroup, AuditFinding } from '@/lib/audit/group-findings'
 import { groupFindings } from '@/lib/audit/group-findings'
 
@@ -119,7 +118,6 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
 }
 
 export default function FindingsTableApp({ findings, statusFilter = 'open' }: FindingsTableAppProps) {
-  const t = useTranslations('audit')
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set())
 

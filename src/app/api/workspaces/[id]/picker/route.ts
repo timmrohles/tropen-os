@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/api/workspaces'
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(req: NextRequest, { params }: Params) {
-  const { id: workspaceId } = await params
+  await params // id/workspaceId unused but params must be awaited
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
 

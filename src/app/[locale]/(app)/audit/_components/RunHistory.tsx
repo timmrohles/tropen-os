@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { TrendUp, TrendDown, Brain, CaretRight, CaretDown } from '@phosphor-icons/react'
+import { Brain, CaretRight, CaretDown } from '@phosphor-icons/react'
 
 interface RunSummary {
   id: string
@@ -153,7 +153,7 @@ export default function RunHistory({ runs, reviewRuns = [], selectedRunId }: Run
 
               {isExpanded && (
                 <div>
-                  {dayRuns.map((run, idx) => {
+                  {dayRuns.map((run, _idx) => {
                     const prevRun = filtered[filtered.indexOf(run) + 1]
                     const delta = prevRun ? run.percentage - prevRun.percentage : null
                     const isSelected = run.id === selectedRunId

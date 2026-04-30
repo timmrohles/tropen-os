@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
 import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench, DownloadSimple } from '@phosphor-icons/react'
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
@@ -16,8 +15,7 @@ interface AuditActionsProps {
   isVercelEnv?: boolean
 }
 
-export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl, isVercelEnv = false }: AuditActionsProps) {
-  const t = useTranslations('audit')
+export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl }: AuditActionsProps) {
   const router = useRouter()
   const [auditState, setAuditState] = useState<TriggerState>('idle')
   const [reviewState, setReviewState] = useState<TriggerState>('idle')
@@ -37,13 +35,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
       if (saved) setLighthouseUrl(saved)
     }
   }, [initialLighthouseUrl, scanProjectId])
-
-  function handleUrlChange(val: string) {
-    setLighthouseUrl(val)
-    const key = `lh_url_${scanProjectId ?? 'default'}`
-    if (val.trim()) localStorage.setItem(key, val.trim())
-    else localStorage.removeItem(key)
-  }
 
   async function handleTrigger() {
     setAuditState('running')
@@ -145,7 +136,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const isAuditRunning  = auditState === 'running'
   const isReviewRunning = reviewState === 'running'
   const alreadyReviewed = reviewType === 'multi_model' && reviewState === 'idle'
-  const canReview       = !!runId && !alreadyReviewed && !isReviewRunning && !isAuditRunning
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>

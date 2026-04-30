@@ -2,7 +2,7 @@
 
 import { AreaChart, Badge, BarChart } from '@tremor/react'
 import type { OverviewResponse } from '@/types/qa'
-import { SectionCard, KpiCard, Skeleton, s } from './QaShared'
+import { SectionCard, KpiCard, Skeleton } from './QaShared'
 
 const ps: Record<string, React.CSSProperties> = {
   grid4: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },

@@ -15,9 +15,9 @@ function fail(ruleId: string, score: number, reason: string, findings: Finding[]
 function readContent(ctx: AuditContext, path: string): string | null {
   if (ctx.fileContents?.has(path)) return ctx.fileContents.get(path)!
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const fs = require('fs') as typeof import('fs')
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const nodePath = require('path') as typeof import('path')
     return fs.readFileSync(nodePath.join(ctx.rootPath ?? process.cwd(), path), 'utf-8')
   } catch { return null }
@@ -26,9 +26,9 @@ function readContent(ctx: AuditContext, path: string): string | null {
 function getAllMigrationContent(ctx: AuditContext): string {
   const migrationsDir = 'supabase/migrations'
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const fs = require('fs') as typeof import('fs')
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const nodePath = require('path') as typeof import('path')
     const dir = nodePath.join(ctx.rootPath ?? process.cwd(), migrationsDir)
     if (!fs.existsSync(dir)) return ''
@@ -112,8 +112,8 @@ export async function checkAnonKeyNoWriteWildcard(ctx: AuditContext): Promise<Ru
   // Look for policies granting anon INSERT/UPDATE/DELETE with USING (true)
   const dangerPattern = /CREATE\s+POLICY[^;]*FOR\s+(?:INSERT|UPDATE|DELETE)[^;]*TO\s+anon[^;]*(?:USING|WITH\s+CHECK)\s*\(\s*true\s*\)/gi
   const violations: Finding[] = []
-  let m: RegExpExecArray | null
-  while ((m = dangerPattern.exec(migrations)) !== null) {
+  let _m: RegExpExecArray | null
+  while ((_m = dangerPattern.exec(migrations)) !== null) {
     violations.push({
       severity: 'high',
       message: 'Anon-User hat unkontrollierten Schreibzugriff — unauthentifizierte Requests können Daten ändern',
@@ -149,9 +149,9 @@ export async function checkStorageBucketPolicies(ctx: AuditContext): Promise<Rul
 export async function checkEdgeFunctionsNoServiceRoleInUserContext(ctx: AuditContext): Promise<RuleResult> {
   const violations: Finding[] = []
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const fs = require('fs') as typeof import('fs')
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const nodePath = require('path') as typeof import('path')
     const dir = nodePath.join(ctx.rootPath ?? process.cwd(), 'supabase/functions')
     if (!fs.existsSync(dir)) return pass('sec-db-08', 5, 'Keine Edge Functions gefunden')

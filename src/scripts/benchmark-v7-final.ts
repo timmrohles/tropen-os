@@ -9,7 +9,6 @@ import { extractRepoFromGitHub } from '../lib/benchmark/tarball-extractor'
 import { discoverRepos } from '../lib/benchmark/repo-discovery'
 import { buildAuditContextFromFiles, runAudit } from '../lib/audit'
 import { calculateStats, formatStats, type RepoResult } from '../lib/benchmark/stats'
-import { getFixType } from '../lib/audit/rule-registry'
 import { supabaseAdmin } from '../lib/supabase-admin'
 
 const ROOT = resolve(process.cwd())
@@ -76,7 +75,7 @@ async function scanRepo(
       totalFindings: allFindings.length, criticalFindings: report.criticalFindings.length,
       fileCount: files.length, scanDurationMs: dur, topic: spec.topic,
     }
-  } catch (err) {
+  } catch {
     const dur = Date.now() - start
     console.log(` ERROR [${dur}ms]`)
     return null

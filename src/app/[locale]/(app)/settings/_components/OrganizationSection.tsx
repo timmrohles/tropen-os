@@ -37,12 +37,6 @@ export function OrganizationSection() {
     setUpdating(null)
   }
 
-  const statusLabel: Record<string, string> = {
-    available: 'Verfügbar',
-    on_request: 'Auf Anfrage',
-    blocked: 'Gesperrt',
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="card">

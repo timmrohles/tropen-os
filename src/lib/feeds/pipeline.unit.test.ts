@@ -1,5 +1,5 @@
 // src/lib/feeds/pipeline.unit.test.ts
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { runStage1, computeContentHash } from './pipeline'
 import type { RawFeedItem, FeedSource } from '@/types/feeds'
 

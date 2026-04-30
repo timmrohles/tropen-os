@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useTranslations } from 'next-intl'
 import {
-  CloudArrowUp, File, FilePdf, FileDoc, FileText, FileCsv,
-  Trash, CheckCircle, Warning, Spinner, Books, FolderOpen, Users, ArrowClockwise,
+  CloudArrowUp, FilePdf, FileDoc, FileText, FileCsv,
+  Trash, CheckCircle, Warning, Spinner, Books, ArrowClockwise,
 } from '@phosphor-icons/react'
 
 // ─── Typen ────────────────────────────────────────────────────────────────────

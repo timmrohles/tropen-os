@@ -25,10 +25,10 @@
  */
 
 import {
-  House, Gear, Plus, Trash, Download, BookmarkSimple,
-  MagnifyingGlass, Bell, User, ArrowRight, Check,
-  Warning, Info, X, CaretDown, DotsThree,
-  FolderOpen, ChatCircle, Brain, Leaf, Buildings,
+  House, Gear, Plus, Trash, Download,
+  MagnifyingGlass, Bell, User,
+  DotsThree,
+  FolderOpen, ChatCircle, Brain, Leaf,
   Sparkle, List, GridFour,
   DownloadSimple, PencilSimple, Archive, Copy,
 } from '@phosphor-icons/react'
@@ -604,7 +604,7 @@ import { HomeIcon } from '@heroicons/react/24/outline'  // verbotene Library
             { var: '--status-danger',  hex: '#C8553D',  label: 'Rot — Pflicht-Tags' },
             { var: '--error',          hex: '#A8301E',  label: 'Error' },
             { var: '--warning',        hex: '#8C5A00',  label: 'Warning Text' },
-          ].map(({ var: v, hex, label }) => (
+          ].map(({ var: v, hex: _hex, label }) => (
             <div key={v} style={{ display: 'flex', alignItems: 'center', gap: 10,
               padding: '8px 12px', background: 'var(--bg-surface)',
               borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>

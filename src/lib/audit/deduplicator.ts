@@ -203,21 +203,6 @@ function findMatch(
   return index.get(matchKey(finding.ruleId, finding.filePath)) ?? null
 }
 
-/**
- * True when the same rule + file combination produces the same logical issue.
- * Strips digits (line numbers, counts) before comparing so minor formatting
- * differences don't incorrectly flag a finding as a regression.
- */
-function isSameIssue(current: EnrichedFinding, previous: PreviousFinding): boolean {
-  const normalize = (msg: string) =>
-    msg.replace(/^\[Regression\]\s*/i, '')
-       .replace(/\d+/g, 'N')
-       .replace(/\s+/g, ' ')
-       .trim()
-       .toLowerCase()
-  return normalize(current.message) === normalize(previous.message)
-}
-
 function statusPriority(status: string): number {
   switch (status) {
     case 'fixed':        return 4

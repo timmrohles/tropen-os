@@ -9,7 +9,7 @@
 // Cost: ~€1.50 (4 reviewers × 3 agents + 3 Opus judges)
 // Time: ~20–30 Min (sequential with 5 s pauses)
 
-import { writeFileSync, readFileSync, existsSync } from 'fs'
+import { writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'

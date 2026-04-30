@@ -14,7 +14,6 @@ export async function GET() {
     const result = await runTtlCleanup()
     return NextResponse.json({ archived: result.archived }, { status: 200 })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
     return apiError(err)
   }
 }

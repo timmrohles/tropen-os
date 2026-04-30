@@ -15,7 +15,8 @@ function readContent(ctx: AuditContext, relPath: string): string | null {
   return null
 }
 
-const SEV_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
+// SEV_ORDER kept for future sorting use
+// const SEV_ORDER: Record<string, number> = { ... }
 
 function pass(ruleId: string, score: number, reason: string): RuleResult {
   return { ruleId, score, reason, findings: [], automated: true }
@@ -201,8 +202,6 @@ export async function checkLoggerAbstraction(ctx: AuditContext): Promise<RuleRes
   const withLogger = apiFiles.filter(
     (f) => f.imports.some((imp) => imp.symbols.includes('createLogger'))
   )
-  const ratio = apiFiles.length > 0 ? withLogger.length / apiFiles.length : 1
-
   const consoleUsers = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/app/api/') && f.symbols.some(
       (s) => s.signature?.includes('console.log') || s.signature?.includes('console.error')
@@ -252,8 +251,7 @@ export async function checkServiceKeyInFrontend(ctx: AuditContext): Promise<Rule
     const importsServiceKey = content.includes('supabaseAdmin') || content.includes('supabase-admin')
     if (!importsServiceKey) return false
     // A file is truly client-side only if it has the 'use client' directive
-    const hasUseClient = /^['"]use client['"]/.test(content.replace(/\/\*[\s\S]*?\*\//g, '').trimStart())
-    return hasUseClient
+    return /^['"]use client['"]/.test(content.replace(/\/\*[\s\S]*?\*\//g, '').trimStart())
   })
 
   if (violations.length === 0) {

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { AuditContext } from '../types'
 import { createCliChecks } from '../checkers/cli-checker'
-import type { RunCommand, ReadFile, BinaryCheck } from '../checkers/cli-checker'
+import type { RunCommand, BinaryCheck } from '../checkers/cli-checker'
 
 function makeCtx(): AuditContext {
   return {

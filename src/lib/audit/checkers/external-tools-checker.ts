@@ -2,7 +2,7 @@
 // Sprint 5c: Wraps external CLI tools (depcruise, lighthouse, bundle, eslint-detailed).
 // All checks are graceful — null score if tool unavailable, never crashes the audit.
 
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, statSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -41,11 +41,6 @@ function run(cmd: string, args: string[], cwd: string, timeoutMs = 60_000): stri
     if (e?.stdout && typeof e.stdout === 'string' && e.stdout.trim()) return e.stdout
     return null
   }
-}
-
-function isAvailable(tool: string): boolean {
-  const result = spawnSync(process.platform === 'win32' ? 'where' : 'which', [tool], { encoding: 'utf-8' })
-  return result.status === 0
 }
 
 // ── 1. dependency-cruiser: circular deps ────────────────────────────────────
@@ -266,19 +261,6 @@ export async function checkLighthouseSeo(ctx: AuditContext): Promise<RuleResult>
 }
 
 // ── 3. Bundle size from .next/static/chunks/ ────────────────────────────────
-
-function sumDirSizeKb(dir: string): number {
-  if (!existsSync(dir)) return 0
-  let total = 0
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name)
-    try {
-      const s = statSync(full)
-      if (s.isFile() && name.endsWith('.js')) total += s.size
-    } catch { /* ignore */ }
-  }
-  return Math.round(total / 1024)
-}
 
 export async function checkBundleSizes(ctx: AuditContext): Promise<RuleResult> {
   const chunksDir = join(ctx.rootPath, '.next', 'static', 'chunks')

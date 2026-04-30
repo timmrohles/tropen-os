@@ -13,6 +13,6 @@ export class EventLogger {
   }
 }
 
-function internalHelper(): void {
-  // not exported
+function _internalHelper(): void {
+  // not exported — kept as fixture for repo-map symbol extraction tests
 }

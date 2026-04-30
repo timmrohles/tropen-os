@@ -9,7 +9,7 @@ export interface GuidedActionsCtx {
 }
 
 export function handleGuidedAction(ctx: GuidedActionsCtx, action: GuidedAction) {
-  const { messages, setMessages, doSend, doSendWithConvId } = ctx
+  const { messages, setMessages, doSendWithConvId } = ctx
 
   const msg = messages.find(m => m.id === action.messageId)
   if (!msg?.guidedData) return

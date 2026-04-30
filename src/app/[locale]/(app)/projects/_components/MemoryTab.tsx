@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { PencilSimple, Trash, Check } from '@phosphor-icons/react'
 import { type Mem, formatRelDate } from './types'
 
-export function MemoryTab({ projectId, memCount }: { projectId: string; memCount: number }) {
+export function MemoryTab({ projectId, memCount: _memCount }: { projectId: string; memCount: number }) {
   const [memories, setMemories]     = useState<Mem[]>([])
   const [loading, setLoading]       = useState(true)
   const [confirmAll, setConfirmAll] = useState(false)

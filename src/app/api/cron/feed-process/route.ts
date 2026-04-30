@@ -138,7 +138,6 @@ export async function GET() {
 
     return NextResponse.json({ processed, stage2Only, stage3Also, errors }, { status: 200 })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
     return apiError(err)
   }
 }

@@ -150,7 +150,6 @@ export async function checkVVTPresent(ctx: AuditContext): Promise<RuleResult> {
     }])
   }
 
-  const docsContent = readFile(ctx.rootPath, 'docs')
   const vvtKeywords = ['vvt', 'verarbeitungsverzeichnis', 'processing-activities', 'dsgvo']
 
   function searchDir(dir: string): boolean {
@@ -266,8 +265,6 @@ export async function checkSoftDeletePattern(ctx: AuditContext): Promise<RuleRes
   const allContent = fileContents.map((f) => f.content).join('\n')
 
   const hasSoftDeleteColumn = /deleted_at/.test(allContent)
-  const hasDeletedAtDefault = /deleted_at.*DEFAULT NULL/.test(allContent) ||
-    /deleted_at.*TIMESTAMP/.test(allContent)
 
   // Count only suspicious DELETE FROM statements — exclude:
   // 1. One-time fix/seed/data migrations (not application-level patterns)

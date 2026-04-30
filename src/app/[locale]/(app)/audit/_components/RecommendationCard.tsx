@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import {
-  CaretDown, CaretRight, Copy, CheckCircle, X, ClipboardText, Check, CaretUp, SealCheck, Brain,
+  CaretDown, CaretRight, CheckCircle, X, ClipboardText, Check, CaretUp, SealCheck, Brain,
 } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 import type { FindingRecommendation } from '@/lib/audit/finding-recommendations'
@@ -90,7 +90,7 @@ function DeepReviewBadge({ level, count }: { level?: string | null; count: numbe
 }
 
 export default function RecommendationCard({
-  group, recommendation, isExternalProject,
+  group, recommendation, isExternalProject: _isExternalProject,
   onMarkFixed, onMarkNotRelevant,
   runId, deepReview,
 }: RecommendationCardProps) {

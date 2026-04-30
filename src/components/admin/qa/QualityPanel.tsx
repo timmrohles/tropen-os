@@ -2,7 +2,7 @@
 
 import { Badge, ProgressBar } from '@tremor/react'
 import type { QualityResponse } from '@/types/qa'
-import { SectionCard, KpiCard, Skeleton, s, modelColor, MODEL_TREMOR_COLORS } from './QaShared'
+import { SectionCard, Skeleton, s, modelColor, MODEL_TREMOR_COLORS } from './QaShared'
 
 const ps: Record<string, React.CSSProperties> = {
   grid4: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },

@@ -19,11 +19,8 @@ vi.mock('node:fs', () => ({
 import {
   checkADRsPresent,
   checkReadmePresent,
-  checkRunbooksPresent,
   checkConventionalCommits,
   checkFKConstraintsInMigrations,
-  checkIndexStrategyInMigrations,
-  checkAiActDocumentation,
 } from '../checkers/documentation-checker'
 import type { AuditContext } from '../types'
 

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
-
-const logger = createLogger('api:perspectives:settings')
 
 const patchSchema = z.object({
   avatar_id:  z.string().uuid(),

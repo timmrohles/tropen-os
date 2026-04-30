@@ -20,8 +20,6 @@ const STATUS_CONFIG: Record<AgentStatus, { dot: string; label: string; color: st
 }
 
 export function AgentHealthBadge({ status, lastCheckAt }: Props) {
-  const cfg = STATUS_CONFIG[status]
-
   // auto-downgrade to outdated if lastCheckAt is > 90 days ago
   let resolvedStatus = status
   if (status === 'active' && lastCheckAt) {

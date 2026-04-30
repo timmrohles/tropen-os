@@ -13,7 +13,7 @@ import type { FeedItem, FeedSource, FeedTopic } from '@/types/feeds'
 import {
   BookmarkSimple, ArrowSquareOut, CheckCircle, DotsThree,
   ThumbsDown, Archive, Trash, Rss, MagnifyingGlass,
-  EyeSlash, ArrowCounterClockwise, Tag, Plus, X, ShareNetwork,
+  EyeSlash, ArrowCounterClockwise, Plus, X, ShareNetwork,
 } from '@phosphor-icons/react'
 import WorkspacePicker from '@/components/workspaces/WorkspacePicker'
 import SourcesView from './SourcesView'

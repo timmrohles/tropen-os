@@ -6,7 +6,7 @@
 // Cost: ~€0.40/agent × 18 = ~€7.20 total
 // Time: ~30–45 min (sequential with 5 s pauses)
 
-import { writeFileSync, readFileSync, existsSync } from 'fs'
+import { writeFileSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
