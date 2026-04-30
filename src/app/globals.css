@@ -4,7 +4,7 @@
 
 :root {
   /* ─── Fundament ─────────────────────────────────────── */
-  --bg-base:        #EAE9E5;
+  --bg-base:        #F4F5F6; /* BP-Surface-Atmosphere 2026-04-30: #EAE9E5 → #F4F5F6 (kühl, Stripe-Stil) */
   --bg-surface:     #ffffff;
   --bg-surface-solid: #FFFFFF;
   --bg-surface-2:   rgba(26, 23, 20, 0.03);
@@ -258,7 +258,7 @@
 
 .app-tabs {
   display: flex; border-bottom: 2px solid var(--border);
-  background: var(--surface-warm);
+  background: var(--surface-cool);
 }
 .app-tab {
   padding: 12px 20px;

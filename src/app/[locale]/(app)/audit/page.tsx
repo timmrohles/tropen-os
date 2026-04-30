@@ -199,8 +199,12 @@ export default async function AuditPage({
 
         return (
           <>
-            {/* Score-Block kompakt — Tabellen-Welt-Stil */}
-            <div id="audit-score-hero">
+            {/* ── SECTION 2: Score-Hero — Schiefer-Hauch (surface-tint) ──── */}
+            <div id="audit-score-hero" style={{
+              background: 'var(--surface-tint)',
+              borderRadius: '4px 4px 0 0',
+              marginBottom: 0,
+            }}>
               <ScoreBar
                 percentage={runDetail.percentage as number}
                 status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
@@ -214,13 +218,21 @@ export default async function AuditPage({
               />
             </div>
 
-            {/* ── Sprint-Box: eigenständig zwischen Score und Tabs ─────────── */}
+            {/* ── SECTION 3: Sprint-Box — dramaturgischer Höhepunkt (bleibt) */}
             <GlobalQuickWinsBar
               clusters={quickWinClusters}
               runId={selectedRunId}
               projectId={activeScanProjectId}
               currentScore={runDetail.percentage as number}
             />
+
+            {/* ── SECTION 4+5: Daten-Welt — kühl (surface-cool) ───────────── */}
+            <div style={{
+              background: 'var(--surface-cool)',
+              border: '1px solid var(--border)',
+              borderRadius: 4, overflow: 'hidden',
+              marginTop: 8,
+            }}>
 
             {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}
             <AppTabs activeTabId={activeTab} tabs={[
@@ -241,7 +253,7 @@ export default async function AuditPage({
             ]} />
 
             {/* ── Domain Content ──────────────────────────────────────────── */}
-            <section id="domain-content" className="audit-tier-section">
+            <section id="domain-content" className="audit-tier-section" style={{ padding: '16px 0 0' }}>
 
               {activeTab === 'dsgvo' ? (
                 <DsgvoTab
@@ -288,6 +300,7 @@ export default async function AuditPage({
                 </AppSection>
               )}
             </section>
+            </div> {/* end Daten-Welt surface-cool wrapper */}
           </>
         )
       })()}

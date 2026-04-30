@@ -68,7 +68,7 @@ export default function ScoreBar({
           {projectName} · {formatRelative(lastRunAt)}
         </span>
       }
-      style={{ marginBottom: 0, borderBottom: 'none', borderRadius: '4px 4px 0 0' }}
+      style={{ marginBottom: 0, borderBottom: 'none', borderRadius: '4px 4px 0 0', background: 'var(--surface-tint)' }}
     >
       <div style={{ padding: '14px 16px' }}>
         {/* Kompakte Status-Bar */}
