@@ -10,16 +10,16 @@ test.describe('Login Page', () => {
 
   test('zeigt Login-Formular', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Tropen OS' })).toBeVisible()
-    await expect(page.locator('#email')).toBeVisible()
-    await expect(page.locator('#password')).toBeVisible()
+    await expect(page.getByTestId('login-email')).toBeVisible()
+    await expect(page.getByTestId('login-password')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
   })
 
   test('Submit-Button ist klickbar wenn Felder ausgefüllt', async ({ page }) => {
-    await page.locator('#email').fill('test@example.com')
-    await page.locator('#password').fill('testpassword')
+    await page.getByTestId('login-email').fill('test@example.com')
+    await page.getByTestId('login-password').fill('testpassword')
     const btn = page.getByRole('button', { name: 'Sign in' })
-    await expect(btn).not.toBeDisabled()
+    await expect(btn).toBeEnabled()
   })
 
   test('zeigt Fehlermeldung bei ungültigen Credentials', async ({ page }) => {
@@ -32,8 +32,8 @@ test.describe('Login Page', () => {
       })
     )
 
-    await page.locator('#email').fill('wrong@example.com')
-    await page.locator('#password').fill('wrongpassword')
+    await page.getByTestId('login-email').fill('wrong@example.com')
+    await page.getByTestId('login-password').fill('wrongpassword')
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     await expect(page.getByText(/Login failed/i)).toBeVisible({ timeout: 5_000 })

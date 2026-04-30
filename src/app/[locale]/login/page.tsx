@@ -48,6 +48,7 @@ export default function LoginPage() {
           <label htmlFor="email" style={s.label}>{t('email')}</label>
           <input
             id="email"
+            data-testid="login-email"
             style={s.input}
             type="email"
             autoComplete="email"
@@ -59,6 +60,7 @@ export default function LoginPage() {
           <label htmlFor="password" style={s.label}>{t('password')}</label>
           <input
             id="password"
+            data-testid="login-password"
             style={s.input}
             type="password"
             autoComplete="current-password"
@@ -69,7 +71,7 @@ export default function LoginPage() {
 
           {error && <p style={s.error}>{error}</p>}
 
-          <button className="btn btn-primary" type="submit" disabled={loading}>
+          <button className="btn btn-primary" type="submit" disabled={loading} data-testid="login-submit">
             {loading ? t('loading') : t('login')}
           </button>
 

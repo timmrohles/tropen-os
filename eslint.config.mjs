@@ -5,6 +5,7 @@ import prettierConfig from 'eslint-config-prettier'
 import boundaries from 'eslint-plugin-boundaries'
 import unicorn from 'eslint-plugin-unicorn'
 import sonarjs from 'eslint-plugin-sonarjs'
+import playwright from 'eslint-plugin-playwright'
 
 export default [
   // ── Next.js Core Web Vitals ────────────────────────────────────────────────
@@ -108,6 +109,19 @@ export default [
       // Unnötige Komplexität
       'sonarjs/prefer-immediate-return': 'warn',
       'sonarjs/no-collapsible-if': 'warn',
+    },
+  },
+
+  // ── Playwright E2E — Selektor-Policy ──────────────────────────────────────
+  // Policy: E2E-Tests dürfen keine rohen CSS-Klassen-Selektoren verwenden.
+  // Erlaubt: getByTestId(), getByRole(), #id, getByText()
+  // Verboten: page.locator('.css-class'), page.locator('div.tailwind-class')
+  {
+    ...playwright.configs['flat/recommended'],
+    files: ['e2e/**/*.spec.ts', 'e2e/**/*.test.ts'],
+    rules: {
+      ...playwright.configs['flat/recommended'].rules,
+      'playwright/no-raw-locators': 'warn', // warn statt error während Migration
     },
   },
 
