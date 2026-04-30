@@ -735,6 +735,14 @@ Audit-Seite ist Domain-basiert geschnitten (ADR-025), nicht Tier-basiert.
 
 **maturityTier-Filter:** War gebrochen (`rule.tier` statt `rule.maturityTier`) — Enterprise-Rules (SBOM etc.) liefen immer. Gefixt in `src/lib/audit/index.ts`.
 
+**GlobalQuickWinsBar (BP8, 2026-04-30):**
+- Position: zwischen ScoreBar und AppTabs (global, über allen 7 Tabs)
+- Props: `wins: GlobalQuickWinFinding[]`, `runId`, `projectId`
+- Logic: `getGlobalQuickWins(allFindings, 5)` in `src/lib/audit/quick-wins.ts`
+- Dedup: max 1 Finding pro `ruleId` (domainübergreifend)
+- Button "Fix-Session starten" → POST `/api/audit/fix-session` → Modal mit Bulk-Prompt
+- Bulk-Prompt: file-sorted (meiste Findings pro Datei zuerst), innerhalb Datei nach Severity
+
 ### Code-Regel: Domain-Pflichtfeld auf Rules
 
 ```typescript

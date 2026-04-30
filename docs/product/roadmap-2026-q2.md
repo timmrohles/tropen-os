@@ -449,11 +449,11 @@ hat und nicht schläft weil er nicht weiß ob alles sicher ist.
   - **Geschätzte Dauer:** 3-4 Wochen Solo-Founder-Arbeit
 
 ### ⏸ Verschoben (warten auf Tab-Sprint-Abschluss)
-- BP8 — Bulk-Download (Findings als Markdown-Export)
+- BP8 — Quick-Wins-Box global + Fix-Session-Bundle ✅ 2026-04-30
 - BP9 — Compliance-Stufe-1 (teilweise in Tab-Sprint Phase 3 integriert)
 - BP10 — Cockpit→Projektboard
 - BP11 — UX-Polish A6/A9/A15/A18
-- BP12 — Fix-Prompt-Top-5-Optimierung
+- ~~BP12 — Fix-Prompt-Top-5-Optimierung~~ → durch BP8 erledigt 2026-04-30
 - BP13 — Self-Audit-Roundtrip
 
 ### 🆕 Neu hinzugefügt (durch ADR-025)
