@@ -1,7 +1,8 @@
 // src/lib/audit/quick-wins.ts
 // Computes the top quick-win findings sorted by impact-to-effort ratio.
 
-import type { FixType } from './types'
+import type { FixType, AuditDomain } from './types'
+import { getDomainForRule } from './domain-filter'
 
 export interface QuickWinFinding {
   id: string
@@ -24,6 +25,22 @@ export interface QuickWinsResult {
     someday: QuickWinFinding[]
   }
   counts: { today: number; thisWeek: number; someday: number }
+}
+
+export interface GlobalQuickWinFinding {
+  id: string
+  ruleId: string
+  severity: string
+  message: string
+  title: string           // aus _recTitle oder message als Fallback
+  suggestion: string | null
+  filePath: string | null
+  line: number | null
+  categoryId: number
+  fixType: FixType
+  domain: AuditDomain
+  estimatedScoreGain: number
+  effortMinutes: number
 }
 
 interface RawFinding {
@@ -72,6 +89,15 @@ function estimateScoreGain(severity: string): number {
   return SEVERITY_WEIGHT[severity] ?? 1
 }
 
+function effortMinutesForFixType(fixType: FixType): number {
+  switch (fixType) {
+    case 'code-gen':    return 10
+    case 'code-fix':    return 15
+    case 'refactoring': return 45
+    case 'manual':      return 60
+  }
+}
+
 function toQuickWin(f: RawFinding, fixType: FixType): QuickWinFinding {
   return {
     id: f.id,
@@ -84,6 +110,28 @@ function toQuickWin(f: RawFinding, fixType: FixType): QuickWinFinding {
     categoryId: f.category_id,
     fixType,
     estimatedScoreGain: estimateScoreGain(f.severity),
+  }
+}
+
+function toGlobalQuickWin(
+  f: Record<string, unknown>,
+  fixType: FixType,
+  domain: AuditDomain,
+): GlobalQuickWinFinding {
+  return {
+    id: f.id as string,
+    ruleId: f.rule_id as string,
+    severity: f.severity as string,
+    message: f.message as string,
+    title: (f._recTitle as string | undefined) ?? (f.message as string),
+    suggestion: f.suggestion as string | null,
+    filePath: f.file_path as string | null,
+    line: f.line as number | null,
+    categoryId: f.category_id as number,
+    fixType,
+    domain,
+    estimatedScoreGain: estimateScoreGain(f.severity as string),
+    effortMinutes: effortMinutesForFixType(fixType),
   }
 }
 
@@ -138,4 +186,47 @@ export function computeQuickWins(findings: RawFinding[]): QuickWinsResult {
     groups: { today, thisWeek, someday },
     counts: { today: today.length, thisWeek: thisWeek.length, someday: someday.length },
   }
+}
+
+/**
+ * Returns the top quick-win findings across ALL domains.
+ * Dedupes by ruleId (max 1 per rule). Expects allFindings already enriched
+ * server-side with fix_type and _recTitle.
+ */
+export function getGlobalQuickWins(
+  allFindings: Array<Record<string, unknown>>,
+  limit = 5,
+): GlobalQuickWinFinding[] {
+  const open = allFindings.filter((f) => f.status === 'open')
+
+  const enriched = open.map((f) => {
+    const fixType: FixType = (f.fix_type as FixType) ?? 'manual'
+    const domain = getDomainForRule(f.rule_id as string)
+    return {
+      raw: f,
+      fixType,
+      domain,
+      score: quickWinScore({
+        severity: f.severity as string,
+        suggestion: f.suggestion as string | null,
+        fixType,
+        categoryId: f.category_id as number,
+      }),
+    }
+  })
+
+  enriched.sort((a, b) => b.score - a.score)
+
+  const seenRuleIds = new Set<string>()
+  const wins: GlobalQuickWinFinding[] = []
+
+  for (const item of enriched) {
+    if (wins.length >= limit) break
+    const ruleId = item.raw.rule_id as string
+    if (seenRuleIds.has(ruleId)) continue
+    seenRuleIds.add(ruleId)
+    wins.push(toGlobalQuickWin(item.raw, item.fixType, item.domain))
+  }
+
+  return wins
 }
