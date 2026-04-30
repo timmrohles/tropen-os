@@ -220,6 +220,8 @@ const PLACEHOLDER_EXEMPT_PATTERNS = [
   'README', 'readme', '.md', '.mdx',
   '.test.', '.spec.', 'example', 'sample', 'template',
   '__mocks__', '/docs/', '/public/',
+  // Recommendation/data files: contain placeholder text as string literals in educational content
+  'finding-recommendations',
 ]
 
 function isPlaceholderExempt(filePath: string): boolean {

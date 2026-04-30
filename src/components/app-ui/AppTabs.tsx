@@ -34,17 +34,17 @@ export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
   useEffect(() => {
     if (activeTabId) return  // URL-based routing handles active state
     const observers: IntersectionObserver[] = []
-    tabs.forEach(tab => {
+    for (const tab of tabs) {
       const el = document.getElementById(tab.sectionId ?? tab.id)
-      if (!el) return
+      if (!el) continue
       const observer = new IntersectionObserver(
         ([entry]) => { if (entry.isIntersecting) setActiveTab(tab.id) },
         { rootMargin: '0px 0px -65% 0px', threshold: 0.01 }
       )
       observer.observe(el)
       observers.push(observer)
-    })
-    return () => observers.forEach(o => o.disconnect())
+    }
+    return () => { for (const o of observers) o.disconnect() }
   }, [tabs, activeTabId])
 
   return (

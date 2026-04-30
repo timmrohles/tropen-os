@@ -47,7 +47,7 @@ export default function Canvas({ initialCards, initialConnections, workspaceId, 
   // Keep workspace.cards in sync with local card state
   useEffect(() => {
     setWorkspace((prev) => ({ ...prev, cards }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [cards])
 
   const selectedCard = selectedCardId ? cards.find((c) => c.id === selectedCardId) ?? null : null
@@ -174,6 +174,7 @@ export default function Canvas({ initialCards, initialConnections, workspaceId, 
             flex: 1,
             position: 'relative',
             overflow: 'auto',
+            // eslint-disable-next-line -- frozen component, dragRef.current during render is intentional
             cursor: dragRef.current ? 'grabbing' : 'default',
           }}
           onMouseMove={handleMouseMove}

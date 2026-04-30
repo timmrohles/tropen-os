@@ -96,8 +96,8 @@ export default [
       // KI-generierter Code sollte ≤ 8 sein (in SonarQube separat konfigurieren)
       'sonarjs/cognitive-complexity': ['warn', 15],
 
-      // Keine duplizierten Strings (Magic Strings) — mehr als 3x = warn
-      'sonarjs/no-duplicate-string': ['warn', { threshold: 3 }],
+      // no-duplicate-string: deaktiviert — CSS-in-JS Noise (var(--border) etc. 50+ Treffer normal)
+      'sonarjs/no-duplicate-string': 'off',
 
       // Keine identisch implementierten Funktionen
       'sonarjs/no-identical-functions': 'warn',
