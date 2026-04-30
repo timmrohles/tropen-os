@@ -87,6 +87,8 @@ export default function KnowledgePage() {
       }
     }
     load()
+  // supabase is created at render time — adding it would cause infinite loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadDocs = useCallback(async () => {

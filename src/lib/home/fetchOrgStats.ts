@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 

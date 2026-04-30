@@ -32,7 +32,7 @@ export function OverviewTab({
     setConfirmDel(false)
     setShowMerge(false)
     setMergeTarget('')
-  }, [project.id])
+  }, [project.id, project.title, project.emoji, project.context])
 
   async function handleSave() {
     if (!title.trim()) return

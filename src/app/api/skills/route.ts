@@ -74,13 +74,11 @@ export async function POST(request: NextRequest) {
   // Scope validation
   const scope = (body.scope as string) ?? 'user'
 
-  if (scope === 'org') {
-    if (!['owner', 'admin', 'superadmin'].includes(me.role)) {
-      return NextResponse.json(
-        { error: 'Forbidden: org-scope skills require org admin or higher' },
-        { status: 403 }
-      )
-    }
+  if (scope === 'org' && !['owner', 'admin', 'superadmin'].includes(me.role)) {
+    return NextResponse.json(
+      { error: 'Forbidden: org-scope skills require org admin or higher' },
+      { status: 403 }
+    )
   }
 
   if (['system', 'package'].includes(scope) && me.role !== 'superadmin') {

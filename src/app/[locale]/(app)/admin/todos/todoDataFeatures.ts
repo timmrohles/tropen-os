@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import type { Todo } from './todo.types'
 import { TODOS_FEATURES_CHAT } from './todoDataFeaturesChat'
 

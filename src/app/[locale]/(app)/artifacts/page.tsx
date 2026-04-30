@@ -35,7 +35,8 @@ function getTypeConfig(t: (key: string) => string): Record<ArtifactType, { label
     list:     { label: t('types.list'),     icon: <ListBullets size={14} weight="bold" /> },
     react:    { label: t('types.react'),    icon: <Atom size={14} weight="bold" /> },
     data:     { label: t('types.data'),     icon: <ChartBar size={14} weight="bold" /> },
-    image:    { label: t('types.image'),    icon: <Image size={14} weight="bold" /> },
+    // eslint-disable-next-line jsx-a11y/alt-text
+    image:    { label: t('types.image'),    icon: <Image size={14} weight="bold" aria-hidden="true" /> },
     other:    { label: t('types.other'),    icon: <File size={14} weight="bold" /> },
   }
 }

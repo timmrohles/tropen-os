@@ -70,10 +70,8 @@ export async function POST(request: NextRequest) {
 
   const scope = (body.scope as string) ?? 'user'
 
-  if (scope === 'system' || scope === 'package') {
-    if (me.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  if ((scope === 'system' || scope === 'package') && me.role !== 'superadmin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   if (scope === 'org' && !['owner', 'admin', 'superadmin'].includes(me.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { listCards } from '@/actions/cards'
 import { listConnections } from '@/actions/connections'
 import Canvas from '@/components/ws/Canvas'
-import type { WorkspaceWithDetails } from '@/types/workspace'
+import type { WorkspaceWithDetails, ParticipantWithUser } from '@/types/workspace'
 
 export default async function CanvasPage({
   params,
@@ -38,7 +38,7 @@ export default async function CanvasPage({
   const ws = wsRow.data
   const connections = connectionsWithCards.map(({ fromCard: _f, toCard: _t, ...conn }) => conn)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const workspace: WorkspaceWithDetails = {
     id: ws.id,
     title: ws.title,
@@ -53,7 +53,7 @@ export default async function CanvasPage({
     createdAt: new Date(ws.created_at),
     updatedAt: new Date(ws.updated_at),
     deletedAt: ws.deleted_at ? new Date(ws.deleted_at) : null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     participants: (participantRows.data ?? []).map((p) => ({
       id: p.id,
       workspaceId: p.workspace_id,
@@ -61,7 +61,7 @@ export default async function CanvasPage({
       role: p.role as 'admin' | 'member' | 'viewer',
       joinedAt: new Date(p.joined_at),
       user: { id: p.user_id, name: null, email: '' },
-    })) as any,
+    })) as unknown as ParticipantWithUser[],
     cards,
     department: null,
   }

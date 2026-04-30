@@ -48,7 +48,7 @@ export default function DepartmentPage() {
       }
     }
     load()
-  }, [t])
+  }, [t, router])
 
   const s: Record<string, React.CSSProperties> = {
     cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 },

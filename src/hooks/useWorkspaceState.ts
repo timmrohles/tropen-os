@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -260,6 +261,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
       setTrashCount(count ?? 0)
     }
     load()
+  // initialConvId and supabase intentionally excluded: adding them causes re-fetching loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId])
 
   useEffect(() => {
@@ -304,6 +307,8 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
             .catch(() => {/* non-blocking */})
         }
       })).catch(() => {})
+  // conversations and supabase intentionally excluded: adding them causes re-fetching on every conversation list update
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConvId])
 
   const messageCount = messages.length

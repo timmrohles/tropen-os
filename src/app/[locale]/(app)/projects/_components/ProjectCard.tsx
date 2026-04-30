@@ -21,7 +21,7 @@ export function ProjectCard({
       role="button"
       tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && onClick()}
-      aria-selected={isSelected}
+      aria-pressed={isSelected}
       aria-label={`Projekt ${project.title} öffnen`}
     >
       <div className="project-card-header">

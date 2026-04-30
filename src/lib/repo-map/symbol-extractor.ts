@@ -109,7 +109,7 @@ export function extractSymbols(
     }
   }
 
-  ts.forEachChild(sourceFile, (node) => visit(node, undefined))
+  ts.forEachChild(sourceFile, (node) => visit(node))
 
   return symbols
 }
@@ -162,9 +162,9 @@ function buildFunctionSignature(node: ts.FunctionDeclaration, sourceFile: ts.Sou
   return `function ${name}(${params})${returnType}`
 }
 
-function buildArrowSignature(
+function buildCallableSignature(
   name: string,
-  node: ts.ArrowFunction | ts.FunctionExpression,
+  node: ts.ArrowFunction | ts.FunctionExpression | ts.MethodDeclaration,
   sourceFile: ts.SourceFile
 ): string {
   const params = node.parameters.map((p) => p.getText(sourceFile)).join(', ')
@@ -172,14 +172,20 @@ function buildArrowSignature(
   return `${name}(${params})${returnType}`
 }
 
+function buildArrowSignature(
+  name: string,
+  node: ts.ArrowFunction | ts.FunctionExpression,
+  sourceFile: ts.SourceFile
+): string {
+  return buildCallableSignature(name, node, sourceFile)
+}
+
 function buildMethodSignature(
   name: string,
   node: ts.MethodDeclaration,
   sourceFile: ts.SourceFile
 ): string {
-  const params = node.parameters.map((p) => p.getText(sourceFile)).join(', ')
-  const returnType = node.type ? ': ' + node.type.getText(sourceFile) : ''
-  return `${name}(${params})${returnType}`
+  return buildCallableSignature(name, node, sourceFile)
 }
 
 function buildExtendsClause(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): string {

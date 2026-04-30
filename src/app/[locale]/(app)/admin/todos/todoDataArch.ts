@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import type { Todo } from './todo.types'
 
 // Architektur-Entscheidungen (Review 2026-03-17)

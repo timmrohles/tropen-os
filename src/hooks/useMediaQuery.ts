@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import { useState, useEffect } from 'react'
 
 export function useMediaQuery(query: string): boolean {

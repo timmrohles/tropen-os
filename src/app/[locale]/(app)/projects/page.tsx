@@ -60,7 +60,7 @@ export default function ProjectsPage() {
       }
     }
     init()
-  }, [loadProjects])
+  }, [loadProjects, router])
 
   function selectProject(p: Project) {
     setSelected(p)
@@ -134,7 +134,7 @@ export default function ProjectsPage() {
 
       {/* Archive filter */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-        <button className={`chip${!showArchived ? ' chip--active' : ''}`} onClick={() => { setShowArchived(false); setSelected(null) }}>
+        <button className={`chip${showArchived ? '' : ' chip--active'}`} onClick={() => { setShowArchived(false); setSelected(null) }}>
           {tc('active')}
         </button>
         <button className={`chip${showArchived ? ' chip--active' : ''}`} onClick={() => { setShowArchived(true); setSelected(null) }}>

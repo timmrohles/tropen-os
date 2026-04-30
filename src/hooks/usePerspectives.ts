@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 'use client'
 
 // Stub — full implementation in mega-refactor-april-8 stash

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import type { Status } from './todo.types'
 import { TODOS } from './todoData'
 

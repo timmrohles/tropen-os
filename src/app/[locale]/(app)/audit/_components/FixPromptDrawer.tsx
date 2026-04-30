@@ -28,6 +28,7 @@ export type FixPromptDrawerProps = {
 } & (GroupPromptProps | SinglePromptProps)
 
 export default function FixPromptDrawer(props: FixPromptDrawerProps) {
+  const { open, onClose } = props
   const t = useTranslations('audit')
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -37,20 +38,20 @@ export default function FixPromptDrawer(props: FixPromptDrawerProps) {
 
   // Escape closes
   useEffect(() => {
-    if (!props.open) return
+    if (!open) return
     function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') props.onClose()
+      if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [props.open, props.onClose])
+  }, [open, onClose])
 
   // Focus trap: focus drawer on open
   useEffect(() => {
-    if (props.open && drawerRef.current) {
+    if (open && drawerRef.current) {
       drawerRef.current.focus()
     }
-  }, [props.open])
+  }, [open])
 
   const prompt = props.mode === 'group'
     ? buildGroupFixPrompt(props.ruleId, props.baseMessage, props.affectedFiles, DEFAULT_TOOL)
@@ -70,12 +71,12 @@ export default function FixPromptDrawer(props: FixPromptDrawerProps) {
       {/* Backdrop */}
       <div
         aria-hidden="true"
-        onClick={props.onClose}
+        onClick={onClose}
         style={{
           position: 'fixed', inset: 0, zIndex: 400,
           background: 'rgba(26,23,20,0.45)',
           backdropFilter: 'blur(2px)',
-          animation: props.open ? 'fadeIn 200ms ease-out' : undefined,
+          animation: open ? 'fadeIn 200ms ease-out' : undefined,
         }}
       />
 
@@ -94,7 +95,7 @@ export default function FixPromptDrawer(props: FixPromptDrawerProps) {
           borderLeft: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column',
           boxShadow: '-4px 0 24px rgba(26,23,20,0.10)',
-          animation: props.open ? 'slideInRight 200ms ease-out' : undefined,
+          animation: open ? 'slideInRight 200ms ease-out' : undefined,
           outline: 'none',
         }}
       >
@@ -108,7 +109,7 @@ export default function FixPromptDrawer(props: FixPromptDrawerProps) {
             {t('fixPrompt')}
           </span>
           <button
-            onClick={props.onClose}
+            onClick={onClose}
             aria-label={t('close')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',

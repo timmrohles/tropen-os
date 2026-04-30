@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 // Shared widget catalog — imported by both API routes and frontend components
 
 export type WidgetSize = 'small' | 'medium' | 'large'

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import { useState, useRef, useCallback } from 'react'
 
 export type TTSState = 'idle' | 'loading' | 'playing' | 'error'

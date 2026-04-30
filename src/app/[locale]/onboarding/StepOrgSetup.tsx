@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import NextImage from 'next/image'
 import { createClient } from '@/utils/supabase/client'
 import { PRESET_COLORS } from './onboarding.types'
 import { s } from './onboarding.styles'
@@ -101,7 +102,7 @@ export default function StepOrgSetup({
           onClick={() => fileInputRef.current?.click()}
         >
           {logoPreview ? (
-            <img src={logoPreview} alt="Logo" style={s.logoPreview} />
+            <NextImage src={logoPreview} alt="Logo" style={s.logoPreview} width={120} height={60} unoptimized />
           ) : uploading ? (
             <span style={s.dropHint}>Wird hochgeladen…</span>
           ) : (

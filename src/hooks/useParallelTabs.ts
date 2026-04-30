@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 'use client'
 
 import { useState } from 'react'

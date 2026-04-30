@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import NextImage from 'next/image'
 import { createClient } from '@/utils/supabase/client'
 import { PaintBrush, UploadSimple, X } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
@@ -163,7 +164,7 @@ export default function BrandingPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Logo" style={s.logoImg} />
+                  <NextImage src={logoPreview} alt="Logo" style={s.logoImg} width={120} height={60} unoptimized />
                 ) : uploading ? (
                   <span style={s.dropHint}>{t('uploading')}</span>
                 ) : (

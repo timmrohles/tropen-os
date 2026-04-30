@@ -38,7 +38,7 @@ function parseArgs() {
     if (args[i] === '--topic' && args[i + 1]) { topic = args[++i]; continue }
     if (args[i] === '--max' && args[i + 1]) { max = parseInt(args[++i], 10); continue }
     if (args[i] === '--token' && args[i + 1]) { token = args[++i]; continue }
-    if (args[i] === '--org-id' && args[i + 1]) { orgId = args[++i]; continue }
+    if (args[i] === '--org-id' && args[i + 1]) { orgId = args[++i] }
   }
 
   return { topic, max, token, orgId }

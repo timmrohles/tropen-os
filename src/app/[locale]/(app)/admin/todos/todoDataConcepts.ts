@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import type { Todo } from './todo.types'
 
 // Konzepte & Roadmap-Einträge
@@ -12,7 +13,7 @@ export const TODOS_CONCEPTS: Todo[] = [
   {
     id: 'chart-tremor',
     titel: 'Tremor Migration — App-UI Charts (Dashboard, SessionPanel)',
-    // eslint-disable-next-line -- hex in description text, not a UI color
+     
     beschreibung: 'Erledigt: Tremor-Theme auf Tropen-Grün (#2D7A50) aktualisiert (tailwind.config.js). CostChart + RoutingPanel BarList: emerald → green. SessionPanel: AreaChart für per-message Kosten (ab 2 Datenpunkten).',
     status: 'erledigt',
     kategorie: 'Charts & Visualisierung',

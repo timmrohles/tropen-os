@@ -368,16 +368,14 @@ export async function checkNamingConventions(ctx: AuditContext): Promise<RuleRes
       }
     }
 
-    if (filePath.includes('src/hooks/') && /\.ts$/.test(fileName)) {
-      // Accept both useToast.ts (camelCase) and use-toast.ts (kebab-case)
-      if (!/^use[A-Z]/.test(nameWithoutExt) && !/^use-[a-z]/.test(nameWithoutExt)) {
-        findings.push({
-          severity: 'medium',
-          message: `Hook-Datei ohne 'use'-Prefix: ${filePath}`,
-          filePath,
-          suggestion: `Rename to use${nameWithoutExt.charAt(0).toUpperCase() + nameWithoutExt.slice(1)}.ts`,
-        })
-      }
+    // Accept both useToast.ts (camelCase) and use-toast.ts (kebab-case)
+    if (filePath.includes('src/hooks/') && /\.ts$/.test(fileName) && !/^use[A-Z]/.test(nameWithoutExt) && !/^use-[a-z]/.test(nameWithoutExt)) {
+      findings.push({
+        severity: 'medium',
+        message: `Hook-Datei ohne 'use'-Prefix: ${filePath}`,
+        filePath,
+        suggestion: `Rename to use${nameWithoutExt.charAt(0).toUpperCase() + nameWithoutExt.slice(1)}.ts`,
+      })
     }
   }
 
