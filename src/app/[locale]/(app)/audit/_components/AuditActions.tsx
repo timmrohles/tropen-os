@@ -141,18 +141,43 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <button
-          className="btn btn-primary"
-          onClick={handleTrigger}
-          disabled={isAuditRunning || isReviewRunning}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <ArrowClockwise size={15} weight="bold" aria-hidden="true"
-            style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
-          {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
-        </button>
+        {/* Primär: Deep Review wenn noch nicht gemacht — sonst Audit starten */}
+        {runId && !alreadyReviewed ? (
+          <button
+            className="btn btn-primary"
+            onClick={handleDeepReview}
+            disabled={isReviewRunning || isAuditRunning}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <Brain size={15} weight="bold" aria-hidden="true" />
+            {isReviewRunning ? '4 Modelle analysieren…' : 'Deep Review'}
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={handleTrigger}
+            disabled={isAuditRunning || isReviewRunning}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <ArrowClockwise size={15} weight="bold" aria-hidden="true"
+              style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
+            {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
+          </button>
+        )}
 
-        {runId && (
+        {/* Sekundär: Audit starten (wenn Deep Review bereits primär) oder Deep Review wiederholen */}
+        {runId && !alreadyReviewed ? (
+          <button
+            className="btn btn-ghost"
+            onClick={handleTrigger}
+            disabled={isAuditRunning || isReviewRunning}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <ArrowClockwise size={15} weight="bold" aria-hidden="true"
+              style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
+            {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
+          </button>
+        ) : runId ? (
           <button
             className="btn btn-ghost"
             onClick={handleDeepReview}
@@ -160,21 +185,25 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <Brain size={15} weight="bold" aria-hidden="true" />
-            {alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
+            Deep Review wiederholen
           </button>
-        )}
+        ) : null}
 
-        {/* Regeln exportieren */}
+        {/* Tertiär: Regeln exportieren — Text-Link-Stil */}
         <div style={{ position: 'relative' }}>
           <button
-            className="btn btn-ghost"
             onClick={() => setExportOpen((v) => !v)}
             disabled={isAuditRunning || isReviewRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'none', border: 'none', padding: '6px 4px',
+              fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer',
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
             aria-haspopup="true"
             aria-expanded={exportOpen}
           >
-            <DownloadSimple size={15} weight="bold" aria-hidden="true" />
+            <DownloadSimple size={14} weight="bold" aria-hidden="true" />
             Regeln exportieren
           </button>
           {exportOpen && (
@@ -256,9 +285,17 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
 
       {/* Deep Review hint — shown before first review */}
       {!alreadyReviewed && !!runId && reviewState === 'idle' && (
-        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'right' }}>
-          4 KI-Modelle prüfen unabhängig — findet was Auto-Checks übersehen · ca. €0.50
-        </p>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px', borderRadius: 4,
+          background: 'color-mix(in srgb, var(--accent) 6%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+          fontSize: 11, color: 'var(--accent)',
+        }}>
+          <Brain size={11} weight="fill" aria-hidden="true" />
+          4 KI-Modelle prüfen unabhängig — findet was Auto-Checks übersehen
+          <span style={{ color: 'var(--text-tertiary)', marginLeft: 2 }}>· ca. €0.50</span>
+        </div>
       )}
 
       {/* Running status banner */}

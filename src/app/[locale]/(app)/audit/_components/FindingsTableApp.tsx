@@ -117,9 +117,18 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
   )
 }
 
+const SEV_FILTER_LABELS: Array<{ value: string; label: string }> = [
+  { value: 'all',      label: 'Alle' },
+  { value: 'critical', label: 'Kritisch' },
+  { value: 'high',     label: 'Hoch' },
+  { value: 'medium',   label: 'Mittel' },
+  { value: 'low',      label: 'Niedrig' },
+]
+
 export default function FindingsTableApp({ findings, statusFilter = 'open' }: FindingsTableAppProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set())
+  const [sevFilter, setSevFilter] = useState<string>('all')
 
   const filtered = findings.filter(f => {
     if (statusFilter === 'open') return f.status === 'open' || f.status === 'acknowledged'
@@ -128,9 +137,16 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
     return true
   })
 
-  const groups = groupFindings(filtered).filter(g => !hiddenKeys.has(g.ruleId))
+  const allGroups = groupFindings(filtered).filter(g => !hiddenKeys.has(g.ruleId))
+  const groups = sevFilter === 'all' ? allGroups : allGroups.filter(g => g.severity === sevFilter)
 
-  if (groups.length === 0) {
+  // Counts per severity for filter chips
+  const sevCounts = allGroups.reduce<Record<string, number>>((acc, g) => {
+    acc[g.severity] = (acc[g.severity] ?? 0) + 1
+    return acc
+  }, {})
+
+  if (allGroups.length === 0) {
     return (
       <div style={{ padding: '24px 16px', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -142,7 +158,44 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
 
   return (
     <>
-    <table className="app-table">
+    {/* Severity-Filter + ×N Hint */}
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+      borderBottom: '1px solid var(--border)', flexWrap: 'wrap',
+    }}>
+      {SEV_FILTER_LABELS.map(({ value, label }) => {
+        const count = value === 'all' ? allGroups.length : (sevCounts[value] ?? 0)
+        if (value !== 'all' && count === 0) return null
+        return (
+          <button
+            key={value}
+            onClick={() => setSevFilter(value)}
+            style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 3, cursor: 'pointer',
+              border: '1px solid',
+              borderColor: sevFilter === value ? 'var(--accent)' : 'var(--border)',
+              background: sevFilter === value ? 'var(--accent-light)' : 'transparent',
+              color: sevFilter === value ? 'var(--accent)' : 'var(--text-secondary)',
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            {label} {count > 0 && <span style={{ opacity: 0.7 }}>{count}</span>}
+          </button>
+        )
+      })}
+      <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}
+        title="×N = N Stellen im Code mit diesem Problem — alle auf einmal beheben">
+        ×N = Anzahl Vorkommen
+      </span>
+    </div>
+
+    {groups.length === 0 && (
+      <div style={{ padding: '16px', textAlign: 'center' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Keine Findings mit diesem Filter.</p>
+      </div>
+    )}
+
+    {groups.length > 0 && <table className="app-table">
       <thead>
         <tr>
           <th style={{ width: 32 }}>SEV</th>
@@ -234,25 +287,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
           )
         })}
       </tbody>
-    </table>
-    <div style={{
-      display: 'flex', gap: 16, flexWrap: 'wrap',
-      padding: '8px 16px', borderTop: '1px solid var(--border)',
-      background: 'var(--surface-warm)',
-    }}>
-      {([
-        ['critical', 'Kritisch'],
-        ['high',     'Hoch'],
-        ['medium',   'Mittel'],
-        ['low',      'Niedrig'],
-        ['info',     'Info'],
-      ] as const).map(([sev, label]) => (
-        <span key={sev} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-          <span className={`severity-dot ${SEV_DOT[sev]}`} role="img" aria-label={label} />
-          {label}
-        </span>
-      ))}
-    </div>
+    </table>}
     </>
   )
 }

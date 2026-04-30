@@ -24,6 +24,7 @@ interface GlobalQuickWinsBarProps {
   clusters: QuickWinCluster[]
   runId?: string | null
   projectId?: string | null
+  currentScore?: number | null
 }
 
 const DOMAIN_LABEL: Record<string, string> = {
@@ -65,7 +66,7 @@ function shortPath(p: string): string {
   return parts.length > 2 ? parts.slice(-2).join('/') : p
 }
 
-export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId: _projectId }: GlobalQuickWinsBarProps) {
+export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId: _projectId, currentScore }: GlobalQuickWinsBarProps) {
   usePathname() // kept for potential future locale use
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -81,6 +82,8 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
 
   const allFindings = clusters.flatMap(c => c.findings)
   const totalScoreGain = clusters.reduce((s, c) => s + c.totalScoreGain, 0)
+  const uniqueFileCount = new Set(clusters.map(c => c.filePath).filter(Boolean)).size
+  const targetScore = currentScore != null ? Math.min(100, currentScore + totalScoreGain) : null
 
   async function toggleFindingPrompt(finding: QuickWinFinding) {
     if (expandedFinding === finding.id) { setExpandedFinding(null); return }
@@ -186,7 +189,14 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
           <Lightning size={11} weight="fill" aria-hidden="true" />
           Dein nächster Sprint
         </span>
-        <span>{allFindings.length} Findings · Score +{totalScoreGain.toFixed(1)}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {allFindings.length} Fixes · Score +{totalScoreGain.toFixed(1)}
+          {uniqueFileCount > 0 && (
+            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', background: 'var(--bg-base)', padding: '0 5px', borderRadius: 3, border: '1px solid var(--border)' }}>
+              {uniqueFileCount} {uniqueFileCount === 1 ? 'Datei' : 'Dateien'}
+            </span>
+          )}
+        </span>
       </div>
 
       {/* Action-Zeile */}
@@ -196,7 +206,10 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
         borderBottom: (open || session) ? '1px solid var(--border)' : 'none',
       }}>
         <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1, minWidth: 160 }}>
-          Höchster Impact, nach Datei geclustert — eine Datei nach der anderen.
+          {targetScore != null
+            ? <>Wenn du diese {allFindings.length} fixt, springst du auf <strong style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{targetScore.toFixed(1)}%</strong></>
+            : 'Höchster Impact, nach Datei geclustert — eine Datei nach der anderen.'
+          }
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
           <button
@@ -225,7 +238,7 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
           >
             {open
               ? <><CaretUp size={11} weight="bold" aria-hidden="true" /> verbergen</>
-              : <><CaretDown size={11} weight="bold" aria-hidden="true" /> Details</>}
+              : <><CaretDown size={11} weight="bold" aria-hidden="true" /> Welche Findings?</>}
           </button>
         </div>
       </div>

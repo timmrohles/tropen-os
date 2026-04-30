@@ -16,6 +16,7 @@ import { findRecommendation } from '@/lib/audit/finding-recommendations'
 import { getGlobalQuickWinClusters } from '@/lib/audit/quick-wins'
 import GlobalQuickWinsBar from './_components/GlobalQuickWinsBar'
 import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
+import { getPercentileRank } from '@/lib/audit/score-percentile'
 import type { AuditDomain } from '@/lib/audit/types'
 import { DomainEmptyState } from './_components/DomainEmptyState'
 import BetaFeedbackButton from './_components/BetaFeedbackButton'
@@ -208,6 +209,8 @@ export default async function AuditPage({
                 projectName={runDetail.project_name as string}
                 isFirstRun={isFirstRun}
                 hasExternalTools={hasLighthouseData}
+                percentileRank={getPercentileRank(runDetail.percentage as number)}
+                isMultiModelReview={(runDetail.review_type as string | null) === 'multi_model'}
               />
             </div>
 
@@ -216,6 +219,7 @@ export default async function AuditPage({
               clusters={quickWinClusters}
               runId={selectedRunId}
               projectId={activeScanProjectId}
+              currentScore={runDetail.percentage as number}
             />
 
             {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}

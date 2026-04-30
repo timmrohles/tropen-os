@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { TrendUp, TrendDown } from '@phosphor-icons/react'
+import { TrendUp, TrendDown, Checks } from '@phosphor-icons/react'
 import { AppSection } from '@/components/app-ui/AppSection'
 
 type Status = 'production_grade' | 'stable' | 'risky' | 'prototype'
@@ -43,10 +43,13 @@ interface ScoreBarProps {
   projectName: string
   isFirstRun?: boolean
   hasExternalTools?: boolean
+  percentileRank?: number | null
+  isMultiModelReview?: boolean
 }
 
 export default function ScoreBar({
   percentage, status, delta, lastRunAt, projectName, isFirstRun, hasExternalTools,
+  percentileRank, isMultiModelReview,
 }: ScoreBarProps) {
   const t = useTranslations('audit')
   const color = STATUS_COLOR[status]
@@ -96,7 +99,36 @@ export default function ScoreBar({
                 {delta! > 0
                   ? <TrendUp size={12} weight="bold" aria-hidden="true" />
                   : <TrendDown size={12} weight="bold" aria-hidden="true" />}
-                {delta! > 0 ? '+' : ''}{delta!.toFixed(1)}%
+                {delta! > 0 ? '+' : ''}{delta!.toFixed(1)}% gegenüber letztem Audit
+              </span>
+            </>
+          )}
+
+          {percentileRank !== null && percentileRank !== undefined && (
+            <>
+              <span style={{ color: 'var(--border-strong)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span
+                title="Vergleich mit 49 öffentlich geprüften Repos"
+                style={{
+                  fontSize: 11, color: 'var(--secondary)', fontFamily: 'var(--font-mono)',
+                  marginRight: 12, cursor: 'help',
+                }}
+              >
+                Top {percentileRank}% aller geprüften Repos
+              </span>
+            </>
+          )}
+
+          {isMultiModelReview && (
+            <>
+              <span style={{ color: 'var(--border-strong)', marginRight: 12, fontSize: 12 }}>│</span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 11, fontFamily: 'var(--font-mono)',
+                color: 'var(--accent)', marginRight: 12,
+              }}>
+                <Checks size={12} weight="bold" aria-hidden="true" />
+                4 KI-Modelle geprüft
               </span>
             </>
           )}

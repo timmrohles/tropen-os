@@ -70,7 +70,9 @@ export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
           {tab.label}
           {tab.comingSoon
             ? <span className="app-tab__badge app-tab__badge--soon">Bald</span>
-            : <span className="app-tab__count">{tab.count}</span>
+            : tab.count === 0
+              ? <span className="app-tab__count app-tab__count--zero" title="Keine offenen Findings" aria-label="Bestanden">✓</span>
+              : <span className="app-tab__count">{tab.count}</span>
           }
           {tab.hasDanger && <span className="app-tab__danger" aria-label="Offene Pflichten" />}
         </a>

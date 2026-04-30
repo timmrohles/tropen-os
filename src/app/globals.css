@@ -277,6 +277,7 @@
 }
 .app-tab__count { font-size: 11px; color: var(--text-tertiary); }
 .app-tab--active .app-tab__count { color: var(--accent); }
+.app-tab__count--zero { color: var(--secondary) !important; font-size: 12px; font-weight: 600; }
 .app-tab__danger { width: 6px; height: 6px; border-radius: 50%; background: var(--status-danger); flex-shrink: 0; }
 .app-tab--coming-soon { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 .app-tab__badge { font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; }
@@ -300,8 +301,17 @@
   }
   .app-table tbody td { padding: 0; border: none; }
   .app-table tbody td:last-child { text-align: left; }
-  .app-tabs { overflow-x: auto; flex-wrap: nowrap; }
-  .app-tab { padding: 10px 14px; font-size: 10px; }
+  .app-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .app-tab { padding: 10px 14px; font-size: 10px; white-space: nowrap; }
+}
+
+/* Tablet (768–1024px) — Pfad-Spalte kürzen */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-table tbody td:nth-child(3) {
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Sprint-Box: Buttons nicht verstecken, flex-wrap erlauben */
+  .app-section__header { flex-wrap: wrap; }
 }
 
 /* Audit Tier-Sections */
