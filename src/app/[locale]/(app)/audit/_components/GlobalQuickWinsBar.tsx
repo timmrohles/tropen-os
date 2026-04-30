@@ -1,9 +1,24 @@
 'use client'
 
 import React, { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Lightning, CaretDown, CaretUp, Copy, Check, X } from '@phosphor-icons/react'
-import type { QuickWinCluster } from '@/lib/audit/quick-wins'
-import type { AuditDomain } from '@/lib/audit/types'
+// Inline types — no import from server-only modules (rule-registry chain)
+interface QuickWinFinding {
+  id: string
+  ruleId: string
+  severity: string
+  title: string
+  domain: string
+  estimatedScoreGain: number
+  filePath: string | null
+}
+
+interface QuickWinCluster {
+  filePath: string | null
+  findings: QuickWinFinding[]
+  totalScoreGain: number
+}
 
 interface GlobalQuickWinsBarProps {
   clusters: QuickWinCluster[]
@@ -11,7 +26,7 @@ interface GlobalQuickWinsBarProps {
   projectId?: string | null
 }
 
-const DOMAIN_LABEL: Record<AuditDomain, string> = {
+const DOMAIN_LABEL: Record<string, string> = {
   'code-quality': 'Code',
   'performance':  'Perf',
   'security':     'Sec',
@@ -43,13 +58,7 @@ const BTN_GHOST: React.CSSProperties = {
   fontFamily: 'var(--font-mono)', background: 'transparent',
 }
 
-function tabHref(domain: AuditDomain, runId?: string | null, projectId?: string | null): string {
-  const params = new URLSearchParams()
-  params.set('tab', domain)
-  if (runId) params.set('runId', runId)
-  if (projectId) params.set('project', projectId)
-  return `/audit?${params.toString()}`
-}
+// tabHref is now a method on the component (uses auditBase from usePathname)
 
 function shortPath(p: string): string {
   const parts = p.replace(/\\/g, '/').split('/')
@@ -57,6 +66,8 @@ function shortPath(p: string): string {
 }
 
 export default function GlobalQuickWinsBar({ clusters, runId, projectId }: GlobalQuickWinsBarProps) {
+  const pathname = usePathname() // e.g. "/de/audit"
+  const auditBase = pathname.split('/').slice(0, 2).join('/') + '/audit' // "/de/audit"
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [session, setSession] = useState<{ prompt: string; fileCount: number } | null>(null)
@@ -193,7 +204,7 @@ export default function GlobalQuickWinsBar({ clusters, runId, projectId }: Globa
               {cluster.findings.map((w) => (
                 <a
                   key={w.id}
-                  href={tabHref(w.domain, runId, projectId)}
+                  href={`${auditBase}?tab=${w.domain}${runId ? `&runId=${runId}` : ''}${projectId ? `&project=${projectId}` : ''}`}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '7px 16px 7px 36px', textDecoration: 'none',

@@ -28,7 +28,7 @@ export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
     if (activeTabId) setActiveTab(activeTabId)
   }, [activeTabId])
 
-  // ResizeObserver entfernt — kein Sticky mehr auf Audit-Seite
+  // ResizeObserver entfernt — kein Sticky auf Audit-Seite
 
   // IntersectionObserver — aktiver Tab folgt sichtbarer Section (nur ohne href-Routing)
   useEffect(() => {
