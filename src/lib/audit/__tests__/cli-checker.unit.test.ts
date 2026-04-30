@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { AuditContext } from '../types'
 import { createCliChecks } from '../checkers/cli-checker'
-import type { RunCommand } from '../checkers/cli-checker'
+import type { RunCommand, ReadFile } from '../checkers/cli-checker'
 
 function makeCtx(): AuditContext {
   return {
@@ -87,24 +87,24 @@ describe('checkNoSecretsInRepo', () => {
 describe('checkUnitTestCoverage', () => {
   it('returns score 5 when coverage >= 80%', async () => {
     const coverage = { total: { lines: { pct: 85 }, functions: { pct: 82 }, branches: { pct: 80 } } }
-    const runner: RunCommand = vi.fn().mockReturnValue(JSON.stringify(coverage))
-    const { checkUnitTestCoverage } = createCliChecks(runner)
+    const readFile = vi.fn().mockReturnValue(JSON.stringify(coverage))
+    const { checkUnitTestCoverage } = createCliChecks(undefined, readFile)
     const result = await checkUnitTestCoverage(makeCtx())
     expect(result.score).toBe(5)
   })
 
   it('returns score 1 when coverage < 20%', async () => {
     const coverage = { total: { lines: { pct: 10 }, functions: { pct: 8 }, branches: { pct: 5 } } }
-    const runner: RunCommand = vi.fn().mockReturnValue(JSON.stringify(coverage))
-    const { checkUnitTestCoverage } = createCliChecks(runner)
+    const readFile = vi.fn().mockReturnValue(JSON.stringify(coverage))
+    const { checkUnitTestCoverage } = createCliChecks(undefined, readFile)
     const result = await checkUnitTestCoverage(makeCtx())
     expect(result.score).toBe(1)
     expect(result.findings[0].severity).toBe('critical')
   })
 
   it('returns score null when coverage report not found', async () => {
-    const runner: RunCommand = vi.fn().mockImplementation(() => { throw new Error('ENOENT') })
-    const { checkUnitTestCoverage } = createCliChecks(runner)
+    const readFile = vi.fn().mockImplementation(() => { throw new Error('ENOENT') })
+    const { checkUnitTestCoverage } = createCliChecks(undefined, readFile)
     const result = await checkUnitTestCoverage(makeCtx())
     expect(result.score).toBeNull()
     expect(result.reason).toContain('not found')

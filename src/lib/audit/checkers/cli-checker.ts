@@ -6,12 +6,17 @@ import type { AuditContext, RuleResult, Finding } from '../types'
 import { resolveNodeCli } from '../utils/platform-utils'
 
 export type RunCommand = (cmd: string, args: string[], cwd: string) => string
+export type ReadFile = (path: string, encoding: BufferEncoding) => string
 
 function defaultRunCommand(cmd: string, args: string[], cwd: string): string {
   const [execCmd, execArgs] = process.platform === 'win32'
     ? ['cmd.exe', ['/c', cmd, ...args]]
     : [cmd, args]
   return execFileSync(execCmd, execArgs, { cwd, timeout: 60_000, encoding: 'utf-8' })
+}
+
+function defaultReadFile(path: string, encoding: BufferEncoding): string {
+  return readFileSync(path, encoding)
 }
 
 function nullResult(ruleId: string, reason: string): RuleResult {
@@ -30,7 +35,7 @@ function gitleaksInstallHint(): string {
   return 'install via: brew install gitleaks  OR  https://github.com/gitleaks/gitleaks#installing'
 }
 
-export function createCliChecks(runner: RunCommand = defaultRunCommand) {
+export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile: ReadFile = defaultReadFile) {
   async function checkDependencyVulnerabilities(ctx: AuditContext): Promise<RuleResult> {
     const pnpmBin = resolveNodeCli('pnpm', ctx.rootPath)
     let raw: string
@@ -152,7 +157,7 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand) {
   async function checkUnitTestCoverage(ctx: AuditContext): Promise<RuleResult> {
     let raw: string
     try {
-      raw = readFileSync(join(ctx.rootPath, 'coverage', 'coverage-summary.json'), 'utf-8')
+      raw = readFile(join(ctx.rootPath, 'coverage', 'coverage-summary.json'), 'utf-8')
     } catch {
       return nullResult('cat-10-rule-1', 'Coverage report not found — run pnpm test --coverage first')
     }
