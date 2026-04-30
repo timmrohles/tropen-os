@@ -157,12 +157,13 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
 
   return (
     <>
-    {/* Severity-Verteilungs-Zeile — kompakt, ein Streifen */}
+    {/* Severity-Verteilungs-Zeile — Schiefer-Dunkel-Hintergrund */}
     <div style={{
       display: 'flex', alignItems: 'center', gap: 0,
-      padding: '6px 16px', borderBottom: '1px solid var(--border)',
+      padding: '7px 16px', borderBottom: '1px solid rgba(0,0,0,0.15)',
       fontFamily: 'var(--font-mono)', fontSize: 11,
       flexWrap: 'wrap', rowGap: 4,
+      background: 'var(--secondary)',
     }}>
       {/* Gesamt — als "Alle"-Filter */}
       <button
@@ -170,9 +171,9 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         style={{
           background: 'none', border: 'none', cursor: 'pointer', padding: '2px 10px 2px 0',
           fontSize: 11, fontFamily: 'var(--font-mono)',
-          color: sevFilter === 'all' ? 'var(--text-primary)' : 'var(--text-secondary)',
+          color: sevFilter === 'all' ? 'var(--active-bg)' : 'rgba(30,37,48,0.55)',
           fontWeight: sevFilter === 'all' ? 700 : 400,
-          borderRight: '1px solid var(--border)', marginRight: 10,
+          borderRight: '1px solid rgba(255,255,255,0.15)', marginRight: 10,
         }}
       >
         {allGroups.length} Findings
@@ -192,10 +193,9 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               border: 'none', cursor: 'pointer',
               padding: '2px 8px', borderRadius: 3,
               fontSize: 11, fontFamily: 'var(--font-mono)',
-              color: isActive ? 'var(--text-primary)' : count === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)',
+              color: 'var(--active-bg)',
               fontWeight: isActive ? 700 : 400,
-              background: isActive ? 'var(--accent-light)' : 'transparent',
-              opacity: count === 0 ? 0.4 : 1,
+              background: isActive ? 'rgba(30,37,48,0.12)' : 'transparent',
             }}
           >
             <span className={`severity-dot ${SEV_DOT[value] ?? ''}`} role="img" aria-label={label} style={{ width: 7, height: 7 }} />
@@ -204,7 +204,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
         )
       })}
 
-      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)' }}
+      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(30,37,48,0.4)' }}
         title="×N = N Stellen im Code mit diesem Problem — alle auf einmal beheben">
         ×N = Vorkommen
       </span>

@@ -37,8 +37,19 @@ export function PerformanceTab({ findings, statusFilter = 'open', initialLightho
 
   return (
     <>
-      {/* Erklärungsbox mit URL-Eingabe */}
-      <AppSection header="Lighthouse — Was bringt das?" style={{ marginBottom: 16 }}>
+      {/* Lighthouse-Box — Limette-Header, direkt an Findings anschließend */}
+      <div style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* Header in Limette */}
+        <div style={{
+          padding: '8px 16px', background: 'var(--secondary)',
+          borderBottom: '1px solid rgba(30,37,48,0.12)',
+          fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
+          textTransform: 'uppercase', letterSpacing: '0.05em',
+          color: 'var(--active-bg)',
+        }}>
+          Lighthouse — Was bringt das?
+        </div>
+        {/* Body */}
         <div style={{ padding: '14px 16px' }}>
           <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
             Lighthouse misst die echte Performance, Barrierefreiheit und SEO deiner Live-URL — aus Sicht des Browsers, nicht des Codes.
@@ -75,24 +86,20 @@ export function PerformanceTab({ findings, statusFilter = 'open', initialLightho
             )}
           </div>
         </div>
-      </AppSection>
+      </div>
 
-      {/* Findings */}
+      {/* Findings — direkt darunter, kein Zwischenraum */}
       {hasLighthouseData || openCount > 0 ? (
-        <AppSection header={`Performance · ${openCount} offen`}>
-          <FindingsTableApp findings={findings} statusFilter={statusFilter} />
-        </AppSection>
+        <FindingsTableApp findings={findings} statusFilter={statusFilter} />
       ) : (
-        <AppSection header="Performance-Findings">
-          <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
-              Noch keine Lighthouse-Daten für dieses Projekt.
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
-              Bundle-Analyse und CC-Metriken laufen automatisch — für Lighthouse-Scores URL oben eintragen.
-            </p>
-          </div>
-        </AppSection>
+        <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+            Noch keine Lighthouse-Daten für dieses Projekt.
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+            Bundle-Analyse und CC-Metriken laufen automatisch — für Lighthouse-Scores URL oben eintragen.
+          </p>
+        </div>
       )}
 
       {/* Fixed findings */}

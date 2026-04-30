@@ -169,12 +169,12 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
   if (!clusters.length) {
     return (
       <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: '#fff', marginBottom: 16 }}>
-        <div className="app-section__header">
-          <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <div className="app-section__header" style={{ background: 'var(--secondary)', color: 'var(--active-bg)' }}>
+          <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--active-bg)' }}>
             <Lightning size={11} weight="fill" aria-hidden="true" />
             Dein nächster Sprint
           </span>
-          <span>Keine offenen Quick-Wins</span>
+          <span style={{ color: 'var(--active-bg)' }}>Keine offenen Quick-Wins</span>
         </div>
       </div>
     )
@@ -183,16 +183,16 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: '#fff', marginBottom: 16 }}>
 
-      {/* Header-Balken — wie SCORE / CODE-QUALITÄT */}
-      <div className="app-section__header">
-        <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {/* Header-Balken — Limette */}
+      <div className="app-section__header" style={{ background: 'var(--secondary)', color: 'var(--active-bg)' }}>
+        <span className="app-section__header-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--active-bg)' }}>
           <Lightning size={11} weight="fill" aria-hidden="true" />
           Dein nächster Sprint
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--active-bg)' }}>
           {allFindings.length} Fixes · Score +{totalScoreGain.toFixed(1)}
           {uniqueFileCount > 0 && (
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', background: 'var(--bg-base)', padding: '0 5px', borderRadius: 3, border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)', background: 'rgba(30,37,48,0.12)', padding: '0 5px', borderRadius: 3, border: '1px solid rgba(30,37,48,0.2)' }}>
               {uniqueFileCount} {uniqueFileCount === 1 ? 'Datei' : 'Dateien'}
             </span>
           )}
@@ -229,10 +229,10 @@ export default function GlobalQuickWinsBar({ clusters, runId: _runId, projectId:
           <button
             onClick={() => setOpen(v => !v)}
             style={{
-              background: 'none', border: '1px solid var(--border)',
+              background: 'var(--accent-light)', border: '1px solid var(--accent-light)',
               borderRadius: 4, padding: '4px 10px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)',
+              fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)',
             }}
             aria-expanded={open}
           >

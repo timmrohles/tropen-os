@@ -222,10 +222,11 @@ export default async function AuditPage({
               currentScore={runDetail.percentage as number}
             />
 
-            {/* ── SECTION 4+5: Daten-Welt — kühl (surface-cool) ───────────── */}
+            {/* ── SECTION 4+5: Daten-Welt ─────────────────────────────────── */}
             <div style={{
-              background: 'var(--surface-cool)',
+              background: '#ffffff',
               border: '1px solid var(--border)',
+              borderTop: 'none',
               borderRadius: 4, overflow: 'hidden',
               marginTop: 8,
             }}>
@@ -249,7 +250,7 @@ export default async function AuditPage({
             ]} />
 
             {/* ── Domain Content ──────────────────────────────────────────── */}
-            <section id="domain-content" className="audit-tier-section" style={{ padding: '16px 0 0' }}>
+            <section id="domain-content" className="audit-tier-section">
 
               {activeTab === 'dsgvo' ? (
                 <DsgvoTab

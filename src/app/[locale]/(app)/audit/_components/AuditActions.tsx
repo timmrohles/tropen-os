@@ -141,53 +141,30 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* Primär: Deep Review wenn noch nicht gemacht — sonst Audit starten */}
-        {runId && !alreadyReviewed ? (
+        {/* Primär: Audit starten — immer */}
+        <button
+          className="btn btn-primary"
+          onClick={handleTrigger}
+          disabled={isAuditRunning || isReviewRunning}
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <ArrowClockwise size={15} weight="bold" aria-hidden="true"
+            style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
+          {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
+        </button>
+
+        {/* Sekundär: Deep Review */}
+        {runId && (
           <button
-            className="btn btn-primary"
+            className="btn btn-ghost"
             onClick={handleDeepReview}
             disabled={isReviewRunning || isAuditRunning}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <Brain size={15} weight="bold" aria-hidden="true" />
-            {isReviewRunning ? '4 Modelle analysieren…' : 'Deep Review'}
-          </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={handleTrigger}
-            disabled={isAuditRunning || isReviewRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <ArrowClockwise size={15} weight="bold" aria-hidden="true"
-              style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
+            {alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
           </button>
         )}
-
-        {/* Sekundär: Audit starten (wenn Deep Review bereits primär) oder Deep Review wiederholen */}
-        {runId && !alreadyReviewed ? (
-          <button
-            className="btn btn-ghost"
-            onClick={handleTrigger}
-            disabled={isAuditRunning || isReviewRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <ArrowClockwise size={15} weight="bold" aria-hidden="true"
-              style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
-          </button>
-        ) : runId ? (
-          <button
-            className="btn btn-ghost"
-            onClick={handleDeepReview}
-            disabled={isReviewRunning || isAuditRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <Brain size={15} weight="bold" aria-hidden="true" />
-            Deep Review wiederholen
-          </button>
-        ) : null}
 
         {/* Tertiär: Regeln exportieren — Text-Link-Stil */}
         <div style={{ position: 'relative' }}>
