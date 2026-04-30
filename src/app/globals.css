@@ -259,7 +259,6 @@
 .app-tabs {
   display: flex; border-bottom: 2px solid var(--border);
   background: var(--surface-warm);
-  position: sticky; top: var(--score-header-height, 0); z-index: 20;
 }
 .app-tab {
   padding: 12px 20px;
@@ -309,8 +308,7 @@
 :root { --score-header-height: 120px; }
 
 .audit-tier-section {
-  scroll-margin-top: calc(var(--score-header-height, 120px) + 48px);
-  padding: 24px 0 40px;
+  padding: 0 0 40px;
   border-bottom: 1px solid var(--border);
 }
 .audit-tier-section:last-child { border-bottom: none; }

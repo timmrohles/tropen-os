@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildFixPrompt } from '@/lib/audit/prompt-export'
 import type { PromptFinding } from '@/lib/audit/prompt-export/types'
+import { getFixType } from '@/lib/audit/rule-registry'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const { data: dbFindings, error } = await supabaseAdmin
     .from('audit_findings')
-    .select('id, rule_id, message, severity, file_path, agent_source, fix_type, suggestion, affected_files, fix_hint')
+    .select('id, rule_id, message, severity, file_path, agent_source, suggestion, affected_files, fix_hint')
     .in('id', body.findingIds)
 
   if (error || !dbFindings) {
@@ -58,13 +59,14 @@ export async function POST(req: NextRequest) {
       : `Datei ${fileIndex}/${totalFiles}: ${filePath}`
 
     const findingBlocks = findings.map((f, idx) => {
+      const ruleId = String(f.rule_id ?? '').split('::')[0]
       const pf: PromptFinding = {
-        ruleId: String(f.rule_id ?? '').split('::')[0],
+        ruleId,
         severity: String(f.severity ?? 'medium'),
         message: String(f.message ?? ''),
         filePath: f.file_path ?? null,
         agentSource: f.agent_source ?? null,
-        fixType: (f.fix_type as PromptFinding['fixType']) ?? null,
+        fixType: getFixType(ruleId),
         affectedFiles: Array.isArray(f.affected_files) ? f.affected_files as string[] : [],
         fixHint: (f.fix_hint as string | null) ?? null,
         suggestion: f.suggestion ?? null,
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
 
   const totalFindings = dbFindings.length
   const totalMinutes = dbFindings.reduce((sum, f) => {
-    const ft = f.fix_type as string | null
+    const ft = getFixType(String(f.rule_id ?? '').split('::')[0])
     const effort = ft === 'code-gen' ? 10 : ft === 'code-fix' ? 15 : ft === 'refactoring' ? 45 : 60
     return sum + effort
   }, 0)

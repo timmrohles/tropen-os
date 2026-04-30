@@ -28,18 +28,7 @@ export function AppTabs({ tabs, activeTabId }: AppTabsProps) {
     if (activeTabId) setActiveTab(activeTabId)
   }, [activeTabId])
 
-  // ResizeObserver — hält --score-header-height dynamisch aktuell
-  useEffect(() => {
-    const hero = document.getElementById('audit-score-hero')
-    if (!hero) return
-    const update = () => {
-      document.documentElement.style.setProperty('--score-header-height', `${hero.getBoundingClientRect().height + 2}px`)
-    }
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(hero)
-    return () => ro.disconnect()
-  }, [])
+  // ResizeObserver entfernt — kein Sticky mehr auf Audit-Seite
 
   // IntersectionObserver — aktiver Tab folgt sichtbarer Section (nur ohne href-Routing)
   useEffect(() => {

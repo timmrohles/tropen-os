@@ -13,7 +13,7 @@ import {
 import { Link } from '@/i18n/navigation'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { findRecommendation } from '@/lib/audit/finding-recommendations'
-import { getGlobalQuickWins } from '@/lib/audit/quick-wins'
+import { getGlobalQuickWinClusters } from '@/lib/audit/quick-wins'
 import GlobalQuickWinsBar from './_components/GlobalQuickWinsBar'
 import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
 import type { AuditDomain } from '@/lib/audit/types'
@@ -126,7 +126,7 @@ export default async function AuditPage({
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
   // Quick wins (server-side computation)
-  const globalQuickWins = getGlobalQuickWins(allFindings)
+  const quickWinClusters = getGlobalQuickWinClusters(allFindings)
 
   return (
     <div className="content-max">
@@ -199,7 +199,7 @@ export default async function AuditPage({
         return (
           <>
             {/* Score-Block kompakt — Tabellen-Welt-Stil */}
-            <div id="audit-score-hero" style={{ position: 'sticky', top: 0, zIndex: 21, background: 'var(--bg-base)' }}>
+            <div id="audit-score-hero">
               <ScoreBar
                 percentage={runDetail.percentage as number}
                 status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
@@ -211,9 +211,9 @@ export default async function AuditPage({
               />
             </div>
 
-            {/* ── Global Quick-Wins Bar ───────────────────────────────────── */}
+            {/* ── Sprint-Box: eigenständig zwischen Score und Tabs ─────────── */}
             <GlobalQuickWinsBar
-              wins={globalQuickWins}
+              clusters={quickWinClusters}
               runId={selectedRunId}
               projectId={activeScanProjectId}
             />

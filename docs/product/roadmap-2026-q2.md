@@ -1,11 +1,94 @@
 # Tropen OS → [Neuer Name] — Roadmap Q2/Q3 2026
 ## Production Readiness Guide für Vibe-Coders
 
-> **Letzte Aktualisierung:** 2026-04-29 (Tab-Sprint Domain-Architektur, ADR-025)
+> **Status:** Normative Roadmap für Tropen OS. Diese Datei ist die Single Source of Truth für Bauphasen, Sprint-Status und strategische Klärungen.
+> **Stand:** 2026-04-30
+> **Pflege:** Bei jedem Sprint-Abschluss aktualisieren. Bei jedem Pivot Phasen-Plan prüfen.
+
+> **Letzte Aktualisierung:** 2026-04-30 (BP8 abgeschlossen, Phasen-Plan ergänzt)
+> **Vorherige Aktualisierung:** 2026-04-29 (Tab-Sprint Domain-Architektur, ADR-025)
 > **Basis:** 5 Komitee-Reviews (€4.80 Gesamtkosten), Tiefe Wettbewerbsanalyse
 > **Positionierung:** "Dein Code, in Production-Reife." — Coach-Position (ADR-024)
 > **Produktname:** Tropen OS (Platzhalter) — Prodify wurde am 2026-04-13 als Idee diskutiert, nicht beschlossen. Naming-Sprint + Domain-Sicherung offen.
 > **Tab-Sprint:** ADR-025 accepted 2026-04-29. Sprint 1 (BP8–BP13) verschoben hinter Tab-Sprint.
+
+## Bauphasen-Plan (Stand 2026-04-30)
+
+> Reihenfolge der Produkt-Bauphasen. Pivots in dieser Reihenfolge erfordern ADR + 24h-Wartezeit.
+
+**Phase 1 — Audit-Seite stabilisieren** ← AKTIV
+- Tab-Sprint (ADR-025) ✅ abgeschlossen 2026-04-29
+- DB-Sicherheit-Erweiterung (10 Rules) ✅ abgeschlossen
+- BP8 — Quick-Wins-Box global + Fix-Session-Bundle ✅ 2026-04-30
+- BP12 — durch BP8 obsolet
+- BP13 — Sprint-Abschluss (Cleanup, Docs, Commit) ⏳ folgt
+
+**Phase 2 — Audit-Design verbessern + Aufräumen**
+- Visueller Sweep nach BP8
+- Audit-Seite-Polish (aus BP8-Sweep 2026-04-30):
+  - Fix-Session-Header-Text "Einzelne Fix-Prompts findest du in den Findings unten" — streichen oder umformulieren (schwächt Coach-Autorität)
+  - Performance-Findings spezifizieren — 4× identische "Core Web Vitals außerhalb Zielbereich" durch konkrete Lighthouse-Daten ersetzen
+  - Score-Drift erklären — "-1.9%" mit Coach-Stimme begründen ("Vor 18h: 93.0% — X neue Findings im Y-Tab")
+  - Findings-Tabellen-Sortierung prüfen — Default-Sortierregel klarstellen (Severity → Score-Gain)
+- 820 Lint-Warnings-Welle (Code-Hygiene)
+- Mobile-Verhalten 7 Tabs prüfen
+- BP11 — UX-Polish (Items vor Start schärfen)
+
+⚠ **Strategische Klärung vor Phase 3** — siehe Klärungen-Abschnitt
+
+**Phase 3 — Onboarding + Projektseite konzipieren**
+- Onboarding-Flow durchdenken
+- "Projektseite" konzeptionell schärfen
+- Verbindung zu BP10 (Cockpit → Projektboard) klären
+
+⚠ **Strategische Klärung vor Phase 4** — siehe Klärungen-Abschnitt
+
+**Phase 4 — Chat + weitere alte/neue Komponenten**
+- Chat-Komponente prüfen
+- Workspaces, Feeds, Agents, Perspectives, Library-System: re-aktivieren / löschen / selektiv?
+- ADRs 020-023 entscheiden (alle "Proposed" seit 2026-04-27)
+
+**Geparkt:** Business-Plan-Logik (Pricing, Kundenmodell — wer zahlt was, wann, wo)
+
+---
+
+## Strategische Klärungen vor Phasen-Übergängen
+
+> Diese Punkte müssen geklärt sein, bevor die nächste Phase startet.
+> Sparring-Sessions / ADRs notwendig.
+
+### Vor Phase 3 (Onboarding + Projektseite)
+
+| Punkt | Beschreibung |
+|-------|--------------|
+| Onboarding-Modus | Audit-Modus (kurz, einfach) oder Build-Modus (Interview, Konventionen-Setup, längerer Funnel)? |
+| Projektseite-Definition | "Audit-Cockpit" oder "Project Hub mit Konventionen, Wissensbasis, Chat-History"? |
+| BP10-Integration | Wird BP10 Teil von Phase 3 oder separater Sprint? |
+| Repo-Konventionen-Datei | `.tropen-conventions.json` als Tropen-OS-eigene Single-Source-of-Truth? |
+
+### Vor Phase 4 (Komponenten)
+
+| Punkt | Beschreibung |
+|-------|--------------|
+| Eingefrorene KMU-Substanz | 113+ Migrationen, vollständige Plattform unter MVP. Re-aktivieren / löschen / selektiv? |
+| ADRs 020-023 | Alle "Proposed" seit 2026-04-27. Phase-2-Architektur strukturell offen. |
+| Live "Prodify" im Nav-Logo | Code rendert Platzhalter, Doku sagt "Idee". Drift sichtbar bei Demo. |
+
+---
+
+## Sequenz-Constraints
+
+> Reihenfolge-Regeln, die nicht verhandelbar sind.
+
+1. **Naming-Sprint vor Beta-Onboarding** — sonst sieht User "Prodify", User-Doku sagt "Tropen OS"
+2. **Strategische Klärung vor Phase 3** — sonst falscher Onboarding-Modus gebaut
+3. **Strategische Klärung vor Phase 4** — sonst falsche KMU-Substanz-Behandlung
+4. **Visueller Sweep nach jedem Sprint-Abschluss** — Pivot-Disziplin-Regel CLAUDE.md
+5. **L2-Outreach (3 Vibe-Coder-Calls) vor großen Architektur-Entscheidungen** — Vibe-Coder-Realität validieren
+6. **Ansatz C (Lighthouse Finding-Typen) klären vor Beta-Einladungen**
+7. **`NEXT_PUBLIC_FIX_ENGINE_ENABLED=false` in `.env.local` setzen vor Beta-Einladungen** ✅ bereits gesetzt
+
+---
 
 ## ⚠️ Pivot-Disziplin (Stand 2026-04-29)
 
@@ -522,3 +605,9 @@ Nach Tab-Sprint-Abschluss kann sofort kommuniziert werden:
   2026-04-13 als Idee in einer Komitee-Diskussion erwähnt, nicht beschlossen.
   Naming-Sprint erforderlich vor Beta-Outreach. Domain-Sicherung Voraussetzung.
   Zuständigkeit: Timm. Kein Build-Prompt nötig — strategische Entscheidung.
+
+---
+
+## Historischer Kontext (aus alter roadmap.md, Stand 2026-03-14)
+
+Vor dem Pivot vom 2026-04-27 war Tropen OS eine vollständige KMU-Plattform mit Chat, Workspaces, Feeds, Agenten, Perspectives und Library-System. Alle Komponenten wurden gebaut (Migrationen 001–113+) und sind eingefroren. Die Substanz liegt in `docs/synthese/anhang-c-kill-und-einfrier-liste.md`. Wieder-Aktivierung in Phase 4 möglich.

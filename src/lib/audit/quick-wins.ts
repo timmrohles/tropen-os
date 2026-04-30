@@ -204,14 +204,30 @@ export function computeQuickWins(findings: RawFinding[]): QuickWinsResult {
 }
 
 /**
- * Returns the top quick-win findings across ALL domains.
- * Dedupes by ruleId (max 1 per rule). Expects allFindings already enriched
- * server-side with fix_type and _recTitle.
+ * A cluster of quick-win findings that share a file (or have no file).
+ * Findings within a cluster should be fixed together in one editor session.
  */
-export function getGlobalQuickWins(
+export interface QuickWinCluster {
+  filePath: string | null
+  findings: GlobalQuickWinFinding[]
+  totalScoreGain: number
+}
+
+/**
+ * Clusters open findings by file, selecting the most valuable files first.
+ *
+ * Algorithm:
+ * 1. Score all open findings by quickWinScore
+ * 2. Dedup globally by ruleId (same rule in 10 files → only appears in best file)
+ * 3. Group deduplicated findings by filePath
+ * 4. Score each file-group by sum of its findings' scores
+ * 5. Return top maxFiles groups, each with top maxPerFile findings
+ */
+export function getGlobalQuickWinClusters(
   allFindings: Array<Record<string, unknown>>,
-  limit = 5,
-): GlobalQuickWinFinding[] {
+  maxFiles = 4,
+  maxPerFile = 2,
+): QuickWinCluster[] {
   const open = allFindings.filter((f) => f.status === 'open') as unknown as RawGlobalFinding[]
 
   const enriched = open.map((f) => {
@@ -221,27 +237,58 @@ export function getGlobalQuickWins(
       raw: f,
       fixType,
       domain,
-      score: quickWinScore({
-        severity: f.severity,
-        suggestion: f.suggestion,
-        fixType,
-        categoryId: f.category_id,
-      }),
+      score: quickWinScore({ severity: f.severity, suggestion: f.suggestion, fixType, categoryId: f.category_id }),
     }
   })
 
   enriched.sort((a, b) => b.score - a.score)
 
+  // Global ruleId dedup — each pattern appears only in its highest-scoring file
   const seenRuleIds = new Set<string>()
-  const wins: GlobalQuickWinFinding[] = []
+  const deduplicated = enriched.filter((item) => {
+    if (seenRuleIds.has(item.raw.rule_id)) return false
+    seenRuleIds.add(item.raw.rule_id)
+    return true
+  })
 
-  for (const item of enriched) {
-    if (wins.length >= limit) break
-    const ruleId = item.raw.rule_id
-    if (seenRuleIds.has(ruleId)) continue
-    seenRuleIds.add(ruleId)
-    wins.push(toGlobalQuickWin(item.raw, item.fixType, item.domain))
+  // Group by filePath
+  const byFile = new Map<string, typeof deduplicated>()
+  for (const item of deduplicated) {
+    const key = item.raw.file_path ?? '__no_file__'
+    if (!byFile.has(key)) byFile.set(key, [])
+    byFile.get(key)!.push(item)
   }
 
-  return wins
+  // Score each file-group, sort DESC, take top maxFiles
+  const sortedFiles = [...byFile.entries()]
+    .map(([key, items]) => ({
+      key,
+      items,
+      groupScore: items.slice(0, maxPerFile).reduce((s, i) => s + i.score, 0),
+    }))
+    .sort((a, b) => b.groupScore - a.groupScore)
+
+  // no-file group always last
+  const namedFiles = sortedFiles.filter(g => g.key !== '__no_file__').slice(0, maxFiles)
+  const noFileGroup = sortedFiles.find(g => g.key === '__no_file__')
+
+  const result: QuickWinCluster[] = []
+  for (const group of [...namedFiles, ...(noFileGroup ? [noFileGroup] : [])]) {
+    const topFindings = group.items.slice(0, maxPerFile)
+    result.push({
+      filePath: group.key === '__no_file__' ? null : group.key,
+      findings: topFindings.map(i => toGlobalQuickWin(i.raw, i.fixType, i.domain)),
+      totalScoreGain: topFindings.reduce((s, i) => s + estimateScoreGain(i.raw.severity), 0),
+    })
+  }
+
+  return result
+}
+
+/** @deprecated use getGlobalQuickWinClusters */
+export function getGlobalQuickWins(
+  allFindings: Array<Record<string, unknown>>,
+  limit = 5,
+): GlobalQuickWinFinding[] {
+  return getGlobalQuickWinClusters(allFindings, limit, 1).map(c => c.findings[0]).filter(Boolean)
 }

@@ -756,7 +756,7 @@ audit-report-template.md   ← Template für nächsten Audit
 ### docs/product/
 ```
 architecture.md            ← Phase-2-Architektur, DB-Hierarchie
-roadmap.md                 ← Produkt-Roadmap
+roadmap-2026-q2.md         ← Normative Roadmap (Single Source of Truth)
 migrations.md              ← Vollständige Migrations-Übersicht
 rag-architecture.md        ← RAG, pgvector, Wissensbasis-Schema
 onboarding.md              ← Onboarding-Schritte, AI Act, Email-Templates

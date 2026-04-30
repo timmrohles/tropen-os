@@ -12,8 +12,9 @@ Nach drei substantiellen Pivots in 48 Stunden (Marken-Pivot, Tabellen-Welt, Tab-
 3. **Sprint-Reihenfolge bleibt stabil bis Abschluss** — keine Zwischenarbeit zwischen Phasen.
 4. **"tsc + lint grün" ist kein Funktionalitäts-Nachweis** — visueller Sweep nach jedem Sprint Pflicht.
 5. **Self-Audit-Score validiert Code, nicht Produkt** — ergänzt visuelle Validation, ersetzt sie nicht.
+6. **Bevor ein neues Strategie-Dokument angelegt wird:** prüfen, ob die Information in eine bestehende Datei passt. Im Zweifel bestehende Datei aufrüsten, nicht neue anlegen. Verstreuung produziert Doku-Drift.
 
-Diese fünf Regeln sind nicht-verhandelbar. Verstöße werden in `architect-log.md` dokumentiert.
+Diese sechs Regeln sind nicht-verhandelbar. Verstöße werden in `architect-log.md` dokumentiert.
 
 ---
 
@@ -1649,8 +1650,7 @@ eslint src/           # keine Fehler
 | `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/phase-2-vision.md` |
 | `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/phase-2-vision.md` |
-| `docs/product/roadmap.md` | Produkt-Roadmap, offene Pläne (alt) |
-| `docs/product/roadmap-2026-q2.md` | **Aktuelle Roadmap Q2/Q3 2026** — Production Readiness Guide für Vibe-Coders, 3 MVP-Features, User-Typen, Kill-the-Darlings, GTM |
+| `docs/product/roadmap-2026-q2.md` | **Normative Roadmap** — Single Source of Truth: Bauphasen, Sprint-Status, strategische Klärungen, Sequenz-Constraints, GTM |
 | `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
 | `docs/product/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
 | `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
