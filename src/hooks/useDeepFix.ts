@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('hooks:useDeepFix')
 
 export interface ConsensusFixData {
   fixId: string
@@ -31,7 +34,7 @@ export function useDeepFix(findingId: string, runId: string) {
 
   const trigger = useCallback(async () => {
     if (process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED !== 'true') {
-      console.warn('Fix-Engine deaktiviert. Verwende Fix-Prompt-Export.')
+      log.warn('Fix-Engine deaktiviert. Verwende Fix-Prompt-Export.')
       return
     }
     if (!findingId || !runId) return
