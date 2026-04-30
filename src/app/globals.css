@@ -246,7 +246,7 @@
 
 .app-section { border: 1px solid var(--border); margin-bottom: 16px; background: #ffffff; border-radius: 4px; overflow: hidden; }
 .app-section__header {
-  padding: 10px 16px; background: var(--surface-warm);
+  padding: 10px 16px; background: #ffffff;
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   font-family: var(--font-mono, 'JetBrains Mono', monospace);

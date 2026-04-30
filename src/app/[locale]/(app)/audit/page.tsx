@@ -199,12 +199,8 @@ export default async function AuditPage({
 
         return (
           <>
-            {/* ── SECTION 2: Score-Hero — Schiefer-Hauch (surface-tint) ──── */}
-            <div id="audit-score-hero" style={{
-              background: 'var(--surface-tint)',
-              borderRadius: '4px 4px 0 0',
-              marginBottom: 0,
-            }}>
+            {/* ── SECTION 2: Score-Hero ───────────────────────────────── */}
+            <div id="audit-score-hero">
               <ScoreBar
                 percentage={runDetail.percentage as number}
                 status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
