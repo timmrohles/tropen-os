@@ -9,12 +9,12 @@ import { SaveArtifactModal } from './SaveArtifactModal'
 import PostToWorkspaceModal from './PostToWorkspaceModal'
 import MessageActions from './MessageActions'
 import ActionLayer from './ActionLayer'
-import GuidedModePicker from './GuidedModePicker'
-import GuidedStepCard from './GuidedStepCard'
-import GuidedSummary from './GuidedSummary'
 import SourcesBar from './SourcesBar'
 import ThinkingBlock from './ThinkingBlock'
 import { makeMdComponents, renderAssistantContent } from './ChatRenderers'
+import FlagPanel from './FlagPanel'
+import GuidedChatMessage from './GuidedChatMessage'
+import SuggestionPillsSection from './SuggestionPillsSection'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -122,37 +122,7 @@ export default function ChatMessage({
 
   // ── Guided Chat Mode rendering ───────────────────────────
   if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
-    const gd = msg.guidedData
-    const msgId = msg.id
-    return (
-      <div className="cmsg cmsg--assistant">
-        <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
-        <div className="cmsg-bubble cmsg-bubble--assistant">
-          <div className="cmsg-content">
-            {msg.role === 'guided_picker' && (
-              <GuidedModePicker
-                onSelect={mode => onGuidedAction({ type: 'select_mode', messageId: msgId, mode })}
-              />
-            )}
-            {msg.role === 'guided_step' && (
-              <GuidedStepCard
-                step={gd.steps[gd.currentStepIndex]}
-                stepNumber={gd.currentStepIndex + 1}
-                totalSteps={gd.steps.length}
-                onAnswer={(value, label) => onGuidedAction({ type: 'answer_step', messageId: msgId, value, label })}
-              />
-            )}
-            {msg.role === 'guided_summary' && (
-              <GuidedSummary
-                answers={gd.answers}
-                onConfirm={() => onGuidedAction({ type: 'confirm_summary', messageId: msgId })}
-                onEdit={stepIndex => onGuidedAction({ type: 'edit_step', messageId: msgId, stepIndex })}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    )
+    return <GuidedChatMessage msg={msg} onGuidedAction={onGuidedAction} />
   }
 
   const isBookmarked = msg.id ? (bookmarkedIds?.has(msg.id) ?? false) : false
@@ -258,67 +228,12 @@ export default function ChatMessage({
             )}
 
           {flagState === 'confirm' && showActions && (
-            <div style={{
-              marginTop: 8,
-              background: 'rgba(248,113,113,0.06)',
-              border: '1px solid rgba(248,113,113,0.2)',
-              borderRadius: 8,
-              padding: '10px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-            }}>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
-                Diese Antwort als fehlerhaft oder unangemessen melden (Art. 14 EU AI Act)?
-              </p>
-              <input
-                placeholder="Grund (optional)"
-                value={flagReason}
-                onChange={e => setFlagReason(e.target.value)}
-                style={{
-                  background: 'var(--bg-input, var(--bg-base))',
-                  border: '1px solid var(--border)',
-                  borderRadius: 6,
-                  padding: '6px 8px',
-                  color: 'var(--text-primary)',
-                  fontSize: 12,
-                  outline: 'none',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-              />
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={handleFlag}
-                  style={{
-                    background: 'var(--error)',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '5px 12px',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Melden
-                </button>
-                <button
-                  onClick={() => { setFlagState('idle'); setFlagReason('') }}
-                  style={{
-                    background: 'none',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    padding: '5px 12px',
-                    color: 'var(--text-secondary)',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Abbrechen
-                </button>
-              </div>
-            </div>
+            <FlagPanel
+              flagReason={flagReason}
+              onReasonChange={setFlagReason}
+              onFlag={handleFlag}
+              onCancel={() => { setFlagState('idle'); setFlagReason('') }}
+            />
           )}
           </div>{/* /cmsg-bubble */}
 
@@ -346,33 +261,14 @@ export default function ChatMessage({
         <SourcesBar sources={msg.sources} />
       )}
 
-      {!isUser && suggestionsEnabled && suggestions.length > 0 && (
-        <div className="suggestion-pills" role="group" aria-label="Weiterführende Vorschläge">
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              className="suggestion-pill"
-              onClick={() => onSendDirect?.(s)}
-            >
-              {s} →
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!isUser && isLastMessage && chips.length > 0 && (
-        <div className="suggestion-pills" role="list" aria-label="Vorschläge">
-          {chips.map(chip => (
-            <button
-              key={chip.label}
-              className="suggestion-pill"
-              role="listitem"
-              onClick={() => onSendDirect?.(chip.prompt)}
-            >
-              {chip.label} →
-            </button>
-          ))}
-        </div>
+      {!isUser && (
+        <SuggestionPillsSection
+          suggestions={suggestions}
+          suggestionsEnabled={suggestionsEnabled}
+          chips={chips}
+          isLastMessage={isLastMessage}
+          onSendDirect={onSendDirect}
+        />
       )}
 
       {workspaceModalOpen && conversationId && (
@@ -399,3 +295,4 @@ export default function ChatMessage({
     </>
   )
 }
+

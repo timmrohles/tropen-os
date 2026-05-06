@@ -303,7 +303,7 @@
   align-items: stretch;
 }
 .island {
-  background: var(--teal);
+  background: color-mix(in srgb, var(--teal) 75%, white);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
   padding: 18px 20px;

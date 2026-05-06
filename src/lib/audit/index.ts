@@ -3,10 +3,11 @@ import { readFileSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { generateRepoMap, generateRepoMapFromFiles } from '@/lib/repo-map'
-import type { AuditContext, AuditReport, AuditOptions, GitInfo, PackageJson, TsConfig } from './types'
+import type { AuditContext, AuditReport, AuditOptions, GitInfo, PackageJson, TsConfig, Finding } from './types'
 import { getRulesForCategory } from './rule-registry'
 import { CATEGORIES } from './types'
 import { calculateCategoryScore, calculateOverallScore } from './scoring/score-calculator'
+import { runComplianceResolver, complianceResultsToFindings, filterFindingsByComplianceAnswers } from './compliance-resolver'
 
 function readJson<T>(rootPath: string, ...parts: string[]): T | null {
   const filePath = join(rootPath, ...parts)
@@ -36,6 +37,7 @@ export async function buildAuditContext(
   rootPath: string,
   existingRepoMap?: AuditContext['repoMap'],
   tokenBudget = 8192,
+  options?: import('./types').AuditOptions,
 ): Promise<AuditContext> {
   const repoMap = existingRepoMap ?? await generateRepoMap({ rootPath, tokenBudget })
   const packageJson = readJson<PackageJson>(rootPath, 'package.json') ?? {}
@@ -43,7 +45,15 @@ export async function buildAuditContext(
   const filePaths = repoMap.files.map((f) => f.path)
   const gitInfo = readGitInfo(rootPath)
 
-  return { rootPath, repoMap, packageJson, tsConfig, filePaths, gitInfo }
+  return {
+    rootPath,
+    repoMap,
+    packageJson,
+    tsConfig,
+    filePaths,
+    gitInfo,
+    complianceAnswers: options?.complianceAnswers,
+  }
 }
 
 export async function runAudit(ctx: AuditContext, options: AuditOptions): Promise<AuditReport> {
@@ -163,6 +173,48 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
             finding.frozen = true
           }
         }
+      }
+    }
+  }
+
+  // Compliance-Resolver Stufe 1 — 2026-05-06
+  // Wenn complianceAnswers im Kontext vorhanden:
+  //   1. Code-Findings aus cat-4-rule-11/17/18 filtern (User-Vorrang total)
+  //   2. Compliance-Resolver-Findings hinzufügen (has_privacy_policy, has_deletion_process, data_location)
+  const complianceCtx = enhancedCtx.complianceAnswers
+    ? enhancedCtx
+    : (options.complianceAnswers ? { ...enhancedCtx, complianceAnswers: options.complianceAnswers } : null)
+
+  if (complianceCtx?.complianceAnswers) {
+    // Filter existing code findings (User-Vorrang)
+    for (const catScore of categoryScores) {
+      for (const result of catScore.ruleResults) {
+        const filteredFindings = filterFindingsByComplianceAnswers(
+          result.findings as Finding[],
+          complianceCtx.complianceAnswers,
+        )
+        // Replace in place — cast needed because result.findings is typed as Finding[]
+        ;(result.findings as Finding[]).length = 0
+        ;(result.findings as Finding[]).push(...filteredFindings)
+      }
+    }
+
+    // Add resolver findings to cat-4 (Datenschutz & Compliance)
+    const complianceResults = runComplianceResolver(complianceCtx)
+    const resolverFindings = complianceResultsToFindings(complianceResults)
+
+    if (resolverFindings.length > 0) {
+      const cat4 = categoryScores.find((c) => c.categoryId === 4)
+      if (cat4) {
+        // Append as a synthetic rule result — score=null (manual), no weight impact
+        cat4.ruleResults.push({
+          ruleId: 'compliance-resolver-stufe1',
+          score: null,
+          reason: `Compliance-Resolver Stufe 1: ${resolverFindings.length} Finding(s)`,
+          findings: resolverFindings,
+          automated: false,
+        })
+        cat4.manualRuleCount += 1
       }
     }
   }

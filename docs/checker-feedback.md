@@ -1,10 +1,232 @@
 # Checker Feedback Log
 
+## Regeln-Export aus Audit-Seite entfernt (2026-05-06)
+Button "Regeln exportieren" aus AuditActions.tsx ausgeblendet (Kommentar im Code).
+API-Endpoint `/api/audit/export-rules` bleibt funktional für interne Tests.
+Backlog: Regeln-Export gehört zu "Vibecoden von Beginn an"-Bereich, der noch konzeptioniert wird. Regel-Qualitäts-Diagnose folgt vor Re-Integration.
+
+---
+
+## Stale-Hinweis Komitee-Findings implementiert (2026-05-06)
+Stale wenn: angezeigte Run hat review_type=multi_model UND neuerer Run existiert.
+Hinweis pro Sektion mit Komitee-Findings (avg_confidence != null).
+Wording: "Komitee-Review-Stand: vor X · Code wurde seither geändert — Findings möglicherweise veraltet."
+
+---
+
+## Deep Review als User-Feature implementiert (2026-05-06)
+Rate-Limit: 24h-Cooldown + 10/Monat. CommitteeBadge mit avg_confidence + models_flagged.
+Domain-Mapping: architecture/process → code-quality.
+Sort-Tiebreaker: avg_confidence (null = 100 für Sort-Zwecke).
+
+---
+
 > Strukturiertes Tracking aller Checker-Verbesserungen.
 > Jeder Eintrag hat ein GitHub Issue.
 > Ziel: False-Positive-Rate <10% (MVP), <5% (Year 1).
 >
 > **Hinweis:** Strukturelle Verbesserung dieser FP-Behandlung (Checker-Korrektur und/oder UI-Markierung) ist im Roadmap-Backlog dokumentiert — siehe Backlog-Eintrag "P4-Pattern für 410-Only-Routes" und "Stop-and-think im Fix-Prompt-Format" in `docs/product/roadmap-2026-q2.md`.
+
+---
+
+## Compliance-Resolver Stufe 1 implementiert (2026-05-06)
+3 Checks aktiv: Privacy, Deletion, Data-Location.
+Status: confirmed / needs-attention / input-needed / not-applicable (kein 'fulfilled').
+User-Vorrang total: Code-Findings cat-4-rule-11/17/18 werden bei User-Bestätigung gefiltert.
+
+---
+
+## Compliance-Resolver-Komitee abgeschlossen (2026-05-06)
+
+4 Modelle + Opus-Judge haben die Dreischichten-Compliance-Resolver-Logik spezifiziert (€0.44).
+
+**Kernentscheidungen:** (1) Status `fulfilled` → `confirmed` — kein Tool das juristisch nicht verifizieren kann darf etwas als "erfüllt" bezeichnen. (2) User-Vorrang bei allen 9 Fragen — Code-Signals sind Hinweise, nie Beweise. (3) Kein `confirmed` ohne User-Bestätigung, auch wenn Code-Check positiv. (4) AVV-Fragen rein User-Only, Privacy-Policy + Deletion-Process Hybrid (code-prüfbar als Hint). (5) Finding-Schwellen: `needs-attention` = HIGH, `input-needed` = MEDIUM.
+
+**Implementations-Reihenfolge:** has_privacy_policy → has_deletion_process → data_location.
+
+**8 Konsens-Punkte, 3 Spaltungen (alle aufgelöst).** Report: `docs/audit-reports/compliance-resolver-komitee-2026-05-06.md`
+
+---
+
+## Diagnose: Compliance-Antworten-Konsumption (2026-05-06)
+
+### Code-Review-Ergebnis
+
+| questionKey | Konsumiert in Detektor-Code? | Wo (ausserhalb ComplianceBlock.tsx) |
+|---|---|---|
+| `has_avv_supabase` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `has_avv_vercel` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `has_privacy_policy` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `data_location` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `has_deletion_process` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `ki_risk_class` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `ki_transparency_label` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `ki_logging_enabled` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+| `ki_purpose_documented` | Nein | Nur in `ComplianceBlock.tsx` (Def) + `IslandsRow.tsx` (Zaehler) + `ScoreBar.tsx` (Zaehler) |
+
+**Grep-Beleg:** `grep -r "has_avv_supabase\|ki_risk_class" src/lib/audit/` — **0 Treffer**. Kein Detektor-Code in `src/lib/audit/` referenziert einen dieser Keys.
+
+### Daten-Pipeline
+
+```
+project_compliance_data (DB, Tabelle aus Migration 20260429000115)
+  → GET /api/audit/compliance-data  (route.ts — lesen + schreiben, kein Audit-Trigger-Bezug)
+  → POST /api/audit/compliance-data (ComplianceQuestion speichert Antwort, fire-and-forget)
+  → audit/page.tsx: supabaseAdmin.from('project_compliance_data').select(...)
+      ↓
+      complianceData = Record<string, unknown>  (z.B. { has_avv_supabase: true, ... })
+      ↓
+      → IslandsRow (SelfInputIsland): zaehlt beantwortet/gesamt — rein dekorativ
+      → ComplianceBlock.tsx: zeigt Fragen + gespeicherte Antworten — rein dekorativ
+      ↓
+      NICHT weitergegeben an:
+      - buildAuditContext()  (src/lib/audit/index.ts — AuditContext hat kein complianceData-Feld)
+      - runAudit()           (src/lib/audit/index.ts — AuditOptions hat kein complianceData-Feld)
+      - irgendein checker    (compliance-checker.ts, agent-regulatory-checker.ts etc.)
+```
+
+**AuditContext-Felder (types.ts, Stand 2026-05-06):**
+`rootPath, repoMap, packageJson, tsConfig, filePaths, gitInfo, externalTools?, fileContents?`
+— kein `complianceData`-Feld, kein `complianceAnswers`-Feld.
+
+**trigger/route.ts:** Baut `ctx` via `buildAuditContext(REPO_ROOT)` — ohne Compliance-Daten, ohne Projekt-ID-Kontext. Die complianceData werden dort nicht geladen.
+
+**compliance-resolver.ts:** Existiert NICHT. Nur in CLAUDE.md (Compliance-Inputs-Sektion) und in `docs/superpowers/plans/2026-04-29-tab-sprint-domain-architektur.md` als geplante Datei beschrieben — nie gebaut.
+
+### Bewertung
+
+**Marken-Bruch bestaetigt — vollstaendige Dekorativitaet.**
+
+Die 9 Compliance-Antworten werden:
+- gespeichert (DB korrekt, API korrekt)
+- angezeigt (ComplianceBlock)
+- gezaehlt (IslandsRow SelfInputIsland: "3/5 beantwortet")
+- **NIEMALS** von einem Detektor gelesen
+
+Die DSGVO-Detektoren (`agent-regulatory-checker.ts`) pruefen eigenstaendig den Code-Bestand:
+- Existiert `src/app/datenschutz/page.tsx`? (cat-4-rule-11)
+- Existiert ein Cookie-Consent-Package? (cat-4-rule-12)
+- Existiert ein Data-Export-Endpoint? (cat-4-rule-17)
+- Existiert Account-Deletion-UI? (cat-4-rule-18)
+
+Diese Code-Checks laufen komplett unabhaengig von den Compliance-Antworten. Ein User der `has_privacy_policy: true` angibt, bekommt trotzdem cat-4-rule-11 als Finding wenn keine Datenschutz-Seite im Code existiert. Umgekehrt: ein User der `has_avv_supabase: false` angibt (kein AVV mit Supabase) — kein Detektor reagiert darauf, kein Finding.
+
+### Plan-vs.-Realitaet
+
+**Was laut Sprint 6b₁ / CLAUDE.md (Compliance-Inputs-Sektion) passieren sollte:**
+
+> "Compliance-Resolver (`src/lib/audit/compliance-resolver.ts`) beruecksichtigt:
+> 1. Code-Existenz-Check (automatisch)
+> 2. Stamm-Daten aus Settings
+> 3. Detail-Antworten aus Tab-Inputs
+> Pflicht-Status: fulfilled | open | input-needed | not-applicable"
+
+**Was tatsaechlich existiert:**
+
+- `compliance-resolver.ts` wurde nie angelegt (Glob-Ergebnis: 0 Treffer)
+- `AuditContext` hat kein Compliance-Antworten-Feld
+- `runAudit()` nimmt keine Compliance-Antworten entgegen
+- Die Dreischichten-Logik (Code + Stamm + Detail) ist Design, kein Code
+
+Der Tab-Sprint (2026-04-29) hat die Infrastruktur fuer das Sammeln der Antworten gebaut (DB-Tabelle, API, ComplianceQuestion-Komponente, ComplianceBlock). Die Konsumptions-Seite (compliance-resolver.ts + AuditContext-Erweiterung + Detektor-Integration) wurde nicht gebaut.
+
+### Empfehlung
+
+**Option A — Minimalziel (ca. 2-3h): Drei explizite AVV/Prozess-Findings**
+
+Neue Rules (manual, `checkMode: 'manual'`) die complianceData als Input nehmen:
+- `has_avv_supabase === false` → Finding "AVV mit Supabase fehlt" (cat-4, severity: high)
+- `has_avv_vercel === false` → Finding "AVV mit Vercel fehlt" (cat-4, severity: high)
+- `has_deletion_process === false` → Finding "Konto-Loeschprozess nicht bestaetigt" (cat-4, severity: medium)
+- `data_location === 'USA ohne SCC'` → Finding "DSGVO-kritische Daten-Region" (cat-4, severity: critical)
+- `ki_risk_class === 'Hoch'` → Finding "Hochrisiko-KI: Konformitaetsbewertung erforderlich" (cat-22, severity: high)
+- `ki_logging_enabled === false` → Finding "KI-Logging nicht bestaetigt" (cat-22, severity: medium)
+
+**Dafuer noetig:**
+1. `AuditContext` um `complianceAnswers?: Record<string, unknown>` erweitern (types.ts)
+2. `buildAuditContext()` / `runAuditFromDb()` Compliance-Daten aus DB laden (oder als `AuditOptions`-Parameter durchreichen)
+3. 6 neue manual-Checker-Rules die `ctx.complianceAnswers` lesen
+4. `trigger/route.ts` und `api/projects/scan/route.ts` Compliance-Daten laden + in Context stecken
+
+**Option B — Vollziel (ca. 1 Tag): compliance-resolver.ts implementieren**
+
+Dreischichten-Status-Resolver wie in CLAUDE.md beschrieben. Aufwaendiger, korrekter.
+
+**Prioritaet:** Option A — sofort machbar, schliesst den Bruch zwischen "Antwort gespeichert" und "Antwort ignoriert". Nutzer die `has_avv_supabase: false` anklicken erwarten ein Finding, nicht Stille.
+
+---
+
+## Komponenten-Rules Scope-Trennung — Option 2 implementiert (2026-05-06)
+
+### Was geändert wurde
+`checkComponentFileSizes()` (cat-25-rule-2, `repo-map-checker.ts`) filtert `.tsx`-Dateien aus.
+Nur `.ts`-Komponenten-Utilities in `/components/` werden auf Datei-Größe geprüft.
+Filter: `f.path.endsWith('.ts')` statt zuvor implizit `.ts|.tsx`.
+
+### Begründung
+Diagnose 2026-05-06: `cat-1-rule-10` (ast-quality-checker, Zeilen + Hooks) und `cat-25-rule-2`
+(repo-map-checker, nur Zeilen) erzeugten Doppel-Findings ab 300 Zeilen für dieselbe `.tsx`-Datei.
+Scope-Trennung: AST-Checker mit Hook-Metrik bewertet `.tsx`, Naming-Convention-Checker nur `.ts`.
+
+### Vorher / Nachher
+| Datei | Vorher | Nachher |
+|-------|--------|---------|
+| `Komponente.tsx` (>300Z, viele Hooks) | 2 Findings (cat-1-rule-10 + cat-25-rule-2) | 1 Finding (nur cat-1-rule-10) |
+| `util.ts` (>300Z, in /components/) | 1 Finding (cat-25-rule-2) | 1 Finding (unverändert) |
+
+### Audit-Verifikation (2026-05-06)
+- `cat-25-rule-2`: Score 5, **0 Findings** (korrekt — kein `.tsx` im Scope)
+- `cat-1-rule-10`: Score 3, 63 Findings (alle `.tsx`, alle medium — unverändert)
+
+---
+
+## Diagnose: Komponenten-Rules Severity-Split (2026-05-06)
+
+### Befund
+
+Es existieren **zwei verschiedene Rules** die Komponenten-Größe prüfen:
+
+| Rule-ID | Name | Datei | Schwellenwerte | Severity-Logik |
+|---------|------|-------|----------------|----------------|
+| `cat-1-rule-10` | "Keine God Components (>300 Zeilen + >5 Hooks)" | `ast-quality-checker.ts` → `checkGodComponents()` | high: >500 Zeilen UND >8 Hooks; medium: >300 Zeilen UND >5 Hooks; medium: >7 state hooks | **Dynamisch** — Severity per Finding nach Schwellenwerten gesetzt |
+| `cat-25-rule-2` | "Keine Dateien > 300 Zeilen (Komponenten)" | `repo-map-checker.ts` → `checkComponentFileSizes()` | high: >400 Zeilen (rein); medium: 300–400 Zeilen (rein) | **Dynamisch** — Severity per Finding nach Zeilenzahl gesetzt |
+
+Zusätzlich existiert `cat-1-rule-4` ("Dateien < 300 Zeilen"), aber diese ist seit dem Tab-Sprint explizit so gepacht, dass sie `/components/` ausschließt (`// Exclude /components/ — those are checked by cat-25-rule-2 to avoid duplicates`). Das Overlap zwischen `cat-1-rule-4` und `cat-25-rule-2` ist also behoben.
+
+Der Severity-Split entsteht so:
+- Eine Datei die 420 Zeilen und 9 Hooks hat → `cat-25-rule-2` meldet sie als **high** (>400 Zeilen), `cat-1-rule-10` meldet sie als **high** (>500 nicht erfüllt, >300+>5 erfüllt → medium). Dieselbe Datei erscheint in zwei Sektionen.
+- Eine Datei mit 350 Zeilen und 6 Hooks → `cat-25-rule-2` meldet **medium** (300–400), `cat-1-rule-10` meldet **medium** (>300+>5). Doppelter Eintrag in der Medium-Sektion.
+- `cat-1-rule-10` hat eine dritte Violation-Kategorie (>7 state hooks, severity=medium) die von `cat-25-rule-2` nie erzeugt wird.
+
+Beide Rules sind in `domain: 'code-quality'` und `fixType: 'refactoring'` — identische Klassifikation, aber kategorisch unterschiedlich (`categoryId: 1` Architektur vs. `categoryId: 25` Namenskonventionen).
+
+### Ursache
+
+**Empfehlung B:** Zwei verschiedene Rules mit ähnlichen Titeln und überlappenden Schwellenwerten.
+
+Die Rules messen konzeptuell unterschiedliche Dinge:
+- `cat-1-rule-10` (AST-basiert) misst **Komplexität**: Zeilenzahl KOMBINIERT mit Hook-Anzahl. Eine 600-Zeilen-Datei mit 2 Hooks ist kein God Component per dieser Definition.
+- `cat-25-rule-2` (RepoMap-basiert) misst **rohe Dateigröße**: Zeilenzahl allein, unabhängig von Hooks. Sie ist ein Style/Naming-Convention-Check (cat-25), kein Architektur-Check.
+
+Die Schwellenwerte überlappen aber erheblich: beide beginnen bei 300 Zeilen. Ein `.tsx`-File in `/components/` das >300 Zeilen hat, löst praktisch immer beide Rules aus — sofern es auch >5 Hooks hat (was bei großen Komponenten fast immer der Fall ist). Das Ergebnis: dieselbe Datei erscheint in der Audit-UI zweimal, oft in verschiedenen Severity-Sektionen, mit ähnlichem aber nicht identischem Meldungstext ("God component:" vs. "Large component:").
+
+Die UI-Verwirrung ist berechtigt. Es handelt sich nicht um einen Daten-Bug (die Findings sind korrekt), sondern um ein Konzept-Overlap das in der Checker-Architektur entstand als `cat-25-rule-2` nachträglich als Komitee-Entscheidung (2026-05-04, 3:1) hinzugefügt wurde.
+
+### Empfehlung
+
+**Backlog-Item: Trennschärfe zwischen cat-1-rule-10 und cat-25-rule-2 schärfen**
+
+Zwei Optionen (als Backlog für nach Beta):
+
+**Option 1 — Schwellenwert-Trennung (minimal-invasiv):**
+`cat-25-rule-2` beginnt erst bei 400 Zeilen statt 300 (high: >500, medium: 400–500). Damit deckt `cat-1-rule-10` den 300–400-Bereich ab, `cat-25-rule-2` den 400+-Bereich als reinen Größen-Check. Overlap wird minimiert ohne Rules zu löschen.
+
+**Option 2 — Scope-Trennung (sauber, mehr Aufwand):**
+`cat-25-rule-2` prüft nur Dateien die **kein** TSX sind (reine `.ts` Komponenten-Utilities). Alle `.tsx`-Dateien werden ausschließlich von `cat-1-rule-10` (AST-basiert) bewertet, da dort die Hook-Metrik verfügbar ist und ein sinnvolleres Signal liefert. Erfordert Filteränderung in `checkComponentFileSizes()`.
+
+**Sofort-Maßnahme (ohne Code-Änderung):** In der Audit-UI die Gruppen-Ansicht `[data-rule-id="cat-1-rule-10"]` und `[data-rule-id="cat-25-rule-2"]` visuell nebeneinander stellen (z.B. unter einem gemeinsamen "Komponentengröße"-Header) anstatt sie in separate Severity-Sektionen aufzuteilen.
+
+---
 
 ## Metriken
 

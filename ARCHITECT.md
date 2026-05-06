@@ -810,4 +810,21 @@ Format pro Eintrag:
 Begründung: Tropen OS Build dauert ~210s. Margin-of-safety 90s.
 Bei Build-Zeit-Anstieg: Timeout neu evaluieren oder Build-Optimierung-Sprint.
 
+---
+
+## Compliance-Resolver-Architektur (2026-05-06)
+
+**Komitee-Entscheidung:** 4 Modelle + Opus-Judge, Report `docs/audit-reports/compliance-resolver-komitee-2026-05-06.md`.
+
+**Neue Datei:** `src/lib/audit/compliance-resolver.ts`
+- Stufe 1: 3 Checks aktiv — `has_privacy_policy`, `has_deletion_process`, `data_location`
+- Status-Typen: `confirmed` / `needs-attention` / `input-needed` / `not-applicable` — **kein** `fulfilled`
+- User-Vorrang total: Code-Signals sind Hinweise, nie Beweise
+- Exports: `runComplianceResolver(ctx)`, `complianceResultsToFindings(results)`, `filterFindingsByComplianceAnswers(findings, answers)`
+
+**AuditContext-Erweiterung:** `complianceAnswers?: ComplianceAnswers` (types.ts) + `AuditOptions.complianceAnswers`
+**Pipeline:** `buildAuditContext()` → `runAudit()` → Compliance-Resolver after Code-Checks → Synthetic RuleResult in cat-4
+**Trigger-Route:** Lädt `project_compliance_data` aus DB wenn `scanProjectId` vorhanden; intern = undefined
+**Stufe 2 (Roadmap):** AVV-Fragen + KI-Act (6 weitere Checks) — wartet auf Stufe-1-Feedback
+
 **cross-env:** `package.json` build-Script nutzt `cross-env NODE_OPTIONS=...` (Windows-kompatibel).

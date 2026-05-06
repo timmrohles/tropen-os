@@ -57,7 +57,7 @@ export default async function AuditPage({
   // ── Runs list ─────────────────────────────────────────────────────────────
   const [runList] = orgId
     ? await Promise.all([
-        fetchAuditRuns(orgId, activeScanProjectId === null ? undefined : activeScanProjectId),
+        fetchAuditRuns(orgId, activeScanProjectId),
       ])
     : [[]]
 
@@ -158,6 +158,11 @@ const initialLighthouseUrl = (activeProject as { live_url?: string | null } | nu
     return (status === 'open' || status === 'acknowledged') && f.is_killer
   }).length
 
+  // Stale-Detection: Komitee-Findings veraltet wenn neuerer Auto-Audit existiert
+  const hasCommitteeFindings = (runDetail?.review_type as string | null) === 'multi_model'
+  const isCommitteeStale = hasCommitteeFindings && runList.length > 0 && runList[0]?.id !== selectedRunId
+  const reviewRunAt = hasCommitteeFindings && runDetail?.created_at ? runDetail.created_at as string : null
+
   return (
     <div className="content-max">
       {/* ── Page Header ─────────────────────────────────────────────────── */}
@@ -228,6 +233,8 @@ const initialLighthouseUrl = (activeProject as { live_url?: string | null } | nu
             initialLighthouseUrl={initialLighthouseUrl}
             scanProjectId={activeScanProjectId}
             activeProfile={scanProjectProfile}
+            isCommitteeStale={isCommitteeStale}
+            reviewRunAt={reviewRunAt}
           />
         </>
       )}

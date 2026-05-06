@@ -140,9 +140,12 @@ export async function checkFileSizes(ctx: AuditContext): Promise<RuleResult> {
 
 // cat-25-rule-2: Stufung 300/400 — Komitee 2026-05-04 (Mehrheit 3:1).
 // 300-400: Frühwarnung (score=3). 400+: echtes Problem (score=2).
+// .tsx-Dateien ausgenommen (Diagnose 2026-05-06): cat-1-rule-10 (ast-quality-checker)
+// bewertet .tsx mit Hook-Metrik — präziseres Signal. Hier nur reine .ts-Utilities.
+// Scope-Trennung verhindert Doppel-Findings für dieselbe Datei (cat-1-rule-10 + cat-25-rule-2).
 export async function checkComponentFileSizes(ctx: AuditContext): Promise<RuleResult> {
   const componentFiles = ctx.repoMap.files.filter(f =>
-    !isExemptFile(f.path) && f.path.includes('/components/') && f.lineCount > 300
+    !isExemptFile(f.path) && f.path.includes('/components/') && f.path.endsWith('.ts') && f.lineCount > 300
   )
   if (componentFiles.length === 0) {
     return { ruleId: 'cat-25-rule-2', score: 5, reason: 'All component files under 300 lines', findings: [], automated: true }

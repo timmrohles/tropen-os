@@ -7,6 +7,14 @@ import { ProfileOnboardingModal } from '@/components/audit/ProfileOnboardingModa
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
 
+interface RateLimitStatus {
+  allowed: boolean
+  reason?: 'cooldown' | 'monthly-limit'
+  cooldownExpires?: string
+  usedThisMonth: number
+  monthlyLimit: number
+}
+
 interface AuditActionsProps {
   runId?: string
   reviewType?: string | null
@@ -32,6 +40,7 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const [exportOpen, setExportOpen] = useState(false)
   const [lighthouseUrl, setLighthouseUrl] = useState(initialLighthouseUrl ?? '')
   const [mounted, setMounted] = useState(false)
+  const [rateLimitStatus, setRateLimitStatus] = useState<RateLimitStatus | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -43,6 +52,15 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
       if (saved) setLighthouseUrl(saved)
     }
   }, [initialLighthouseUrl, scanProjectId])
+
+  // Fetch rate-limit status on mount (only when runId available = review button shown)
+  useEffect(() => {
+    if (!runId) return
+    fetch('/api/audit/review/status')
+      .then(r => r.ok ? r.json() as Promise<RateLimitStatus> : null)
+      .then(data => { if (data) setRateLimitStatus(data) })
+      .catch(() => { /* fail-open — rate limit not fetched */ })
+  }, [runId])
 
   async function handleTrigger() {
     // Onboarding-Check: nur für externe Scan-Projekte mit fehlendem Profil
@@ -149,6 +167,13 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const isAuditRunning  = auditState === 'running'
   const isReviewRunning = reviewState === 'running'
   const alreadyReviewed = reviewType === 'multi_model' && reviewState === 'idle'
+  const reviewBlocked = rateLimitStatus !== null && !rateLimitStatus.allowed
+  const reviewCooldownLabel = rateLimitStatus?.reason === 'cooldown' && rateLimitStatus.cooldownExpires
+    ? `Verfügbar ab ${new Date(rateLimitStatus.cooldownExpires).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr`
+    : null
+  const reviewUsageLabel = rateLimitStatus
+    ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} verbraucht`
+    : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
@@ -173,66 +198,29 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
             key="deep-review"
             className="btn btn-ghost"
             onClick={handleDeepReview}
-            disabled={isReviewRunning || isAuditRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            disabled={isReviewRunning || isAuditRunning || reviewBlocked}
+            title={
+              rateLimitStatus?.reason === 'cooldown' && reviewCooldownLabel
+                ? reviewCooldownLabel
+                : rateLimitStatus?.reason === 'monthly-limit'
+                  ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} genutzt — monatliches Limit erreicht`
+                  : undefined
+            }
+            style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: reviewBlocked ? 0.5 : 1 }}
           >
             <Brain size={15} weight="bold" aria-hidden="true" />
-            {alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
+            {rateLimitStatus?.reason === 'monthly-limit'
+              ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} genutzt`
+              : alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
+            {rateLimitStatus?.allowed && rateLimitStatus.usedThisMonth > 0 && (
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                {rateLimitStatus.monthlyLimit - rateLimitStatus.usedThisMonth}/{rateLimitStatus.monthlyLimit}
+              </span>
+            )}
           </button>
         )}
 
-        {/* Tertiär: Regeln exportieren — Text-Link-Stil */}
-        <div key="export-wrapper" style={{ position: 'relative' }}>
-          <button
-            onClick={() => setExportOpen((v) => !v)}
-            disabled={isAuditRunning || isReviewRunning}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: 'none', border: 'none', padding: '6px 4px',
-              fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer',
-              textDecoration: 'underline', textUnderlineOffset: 3,
-            }}
-            aria-haspopup="true"
-            aria-expanded={exportOpen}
-          >
-            <DownloadSimple size={14} weight="bold" aria-hidden="true" />
-            Regeln exportieren
-          </button>
-          {exportOpen && (
-            <>
-              {/* Backdrop */}
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                onClick={() => setExportOpen(false)}
-                aria-hidden="true"
-              />
-              {/* Dropdown */}
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 100,
-                background: 'var(--bg-surface-solid)', border: '1px solid var(--border)',
-                borderRadius: 8, padding: '4px 0', minWidth: 220,
-                boxShadow: '0 4px 16px rgba(26,23,20,0.10)',
-              }}>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleExport('cursorrules')}
-                  style={{ width: '100%', textAlign: 'left', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>.cursorrules</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Für Cursor, Windsurf, Zed</span>
-                </button>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleExport('claude-md')}
-                  style={{ width: '100%', textAlign: 'left', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>CLAUDE.md</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Für Claude Code</span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        {/* Regeln exportieren — temporär ausgeblendet (gehört zu "Vibecoden von Beginn an"-Bereich, noch nicht konzeptioniert) */}
 
         {runId && (criticalCount ?? 0) > 0 && (
           <button

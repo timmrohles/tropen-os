@@ -5,7 +5,13 @@
 // Ersetzt ScoreBar. Projektname + Zeit jetzt im SectionLabel oberhalb (nicht in Insel).
 
 import { TrendUp, TrendDown, ArrowRight, Checks, CheckCircle, XCircle, Warning } from '@phosphor-icons/react'
-import type { ScoreTrend } from '@/lib/audit/trend'
+
+interface ScoreTrend {
+  delta: number | null
+  direction: 'up' | 'down' | 'stable' | 'first-audit'
+  previousScore: number | null
+  previousAuditDate: string | null
+}
 
 function formatRelativeDate(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime()
@@ -108,14 +114,14 @@ function KillerStatusIsland({ killerCount, polishScore }: {
   return (
     <article className="island island--centered">
       <p className="island__label">Veröffentlichungs-Check</p>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, paddingTop: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {icon}
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
             {label}
           </span>
         </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '26px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
           {coachSubtext}
         </p>
       </div>
@@ -134,57 +140,43 @@ function PolishScoreIsland({ polishScore, trend, isMultiModelReview }: {
     <article className="island island--centered">
       <p className="island__label">Polish-Score</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, justifyContent: 'center' }}>
-        {/* Score-Zahl in Türkis, kein "Polish"-Label */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700,
-            color: '#ffffff', lineHeight: 1,
-          }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, paddingTop: 20 }}>
+        {/* Score + Delta + Badge — eng beieinander */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>
             {polishScore.toFixed(1)}%
           </span>
+
+          {trend.direction !== 'first-audit' && trend.delta !== null && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+              {trend.delta > 0
+                ? <TrendUp size={12} weight="bold" aria-hidden="true" />
+                : <TrendDown size={12} weight="bold" aria-hidden="true" />}
+              {trend.delta > 0 ? '+' : ''}{trend.delta.toFixed(1)}%
+            </span>
+          )}
+
+          {isMultiModelReview && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#ffffff', background: 'rgba(255,255,255,0.20)', padding: '2px 7px', borderRadius: 4 }}>
+              <Checks size={10} weight="bold" aria-hidden="true" />
+              4 Modelle
+            </span>
+          )}
         </div>
 
-        {/* Trend-Delta */}
-        {trend.direction !== 'first-audit' && trend.delta !== null && (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-            fontSize: 12, fontWeight: 600,
-            color: '#ffffff',
-            fontFamily: 'var(--font-mono)',
-          }}>
-            {trend.delta > 0
-              ? <TrendUp size={12} weight="bold" aria-hidden="true" />
-              : <TrendDown size={12} weight="bold" aria-hidden="true" />}
-            {trend.delta > 0 ? '+' : ''}{trend.delta.toFixed(1)}%
-          </span>
-        )}
-
-        {isMultiModelReview && (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600,
-            color: '#ffffff', background: 'rgba(255,255,255,0.20)',
-            padding: '2px 7px', borderRadius: 4,
-          }}>
-            <Checks size={10} weight="bold" aria-hidden="true" />
-            4 Modelle
-          </span>
-        )}
-
-        {/* Trend-Kontext-Text */}
+        {/* Trend-Kontext-Text — immer am unteren Rand */}
         {trend.direction === 'first-audit' && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '4px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             Erster Audit — das ist deine Baseline.
           </p>
         )}
         {trend.direction === 'stable' && trend.previousAuditDate && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '4px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             Stabil vs. letzter Audit ({formatRelativeDate(trend.previousAuditDate)})
           </p>
         )}
         {(trend.direction === 'up' || trend.direction === 'down') && trend.previousAuditDate && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '4px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             vs. letzter Audit ({formatRelativeDate(trend.previousAuditDate)})
           </p>
         )}
@@ -236,7 +228,7 @@ function SelfInputIsland({ dsgvoAnswered, kiActAnswered, lighthouseSet, hasProje
         ))}
       </div>
       {!hasProject && (
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.90)', margin: '10px 0 0', lineHeight: 1.4, textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '10px 0 0', lineHeight: 1.4, textAlign: 'center' }}>
           Verbinde ein externes Projekt, um Antworten zu speichern.
         </p>
       )}

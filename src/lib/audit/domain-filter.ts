@@ -23,7 +23,11 @@ export const ALL_DOMAINS: AuditDomain[] = [
 
 export function getDomainForRule(ruleId: string): AuditDomain {
   const rule = AUDIT_RULES.find(r => r.id === ruleId)
-  return rule?.domain ?? 'code-quality'
+  if (rule?.domain) return rule.domain
+  // Komitee-Rules — explizites Mapping vor Fallback
+  if (ruleId === 'architecture') return 'code-quality'
+  if (ruleId === 'process') return 'code-quality'  // kein engineering-maturity, Backlog
+  return 'code-quality'
 }
 
 export function getFindingsByDomain(

@@ -28,6 +28,7 @@ const requestSchema = z.object({
   withTools: z.boolean().optional().default(false),
   lighthouseUrl: z.string().url().optional(),
   deepSecrets: z.boolean().optional().default(false),
+  scanProjectId: z.string().uuid().optional(),
 })
 
 function toDbStatus(status: AuditReport['status']): 'production_grade' | 'stable' | 'risky' | 'prototype' {
@@ -87,8 +88,36 @@ export async function POST(request: Request) {
 
     log.info('Audit options', { withTools: body.withTools, skipModes })
 
+    // Load compliance answers for external scan projects.
+    // For internal Tropen OS audits (no scanProjectId): complianceAnswers = undefined.
+    let complianceAnswers: import('@/lib/audit/types').ComplianceAnswers | undefined
+    if (body.scanProjectId) {
+      try {
+        const { data: complianceRows } = await supabaseAdmin
+          .from('project_compliance_data')
+          .select('question_key, question_value')
+          .eq('project_id', body.scanProjectId)
+
+        if (complianceRows && complianceRows.length > 0) {
+          const parsed: Record<string, unknown> = {}
+          for (const row of complianceRows) {
+            if (row.question_key && row.question_value !== undefined) {
+              const val = row.question_value
+              parsed[row.question_key] = typeof val === 'object' && val !== null && 'value' in val
+                ? (val as { value: unknown }).value
+                : val
+            }
+          }
+          complianceAnswers = parsed as import('@/lib/audit/types').ComplianceAnswers
+          log.info('Compliance answers loaded', { scanProjectId: body.scanProjectId, keys: Object.keys(parsed) })
+        }
+      } catch (compErr) {
+        log.warn('Failed to load compliance answers — proceeding without', { error: String(compErr) })
+      }
+    }
+
     const ctx = await buildAuditContext(REPO_ROOT, undefined, 8192)
-    const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools })
+    const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools, complianceAnswers })
 
     // Compute aggregated values
     const allFindings = report.categories.flatMap((c) =>

@@ -1,84 +1,18 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import type { ChatMessageType, Project, Conversation } from '@/hooks/useWorkspaceState'
-import type { ChipItem, AttachmentData, GuidedAction } from '@/lib/workspace-types'
-import { detectParallelIntent } from '@/lib/chat/detect-parallel-intent'
-import ParallelConfirmBubble from './ParallelConfirmBubble'
+import React from 'react'
+import type { ChatAreaProps } from './ChatArea.types'
+import { useChatAreaState } from '@/hooks/useChatAreaState'
 import IntentionGate from './IntentionGate'
 import FocusedFlow from './FocusedFlow'
-import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
-import ChatHeaderStrip, { type ChatHeaderStripHandle } from './ChatHeaderStrip'
+import ChatHeaderStrip from './ChatHeaderStrip'
 import ArtifactsView from './ArtifactsView'
 import ContextBar from './ContextBar'
 import ChatContextStrip from './ChatContextStrip'
-import BookmarksDrawer from './BookmarksDrawer'
-import SearchDrawer from './SearchDrawer'
-import MemorySaveModal from './MemorySaveModal'
-import ShareModal from './ShareModal'
-import PerspectiveMessage from './PerspectiveMessage'
-import { usePerspectives } from '@/hooks/usePerspectives'
-import { useArtifactsView } from '@/hooks/useArtifactsView'
-import { useAssistantName } from '@/hooks/useAssistantName'
-import { useParallelTabs } from '@/hooks/useParallelTabs'
-import type { CompareModel } from './ModelComparePopover'
-
-interface ChatAreaProps {
-  activeConvId: string | null
-  messages: ChatMessageType[]
-  input: string
-  sending: boolean
-  error: string
-  routing: { task_type: string; agent: string; model_class: string; model: string } | null
-  messagesEndRef: React.RefObject<HTMLDivElement>
-  userInitial: string
-  projects: Project[]
-  workspaceId?: string
-  organizationId?: string
-  onNewConversation: () => void
-  onSetInput: (v: string) => void
-  onSendMessage: (e: React.FormEvent) => void
-  onSendDirect: (text: string) => void
-  onRegenerate: () => void
-  onAssignToProject: (convId: string, projectId: string | null) => Promise<void>
-  onRenameConversation?: (id: string, title: string) => void
-  onDeleteConversation?: (id: string) => Promise<void>
-  contextPercent: number
-  activeConvProjectId: string | null
-  onRefreshMessages: () => void
-  showMemoryModal: boolean
-  onSetShowMemoryModal: (v: boolean) => void
-  conversations: Conversation[]
-  shareModalConvId: string | null
-  onSetShareModalConvId: (id: string | null) => void
-  memoryExtracting?: boolean
-  chips: ChipItem[]
-  setChips: React.Dispatch<React.SetStateAction<ChipItem[]>>
-  attachmentRef: React.MutableRefObject<AttachmentData | null>
-  pendingIntention: 'focused' | 'guided' | null
-  onSetPendingIntention: React.Dispatch<React.SetStateAction<'focused' | 'guided' | null>>
-  pendingCurrentProjectId: string | null
-  onSetPendingCurrentProjectId: React.Dispatch<React.SetStateAction<string | null>>
-  onGuidedAction: (action: GuidedAction) => void
-  onGenerateImage?: (content: string) => void
-  userName?: string
-  isInSplitView?: boolean
-  isSearching?: boolean
-  contextStartIndex?: number
-  onContextReset?: () => void
-  suggestionsEnabled?: boolean
-  isMobile?: boolean
-  searchDrawerOpen?: boolean
-  onSearchDrawerClose?: () => void
-  onOpenSearch?: () => void
-  onOpenInNewTab?: () => void
-  canOpenNewTab?: boolean
-  onOpenParallelTabs?: (items: Array<{ convId: string; title: string }>) => void
-  onSendDirectToConv?: (text: string, convId: string) => void
-  onSendDirectToNewConv?: (text: string, convId: string, overrideClientPrefs?: Record<string, unknown>, displayText?: string) => void
-  showHeaderTitle?: boolean
-}
+import ChatModals from './ChatModals'
+import ChatStatusBar from './ChatStatusBar'
+import ChatMessageList from './ChatMessageList'
 
 export default function ChatArea({
   activeConvId,
@@ -92,7 +26,7 @@ export default function ChatArea({
   projects,
   workspaceId,
   organizationId,
-  onNewConversation,
+  onNewConversation: _onNewConversation,
   onSetInput,
   onSendMessage,
   onSendDirect,
@@ -112,9 +46,9 @@ export default function ChatArea({
   chips,
   setChips: _setChips,
   attachmentRef,
-  pendingIntention,
+  pendingIntention: _pendingIntention,
   onSetPendingIntention,
-  pendingCurrentProjectId,
+  pendingCurrentProjectId: _pendingCurrentProjectId,
   onSetPendingCurrentProjectId,
   onGuidedAction,
   onGenerateImage,
@@ -128,125 +62,51 @@ export default function ChatArea({
   searchDrawerOpen = false,
   onSearchDrawerClose,
   onOpenSearch,
-  onOpenInNewTab,
+  onOpenInNewTab: _onOpenInNewTab,
   canOpenNewTab = false,
   onOpenParallelTabs,
-  onSendDirectToConv,
+  onSendDirectToConv: _onSendDirectToConv,
   onSendDirectToNewConv,
-  showHeaderTitle = true,
+  showHeaderTitle: _showHeaderTitle = true,
 }: ChatAreaProps) {
-  const assistantName = useAssistantName()
-  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
-  const [bookmarksDrawerOpen, setBookmarksDrawerOpen] = useState(false)
-  const headerRef = useRef<ChatHeaderStripHandle>(null)
-
-  // Prompt-Builder context — last user message + recent history
-  const lastUserMsg = messages.filter(m => m.role === 'user').at(-1)
-  const pbRecentMessages = React.useMemo(
-    () => messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [messages.length]
-  )
-
-  // ── Perspectives ──────────────────────────────────────
-  const { avatarCache, perspectiveMsg, loadAvatars, startPerspective } = usePerspectives(activeConvId, onRefreshMessages)
-
-  // Artefakte-Übersicht
-  const { artifactsView, setArtifactsView, artifactsViewItems, artifactsViewLoading, openArtifactsView } = useArtifactsView(activeConvId)
-
-  // Derive focused-mode context from the active conversation
-  const activeConv = conversations.find(c => c.id === activeConvId) ?? null
-  const isFocused = activeConv?.intention === 'focused' && !!activeConv.current_project_id
-  const focusedProject = isFocused
-    ? projects.find(p => p.id === activeConv!.current_project_id) ?? null
-    : null
-
-  // IntentionGate: lokale Auswahl — wird bei jedem Wechsel zu activeConvId=null zurückgesetzt
-  const [intentionChoice, setIntentionChoice] = useState<'focused' | 'guided' | null>(null)
-  useEffect(() => {
-    if (!activeConvId) setIntentionChoice(null)
-  }, [activeConvId])
-
-  // ── Parallel tabs + model compare ────────────────────
   const {
+    assistantName,
+    bookmarkedIds,
+    bookmarksDrawerOpen,
+    setBookmarksDrawerOpen,
+    headerRef,
+    perspectiveMsg,
+    artifactsView,
+    setArtifactsView,
+    artifactsViewItems,
+    artifactsViewLoading,
+    openArtifactsView,
+    activeConv,
+    isFocused,
+    focusedProject,
+    intentionChoice,
+    setIntentionChoice,
     parallelConfirm,
-    setParallelConfirm,
     parallelLoading,
     handleParallelConfirm,
-    handleModelCompare,
-  } = useParallelTabs({
-    workspaceId,
+    handleChatSubmit,
+    handleParallelDeny,
+    handleBookmarkChange,
+  } = useChatAreaState({
+    activeConvId,
     input,
+    workspaceId,
+    canOpenNewTab,
+    conversations,
+    projects,
+    onRefreshMessages,
+    onSetInput,
+    onSendMessage,
+    onSendDirect,
     onOpenParallelTabs,
     onSendDirectToNewConv,
   })
 
-  // Intercept submit: handle @-mention and parallel-tab intent
-  async function handleChatSubmit(e: React.FormEvent) {
-    const trimmed = input.trim()
-
-    // @-mention → perspective
-    const mentionMatch = trimmed.match(/^@([^\s]+)\s*([\s\S]*)$/)
-    if (mentionMatch) {
-      const mentionName = mentionMatch[1]
-      const afterMention = mentionMatch[2]?.trim() || undefined
-      const avs = avatarCache ?? await loadAvatars()
-      const avatar = avs.find((a) => a.name.toLowerCase() === mentionName.toLowerCase())
-      if (avatar) {
-        e.preventDefault()
-        onSetInput('')
-        await startPerspective(avatar, afterMention)
-        return
-      }
-    }
-
-    // Parallel-tabs detection (only when tab feature is available and active conversation exists)
-    if (onOpenParallelTabs && canOpenNewTab && activeConvId) {
-      const intent = detectParallelIntent(trimmed)
-      if (intent) {
-        e.preventDefault()
-        setParallelConfirm({ intent, originalInput: trimmed })
-        return
-      }
-    }
-
-    onSendMessage(e)
-  }
-
-  function handleParallelDeny() {
-    if (!parallelConfirm) return
-    const { originalInput } = parallelConfirm
-    setParallelConfirm(null)
-    onSendDirect(originalInput)
-  }
-
-  const fetchBookmarks = useCallback(async (convId: string) => {
-    try {
-      const res = await fetch(`/api/bookmarks?conversationId=${convId}`)
-      if (res.ok) {
-        const data: Array<{ message_id: string }> = await res.json()
-        setBookmarkedIds(new Set(data.map((b) => b.message_id)))
-      }
-    } catch {
-      // silently ignore
-    }
-  }, [])
-
-  useEffect(() => {
-    setBookmarkedIds(new Set())
-    if (activeConvId) fetchBookmarks(activeConvId)
-  }, [activeConvId, fetchBookmarks])
-
-  function handleBookmarkChange(messageId: string, bookmarked: boolean) {
-    setBookmarkedIds((prev) => {
-      const next = new Set(prev)
-      if (bookmarked) next.add(messageId)
-      else next.delete(messageId)
-      return next
-    })
-  }
-
-  // Shared input section — plain function, NOT a component (avoids remount-on-render)
   function renderInput(onSubmit: (e: React.FormEvent) => void) {
     return (
       <div className="carea-input-wrap">
@@ -266,7 +126,6 @@ export default function ChatArea({
     <div className="carea">
       {activeConvId ? (
         <>
-          {/* ChatHeaderStrip renders into #topbar-chat-slot via portal (desktop only) */}
           {!isMobile && (
             <ChatHeaderStrip
               ref={headerRef}
@@ -294,11 +153,8 @@ export default function ChatArea({
             />
           )}
 
-          {activeConvId && (
-            <ContextBar percent={contextPercent} />
-          )}
+          {activeConvId && <ContextBar percent={contextPercent} />}
 
-          {/* Artefakte-Übersicht */}
           {artifactsView && (
             <ArtifactsView
               items={artifactsViewItems}
@@ -310,128 +166,58 @@ export default function ChatArea({
             />
           )}
 
-          <div className="carea-messages" aria-live="polite" aria-label="Chat-Verlauf" role="log" style={artifactsView ? { display: 'none' } : undefined}>
-            {(() => {
-              return messages.map((msg, i) => {
-              const isLast = i === messages.length - 1
-              const isLastAssistant = isLast && msg.role === 'assistant'
-              const showResetDivider = contextStartIndex > 0 && i === contextStartIndex
-              return (
-                <React.Fragment key={msg.id ?? `pending-${i}`}>
-                  {showResetDivider && (
-                    <div className="context-reset-divider" role="separator">
-                      <span>Neuer Kontext-Start</span>
-                    </div>
-                  )}
-                  <ChatMessage
-                    msg={msg}
-                    userInitial={userInitial}
-                    conversationId={activeConvId}
-                    organizationId={organizationId}
-                    bookmarkedIds={bookmarkedIds}
-                    onBookmarkChange={handleBookmarkChange}
-                    onArtifactSaved={() => headerRef.current?.refresh()}
-                    onSendDirect={onSendDirect}
-                    isLastMessage={isLast}
-                    isLastAssistantMessage={isLastAssistant}
-                    isStreaming={sending}
-                    chips={isLast ? chips : []}
-                    onRegenerate={onRegenerate}
-                    onGuidedAction={onGuidedAction}
-                    onGenerateImage={onGenerateImage}
-                    isInSplitView={isInSplitView}
-                    suggestionsEnabled={suggestionsEnabled}
-                  />
-                </React.Fragment>
-              )
-            })})()}
+          <ChatMessageList
+            messages={messages}
+            contextStartIndex={contextStartIndex}
+            userInitial={userInitial}
+            conversationId={activeConvId}
+            organizationId={organizationId}
+            bookmarkedIds={bookmarkedIds}
+            onBookmarkChange={handleBookmarkChange}
+            headerRef={headerRef}
+            onSendDirect={onSendDirect}
+            sending={sending}
+            chips={chips}
+            onRegenerate={onRegenerate}
+            onGuidedAction={onGuidedAction}
+            onGenerateImage={onGenerateImage}
+            isInSplitView={isInSplitView}
+            suggestionsEnabled={suggestionsEnabled}
+            parallelConfirm={parallelConfirm}
+            parallelLoading={parallelLoading}
+            onParallelConfirm={() => { void handleParallelConfirm() }}
+            onParallelDeny={handleParallelDeny}
+            contextPercent={contextPercent}
+            onContextReset={onContextReset}
+            error={error}
+            messagesEndRef={messagesEndRef}
+            artifactsView={artifactsView}
+          />
 
-            {/* Parallel-tabs confirmation bubble */}
-            {parallelConfirm && (
-              <ParallelConfirmBubble
-                intent={parallelConfirm.intent}
-                loading={parallelLoading}
-                onConfirm={() => { void handleParallelConfirm() }}
-                onDeny={handleParallelDeny}
-              />
-            )}
-
-            {contextPercent >= 80 && onContextReset && (
-              <div className="context-warning" role="status">
-                <span>Ich kann die ersten Teile unseres Gesprächs nicht mehr vollständig berücksichtigen.</span>
-                <button className="btn btn-ghost btn-sm" onClick={onContextReset}>
-                  Kontext zurücksetzen
-                </button>
-              </div>
-            )}
-            {error && <div className="carea-error">{error}</div>}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {isSearching && !routing && (
-            <div className="carea-routing-meta carea-routing-meta--searching">
-              <span className="carea-searching-dot" aria-hidden="true" />
-              <span style={{ fontStyle: 'italic' }}>Suche im Web…</span>
-            </div>
-          )}
-          {routing && (
-            <div className="carea-routing-meta">
-              <span>{routing.model}</span>
-              <span className="carea-routing-dot">·</span>
-              <span>{routing.model_class}</span>
-              <span className="carea-routing-dot">·</span>
-              <span>{routing.task_type}</span>
-              <span className="carea-routing-dot">·</span>
-              <span>🌱</span>
-              {memoryExtracting && (
-                <>
-                  <span className="carea-routing-dot">·</span>
-                  <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>
-                    Gedächtnis wird gespeichert…
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-          {/* Inline perspective response */}
-          {perspectiveMsg && (
-            <PerspectiveMessage
-              avatarEmoji={perspectiveMsg.avatarEmoji}
-              avatarName={perspectiveMsg.avatarName}
-              text={perspectiveMsg.text}
-              pending={!perspectiveMsg.done}
-            />
-          )}
+          <ChatStatusBar
+            isSearching={isSearching}
+            routing={routing}
+            memoryExtracting={memoryExtracting}
+            perspectiveMsg={perspectiveMsg}
+          />
 
           {renderInput(handleChatSubmit)}
 
-          <BookmarksDrawer
-            open={bookmarksDrawerOpen}
-            onClose={() => setBookmarksDrawerOpen(false)}
-            conversationId={activeConvId}
-            onUseAsPrompt={(text) => { onSetInput(text); setBookmarksDrawerOpen(false) }}
-          />
-          <SearchDrawer
-            open={searchDrawerOpen}
-            onClose={() => onSearchDrawerClose?.()}
+          <ChatModals
+            activeConvId={activeConvId}
+            bookmarksDrawerOpen={bookmarksDrawerOpen}
+            onBookmarksDrawerClose={() => setBookmarksDrawerOpen(false)}
+            onUseBookmarkAsPrompt={(text) => { onSetInput(text); setBookmarksDrawerOpen(false) }}
+            searchDrawerOpen={searchDrawerOpen}
+            onSearchDrawerClose={() => onSearchDrawerClose?.()}
             workspaceId={workspaceId}
+            showMemoryModal={showMemoryModal}
+            onSetShowMemoryModal={onSetShowMemoryModal}
+            activeConvProjectId={activeConvProjectId}
+            shareModalConvId={shareModalConvId}
+            conversations={conversations}
+            onSetShareModalConvId={onSetShareModalConvId}
           />
-
-          {activeConvProjectId && (
-            <MemorySaveModal
-              open={showMemoryModal}
-              onClose={() => onSetShowMemoryModal(false)}
-              projectId={activeConvProjectId}
-              conversationId={activeConvId}
-            />
-          )}
-          {shareModalConvId && (
-            <ShareModal
-              convId={shareModalConvId}
-              convTitle={conversations.find(c => c.id === shareModalConvId)?.title ?? null}
-              onClose={() => onSetShareModalConvId(null)}
-            />
-          )}
         </>
       ) : intentionChoice === 'focused' ? (
         <FocusedFlow

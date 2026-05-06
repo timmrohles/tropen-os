@@ -138,6 +138,25 @@ export interface GitInfo {
   recentCommits: string[]
 }
 
+/**
+ * User-supplied compliance answers from project_compliance_data (DB).
+ * Stufe 1: 3 Fragen aktiv. Weitere 6 für spätere Stufe definiert.
+ * Komitee-Entscheidung 2026-05-06: confirmed/needs-attention/input-needed/not-applicable,
+ * kein 'fulfilled' (juristisch untragbar).
+ */
+export type ComplianceAnswers = {
+  has_privacy_policy?: boolean
+  has_deletion_process?: boolean
+  data_location?: string
+  // Optional — für Stufe 2 (KI-Act):
+  has_avv_supabase?: boolean
+  has_avv_vercel?: boolean
+  ki_risk_class?: string
+  ki_transparency_label?: boolean
+  ki_logging_enabled?: boolean
+  ki_purpose_documented?: boolean
+}
+
 export interface AuditContext {
   rootPath: string
   repoMap: RepoMap
@@ -150,6 +169,8 @@ export interface AuditContext {
   externalTools?: ExternalToolsOptions
   /** In-memory file contents for external project scans (no disk access) */
   fileContents?: Map<string, string>
+  /** User-supplied compliance answers (from project_compliance_data DB) */
+  complianceAnswers?: ComplianceAnswers
 }
 
 export interface CategoryDefinition {
@@ -225,6 +246,12 @@ export interface AuditOptions {
    * LAZY = heute wie active (Code-Marker-Erkennung kommt mit Sprint 9b).
    */
   domainActivation?: Record<string, 'active' | 'lazy' | 'inactive'>
+  /**
+   * User-supplied compliance answers — passed to buildAuditContext + runAudit.
+   * Consumed by compliance-resolver.ts (Stufe 1: 3 Fragen).
+   * Komitee-Entscheidung 2026-05-06.
+   */
+  complianceAnswers?: ComplianceAnswers
 }
 
 /** Category metadata — weights match the manual audit report */

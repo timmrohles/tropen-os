@@ -10,6 +10,7 @@ import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { runMultiModelReview } from '@/lib/review/orchestrator'
+import { checkDeepReviewRateLimit, recordDeepReviewInvocation } from '@/lib/audit/deep-review-rate-limit'
 
 const log = createLogger('api:audit:review')
 
@@ -33,6 +34,18 @@ export async function POST(request: Request) {
   }
   if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? '')) {
     return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
+  }
+
+  // Rate-Limit: 24h Cooldown + 10/Monat pro User
+  const rateLimit = await checkDeepReviewRateLimit(user.id)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({
+      error: 'rate-limit',
+      reason: rateLimit.reason,
+      cooldownExpires: rateLimit.cooldownExpires,
+      usedThisMonth: rateLimit.usedThisMonth,
+      monthlyLimit: rateLimit.monthlyLimit,
+    }, { status: 429 })
   }
 
   const raw = await request.json().catch(() => ({}))
@@ -133,6 +146,9 @@ export async function POST(request: Request) {
 
       await supabaseAdmin.from('audit_findings').insert(findingRows)
     }
+
+    // Record invocation for rate-limiting (fire-and-forget, non-blocking)
+    void recordDeepReviewInvocation(user.id, runId, result.totalCostEur)
 
     log.info('Multi-model review complete', {
       runId,
