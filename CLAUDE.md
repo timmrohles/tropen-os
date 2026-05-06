@@ -733,9 +733,9 @@ Audit-Seite ist Domain-basiert geschnitten (ADR-025), nicht Tier-basiert.
 
 **Neue Infrastruktur (Tab-Sprint 2026-04-29):**
 - `src/lib/audit/domain-filter.ts` — `getFindingsByDomain`, `getDomainCounts`, `ALL_DOMAINS`
-- `src/app/[locale]/(app)/audit/_components/DsgvoTab.tsx` — DSGVO-Findings + Inline-Fragen
-- `src/app/[locale]/(app)/audit/_components/KiActTab.tsx` — KI-Act-Findings + Inline-Fragen
-- `src/app/[locale]/(app)/audit/_components/PerformanceTab.tsx` — Lighthouse-Erklärung + URL-Input
+- `src/app/[locale]/(app)/audit/_components/DsgvoTab.tsx` — **GELÖSCHT 2026-05-06** (durch ComplianceBlock ersetzt)
+- `src/app/[locale]/(app)/audit/_components/KiActTab.tsx` — **GELÖSCHT 2026-05-06** (durch ComplianceBlock ersetzt)
+- `src/app/[locale]/(app)/audit/_components/PerformanceTab.tsx` — **GELÖSCHT 2026-05-06** (durch LighthouseUrlBlock ersetzt)
 - `src/app/[locale]/(app)/audit/_components/ComplianceQuestion.tsx` — Inline-Compliance-Input
 - `src/app/api/audit/compliance-data/route.ts` — GET/POST Compliance-Antworten
 - `src/app/api/audit/fix-prompt/route.ts` — Server-seitige Prompt-Generierung (finding-recommendations CLIENT-FREI)
@@ -745,13 +745,24 @@ Audit-Seite ist Domain-basiert geschnitten (ADR-025), nicht Tier-basiert.
 
 **maturityTier-Filter:** War gebrochen (`rule.tier` statt `rule.maturityTier`) — Enterprise-Rules (SBOM etc.) liefen immer. Gefixt in `src/lib/audit/index.ts`.
 
-**GlobalQuickWinsBar (BP8, 2026-04-30):**
-- Position: zwischen ScoreBar und AppTabs (global, über allen 7 Tabs)
-- Props: `wins: GlobalQuickWinFinding[]`, `runId`, `projectId`
-- Logic: `getGlobalQuickWins(allFindings, 5)` in `src/lib/audit/quick-wins.ts`
-- Dedup: max 1 Finding pro `ruleId` (domainübergreifend)
-- Button "Fix-Session starten" → POST `/api/audit/fix-session` → Modal mit Bulk-Prompt
-- Bulk-Prompt: file-sorted (meiste Findings pro Datei zuerst), innerhalb Datei nach Severity
+**GlobalQuickWinsBar (BP8):** **GELÖSCHT 2026-05-06** — ersetzt durch inline Fix-Session-Bundle in `AuditFindingsClient.tsx`.
+
+**Audit-Seite Architektur (Stand 2026-05-06):**
+- `src/app/[locale]/(app)/audit/_components/IslandsRow.tsx` — Drei Insel-Karten (KillerStatusIsland / PolishScoreIsland / SelfInputIsland), türkiser Hintergrund, ersetzt ScoreBar
+- `src/app/[locale]/(app)/audit/_components/AuditFindingsClient.tsx` — Findings-Sektionen: STOPPER / EMPFOHLEN ZUERST (Top 10) / WEITERE (mit Severity-Sub-Trennern). Inline Fix-Session-Bundle + Cluster-Bundle-Button.
+- `src/app/[locale]/(app)/audit/_components/ComplianceBlock.tsx` — DSGVO + KI-Act Compliance-Fragen (projectId nullable, immer sichtbar)
+- `src/app/[locale]/(app)/audit/_components/LighthouseUrlBlock.tsx` — Performance-URL-Input
+- `src/lib/audit/killer-rule-ids.ts` — `shouldBeKiller(severity, ruleId)` — einziger Killer-Entscheidungspunkt (severity='critical' → automatisch Killer)
+- `src/lib/audit/project-profiles-shared.ts` — Typen + Konstanten (client-safe, kein supabaseAdmin). Client Components importieren HIER, nicht aus `project-profiles.ts`
+- `src/lib/audit/project-profiles.ts` — Server-only DB-Queries (supabaseAdmin). NIEMALS in Client Components importieren.
+- `src/lib/audit/trend.ts` — ScoreTrend-Typen + calculateScoreTrend (server-only via page.tsx). `formatRelativeDate` ist inline in IslandsRow.tsx (RSC-Konflikt-Vermeidung).
+- `src/components/ui/SectionLabel.tsx` — 'use client', Mono-Text + Linie. NIEMALS in Server Components importieren (RSC-Modul-ID-Konflikt) — Server Components inlinen den Style direkt.
+
+**RSC-Modul-ID-Konflikt-Regel (kritisch, Stand 2026-05-06):**
+Wenn ein Modul von BEIDEN Server Components UND Client Components importiert wird, verursacht es einen webpack-Factory-Fehler im Browser. Betroffene Module müssen entweder:
+- 'use client' haben UND nur in Client Components importiert werden (Server Components inlinen den Code)
+- ODER reine Server-Module sein (nie in Client importieren)
+Bekannte Fälle: `trend.ts` (formatRelativeDate → inline in IslandsRow), `SectionLabel.tsx` (→ nur in Client Components), `project-profiles.ts` (→ aufgeteilt in shared + server)
 
 ### Code-Regel: Domain-Pflichtfeld auf Rules
 
@@ -1114,6 +1125,7 @@ Letzte relevante Migrationen:
 | 20260417000113_beta_tables.sql | beta_waitlist (email/platform/message, RLS public insert + superadmin read) + beta_feedback (user_id/audit_run_id/ratings/message/platform) + user_preferences: beta_onboarding_done + is_beta_user |
 | 20260505000116_scan_project_profiles.sql | scan_project_profiles: profile_type_enum + geo_scope_enum + 5 Felder (profile_type, geo_scope, has_user_data, has_ai nullable, has_ecommerce nullable) + RLS org-scoped. ADR-027 Schritt 5. |
 | 20260505000117_audit_findings_killer_effort.sql | audit_findings: is_killer BOOLEAN + effort_minutes INTEGER (beide nullable, Heuristik-Fallback für alte Findings). ADR-027 Schritt 9a. |
+| 20260506000118_critical_findings_killer_coupling.sql | UPDATE audit_findings SET is_killer=true WHERE severity='critical'. Severity-Coupling: alle Critical-Findings nachträglich als Killer klassifiziert. ADR-027 Sprint 9-Critical-Killer. |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
