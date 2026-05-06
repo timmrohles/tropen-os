@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 next build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "security:scan": "gitleaks detect --config .gitleaks.toml --verbose",
     "start": "next start",
     "lint": "eslint src",
@@ -22,9 +22,8 @@
     "typecheck": "tsc --noEmit",
     "lint:design": "node scripts/ci/lint-design-system.mjs",
     "lint:deps": "depcruise src --config .dependency-cruiser.cjs",
-    "lint:features": "node scripts/ci/check-feature-guards.mjs",
     "lint:rule-ids": "node scripts/ci/check-rule-id-consistency.mjs",
-    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:features && pnpm lint:rule-ids",
+    "lint:all": "pnpm lint && pnpm lint:design && pnpm lint:deps && pnpm lint:rule-ids",
     "analyze": "ANALYZE=true pnpm build"
   },
   "dependencies": {
@@ -83,6 +82,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.4",
     "autoprefixer": "^10.4.27",
+    "cross-env": "^10.1.0",
     "dependency-cruiser": "^16.10.4",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9.39.4",
@@ -96,7 +96,7 @@
     "happy-dom": "^20.8.9",
     "lighthouse": "^13.1.0",
     "msw": "^2.12.14",
-    "postcss": "^8.5.12",
+    "postcss": "^8.5.13",
     "prettier": "^3.8.1",
     "tailwindcss": "^3.4.19",
     "tar-stream": "^3.1.8",

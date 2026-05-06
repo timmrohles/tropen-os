@@ -155,7 +155,7 @@ export default function QADashboard() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <ChartBar size={22} color="var(--text-primary)" weight="fill" />
+            <ChartBar size={22} color="var(--accent)" weight="fill" />
             QA & Observability
           </h1>
           <p className="page-header-sub">Modell-Routing, Bias-Evaluierungen, Lighthouse & Compliance</p>

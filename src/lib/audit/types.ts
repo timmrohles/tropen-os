@@ -48,6 +48,11 @@ export type AuditDomain =
   | 'dsgvo'           // DSGVO-Pflichten, Cookie-Consent, Datenexport
   | 'ki-act'          // EU AI Act, Risiko-Klassifizierung
   | 'documentation'   // README-Drift, ADRs, Changelog, KI-Kontext (ADR-026)
+  // Sprint 9b — neue Domain-Detektoren (ADR-027 Schritt 9)
+  | 'oss'             // Open-Source-Lizenzen, Copyleft-Detection
+  | 'marketing'       // Tracking-Libraries, Analytics-Detection
+  | 'platform'        // App Store (Capacitor, iOS, Android)
+  | 'infrastructure'  // Hosting-Konfiguration (Vercel, Netlify, Docker)
 
 export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
@@ -68,6 +73,12 @@ export interface Finding {
   fixType?: FixType
   /** True when filePath matches a frozenPath — finding will be auto-dismissed on persist */
   frozen?: boolean
+  /**
+   * Killer-Flag — ADR-027. Wenn true: Veröffentlichung blockiert.
+   * Nur 4 Detektoren setzen isKiller=true: Hardcoded Secrets, SQL-Injection,
+   * API-Routes ohne Auth, Open CORS. UI-Pivot in ADR-027 Schritt 6.
+   */
+  isKiller?: boolean
 }
 
 export interface RuleResult {
@@ -207,6 +218,13 @@ export interface AuditOptions {
   complianceProfile?: { app_type: string; user_location: string; features: string[] }
   /** Path prefixes for inactive/frozen features — findings from these paths are auto-dismissed */
   frozenPaths?: string[]
+  /**
+   * ADR-027 Schritt 9a — DomainActivation aus Profil.
+   * Compliance-Domänen mit 'inactive' werden nicht ausgeführt.
+   * Universal-Domänen (code-quality, performance, security, documentation) immer aktiv.
+   * LAZY = heute wie active (Code-Marker-Erkennung kommt mit Sprint 9b).
+   */
+  domainActivation?: Record<string, 'active' | 'lazy' | 'inactive'>
 }
 
 /** Category metadata — weights match the manual audit report */

@@ -120,7 +120,7 @@ export default function ProjectsPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <FolderOpen size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <FolderOpen size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('title')}
           </h1>
           <p className="page-header-sub">{t('subtitle')}</p>

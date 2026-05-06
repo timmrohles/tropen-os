@@ -217,7 +217,7 @@ export default function PerspectivesPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <Eye size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <Eye size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('perspectives.title')}
           </h1>
           <p className="page-header-sub">{t('perspectives.subtitle')}</p>

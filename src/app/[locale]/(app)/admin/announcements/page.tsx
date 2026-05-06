@@ -140,7 +140,7 @@ export default function OrgAnnouncementsPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <Megaphone size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <Megaphone size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             Neuigkeiten für dein Team
           </h1>
           <p className="page-header-sub">Informiere dein Team über wichtige Updates</p>

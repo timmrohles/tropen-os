@@ -14,6 +14,11 @@ export const ALL_DOMAINS: AuditDomain[] = [
   'dsgvo',
   'ki-act',
   'documentation',
+  // Sprint 9b — neue Domain-Detektoren
+  'oss',
+  'marketing',
+  'platform',
+  'infrastructure',
 ]
 
 export function getDomainForRule(ruleId: string): AuditDomain {
@@ -40,6 +45,10 @@ export function getDomainCounts(
     'dsgvo': 0,
     'ki-act': 0,
     'documentation': 0,
+    'oss': 0,
+    'marketing': 0,
+    'platform': 0,
+    'infrastructure': 0,
   }
   for (const f of open) {
     const domain = getDomainForRule(f.rule_id as string)

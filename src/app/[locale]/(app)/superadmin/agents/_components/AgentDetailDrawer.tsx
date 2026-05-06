@@ -95,7 +95,7 @@ export function AgentDetailDrawer({ agent, onClose }: Props) {
         <div style={s.header}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <Robot size={20} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+              <Robot size={20} color="var(--accent)" weight="fill" aria-hidden="true" />
               <h2 style={s.title}>{agent.name}_AGENT</h2>
               <AgentHealthBadge status={agent.status as AgentStatus} lastCheckAt={agent.lastCheckAt} />
             </div>

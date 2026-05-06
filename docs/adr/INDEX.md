@@ -32,10 +32,11 @@
 | ADR-024 | `024-marken-pivot.md` | Marken-Pivot: Coach-Position + Schiefer-Limette-Welt | Accepted |
 | ADR-025 | `ADR-025-tab-architektur.md` | Strategische Tab-Architektur und Compliance-Strategie | Accepted |
 | ADR-026 | `ADR-026-doku-hygiene-tab.md` | Doku-Hygiene als siebter Domain-Tab | Draft (24h-Wartezeit) |
+| ADR-027 | `027-killer-kriterien-score-pivot.md` | Killer-Kriterien als primäres Coach-Signal (Update 2026-05-05: Compliance-Domänen) | Accepted |
 
 ## Konventionen
 
 - **Dateiname ist die Wahrheit.** Bei Widerspruch zwischen Dateiname und H1-Header gilt der Dateiname.
 - **Neue ADRs:** Format `NNN-kebab-case-titel.md`, interne H1 = `# ADR-NNN: Titel`.
-- **Nächste freie Nummer:** 027
+- **Nächste freie Nummer:** 028
 - **Status-Werte:** `Proposed` → `Accepted` | `Superseded` | `Deprecated` | `Draft`

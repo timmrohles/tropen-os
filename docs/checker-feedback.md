@@ -3,6 +3,8 @@
 > Strukturiertes Tracking aller Checker-Verbesserungen.
 > Jeder Eintrag hat ein GitHub Issue.
 > Ziel: False-Positive-Rate <10% (MVP), <5% (Year 1).
+>
+> **Hinweis:** Strukturelle Verbesserung dieser FP-Behandlung (Checker-Korrektur und/oder UI-Markierung) ist im Roadmap-Backlog dokumentiert — siehe Backlog-Eintrag "P4-Pattern für 410-Only-Routes" und "Stop-and-think im Fix-Prompt-Format" in `docs/product/roadmap-2026-q2.md`.
 
 ## Metriken
 
@@ -60,3 +62,250 @@ gemeldet werden. Werden priorisiert gefixt.
 5. Fix gegen Test-Repos pruefen (keine neuen FPs erzeugen)
 6. Eintrag in diesem Log ergaenzen
 7. Bei Beta: "Finding falsch?"-Button-Feedback ebenfalls hier einpflegen
+
+## Known Debt — Bewusste Ausnahmen (kein Fix geplant)
+
+Diese Findings sind echte Findings, werden aber bewusst nicht behoben. Begründung dokumentiert.
+
+| Datum | Regel-ID | Finding | Bewusste Ausnahme | Begründung |
+|-------|----------|---------|-------------------|------------|
+| 2026-05-04 | `cat-1-rule-10` | 68 oversized components | ~60% sind eingefrorene Phase-4-Dateien (agenten, feeds, workspaces, chat, perspectives) | Frozen-Code wird in Phase 4 entschieden (re-aktivieren / löschen / selektiv). Kein Refactoring an eingefrorenen Dateien vor dieser Entscheidung. |
+| 2026-05-04 | `cat-2-rule-12` | 48 functions mit hohem CC | Gleiche Ursache: frozen Phase-4-Dateien | s.o. |
+| 2026-05-04 | `cat-10-rule-5` | Test-Coverage < 80% | Known seit Projektstart | Phase 2.5 Sub-Item 3 adressiert das. Bis dahin: bewusst belassen. Ziel 30% für kritische Pfade (Top-Issues-Eintrag). |
+| 2026-05-04 | `cat-11-rule-4` | Kein Terraform/Pulumi | Vercel-native IaC via vercel.json ist die bewusste Strategie | vercel.json deckt alle Deployment-Konfigurationen ab. Terraform wäre Over-Engineering für Vercel-native-Stack. |
+
+## False Positives — neu identifiziert (Dogfooding 2026-05-04)
+
+| Datum | Regel-ID | FP-Beschreibung | Reproduzierbar | Fix-Aufwand |
+|-------|----------|----------------|----------------|-------------|
+| 2026-05-04 | `cat-12-rule-6` | `console.*` in String-Literalen (Prompt-Texte in finding-recommendations.ts) | Ja | Klein — String-Content vor Regex-Match ausschließen (P4-Pattern) |
+| 2026-05-04 | `cat-3-rule-15` | 410-Only-Routes ohne Auth-Check gemeldet (audit/tasks/*) | Ja | Klein — Routes mit ausschließlich Error-Response-Body excluden |
+
+## Killer-Detektoren — bekannte FPs und Allowlists (Stand 2026-05-04)
+
+### Hardcoded Secrets — scripts/ Ausnahme
+`src/scripts/` ist global aus dem Hardcoded-Secrets-Killer-Detektor excludiert.
+Begründung: CLAUDE.md — "src/scripts/ use direct API keys (not AI Gateway) — gateway billing not configured."
+Bei Migration zu Vercel AI Gateway billing kann diese Allowlist in `security-scan-checker.ts` angepasst werden.
+
+### Auth-Check — Beta-Waitlist und Stub-Routes
+`/api/beta/waitlist` ist explizit als intentionally-public in der publicPrefixes-Allowlist.
+410/404/501-Only-Routes werden per Stub-Erkennung excludiert (File-Content-Check mit fs-Fallback).
+Fix 2026-05-04: `ctx.fileContents?.get(f.path)` hatte keinen Fallback bei Standard-Audit-Runs —
+jetzt: `ctx.fileContents?.get(f.path) ?? readFileSafe(ctx.rootPath, f.path)`.
+
+### SQL-Injection — Drizzle sql-Tag ist safe
+Drizzle `sql\`...\`` tagged template ist parametrisiert. Pattern `sqli-template` excludiert migrations/.
+Supabase QB (.from, .eq, .filter) ist safe — kein Raw-SQL, wird nicht gemeldet.
+
+## Dependency-Scanner — Killer-Detektor (Stand 2026-05-04)
+
+### Nur patchbare CVEs werden Killer
+ADR-027 definiert "ungepatchte kritische Dependencies (CVSS >9)" als Killer.
+Implementierung: nur CVEs mit `patched_versions !== '<0.0.0'` bekommen `isKiller: true`.
+Begründung: Killer ohne Action-Pfad ist frustrierend — User braucht konkretes Update-Target.
+Unpatchbare Critical-CVEs → Polish-Findings mit high-Severity.
+
+### DevDependencies excluded via --prod
+`pnpm audit --prod` excludiert alle devDependencies aus dem Killer-Detektor.
+Begründung: kein Production-Risiko.
+
+### moderate CVEs unter CVSS 9 = Polish, nicht Killer
+Tropen OS hat 3 moderate CVEs (uuid, postcss, @anthropic-ai/sdk) mit CVSS 0–6.1.
+Diese erscheinen als Polish-Findings (medium severity), blockieren nicht die Veröffentlichung.
+Update-Empfehlung: pnpm update wird als suggestion mitgegeben.
+
+## CVE-Hygiene 2026-05-04 — 3 transitive moderate CVEs (accepted)
+
+| Paket | CVSS | Blockiert durch | Re-Check |
+|-------|------|----------------|----------|
+| uuid@10 | 0 | langsmith@0.5.20 + resend/svix (brauchen uuid >=14) | 2026-07-04 |
+| postcss@8.4.31 | 6.1 | next@15.5.15 (Next.js bundelt postcss, Patch-Release ausstehend) | 2026-07-04 |
+| @anthropic-ai/sdk@0.81.x | 0 | transitive Pfad, Upstream-Update abwarten | 2026-07-04 |
+
+Alle CVSS ≤ 6.1 → keine Killer, kein User-Daten-Risiko.
+Kein manueller pnpm override — würde next.js-Deps destabilisieren.
+
+**Re-Check 2026-07-04:** `pnpm audit --prod` laufen lassen. Wenn CVEs noch offen:
+Upstream-Changelog prüfen, dann entweder erneut akzeptieren oder fixen.
+
+## Build-Check — Performance-Hinweis (Stand 2026-05-04)
+
+Production-Build-Check (`cat-3-rule-build`) läuft bei jedem Audit als Killer-Detektor.
+Implementierung: `cliChecks.checkProductionBuild` in `cli-checker.ts`, registriert in `rule-registry.ts`.
+Timeout: 3 Minuten. CI=true. NODE_OPTIONS via subprocess env (cross-platform).
+
+Windows-Fix: Build-Script in package.json auf `cross-env NODE_OPTIONS=... next build` umgestellt
+(war: `NODE_OPTIONS=... next build` — funktioniert nur auf Unix, nicht auf Windows-Shell).
+
+Gleichzeitig: isKiller-Logik auch in `checkNpmAudit` (external-tools-checker.ts) ergänzt —
+der registrierte Checker für cat-3-rule-7 ist dort, nicht in cli-checker.ts.
+
+## Build-Check — Timeout-Anpassung (Stand 2026-05-04)
+
+**Anlass:** Self-Audit zeigte cat-3-rule-build mit ETIMEDOUT (FP).
+- Build-Zeit Tropen OS: ~210s
+- Vorheriger Timeout: 180s → **Neuer Timeout: 300s**
+
+**Plus:** `sentry.client.config.ts` gelöscht — produzierte Deprecation-Warning in Next.js 15.5,
+nicht mehr nötig da `src/instrumentation-client.ts` die Sentry-Initialisierung übernimmt.
+
+**Re-Check:** wenn Build-Zeiten weiter steigen, separater Sprint zu Build-Optimierung.
+
+## Config-Analyzer — Allowlists (Stand 2026-05-04)
+
+### DB-SSL Detektor (config-killer-db-ssl)
+- localhost / 127.0.0.1 / 0.0.0.0 Hosts → kein Killer
+- `.env.local`, `.env.development`, `.env.test` excludiert
+- Variablen mit `_DEV_`, `_TEST_`, `_LOCAL_` excludiert
+- Unbekannter DB-Typ → konservativ kein Killer (FN besser als FP)
+
+### Dev-Secrets Detektor (config-killer-dev-secret)
+- `pk_test_*` (Stripe publishable) erlaubt — public by design
+- Production-Filter: `.env.production` und `.env`
+- Test-Dateien excludiert
+
+### HTTPS Detektor (config-killer-https)
+- Platform-IaC-Whitelist: vercel.json/netlify.toml/fly.toml/railway.toml+json/render.yaml
+- Tropen OS hat vercel.json → kein Killer (erwartet)
+- Custom-Detection als Fallback: middleware.ts, next.config.*, server.*
+
+---
+
+## Profile-Onboarding (Stand 2026-05-05, Sprint 5)
+
+Sprint 5 abgeschlossen. 3 Pflichtfragen + 2 empfohlene + Wizard-Modus, Persistenz mit Historie in `scan_project_profiles`.
+
+### Bekannte Limitierungen
+
+**LAZY-Detection nicht aktiv:** Detektoren konsumieren `DomainActivation` noch NICHT. Aktuell läuft jeder Detektor wie vorher (alle aktiv für alle Profile). `getDomainActivation()` in `src/lib/audit/project-profiles.ts` speichert die Activation-Info, aber erst mit Schritt 9 (ADR-027) wird sie von den Detektoren konsumiert.
+
+**Konsequenz:** Solo-Projekt-User sehen aktuell dieselben Findings wie B2B-Regulated. Profil-Auswahl beeinflusst nur die Datenbank, nicht den Audit-Output.
+
+**Re-Check:** mit Implementation von Schritt 9 (Domain-Detektoren).
+
+### Migration bestehender Projekte
+
+Default beim ersten Audit nach Sprint 5: B2C-App + EU (Modal mit Pre-Fill). User kann anpassen.
+
+Coach-Wording bei Pre-Fill: "Wir haben ein paar Annahmen für dich getroffen. Bitte prüfe, ob das stimmt."
+
+### Modal-Loop-Sicherung
+
+`profileJustSet`-Override-State in `AuditActions.tsx` verhindert Re-Open des Modals zwischen User-Submit und Server-State-Refresh (bevor Next.js Router den `needsOnboarding`-Prop aktualisiert).
+
+
+---
+
+## Sprint 9-Polish-1/2/3 — Abschluss UI-Pivot-Runde (Stand 2026-05-05)
+
+### 9-Polish-1 (Hybrid-Badge + Auto-Skip + 0-Dateien)
+- Hybrid-Badge: 🟡 "Veröffentlichbar mit Polish-Bedarf" bei 0 Killer + Polish < 70%
+- Auto-Skip-Sektion als Info-Block (Marken-Brief 28.6)
+- 0-Dateien-Stale-Data: file_count=0 mit last_scan_at → Score trotzdem zeigen
+- POLISH_THRESHOLD = 70 in KillerStatusBadge.tsx
+
+### 9-Polish-2 (Pattern-Cluster + KI-Optik + Aufwand-Klassen)
+- Pattern-Cluster: Findings mit gleichem rule_id → "X Dateien betroffen" (collapsed)
+- KI-Optik raus: "Empfohlen zuerst" = linker Border-Strich (var(--teal)), kein blauer Hintergrund
+- Aufwand-Klassen: Quick Win / Mittel / Größer (keine Minuten-Schätzungen — Marken-Brief 28.1)
+- Sortierung intern weiterhin minutenbasiert
+
+### 9-Polish-3 (Score-Header + Mini-Status + Compliance-Visual)
+- Score-Header: "Veröffentlichungs-Check", 60/40-Layout
+- Links: Killer-Badge + 3 Coach-Subtext-Varianten + Polish-Score
+- Rechts (nur bei Scan-Projekten): "Was wir von dir brauchen" — Mini-Status DSGVO/KI-Act/Lighthouse mit Scroll-Anchors
+- Doppel-Icon-Fix: Note-Icon entfernt, nur 📋 als Marker
+- Compliance-Blöcke: weißer Hintergrund, neutrale Border (kein gelblicher Tint)
+- "Top 14%" entfernt (kein klarer Bezugspunkt)
+- Scroll-Anchors: #dsgvo-stamm-daten, #eu-ai-act, #lighthouse-url
+
+### Sichtbarkeits-Logik Compliance-Blöcke (final)
+- DSGVO + KI-Act: immer sichtbar wenn kein Chip aktiv (Selbst-Auskunft unabhängig von Findings)
+- Lighthouse: nur wenn Performance-Chip aktiv ODER Performance-Findings vorhanden
+- Pattern-Cluster sichtbar wenn findings > 0 in der Sektion
+
+### 9-Polish-3-Inseln (Drei Inseln oberhalb Findings, 2026-05-06)
+ScoreBar (60/40 AppSection) ersetzt durch drei separate helle Insel-Karten.
+
+**KillerStatusIsland (Insel 1)**
+- KillerStatusBadge (full) + Coach-Subtext (3 Varianten) + Projekt/Zeit-Kontext
+- Keine Subcounts/Zahlen-Kennzahlen (Coach-Position 28.1)
+
+**PolishScoreIsland (Insel 2)**
+- Score 28px + Trend-Delta (TrendUp/TrendDown Icons + %-Wert)
+- Drei UI-Zustände: First-Audit ("Baseline") / Stable ("Stabil") / Up|Down ("vs. letzter Audit")
+- Trend-Schwelle ±1% (src/lib/audit/trend.ts, TREND_THRESHOLD=1)
+- "4 Modelle"-Badge bei Multi-Model-Review
+
+**SelfInputIsland (Insel 3)**
+- Nur bei externen Scan-Projekten (hasProject + complianceData vorhanden)
+- Drei Mini-Status-Zeilen mit 📋 + Scroll-Anchor-Links (#dsgvo-stamm-daten, #eu-ai-act, #lighthouse-url)
+- Ohne Projekt: Placeholder mit dashed Border + Hinweis
+
+**Compliance-Blöcke-Polish**
+- Gelbe Border-Color (rgba(229,160,0,0.30)) → var(--border) (sachlicher)
+- IDs und Scroll-Anchors waren bereits vorhanden
+
+**Neue Dateien:** src/lib/audit/trend.ts, _components/IslandsRow.tsx
+
+### 9-Polish-3-FIX (Compliance-Blöcke + Visuelle Angleichung, 2026-05-06)
+
+**Root cause:** DSGVO/KI-Act-Blöcke waren nicht gelöscht, sondern durch zwei Bedingungen versteckt:
+1. `showDsgvo`/`showKiAct` wurden fälschlicherweise durch aktiven Category-Filter deaktiviert
+2. `{projectId && ...}` Guard hält sie bei internem Audit verborgen (Design-Entscheidung, kein Bug)
+
+**Fix 1 — Compliance-Blöcke:** `showDsgvo = true`, `showKiAct = true` — immer sichtbar für externe Projekte, unabhängig von aktivem Filter.
+
+**Fix 2 — Insel 3:** `IslandPlaceholder` entfernt. `SelfInputIsland` immer gerendert (auch bei 0/5, 0/4). Bei fehlendem externem Projekt: Hinweis "Verbinde ein externes Projekt..." als Fußnote, Links bleiben klickbar.
+
+**Fix 3 — Visuelle Angleichung:**
+- KillerStatusIsland: `KillerStatusBadge` (mit Rahmen) → großes Icon+Label ohne Border-Box, zentriert. Farben: Türkis (Veröffentlichbar), Amber (Polish-Bedarf), Rot (Stopper)
+- PolishScoreIsland: Score-Zahl in `var(--teal)` (Türkis), "Polish"-Label grau, zentriert
+- `.islands-row`: `align-items: stretch` → alle Inseln gleiche Höhe
+- `.island--centered`: neue CSS-Klasse für zentriertes Layout (Inseln 1+2)
+- `.island`: `display: flex; flex-direction: column` für gleichmäßige Höhe
+
+### 9-Polish-4 — Detail-Fixes Audit + SectionLabel-Sweep (Stand 2026-05-06)
+
+**SectionLabel als Reusable Component:** `src/components/ui/SectionLabel.tsx`
+- Mono-Font 12px, `var(--accent)`, 28px-Linie, marginBottom 20
+- Visual 1:1 aus Dashboard-Pattern extrahiert
+
+**Sweep:** Dashboard (extrahiert), Audit (neu), audit/scan/ProjectList (h2 → SectionLabel)
+
+**Detail-Fixes Audit-Seite:**
+- Page-Subtext `t('subtitle')` entfernt
+- SectionLabel "Audit für [Projektname]" über IslandsRow
+- Insel 1: Projektname + lastRunAt-Footer entfernt (stand jetzt im SectionLabel)
+- `projectName`/`lastRunAt` Props aus IslandsRow-Interface entfernt
+- Insel 2: "Polish"-Label hinter Score entfernt
+- Insel 3: 📋-Icons aus Mini-Status-Zeilen entfernt; Label jetzt zentriert (`alignSelf: 'center'`)
+- Text in Insel 1+2 Subtext: `var(--text-secondary)` statt `var(--text-tertiary)` (dunkler, stärker)
+
+### Sprint 9-Critical-Killer + Findings-Order (Stand 2026-05-06)
+
+**Severity-Coupling:**
+- `shouldBeKiller(severity, ruleId)` in `killer-rule-ids.ts` — einziger Entscheidungspunkt
+- `severity='critical'` → automatisch Killer (agent-regulatory, ast-quality-checker hatten Critical ohne isKiller)
+- Trigger-Route: `is_killer: shouldBeKiller(f.severity, f.ruleId)` (statt `f.isKiller ?? null`)
+- page.tsx-Fallback: `shouldBeKiller(severity, rule_id)` (statt `isKillerByRuleId`)
+
+**DB-Migration 20260506000118:** Critical-Findings auf is_killer=true gesetzt
+
+**Findings-Sektionen:**
+- STOPPER: alle is_killer=true, nach Severity sortiert
+- EMPFOHLEN ZUERST: Top 10 non-Killer, Severity-Pyramide + Quick Wins bei Gleichstand
+- WEITERE: Rest mit Severity-Sub-Sektionen (Hoch/Mittel/Niedrig) via SectionLabel-Trenner
+- Pattern-Cluster funktioniert innerhalb jeder Sub-Sektion
+
+### Sprint Top-10-Bundle (Stand 2026-05-06)
+
+Fix-Session-Bundle für "EMPFOHLEN ZUERST"-Sektion eingeführt.
+
+**Bundle-Button:** rechts im Sektions-Header, `btn-primary` Türkis-Stil, nur sichtbar wenn Findings vorhanden
+**Modal:** öffnet sich inline, dark background für Prompt, Copy-Button mit Feedback, Escape/Klick-auf-Backdrop schließt
+**API:** existierende `/api/audit/fix-session` (nimmt findingIds, file-grouped Output via buildFixPrompt)
+**GlobalQuickWinsBar:** gelöscht (war nicht gerendert; Top-10-Bundle ersetzt das BP8-Versprechen)
+**FindingSection-Header:** von `<button>`-Wrapper zu `<div>` umgebaut (bundle + toggle als separate Buttons)
+**Re-generate:** Prompt wird nur einmal generiert pro Session-State; bei Schließen/Öffnen kein neuer API-Call

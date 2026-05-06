@@ -19,6 +19,8 @@ interface SecurityPattern {
   message: string
   exploitability: string
   suggestion: string
+  /** ADR-027 Killer-Flag — wenn true: isKiller=true auf allen Findings dieses Patterns */
+  isKiller?: boolean
 }
 
 // Helper: read file safely
@@ -65,6 +67,7 @@ function scanPatterns(
           line: i + 1,
           suggestion: p.suggestion,
           agentSource: 'security-scan',
+          ...(p.isKiller ? { isKiller: true } : {}),
         })
         break // one finding per pattern per file
       }
@@ -100,14 +103,19 @@ function makeResult(
 
 const INJECTION_PATTERNS: SecurityPattern[] = [
   {
+    // isKiller=true — SQL-Injection durch String-Interpolation (ADR-027 Universal-Killer).
+    // Drizzle sql-Tagged-Template ist parametrisiert (safe) — wird per Import-Detection excludiert.
+    // Supabase QB (.from, .eq, .filter) ist safe — kein Raw-SQL.
+    // Strategie: docs/audit-reports/killer-detector-strategies-2026-05-04.md
     id: 'sqli-template',
     severity: 'critical',
     pattern: /\.(?:query|execute|raw)\s*\(\s*`[^`]*\$\{/,
     fileGlob: ['.ts', '.js'],
-    excludePattern: /\.(?:test|spec)\./,
+    excludePattern: /\.(?:test|spec)\.|[\\/]migrations[\\/]/,
     message: 'SQL/DB query built with template literal interpolation (SQL Injection risk)',
     exploitability: 'Attacker can inject arbitrary SQL commands',
     suggestion: 'Use parameterized queries: db.query("SELECT ... WHERE id = $1", [id])',
+    isKiller: true,
   },
   {
     id: 'nosql-injection',
@@ -193,19 +201,19 @@ const INJECTION_PATTERNS: SecurityPattern[] = [
 
 const AUTH_PATTERNS: SecurityPattern[] = [
   {
+    // isKiller=true — Hardcoded Secrets im Production-Code (ADR-027 Universal-Killer).
+    // src/scripts/ GLOBAL excludiert: CLAUDE.md — scripts use direct API keys,
+    // gateway billing not configured. Publishable Keys (pk_live_, NEXT_PUBLIC_*) erlaubt.
+    // Strategie: docs/audit-reports/killer-detector-strategies-2026-05-04.md
     id: 'hardcoded-secret',
     severity: 'critical',
-    // Requires: security keyword + assignment operator + quoted value (8+ non-space chars).
-    // This already avoids most natural-language false positives (no quotes after the keyword).
-    // Additional exclusion: agent-gen definition scripts embed engineering-standard rules as
-    // template-string literals — their text contains "Secret-Rewrite", "Service Role Key" etc.
-    // as documentation vocabulary, not credential assignments. (checker-feedback.md 2026-04-22)
     pattern: /(?:password|secret|api_?key|jwt_?secret|access_?token|private_?key|client_?secret)\s*[:=]\s*['"][^'"${\s]{8,}['"]/i,
     fileGlob: ['.ts', '.js', '.json', '.yml', '.yaml', '.env'],
-    excludePattern: /(?:\.(?:test|spec|example)|node_modules|\.env\.example|[\\/]scripts[\\/]agent-gen)/,
+    excludePattern: /(?:\.(?:test|spec|example)|node_modules|\.env\.example|[\\/]src[\\/]scripts[\\/]|[\\/]scripts[\\/])/,
     message: 'Potential hardcoded secret or credential in source code',
     exploitability: 'Any code access (breach, leak, disgruntled employee) gives attacker valid credentials',
     suggestion: 'Move to environment variable; rotate the exposed credential immediately',
+    isKiller: true,
   },
   {
     id: 'localstorage-token',

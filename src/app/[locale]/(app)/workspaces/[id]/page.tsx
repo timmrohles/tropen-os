@@ -110,7 +110,7 @@ export default function WorkspaceDetailPage() {
           <h1 className="page-header-title">
             {ws.emoji
               ? <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">{ws.emoji}</span>
-              : <SquaresFour size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+              : <SquaresFour size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             }
             {ws.title}
           </h1>

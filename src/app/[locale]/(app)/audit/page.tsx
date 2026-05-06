@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { ShieldCheck, ArrowLeft } from '@phosphor-icons/react/dist/ssr'
+import { ClipboardText } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getTranslations, getLocale } from 'next-intl/server'
@@ -10,41 +10,30 @@ import {
   fetchAuditFindings,
   fetchScanProjects,
 } from '@/lib/audit/page-data'
-import { Link } from '@/i18n/navigation'
+import { getActiveScanProjectProfile } from '@/lib/audit/project-profiles'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { findRecommendation } from '@/lib/audit/finding-recommendations'
-import { getGlobalQuickWinClusters } from '@/lib/audit/quick-wins'
-import GlobalQuickWinsBar from './_components/GlobalQuickWinsBar'
-import { getDomainCounts, getFindingsByDomain, ALL_DOMAINS } from '@/lib/audit/domain-filter'
-import { getPercentileRank } from '@/lib/audit/score-percentile'
-import type { AuditDomain } from '@/lib/audit/types'
-import { DomainEmptyState } from './_components/DomainEmptyState'
+
+import { shouldBeKiller, effortMinutesFromFixType } from '@/lib/audit/killer-rule-ids'
+import { getDomainForRule } from '@/lib/audit/domain-filter'
 import BetaFeedbackButton from './_components/BetaFeedbackButton'
-import ScoreBar from './_components/ScoreBar'
 import AuditActions from './_components/AuditActions'
-import { AppTabs } from '@/components/app-ui/AppTabs'
-import { AppSection } from '@/components/app-ui/AppSection'
-import FindingsTableApp from './_components/FindingsTableApp'
-import { DsgvoTab } from './_components/DsgvoTab'
-import { KiActTab } from './_components/KiActTab'
-import { PerformanceTab } from './_components/PerformanceTab'
-export const metadata = { title: 'Code Audit — Tropen OS' }
+import { IslandsRow } from './_components/IslandsRow'
+import { AuditFindingsClient } from './_components/AuditFindingsClient'
+import { calculateScoreTrend } from '@/lib/audit/trend'
+export const metadata = { title: 'Audit' }
 
 interface PageProps {
   searchParams: Promise<{
-    runId?: string; status?: string; severity?: string; agent?: string; project?: string
-    tab?: string  // ← domain tab
+    runId?: string; status?: string; project?: string
   }>
 }
 
 export default async function AuditPage({
   searchParams }: PageProps) {
   const locale = await getLocale()
-  const { runId: requestedRunId, status: statusParam, project: projectParam, tab: tabParam } = await searchParams
+  const { runId: requestedRunId, status: statusParam, project: projectParam } = await searchParams
   const status = statusParam ?? 'open'
-  const activeTab: AuditDomain = (ALL_DOMAINS as string[]).includes(tabParam ?? '')
-    ? (tabParam as AuditDomain)
-    : 'code-quality'
 
   const t = await getTranslations('audit')
   const supabase = await createClient()
@@ -78,6 +67,7 @@ export default async function AuditPage({
   let runDetail: Record<string, unknown> | null = null
   let findings: unknown[] = []
   let delta: number | null = null
+  let prevRun: { percentage: number; created_at: string } | null = null
 
   if (selectedRunId) {
     ;[runDetail, findings] = await Promise.all([
@@ -87,7 +77,7 @@ export default async function AuditPage({
 
     if (runDetail && runList.length > 1) {
       const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
-      const prevRun = currentIdx >= 0 ? runList[currentIdx + 1] : null
+      prevRun = currentIdx >= 0 ? runList[currentIdx + 1] ?? null : null
       if (prevRun) {
         delta = (runDetail.percentage as number) - prevRun.percentage
       }
@@ -97,18 +87,19 @@ export default async function AuditPage({
   // Enrich findings server-side: fixType (Node.js only) + recommendation title/problem
   // _recTitle / _recProblem prevent finding-recommendations.ts from entering the client bundle.
   // Memoize per ruleId — most findings share the same ruleId, avoiding O(n×m) regex scans.
-  const recCache = new Map<string, { title: string; problem: string } | null>()
+  const recCache = new Map<string, { title: string; problem: string; limitation?: string } | null>()
   const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
     f.fix_type = getFixType(f.rule_id as string)
     const ruleId = f.rule_id as string
     if (!recCache.has(ruleId)) {
       const rec = findRecommendation(ruleId, f.message as string)
-      recCache.set(ruleId, rec ? { title: rec.title, problem: rec.problem } : null)
+      recCache.set(ruleId, rec ? { title: rec.title, problem: rec.problem, limitation: rec.limitation ?? undefined } : null)
     }
     const cached = recCache.get(ruleId)
     if (cached) {
       f._recTitle = cached.title
       f._recProblem = cached.problem
+      if (cached.limitation) f._limitation = cached.limitation
     }
     return f
   })
@@ -119,37 +110,63 @@ export default async function AuditPage({
   const activeProject = activeScanProjectId
     ? scanProjects.find((p) => p.id === activeScanProjectId) ?? null
     : null
-  const activeProjectName = activeProject?.name ?? 'Tropen OS'
-  const initialLighthouseUrl = (activeProject as { live_url?: string | null } | null)?.live_url ?? null
+const initialLighthouseUrl = (activeProject as { live_url?: string | null } | null)?.live_url ?? null
+
+  // Profile-Onboarding: prüfen ob ext. Scan-Projekt ein Profil hat
+  let needsOnboarding = false
+  let isExistingProject = false
+  let scanProjectProfile: import('@/lib/audit/project-profiles').ScanProjectProfile | null = null
+  if (activeScanProjectId) {
+    scanProjectProfile = await getActiveScanProjectProfile(activeScanProjectId)
+    needsOnboarding = scanProjectProfile === null
+    isExistingProject = needsOnboarding && runList.length > 0
+  }
 
   // Detect if the latest run has Lighthouse data (any finding with lighthouse-* agent_source)
   const hasLighthouseData = (findings as { agent_source?: string }[]).some(
     (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
   )
-  // Quick wins (server-side computation)
-  const quickWinClusters = getGlobalQuickWinClusters(allFindings)
+
+  // Sprint 6b₁ — Compliance-Daten laden (für Compliance-Blöcke)
+  let complianceData: Record<string, unknown> = {}
+  if (activeScanProjectId) {
+    const { data: complianceRows } = await supabaseAdmin
+      .from('project_compliance_data')
+      .select('question_key, question_value')
+      .eq('project_id', activeScanProjectId)
+    if (complianceRows) {
+      complianceData = Object.fromEntries(
+        complianceRows.map(r => [r.question_key as string, r.question_value])
+      )
+    }
+  }
+
+  // Sprint 9a — DB-Werte bevorzugen, Heuristik als Fallback für alte Findings (NULL-Spalten)
+  const enrichedFindings = allFindings.map(f => ({
+    ...f,
+    is_killer: (f as Record<string, unknown>).is_killer != null
+      ? Boolean((f as Record<string, unknown>).is_killer)
+      : shouldBeKiller(f.severity as string, f.rule_id as string),
+    effort_minutes: (f as Record<string, unknown>).effort_minutes != null
+      ? Number((f as Record<string, unknown>).effort_minutes)
+      : effortMinutesFromFixType(f.fix_type as string | null),
+    domain: getDomainForRule(f.rule_id as string),
+  }))
+
+  const killerCount = enrichedFindings.filter(f => {
+    const status = (f as Record<string, unknown>).status as string | undefined
+    return (status === 'open' || status === 'acknowledged') && f.is_killer
+  }).length
 
   return (
     <div className="content-max">
-      {/* ── Breadcrumb ──────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 8 }}>
-        <Link
-          href="/dashboard"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
-        >
-          <ArrowLeft size={13} weight="bold" aria-hidden="true" />
-          {t('backToDashboard')}
-        </Link>
-      </div>
-
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <ShieldCheck size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
-            {activeProjectName}
+            <ClipboardText size={30} color="var(--accent)" weight="fill" aria-hidden="true" />
+            Audit
           </h1>
-          <p className="page-header-sub">{t('subtitle')}</p>
         </div>
         <div className="page-header-actions">
           <AuditActions
@@ -159,6 +176,8 @@ export default async function AuditPage({
             scanProjectId={activeScanProjectId}
             initialLighthouseUrl={initialLighthouseUrl}
             isVercelEnv={!!process.env.NEXT_PUBLIC_VERCEL_ENV}
+            needsOnboarding={needsOnboarding}
+            isExistingProject={isExistingProject}
           />
         </div>
       </div>
@@ -166,7 +185,7 @@ export default async function AuditPage({
       {/* ── No runs yet ─────────────────────────────────────────────────── */}
       {!hasRuns && (
         <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <ShieldCheck size={40} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
+          <ClipboardText size={40} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 12, marginBottom: 4 }}>
             {activeScanProjectId ? t('noRunsYetProject') : t('noRunsYet')}
           </p>
@@ -177,123 +196,41 @@ export default async function AuditPage({
       )}
 
       {/* ── Run data ────────────────────────────────────────────────────── */}
-      {hasRuns && runDetail && (() => {
-        const domainCounts = getDomainCounts(allFindings)
-        const activeFindings = getFindingsByDomain(allFindings, activeTab)
-        const hasDsgvoDanger = domainCounts['dsgvo'] > 0
-        const hasKiActDanger = domainCounts['ki-act'] > 0
+      {hasRuns && runDetail && (
+        <>
+          {/* ── Section-Label über den Inseln ───────────────────────── */}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 12,
+            fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+            color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
+          }}>
+            <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} aria-hidden="true" />
+            Audit für {runDetail.project_name as string}
+          </span>
 
-        const domainLabel = (d: AuditDomain): string => ({
-          'code-quality': 'Code-Qualität', 'performance': 'Performance',
-          'security': 'Sicherheit', 'accessibility': 'Barrierefreiheit',
-          'dsgvo': 'DSGVO', 'ki-act': 'KI-Act', 'documentation': 'Doku-Hygiene',
-        }[d])
+          {/* ── SECTION 2: Drei Inseln (BP-9-Polish-3-Inseln) ─────────── */}
+          <IslandsRow
+            killerCount={killerCount}
+            polishScore={runDetail.percentage as number}
+            trend={calculateScoreTrend(runDetail.percentage as number, prevRun, isFirstRun)}
+            complianceData={activeScanProjectId ? complianceData : undefined}
+            lighthouseUrl={initialLighthouseUrl}
+            hasProject={!!activeScanProjectId}
+            isMultiModelReview={(runDetail.review_type as string | null) === 'multi_model'}
+          />
 
-        const tabHref = (domain: AuditDomain): string => {
-          const params = new URLSearchParams()
-          params.set('tab', domain)
-          if (selectedRunId) params.set('runId', selectedRunId)
-          if (activeScanProjectId) params.set('project', activeScanProjectId)
-          return `?${params.toString()}`
-        }
-
-        return (
-          <>
-            {/* ── SECTION 2: Score-Hero ───────────────────────────────── */}
-            <div id="audit-score-hero">
-              <ScoreBar
-                percentage={runDetail.percentage as number}
-                status={runDetail.status as 'production_grade' | 'stable' | 'risky' | 'prototype'}
-                delta={delta}
-                lastRunAt={runDetail.created_at as string}
-                projectName={runDetail.project_name as string}
-                isFirstRun={isFirstRun}
-                hasExternalTools={hasLighthouseData}
-                percentileRank={getPercentileRank(runDetail.percentage as number)}
-                isMultiModelReview={(runDetail.review_type as string | null) === 'multi_model'}
-              />
-            </div>
-
-            {/* ── SECTION 3: Sprint-Box — dramaturgischer Höhepunkt (bleibt) */}
-            <GlobalQuickWinsBar
-              clusters={quickWinClusters}
-              runId={selectedRunId}
-              projectId={activeScanProjectId}
-              currentScore={runDetail.percentage as number}
-            />
-
-            {/* ── SECTION 4+5: Daten-Welt ─────────────────────────────────── */}
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid var(--border)',
-              borderTop: 'none',
-              borderRadius: 4, overflow: 'hidden',
-              marginTop: 8,
-            }}>
-
-            {/* ── Sticky Domain-Tab-Bar (6 Domains, URL-Routing) ─────────── */}
-            <AppTabs activeTabId={activeTab} tabs={[
-              { id: 'code-quality',  label: 'Code-Qualität',  count: domainCounts['code-quality'],
-                href: tabHref('code-quality') },
-              { id: 'performance',   label: 'Performance',    count: domainCounts['performance'],
-                href: tabHref('performance') },
-              { id: 'security',      label: 'Sicherheit',     count: domainCounts['security'],
-                href: tabHref('security') },
-              { id: 'accessibility', label: 'Barrierefrei.',  count: domainCounts['accessibility'],
-                href: tabHref('accessibility') },
-              { id: 'dsgvo',         label: 'DSGVO',          count: domainCounts['dsgvo'],
-                href: tabHref('dsgvo'), hasDanger: hasDsgvoDanger },
-              { id: 'ki-act',        label: 'KI-Act',         count: domainCounts['ki-act'],
-                href: tabHref('ki-act'), hasDanger: hasKiActDanger },
-              { id: 'documentation', label: 'Doku',           count: domainCounts['documentation'],
-                href: tabHref('documentation') },
-            ]} />
-
-            {/* ── Domain Content ──────────────────────────────────────────── */}
-            <section id="domain-content" className="audit-tier-section">
-
-              {activeTab === 'dsgvo' ? (
-                <DsgvoTab
-                  findings={activeFindings as unknown as Parameters<typeof DsgvoTab>[0]['findings']}
-                  projectId={activeScanProjectId}
-                  statusFilter={status}
-                />
-              ) : activeTab === 'performance' ? (
-                <PerformanceTab
-                  findings={activeFindings as unknown as Parameters<typeof PerformanceTab>[0]['findings']}
-                  statusFilter={status}
-                  initialLighthouseUrl={initialLighthouseUrl}
-                  scanProjectId={activeScanProjectId}
-                  hasLighthouseData={hasLighthouseData}
-                />
-              ) : activeTab === 'ki-act' ? (
-                <KiActTab
-                  findings={activeFindings as unknown as Parameters<typeof KiActTab>[0]['findings']}
-                  projectId={activeScanProjectId}
-                  statusFilter={status}
-                />
-              ) : activeFindings.length > 0 ? (
-                <FindingsTableApp
-                  findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
-                  statusFilter={status}
-                />
-              ) : (
-                <DomainEmptyState domain={activeTab} hasRun={hasRuns} />
-              )}
-
-              {activeFindings.filter(f => (f as Record<string, unknown>).status === 'fixed').length > 0 && (
-                <div style={{ marginTop: 8, borderTop: '2px solid var(--border)' }}>
-                  <FindingsTableApp
-                    findings={activeFindings as unknown as Parameters<typeof FindingsTableApp>[0]['findings']}
-                    statusFilter="fixed"
-                  />
-                </div>
-              )}
-            </section>
-            </div> {/* end Daten-Welt surface-cool wrapper */}
-          </>
-        )
-      })()}
+          {/* ── SECTION 3: Filter-Chips + Drei-Sektionen + Compliance-Blöcke ── */}
+          <AuditFindingsClient
+            allFindings={enrichedFindings as import('./_components/AuditFindingsClient').EnrichedFinding[]}
+            runId={selectedRunId}
+            projectId={activeScanProjectId}
+            complianceData={complianceData}
+            initialLighthouseUrl={initialLighthouseUrl}
+            scanProjectId={activeScanProjectId}
+            activeProfile={scanProjectProfile}
+          />
+        </>
+      )}
 
       {/* ── Run selected but not found ───────────────────────────────────── */}
       {hasRuns && !runDetail && selectedRunId && (

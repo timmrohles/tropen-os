@@ -71,7 +71,7 @@ export default function SettingsPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <GearSix size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <GearSix size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('title')}
           </h1>
         </div>

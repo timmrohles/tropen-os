@@ -38,6 +38,26 @@ const DOMAIN_COPY: Record<AuditDomain, { headline: string; description: string; 
     description: 'README, ADRs, CHANGELOG und KI-Kontext sind vollständig. Doku-Drift ist das unsichtbare Tech Debt.',
     tools: [],
   },
+  'oss': {
+    headline: 'OSS-Lizenzen — keine Copyleft-Dependencies',
+    description: 'Keine direkten Dependencies mit GPL/AGPL/LGPL-Lizenz gefunden.',
+    tools: [],
+  },
+  'marketing': {
+    headline: 'Kein Tracking erkannt',
+    description: 'Keine bekannten Analytics- oder Tracking-Libraries gefunden.',
+    tools: [],
+  },
+  'platform': {
+    headline: 'Keine App-Store-Konfiguration erkannt',
+    description: 'Kein Capacitor, iOS- oder Android-Setup gefunden.',
+    tools: [],
+  },
+  'infrastructure': {
+    headline: 'Hosting-Konfiguration',
+    description: 'Keine bekannte Hosting-Konfiguration erkannt.',
+    tools: [],
+  },
 }
 
 interface Props {

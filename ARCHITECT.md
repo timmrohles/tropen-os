@@ -801,3 +801,13 @@ Format pro Eintrag:
 **Offene Punkte nach dem Build:** [keine | Liste]
 **Neue Lernmuster:** [keine | Was wurde gelernt]
 ```
+
+---
+
+## Build-Check-Konfiguration (Stand 2026-05-04)
+
+**Timeout:** 300s (`cat-3-rule-build`, `cli-checker.ts:checkProductionBuild`).
+Begründung: Tropen OS Build dauert ~210s. Margin-of-safety 90s.
+Bei Build-Zeit-Anstieg: Timeout neu evaluieren oder Build-Optimierung-Sprint.
+
+**cross-env:** `package.json` build-Script nutzt `cross-env NODE_OPTIONS=...` (Windows-kompatibel).

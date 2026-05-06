@@ -13,6 +13,7 @@ import { createLogger } from '@/lib/logger'
 import { buildAuditContext, runAudit } from '@/lib/audit'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
 import { deduplicateFindings } from '@/lib/audit/deduplicator'
+import { effortMinutesFromFixType, shouldBeKiller } from '@/lib/audit/killer-rule-ids'
 import type { AuditReport, CategoryScore } from '@/lib/audit/types'
 import type { EnrichedFinding } from '@/lib/audit/deduplicator'
 
@@ -191,6 +192,8 @@ export async function POST(request: Request) {
           enforcement: f.enforcement ?? rule?.enforcement ?? null,
           affected_files: f.affectedFiles ?? null,
           fix_hint: f.fixHint ?? null,
+          is_killer: shouldBeKiller(f.severity, f.ruleId),
+          effort_minutes: effortMinutesFromFixType(rule?.fixType ?? (f as { fixType?: string }).fixType ?? null),
           ...(f.frozen
             ? { status: 'dismissed', not_relevant_reason: 'frozen-path' }
             : f.inheritedStatus ? { status: f.inheritedStatus } : {}),

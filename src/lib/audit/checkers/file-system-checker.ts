@@ -272,14 +272,19 @@ export async function checkCIPipelinePresent(ctx: AuditContext): Promise<RuleRes
 }
 
 export async function checkInfrastructureAsCode(ctx: AuditContext): Promise<RuleResult> {
-  const hasVercelJson = hasFile(ctx.rootPath, 'vercel.json')
+  // Platform-IaC-Whitelist — Komitee 2026-05-04 (Mehrheit 3:1).
+  // Vibe-Coder deployen primär auf Vercel/Netlify/Fly/Railway/Render.
+  // Terraform/Pulumi = Industrie-Standard (score=5).
+  // Platform-native IaC = gleichwertig für Vibe-Coder (score=4).
+  const PLATFORM_IAC_FILES = ['vercel.json', 'netlify.toml', 'fly.toml', 'railway.toml', 'railway.json', 'render.yaml']
   const hasTerraform = hasFile(ctx.rootPath, 'terraform') || ctx.filePaths.some((p) => p.endsWith('.tf'))
   const hasPulumi = hasFile(ctx.rootPath, 'Pulumi.yaml')
+  const platformIaC = PLATFORM_IAC_FILES.find(f => hasFile(ctx.rootPath, f))
   if (hasTerraform || hasPulumi) {
     return pass('cat-11-rule-4', 5, 'Full IaC found (Terraform/Pulumi)')
   }
-  if (hasVercelJson) {
-    return pass('cat-11-rule-4', 3, 'vercel.json present (partial IaC — no Terraform/Pulumi)')
+  if (platformIaC) {
+    return pass('cat-11-rule-4', 4, `Platform-native IaC found (${platformIaC}) — Vibe-Coder-equivalent to Terraform`)
   }
   return fail('cat-11-rule-4', 0, 'No Infrastructure as Code found')
 }

@@ -38,10 +38,13 @@ function gitleaksInstallHint(): string {
 
 export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile: ReadFile = defaultReadFile, binaryCheck: BinaryCheck = isBinaryAvailable) {
   async function checkDependencyVulnerabilities(ctx: AuditContext): Promise<RuleResult> {
+    // Killer-Detektor — ADR-027 Schritt 3: CVSS >9 + patchbar + nur prod-deps = isKiller.
+    // --prod excludiert devDependencies (kein Production-Risiko).
+    // Strategie: docs/audit-reports/killer-detector-strategies-2026-05-04.md
     const pnpmBin = resolveNodeCli('pnpm', ctx.rootPath)
     let raw: string
     try {
-      raw = runner(pnpmBin, ['audit', '--json'], ctx.rootPath)
+      raw = runner(pnpmBin, ['audit', '--json', '--prod'], ctx.rootPath)
     } catch (err: unknown) {
       // pnpm audit exits non-zero when vulnerabilities found — check if stdout was captured
       if (err && typeof err === 'object' && 'stdout' in err && typeof (err as { stdout: unknown }).stdout === 'string') {
@@ -54,6 +57,8 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile
     interface Advisory {
       id?: number; title?: string; severity?: string; module_name?: string
       cves?: string[]; url?: string; findings?: { paths?: string[] }[]
+      cvss?: { score?: number; vectorString?: string } | null
+      patched_versions?: string
     }
     let vulns: { critical: number; high: number; moderate: number; total: number }
     let advisories: Advisory[] = []
@@ -65,14 +70,32 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile
       return nullResult('cat-3-rule-7', 'Could not parse pnpm audit JSON output')
     }
 
+    function isCvssKiller(adv: Advisory): boolean {
+      const score = adv.cvss?.score ?? 0
+      if (score <= 9.0) return false
+      // Only patchable CVEs as Killer — unpatchable = no action path for user
+      const patched = adv.patched_versions ?? ''
+      return patched.length > 0 && patched !== '<0.0.0'
+    }
+
     const findings: Finding[] = advisories
       .filter((a) => a.severity === 'critical' || a.severity === 'high' || a.severity === 'moderate')
-      .map((a) => ({
-        severity: (a.severity === 'critical' ? 'critical' : a.severity === 'high' ? 'high' : 'medium') as Finding['severity'],
-        message: `[${a.module_name ?? 'unknown'}] ${a.title ?? 'Vulnerability'}${a.cves?.length ? ` (${a.cves[0]})` : ''}`,
-        suggestion: a.url ? `See: ${a.url}` : 'Run pnpm audit fix or update the affected package',
-      }))
+      .map((a) => {
+        const killer = isCvssKiller(a)
+        const cvssScore = a.cvss?.score
+        const suggestion = killer
+          ? `🛑 Patch verfügbar in ${a.patched_versions} — update mit: pnpm update ${a.module_name ?? ''}`
+          : a.url ? `See: ${a.url}` : 'Run pnpm update or pnpm audit fix'
+        return {
+          severity: (a.severity === 'critical' ? 'critical' : a.severity === 'high' ? 'high' : 'medium') as Finding['severity'],
+          message: `[${a.module_name ?? 'unknown'}] ${a.title ?? 'Vulnerability'}${a.cves?.length ? ` (${a.cves[0]})` : ''}${cvssScore ? ` — CVSS ${cvssScore}` : ''}`,
+          suggestion,
+          ...(killer ? { isKiller: true } : {}),
+        }
+      })
 
+    // ADR-027: killerCount no longer affects score — calculator excludes killer rules.
+    const killerCount = findings.filter((f) => f.isKiller).length
     let score: number
     if (vulns.critical === 0 && vulns.high === 0 && vulns.total === 0) score = 5
     else if (vulns.critical === 0 && vulns.high === 0) score = 4
@@ -83,7 +106,7 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile
     return {
       ruleId: 'cat-3-rule-7',
       score,
-      reason: `pnpm audit: ${vulns.critical} critical, ${vulns.high} high, ${vulns.total} total`,
+      reason: `pnpm audit --prod: ${vulns.critical} critical, ${vulns.high} high, ${vulns.total} total${killerCount > 0 ? ` (${killerCount} Killer-CVEs CVSS>9 — excluded from Polish score)` : ''}`,
       findings,
       automated: true,
     }
@@ -201,7 +224,86 @@ export function createCliChecks(runner: RunCommand = defaultRunCommand, readFile
     }
   }
 
-  return { checkDependencyVulnerabilities, checkNoSecretsInRepo, checkUnitTestCoverage }
+  // Production-Build-Check — ADR-027 Universal-Killer.
+  // exit-code != 0 = Killer (App ist nicht deploybar).
+  // CI=true: deterministisches Build-Verhalten, keine interaktiven Prompts.
+  // NODE_OPTIONS via subprocess env — funktioniert cross-platform (kein Shell-Syntax).
+  async function checkProductionBuild(ctx: AuditContext): Promise<RuleResult> {
+    const pnpmBin = resolveNodeCli('pnpm', ctx.rootPath)
+    const startTime = Date.now()
+    // Use execFileSync directly (not runner) to pass custom env + timeout.
+    // NODE_OPTIONS set via env object — cross-platform, avoids Windows shell syntax issue.
+    const [execCmd, execArgs] = process.platform === 'win32'
+      ? ['cmd.exe', ['/c', pnpmBin, 'build']]
+      : [pnpmBin, ['build']]
+    const buildEnv = { ...process.env, CI: 'true', NODE_OPTIONS: '--max-old-space-size=4096' }
+
+    let output = ''
+    let success = false
+    try {
+      output = execFileSync(execCmd, execArgs, {
+        cwd: ctx.rootPath,
+        timeout: 300_000, // 5 Min — Build kann auf langsamen Maschinen >3 Min dauern
+        maxBuffer: 50 * 1024 * 1024,
+        encoding: 'utf-8',
+        env: buildEnv,
+      })
+      success = true
+    } catch (err: unknown) {
+      const e = err as { stdout?: string; stderr?: string; message?: string }
+      output = (e.stdout ?? '') + (e.stderr ?? '') + (e.message ?? '')
+    }
+
+    const durationMs = Date.now() - startTime
+
+    if (success) {
+      return {
+        ruleId: 'cat-3-rule-build',
+        score: 5,
+        reason: `Production build successful (${Math.round(durationMs / 1000)}s)`,
+        findings: [],
+        automated: true,
+      }
+    }
+
+    // Extrahiere erste aussagekräftige Error-Zeile (kein riesiger Stacktrace)
+    const errorSummary = extractBuildError(output)
+
+    return {
+      ruleId: 'cat-3-rule-build',
+      score: 0,
+      reason: `Production build failed — ${errorSummary}`,
+      findings: [{
+        severity: 'critical',
+        isKiller: true,
+        message: `Production-Build schlägt fehl: ${errorSummary}`,
+        suggestion:
+          '🛑 Stopper: Production-Build schlägt fehl. ' +
+          'Eine nicht deploybare App kann nicht veröffentlicht werden. ' +
+          '`pnpm build` lokal ausführen, alle Errors beheben, dann nochmal testen.',
+        agentSource: 'security',
+      }],
+      automated: true,
+    }
+  }
+
+  function extractBuildError(output: string): string {
+    const patterns = [
+      /error TS\d+: .{0,150}/,
+      /Error: .{0,150}/,
+      /Failed to compile[^\n]*/,
+      /Module not found[^\n]*/,
+      /Build failed[^\n]*/,
+      /SyntaxError: .{0,150}/,
+    ]
+    for (const p of patterns) {
+      const m = output.match(p)
+      if (m) return m[0].trim()
+    }
+    return output.slice(-200).trim().replace(/\n/g, ' ') || 'Unknown build error'
+  }
+
+  return { checkDependencyVulnerabilities, checkNoSecretsInRepo, checkUnitTestCoverage, checkProductionBuild }
 }
 
 /** Default instance using real CLI tools */

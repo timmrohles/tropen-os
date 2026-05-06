@@ -53,6 +53,23 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
     : ctx
 
   const skipModes = new Set(options.skipModes ?? [])
+
+  // ADR-027 Schritt 9a — Universal-Domänen laufen immer (unabhängig vom Profil)
+  const UNIVERSAL_DOMAINS = new Set(['code-quality', 'performance', 'security', 'documentation'])
+  const domainActivation = options.domainActivation ?? null
+
+  // Mapping von rule.domain (AuditDomain) → DomainActivation-Key
+  // Muss synchron mit project-profiles.ts DomainActivation-Interface bleiben.
+  // Sprint 9b: alle neuen Domains ergänzt.
+  const RULE_DOMAIN_TO_ACTIVATION: Partial<Record<import('./types').AuditDomain, string>> = {
+    'dsgvo':          'privacy',
+    'ki-act':         'ai',
+    'accessibility':  'accessibility',
+    'oss':            'oss',
+    'marketing':      'marketing',
+    'platform':       'platform',
+    'infrastructure': 'infrastructure',
+  }
   // Merge explicit exclusions with profile-gated rules (if no profile set)
   const baseExclusions = options.excludeRuleIds ?? new Set<string>()
   let excludeRuleIds = baseExclusions
@@ -69,6 +86,22 @@ export async function runAudit(ctx: AuditContext, options: AuditOptions): Promis
     const rules = getRulesForCategory(catDef.id)
     const results = await Promise.all(
       rules.map(async (rule) => {
+        // ADR-027 Schritt 9a: Domain-basiertes Skip für inactive Compliance-Domänen
+        if (domainActivation && rule.domain && !UNIVERSAL_DOMAINS.has(rule.domain)) {
+          const activationKey = RULE_DOMAIN_TO_ACTIVATION[rule.domain as import('./types').AuditDomain]
+          const activation = activationKey ? domainActivation[activationKey] : undefined
+          if (activation === 'inactive') {
+            return {
+              ruleId: rule.id,
+              score: null as null,
+              reason: 'Domain inactive for this project profile',
+              findings: [] as never[],
+              automated: false,
+            }
+          }
+          // lazy: today = active (Code-Marker-Erkennung kommt mit Sprint 9b)
+        }
+
         // Profile-based exclusion: rule not relevant for this project
         if (excludeRuleIds.has(rule.id)) {
           return {

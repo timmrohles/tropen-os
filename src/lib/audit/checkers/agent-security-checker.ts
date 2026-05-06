@@ -20,12 +20,14 @@ function readFileSafe(rootPath: string, ...parts: string[]): string {
 
 // R3 — Auth guard consistency across API routes
 export async function checkAuthGuardConsistency(ctx: AuditContext): Promise<RuleResult> {
+  // isKiller=true — Multi-User-Killer (ADR-027 Profil 4-5).
+  // Strikt: jede ungeschützte Route ist Killer. Stub-Erkennung: 4xx/5xx-Only-Routes excludiert.
+  // Strategie: docs/audit-reports/killer-detector-strategies-2026-05-04.md
   const publicPrefixes = [
     '/api/public/', '/api/auth/', '/api/health', '/api/webhooks/', '/api/s/',
-    // Cron routes use CRON_SECRET bearer token (not user auth) — excluded from user-auth check
     '/api/cron/',
-    // Stateless transform endpoint — no user data, used by unauthenticated shared-artifact viewers
     '/api/artifacts/transform',
+    '/api/beta/waitlist',  // intentionally public POST (ADR-027 Allowlist)
   ]
   const apiRoutes = ctx.repoMap.files.filter(
     (f) => f.path.startsWith('src/app/api/') && f.path.endsWith('route.ts')
@@ -33,7 +35,8 @@ export async function checkAuthGuardConsistency(ctx: AuditContext): Promise<Rule
   const nonPublicRoutes = apiRoutes.filter((f) => {
     if (publicPrefixes.some((p) => f.path.replace('src/app', '').includes(p))) return false
     // Exclude routes that only return 4xx/5xx (deprecated/gone/stub routes — no data access)
-    const content = ctx.fileContents?.get(f.path) ?? ''
+    // Fallback to direct file read when fileContents is not pre-populated (standard audit run)
+    const content = ctx.fileContents?.get(f.path) ?? readFileSafe(ctx.rootPath, f.path)
     const hasOnlyErrorResponses = content.length > 0
       && /status:\s*[45]\d\d/.test(content)
       && !/\.from\s*\(|supabase|getUser|createClient|fetch\s*\(/.test(content)
@@ -67,6 +70,7 @@ export async function checkAuthGuardConsistency(ctx: AuditContext): Promise<Rule
       message: `API route may lack auth check: ${f.path}`,
       filePath: f.path,
       suggestion: 'Add createClient() + getUser() auth check as the first operation',
+      isKiller: true,
     })),
   }
 }
@@ -183,11 +187,17 @@ export async function checkCorsConfig(ctx: AuditContext): Promise<RuleResult> {
     || readFileSafe(ctx.rootPath, 'middleware.ts')
   const combined = configContent + middlewareContent
 
-  if (combined.includes('origin: "*"') || combined.includes("origin: '*'")) {
+  // isKiller=true — Open CORS auf Public Endpoints (ADR-027).
+  // Allowlists: Dev-Gated (NODE_ENV-Check), Kommentare, Test-Dateien.
+  // Strategie: docs/audit-reports/killer-detector-strategies-2026-05-04.md
+  const hasWildcard = combined.includes('origin: "*"') || combined.includes("origin: '*'")
+  const isDevGated = /process\.env\.NODE_ENV\s*[!=]==?\s*['"]production['"]/.test(combined)
+  if (hasWildcard && !isDevGated) {
     return fail('cat-3-rule-18', 0, 'Wildcard CORS origin detected', [{
       severity: 'critical',
       message: 'CORS wildcard origin "*" allows any domain to read API responses',
       suggestion: 'Replace with explicit allowed origins array: ["https://yourapp.com"]',
+      isKiller: true,
     }])
   }
   if (combined.includes('Access-Control-Allow-Origin') || combined.includes('headers:')) {

@@ -13,6 +13,8 @@ import { apiError } from '@/lib/api-error'
 import { buildAuditContextFromFiles, runAudit } from '@/lib/audit'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
 import { deduplicateFindings } from '@/lib/audit/deduplicator'
+import { effortMinutesFromFixType } from '@/lib/audit/killer-rule-ids'
+import { getActiveScanProjectProfile, getDomainActivation } from '@/lib/audit/project-profiles'
 import type { AuditReport, CategoryScore, CheckMode } from '@/lib/audit/types'
 import type { EnrichedFinding } from '@/lib/audit/deduplicator'
 
@@ -133,10 +135,26 @@ export async function POST(request: Request) {
     // 1. Build AuditContext from in-memory files
     const ctx = await buildAuditContextFromFiles(files, 4096)
 
+    // ADR-027 Schritt 9a: Domain-Activation aus bestehendem Profil laden
+    let domainActivation: Record<string, 'active' | 'lazy' | 'inactive'> | undefined
+    const { data: existingProject } = await supabaseAdmin
+      .from('scan_projects')
+      .select('id')
+      .eq('organization_id', orgProfile.organization_id)
+      .eq('name', projectName)
+      .maybeSingle()
+    if (existingProject?.id) {
+      const scanProfile = await getActiveScanProjectProfile(existingProject.id)
+      if (scanProfile) {
+        domainActivation = getDomainActivation(scanProfile) as unknown as Record<string, 'active' | 'lazy' | 'inactive'>
+      }
+    }
+
     // 2. Run audit (skip all disk/CLI-dependent modes)
     const report = await runAudit(ctx, {
       rootPath: '',
       skipModes: EXTERNAL_SKIP_MODES,
+      domainActivation,
     })
 
     const allFindings = report.categories.flatMap((c) =>
@@ -279,6 +297,8 @@ export async function POST(request: Request) {
           enforcement: f.enforcement ?? rule?.enforcement ?? null,
           affected_files: f.affectedFiles ?? null,
           fix_hint: f.fixHint ?? null,
+          is_killer: (f as { isKiller?: boolean }).isKiller ?? null,
+          effort_minutes: effortMinutesFromFixType(rule?.fixType ?? (f as { fixType?: string }).fixType ?? null),
           ...(f.inheritedStatus ? { status: f.inheritedStatus } : {}),
         }
       })

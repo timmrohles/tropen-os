@@ -5,8 +5,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildFixPrompt } from '@/lib/audit/prompt-export'
 import type { PromptFinding } from '@/lib/audit/prompt-export/types'
 import { getFixType } from '@/lib/audit/rule-registry'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('fix-session')
 
 export async function POST(req: NextRequest) {
+  try {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -102,4 +106,8 @@ Die Findings sind nach Datei sortiert — bearbeite jede Datei komplett bevor du
     fileCount: totalFiles,
     estimatedMinutes: roundedMinutes,
   })
+  } catch (err) {
+    log.error('fix-session failed', { err })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

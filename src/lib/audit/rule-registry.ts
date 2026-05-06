@@ -1,6 +1,12 @@
 // src/lib/audit/rule-registry.ts
 import type { AuditRule, AuditContext, FixType, RuleTier, AuditTier, AuditDomain } from './types'
 import {
+  checkOssLicenses,
+  checkMarketingTracking,
+  checkPlatformAppStore,
+  checkInfrastructure,
+} from './checkers/sprint9b-domain-checkers'
+import {
   checkTypeScriptStrictMode, checkEsLintConfigured, checkPrettierConfigured,
   checkLockfileCommitted, checkNodeVersionFixed, checkMigrationsTool,
   checkCIPipelinePresent, checkDependabotConfigured, checkPWAManifest,
@@ -12,7 +18,7 @@ import {
   checkProjectStructure,
 } from './checkers/file-system-checker'
 import {
-  checkFileSizes, checkInputValidationCoverage,
+  checkFileSizes, checkComponentFileSizes, checkInputValidationCoverage,
   checkLoggerAbstraction, checkVendorAbstraction, checkServiceKeyInFrontend,
   checkBudgetEnforcement, checkBusinessLogicSeparation, checkNamingConventions,
   checkAriaAttributes, checkTokenLimitsConfigured,
@@ -76,6 +82,7 @@ import {
   checkAiActDecisionLogging, checkAiActPurposeDocs, checkAiActProhibitedPractices,
 } from './checkers/agent-regulatory-checker'
 import { checkSchemaDrift } from './schema-drift-check'
+import { checkDbSslConfig, checkDevSecretsInProd, checkHttpsEnforcement } from './checkers/config-killer-checker'
 import {
   checkAgbPage, checkWiderrufsbelehrung, checkCheckoutButtonText,
   checkAffiliateDisclosure, checkAiTransparency, checkAiContentLabeling,
@@ -178,6 +185,12 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('cat-3-rule-1',  3, 'OWASP Top 10 beruecksichtigt', 3, 'manual', 'code', undefined, 'security'),
   { id: 'cat-3-rule-2',  categoryId: 3, name: 'Serverseitige Input-Validierung', weight: 3, checkMode: 'repo-map', automatable: true, check: checkInputValidationCoverage, agentSource: 'security', agentRuleId: 'R2', enforcement: 'blocked', fixType: 'code-fix' , tier: 'code', domain: 'security' },
   { id: 'cat-3-rule-3',  categoryId: 3, name: 'Keine Secrets im Repo / History', weight: 3, checkMode: 'cli', automatable: true, check: cliChecks.checkNoSecretsInRepo, agentSource: 'security', agentRuleId: 'R1', enforcement: 'blocked', fixType: 'code-fix' , tier: 'code', domain: 'security' },
+  // ADR-027 Killer: Production-Build muss erfolgreich sein. exit-code != 0 = isKiller.
+  { id: 'cat-3-rule-build', categoryId: 3, name: 'Production-Build erfolgreich', weight: 3, checkMode: 'cli', automatable: true, check: cliChecks.checkProductionBuild, agentSource: 'security', enforcement: 'blocked', fixType: 'code-fix', tier: 'code', domain: 'security' },
+  // ADR-027 Schritt 4 — Config-Analyzer Killer
+  { id: 'config-killer-db-ssl', categoryId: 3, name: 'DB-Verbindungen nutzen SSL', weight: 3, checkMode: 'file-system', automatable: true, check: checkDbSslConfig, agentSource: 'security', enforcement: 'blocked', fixType: 'code-fix', tier: 'code', domain: 'security' },
+  { id: 'config-killer-dev-secret', categoryId: 3, name: 'Keine Dev-Credentials in Production', weight: 3, checkMode: 'file-system', automatable: true, check: checkDevSecretsInProd, agentSource: 'security', enforcement: 'blocked', fixType: 'code-fix', tier: 'code', domain: 'security' },
+  { id: 'config-killer-https', categoryId: 3, name: 'HTTPS-Erzwingung vorhanden', weight: 2, checkMode: 'file-system', automatable: true, check: checkHttpsEnforcement, agentSource: 'security', enforcement: 'blocked', fixType: 'code-fix', tier: 'code', domain: 'security' },
   manual('cat-3-rule-4',  3, 'HTTP Sicherheitsheader gesetzt', 2, 'code-fix', 'code', undefined, 'security'),
   manual('cat-3-rule-5',  3, 'Rate Limiting implementiert', 2, 'code-fix', 'code', undefined, 'security'),
   manual('cat-3-rule-6',  3, 'Auth und Authz klar getrennt', 3, 'refactoring', 'code', undefined, 'security'),
@@ -438,15 +451,7 @@ export const AUDIT_RULES: AuditRule[] = [
   {
     id: 'cat-25-rule-2', categoryId: 25, name: 'Keine Dateien > 300 Zeilen (Komponenten)', weight: 2, checkMode: 'repo-map', automatable: true,
     check: async (ctx: AuditContext) => {
-      // Only check component files — cat-1-rule-4 handles all files
-      const componentCtx = {
-        ...ctx,
-        repoMap: {
-          ...ctx.repoMap,
-          files: ctx.repoMap.files.filter(f => f.path.includes('/components/'))
-        }
-      }
-      const r = await checkFileSizes(componentCtx)
+      const r = await checkComponentFileSizes(ctx)
       return { ...r, ruleId: 'cat-25-rule-2' }
     },
     fixType: 'refactoring', tier: 'code', domain: 'code-quality' as AuditDomain,
@@ -562,6 +567,23 @@ export const AUDIT_RULES: AuditRule[] = [
     checkMode: 'documentation' as const, automatable: true, check: checkDbBackupStrategyDocumented,
     agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-gen' as const,
     tier: 'code' as const, domain: 'security' as const },
+
+  // ── Sprint 9b — neue Domain-Detektoren (ADR-027 Schritt 9) ──────────────────
+  { id: 'oss-license-copyleft', categoryId: 24, name: 'Habt ihr GPL/AGPL/LGPL-Bibliotheken in direkten Dependencies?',
+    weight: 2, checkMode: 'file-system' as const, automatable: true, check: checkOssLicenses,
+    fixType: 'code-fix' as const, tier: 'code' as const, domain: 'oss' as const },
+
+  { id: 'marketing-tracking-detection', categoryId: 6, name: 'Analytics-/Tracking-Libraries erkannt — Cookie-Consent konfiguriert?',
+    weight: 1, checkMode: 'file-system' as const, automatable: true, check: checkMarketingTracking,
+    fixType: 'code-fix' as const, tier: 'code' as const, domain: 'marketing' as const },
+
+  { id: 'platform-app-store-detection', categoryId: 21, name: 'Mobile-Plattform-Konfiguration erkannt — App-Store-Compliance geprüft?',
+    weight: 1, checkMode: 'file-system' as const, automatable: true, check: checkPlatformAppStore,
+    fixType: 'code-fix' as const, tier: 'code' as const, domain: 'platform' as const },
+
+  { id: 'infrastructure-hosting-detection', categoryId: 23, name: 'Hosting-Konfiguration erkannt — Region und Datenspeicherort bekannt?',
+    weight: 1, checkMode: 'file-system' as const, automatable: true, check: checkInfrastructure,
+    fixType: 'code-fix' as const, tier: 'code' as const, domain: 'infrastructure' as const },
 ]
 
 export function getRulesForCategory(categoryId: number): AuditRule[] {

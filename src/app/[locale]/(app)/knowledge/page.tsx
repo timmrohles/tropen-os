@@ -272,7 +272,7 @@ export default function KnowledgePage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <Books size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <Books size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('title')}
           </h1>
           <p className="page-header-sub">{t('subtitle')}</p>

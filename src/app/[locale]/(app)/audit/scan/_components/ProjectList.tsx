@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { FolderSimple, ArrowRight, PencilSimple, Check, X } from '@phosphor-icons/react'
+import { KillerStatusBadge } from '@/components/audit/KillerStatusBadge'
+import { SectionLabel } from '@/components/ui/SectionLabel'
 
 interface ScanProject {
   id: string
@@ -12,6 +14,7 @@ interface ScanProject {
   file_count: number | null
   last_scan_at: string | null
   last_score: number | null
+  critical_count: number | null
   detected_stack: Record<string, string> | null
   created_at: string
 }
@@ -147,7 +150,8 @@ function ProjectRow({ project }: { project: ScanProject }) {
           </div>
         )}
         <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 2 }}>
-          {project.file_count != null && <span>{project.file_count.toLocaleString('de')} Dateien</span>}
+          {/* Stale-Data-Schutz: 0 Dateien nicht zeigen wenn last_scan_at vorhanden (Score ist valide) */}
+          {project.file_count != null && project.file_count > 0 && <span>{project.file_count.toLocaleString('de')} Dateien</span>}
           {project.detected_stack?.framework && project.detected_stack.framework !== 'unknown' && (
             <span style={{ textTransform: 'capitalize' }}>{project.detected_stack.framework}</span>
           )}
@@ -155,11 +159,24 @@ function ProjectRow({ project }: { project: ScanProject }) {
         </div>
       </div>
 
-      {project.last_score != null && (
-        <div style={{ fontSize: 18, fontWeight: 700, color: scoreColor(project.last_score), flexShrink: 0 }}>
-          {Math.round(project.last_score)}%
-        </div>
-      )}
+      {/* Killer-Status (primär) + Polish-Score (sekundär) */}
+      {/* Phase 0-Diagnose: file_count=0 mit last_scan_at = stale data, Score aber valide */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+        {project.last_score != null ? (
+          <KillerStatusBadge
+            count={project.critical_count ?? 0}
+            polishScore={project.last_score}
+            variant="compact"
+          />
+        ) : (
+          <KillerStatusBadge count={0} variant="empty" />
+        )}
+        {project.last_score != null && (
+          <span style={{ fontSize: 11, color: scoreColor(project.last_score), fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+            {Math.round(project.last_score)}% Polish
+          </span>
+        )}
+      </div>
 
       <Link href={`/audit?project=${project.id}`} aria-label={`Audit für ${project.name} öffnen`} onClick={(e) => e.stopPropagation()}>
         <ArrowRight size={16} color="var(--text-tertiary)" weight="bold" aria-hidden="true" />
@@ -173,9 +190,7 @@ export default function ProjectList({ projects }: Props) {
 
   return (
     <div>
-      <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>
-        Verbundene Projekte
-      </h2>
+      <SectionLabel>Verbundene Projekte</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {projects.map((p) => <ProjectRow key={p.id} project={p} />)}
       </div>

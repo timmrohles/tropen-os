@@ -22,12 +22,35 @@ export async function fetchAuditRuns(orgId: string, scanProjectId?: string | nul
 }
 
 export async function fetchScanProjects(orgId: string) {
-  const { data } = await supabaseAdmin
+  const { data: projects } = await supabaseAdmin
     .from('scan_projects')
     .select('id, name, source, file_count, last_scan_at, last_score, detected_stack, created_at, live_url')
     .eq('organization_id', orgId)
     .order('last_scan_at', { ascending: false })
-  return data ?? []
+
+  if (!projects?.length) return []
+
+  // Sprint 6b₂: critical_findings aus letztem Audit-Run als Proxy für Killer-Count.
+  // TODO: durch echten is_killer-Count ersetzen wenn is_killer in audit_findings gespeichert wird (Schritt 9).
+  const { data: runs } = await supabaseAdmin
+    .from('audit_runs')
+    .select('scan_project_id, critical_findings')
+    .not('scan_project_id', 'is', null)
+    .eq('organization_id', orgId)
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  const criticalMap = new Map<string, number>()
+  for (const run of runs ?? []) {
+    if (run.scan_project_id && !criticalMap.has(run.scan_project_id)) {
+      criticalMap.set(run.scan_project_id, run.critical_findings ?? 0)
+    }
+  }
+
+  return projects.map(p => ({
+    ...p,
+    critical_count: criticalMap.get(p.id) ?? null,
+  }))
 }
 
 export async function fetchAuditReviewRuns(orgId: string) {

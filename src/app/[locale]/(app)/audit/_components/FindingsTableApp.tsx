@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Copy, Check } from '@phosphor-icons/react'
+import { Copy, Check, X } from '@phosphor-icons/react'
 import type { FindingGroup, AuditFinding } from '@/lib/audit/group-findings'
 import { groupFindings } from '@/lib/audit/group-findings'
 
@@ -23,10 +23,10 @@ const SEV_DOT: Record<string, string> = {
 }
 
 const BTN_STYLE: React.CSSProperties = {
-  display: 'inline-flex', alignItems: 'center', gap: 4,
-  border: '1px solid var(--secondary)', borderRadius: 4, padding: '3px 8px',
-  fontSize: 11, color: 'var(--secondary)', cursor: 'pointer',
-  fontFamily: 'var(--font-mono)', background: 'transparent',
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  border: '1px solid var(--border-medium)', borderRadius: 8, padding: '4px 12px',
+  fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', cursor: 'pointer',
+  fontFamily: 'var(--font-sans)', background: 'rgba(255,255,255,0.80)',
 }
 
 function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: () => void; onDismiss: () => void }) {
@@ -63,7 +63,7 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
     void navigator.clipboard.writeText(prompt).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    })
+    }).catch(() => { /* clipboard not available */ })
   }
 
   async function dismiss() {
@@ -84,9 +84,18 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
   return (
     <div style={{ background: 'var(--active-bg)', borderTop: '1px solid var(--border)' }}>
       <div style={{ padding: '14px 16px' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 10 }}>
-          Fix-Prompt
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)' }}>
+            Fix-Prompt
+          </span>
+          <button
+            onClick={onHide}
+            aria-label="Prompt schließen"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+          >
+            <X size={14} weight="bold" />
+          </button>
+        </div>
         {loading ? (
           <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Wird geladen…</p>
         ) : (
@@ -96,7 +105,7 @@ function PromptBox({ group, onHide, onDismiss }: { group: FindingGroup; onHide: 
         )}
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '10px 16px', background: 'rgba(0,0,0,0.15)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={copy} disabled={loading} style={{ ...BTN_STYLE, background: 'var(--secondary)', color: 'var(--active-bg)', opacity: loading ? 0.5 : 1 }}>
+        <button onClick={copy} disabled={loading} className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5, opacity: loading ? 0.5 : 1 }}>
           {copied
             ? <><Check size={11} weight="bold" aria-hidden="true" /> Kopiert</>
             : <><Copy size={11} weight="bold" aria-hidden="true" /> Kopieren</>}
@@ -155,31 +164,26 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
     )
   }
 
-  return (
-    <>
-    {/* Severity-Verteilungs-Zeile — Schiefer-Dunkel-Hintergrund */}
+  const severityBar = (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 0,
-      padding: '10px 20px', borderBottom: '1px solid rgba(0,0,0,0.15)',
+      padding: '10px 20px',
       fontFamily: 'var(--font-mono)', fontSize: 11,
       flexWrap: 'wrap', rowGap: 4,
       background: 'var(--secondary)',
     }}>
-      {/* Gesamt — als "Alle"-Filter */}
       <button
         onClick={() => setSevFilter('all')}
         style={{
           background: 'none', border: 'none', cursor: 'pointer', padding: '2px 10px 2px 0',
           fontSize: 11, fontFamily: 'var(--font-mono)',
-          color: sevFilter === 'all' ? 'var(--active-bg)' : 'rgba(30,37,48,0.55)',
+          color: sevFilter === 'all' ? 'var(--active-bg)' : 'rgba(30,37,48,0.5)',
           fontWeight: sevFilter === 'all' ? 700 : 400,
-          borderRight: '1px solid rgba(255,255,255,0.15)', marginRight: 10,
+          borderRight: '1px solid rgba(30,37,48,0.15)', marginRight: 10,
         }}
       >
         {allGroups.length} Findings
       </button>
-
-      {/* Severity-Punkte als Filter */}
       {SEV_DIST.map(({ value, label }) => {
         const count = sevCounts[value] ?? 0
         const isActive = sevFilter === value
@@ -195,7 +199,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               fontSize: 11, fontFamily: 'var(--font-mono)',
               color: 'var(--active-bg)',
               fontWeight: isActive ? 700 : 400,
-              background: isActive ? 'rgba(30,37,48,0.12)' : 'transparent',
+              background: isActive ? 'rgba(30,37,48,0.1)' : 'transparent',
             }}
           >
             <span className={`severity-dot ${SEV_DOT[value] ?? ''}`} role="img" aria-label={label} style={{ width: 7, height: 7 }} />
@@ -203,13 +207,16 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
           </button>
         )
       })}
-
-      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(30,37,48,0.75)' }}
+      <span style={{ marginLeft: 'auto', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)' }}
         title="×N = N Stellen im Code mit diesem Problem — alle auf einmal beheben">
         ×N = Vorkommen
       </span>
     </div>
+  )
 
+  return (
+    <>
+    {severityBar}
     {groups.length === 0 && (
       <div style={{ padding: '16px', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Keine Findings mit diesem Filter.</p>
@@ -271,7 +278,7 @@ export default function FindingsTableApp({ findings, statusFilter = 'open' }: Fi
               {isExpanded && (
                 <tr key={`${key}-expanded`}>
                   <td colSpan={4} style={{ padding: 0, textAlign: 'left' }}>
-                    <div style={{ padding: '12px 16px', background: 'var(--surface-warm)', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ padding: '12px 16px', background: 'var(--accent-light)', borderTop: '1px solid var(--border)' }}>
                       <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
                         {problem ?? group.baseMessage}
                       </p>

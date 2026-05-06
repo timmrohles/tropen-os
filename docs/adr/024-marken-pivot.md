@@ -1,4 +1,4 @@
-# ADR-024 — Marken-Pivot: Coach-Position + Schiefer-Limette-Welt
+# ADR-024 — Marken-Pivot: Coach-Position + Schiefer-Korb-Welt
 
 **Status:** Accepted  
 **Datum:** 2026-04-28  
@@ -87,3 +87,59 @@ Marken-Pivot mit zehn Pfeilern (vollständige Spezifikation: `docs/product/marke
 - Sprint 1-5 Roadmap unverändert (Pivot läuft parallel)
 - Compliance als zentraler Moat
 - Vibe-Coder-Zielgruppe
+
+---
+
+## Update 2026-05-04 — Türkis standardisiert, Limette durch Korb ersetzt
+
+**Anlass:** Beim visuellen Polish der Audit-Seite (Severity-Filterbalken, Button-Konsistenz) wurde sichtbar, dass Limette als Sekundärfarbe nicht mehr zur datengetriebenen Audit-Welt passt. Limette hatte einen grasigen, warmen Charakter — die Audit-Seite wirkt substantieller mit klaren Farbzuweisungen: Türkis für Aktionen, Korb für Highlight-Balken.
+
+**Entscheidung:** Zwei Änderungen gleichzeitig:
+
+1. **Türkis** (`#1E7070`, `var(--teal)`) wird als Farbe für **alle primären Action-Buttons** standardisiert (Audit starten, Fix-Session starten, Kopieren, etc.)
+2. **Limette** (`#A8B852`, `var(--secondary)`) wird durch **Korb** (`#fffad3`) ersetzt — als warme Highlight-Farbe für Severity-Filterbalken und Coach-Atmosphäre-Elemente
+
+**Konkrete Werte:**
+
+| Variable | Alt (Limette) | Neu (Korb) |
+|----------|--------------|------------|
+| `--secondary` | `#A8B852` | `#fffad3` |
+| `--secondary-hover` | `#93A346` | `#FFEE58` |
+| `--secondary-light` | `#EEF2DD` | `#FFFEF5` |
+
+Türkis war bereits als `--teal: #1E7070` definiert — der heutige Schritt macht es zur verbindlichen Farbe für alle primären Buttons (keine Ausnahmen mehr, keine eigenen Hex-Werte).
+
+**Begründung:** Die Trennung Türkis/Korb schafft klare semantische Zuordnung: Türkis = "Handlung auslösen", Korb = "Information kontextualisieren". Korb als sehr helles Cremgelb ist optisch ruhiger als Limette, bricht aber trotzdem mit Weiß und setzt Filter-Balken ab.
+
+**Differenzierung:** Korb grenzt Tropen OS visuell von Sentry (lila), DataDog (lila), Vercel (schwarz-weiß) und Linear (lila) ab — keiner dieser Wettbewerber hat ein cremgelbes Highlight-System.
+
+**Konsequenz für Codebase:**
+- `globals.css`: `--secondary` / `--secondary-hover` / `--secondary-light` auf Korb-Werte gesetzt
+- Alle primären Buttons nutzen jetzt `className="btn btn-primary"` + Größenstandard `fontSize: 12, padding: '4px 12px'`
+- Severity-Filterbalken in `FindingsTableApp` und `GlobalQuickWinsBar` nutzen `var(--secondary)` = Korb
+- `_DESIGN_REFERENCE.tsx` Sections 3, 11, 26, 27 aktualisiert
+- `CLAUDE.md` Farbpalette + Icon-Größen + Pflichtcheck aktualisiert
+
+**Was unverändert bleibt:**
+- Schiefer (`#3F4A55`, `var(--accent)`) als Haupt-Textfarbe
+- Coach-Position als Marken-Stimme
+- Sentry-Stil-Architektur für Tabellen-Welt
+- Plus Jakarta Sans + Inter + JetBrains Mono
+
+**Risiken:**
+- Externe Marketing-Materialien (Pitch-Decks, Social-Media) sind ggf. noch auf Limette — Backlog-Notiz (s.u.)
+- Code-Drift: einzelne Stellen mit hardcoded `#A8B852` könnten übersehen worden sein → Phase-2-Verifikation durchgeführt (s.u.)
+
+**Status:** ADR bleibt **Accepted** — dieser Block ist eine Erweiterung, kein neuer Beschluss.
+
+### Verifikation (Phase 2)
+
+Hardcoded Limette-Werte in `src/`:
+- `#A8B852`: 2 Treffer in `_DESIGN_REFERENCE.tsx` (historische Farbdoku) + 1 in `ArtifactRenderer.tsx` (unrelated) — kein App-UI betroffen
+- `#a3b554` (alte Limette-Variante): 0 Treffer
+- CSS-Variable `--secondary`: korrekt auf `#fffad3` gesetzt ✅
+- "Limette" in aktiver Doku: nur noch in ADR-024 (historisch) + Sidebar-Kommentar in `globals.css` (folgt)
+
+### Backlog-Notiz
+
+Vor Beta-Onboarding zu klären: externe Marketing-Materialien auf Korb/Türkis-Migration prüfen (Pitch-Decks, Social-Media-Profile, Domain-Recherche).

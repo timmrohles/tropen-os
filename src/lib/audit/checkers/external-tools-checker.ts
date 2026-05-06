@@ -366,6 +366,8 @@ interface PnpmAdvisory {
   recommendation?: string
   cves?: string[]
   findings?: { version?: string; paths?: string[] }[]
+  cvss?: { score?: number; vectorString?: string } | null
+  patched_versions?: string
 }
 
 interface PnpmAuditOutput {
@@ -393,12 +395,22 @@ export async function checkNpmAudit(ctx: AuditContext): Promise<RuleResult> {
 
   const advisories = Object.values(parsed?.advisories ?? {}) as PnpmAdvisory[]
 
+  // isKiller=true — CVSS >9 + patchbar + nur prod-deps (ADR-027 Universal-Killer).
+  function isCvssKiller(a: PnpmAdvisory): boolean {
+    const score = (a.cvss as { score?: number } | null)?.score ?? 0
+    if (score <= 9.0) return false
+    const patched = a.patched_versions ?? ''
+    return patched.length > 0 && patched !== '<0.0.0'
+  }
+
   const findings: Finding[] = advisories
     .filter((a) => a.severity === 'critical' || a.severity === 'high' || a.severity === 'moderate' || a.severity === 'low')
     .map((a) => {
       const version = a.findings?.[0]?.version ?? 'unknown'
       const cveStr = a.cves?.length ? `CVE: ${a.cves.join(', ')}. ` : ''
       const fixCmd = a.module_name ? `Run: pnpm update ${a.module_name}` : ''
+      const killer = isCvssKiller(a)
+      const cvssScore = (a.cvss as { score?: number } | null)?.score
       return {
         severity: (
           a.severity === 'critical' ? 'critical'
@@ -406,11 +418,12 @@ export async function checkNpmAudit(ctx: AuditContext): Promise<RuleResult> {
           : a.severity === 'moderate' ? 'medium'
           : 'low'
         ) as Finding['severity'],
-        message: `${a.module_name ?? 'unknown'} ${version} — ${a.title ?? 'Vulnerability'}`,
+        message: `${a.module_name ?? 'unknown'} ${version} — ${a.title ?? 'Vulnerability'}${cvssScore ? ` (CVSS ${cvssScore})` : ''}`,
         filePath: 'package.json',
         suggestion: `${cveStr}${a.recommendation ?? ''}. ${fixCmd}`.trim().replace(/^\./, '').trim(),
         agentSource: 'npm-audit' as AgentSource,
         agentRuleId: `npm-audit-${a.id ?? a.module_name}`,
+        ...(killer ? { isKiller: true } : {}),
       }
     })
 

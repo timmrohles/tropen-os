@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Checker: Prop Drilling Severity `info` → `low` (Komitee 2026-05-04, einig)
+- Checker: Dateigrößen-Stufung für Komponenten: 300–400 Zeilen = score=3, 400+ = score=2 (Komitee 2026-05-04)
+- Checker: Platform-IaC-Whitelist (vercel.json/netlify.toml/fly.toml/railway/render = score=4) (Komitee 2026-05-04)
+- Marken-Pivot: Limette (`#A8B852`) durch Korb (`#fffad3`) als `--secondary` ersetzt — Severity-Filterbalken, Highlight-Balken
+- Türkis (`#1E7070`) als verbindliche Farbe für alle primären Action-Buttons standardisiert
+- Page-Header-Titel global auf 36px / Icon 30px vergrößert
+- Button-Standard App-Welt: `fontSize: 12`, `padding: 4px 12px`, `borderRadius: 8px`
+- Inhaltsblöcke Audit-Seite: `borderRadius: 8px` durchgängig
+- ADR-024 Update-Block ergänzt (Korb/Türkis-Pivot)
+
 ### Added
 - Beta waitlist + welcome onboarding flow
 - Audit batch-fix strategy with 5-finding limit per batch

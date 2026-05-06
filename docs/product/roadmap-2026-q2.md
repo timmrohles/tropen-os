@@ -5,7 +5,7 @@
 > **Stand:** 2026-04-30
 > **Pflege:** Bei jedem Sprint-Abschluss aktualisieren. Bei jedem Pivot Phasen-Plan prüfen.
 
-> **Letzte Aktualisierung:** 2026-04-30 (BP8 abgeschlossen, Phasen-Plan ergänzt)
+> **Letzte Aktualisierung:** 2026-05-04 (ADR-027 Schritte 1-4 + Score-Refactor + Design-Sprint + Phase 2.5)
 > **Vorherige Aktualisierung:** 2026-04-29 (Tab-Sprint Domain-Architektur, ADR-025)
 > **Basis:** 5 Komitee-Reviews (€4.80 Gesamtkosten), Tiefe Wettbewerbsanalyse
 > **Positionierung:** "Dein Code, in Production-Reife." — Coach-Position (ADR-024)
@@ -36,7 +36,35 @@
 - Mobile-Verhalten 7 Tabs prüfen
 - BP11 — UX-Polish (Items vor Start schärfen)
 
-⚠ **Strategische Klärung vor Phase 3** — siehe Klärungen-Abschnitt
+**Phase 2.5 — Validierung der Audit-Engine** ← NEU, AKTIV
+
+Bevor weitere Polish-Iterationen stattfinden, wird die Audit-Engine mit echten Daten validiert. Ohne Validierung wäre jeder weitere Polish-Schritt Lippenstift auf möglicherweise schiefen Daten.
+
+- **Self-Dogfooding der eigenen Findings** — die ~183 Code-Qualität-Findings und weitere offene Findings systematisch durcharbeiten. Pro Finding klären: ist das ein echter Befund? Severity korrekt? Fix-Prompt nützlich? Bei Bedarf: Checker direkt korrigieren oder als unklarer Fall sammeln.
+- **Fremd-Repo-Scan-Erweiterung** — bestehenden 49-Repo-Benchmark erweitern. Mehr Vibe-Coder-Stack-Repos (Next.js + Supabase) testen. Top-20 häufigste Findings über alle Benchmark-Repos identifizieren — diese Rules brauchen die beste Coach-Stimme.
+- **Erkenntnisse zurück in Audit-Engine — Killer-Kriterien-Implementation** (ADR-027, 2026-05-04)
+  - Marken-Brief Section 28 ✅ 2026-05-04
+  - AST-Detektoren (Secrets/SQL/Auth/CORS/Build) ✅ 2026-05-04
+  - Dependency-Scanner ✅ 2026-05-04
+  - Config-Analyzer (DB-SSL/Dev-Secrets/HTTPS) ✅ 2026-05-04
+  - Score-Architektur-Refactor ✅ 2026-05-04
+  - Compliance-Domänen-Architektur ✅ 2026-05-05 — 9 Domänen, 5 umbenannte Profile, Default-Tabelle, Marken-Brief Section 28.5/28.6 (ADR-027 Update)
+  - ✅ **Sprint 5: Profil-Onboarding** (2026-05-05) — scan_project_profiles Migration + API + getDomainActivation + Modal/Wizard UI + AuditActions-Integration
+  - ✅ **Sprint 6a: UI-Pivot Audit-Detail** (2026-05-05) — ScoreBar Killer-primär, GlobalQuickWinsBar entfernt, FilterChips Multi-Select dynamisch, drei Sektionen (Stopper/Empfohlen/Polish)
+  - ✅ **Sprint 6b₁: Compliance-Blöcke** (2026-05-05) — DSGVO/KI-Act Fragen + Lighthouse-URL wiederhergestellt
+  - ✅ **Sprint 6b₂: Liste + Verbinden + Cleanup** (2026-05-05) — KillerStatusBadge, Projekteliste Killer-primär, Verbinden-Maske schlank, Tabs gelöscht. Schritt 6 abgeschlossen.
+  - ✅ Schritt 7: Settings-Profil-Änderbarkeit (2026-05-05) — ProfileDisplayBar + Modal edit-mode + activeProfile prop-chain
+  - ✅ Schritt 8: Coach-Wording (Sprint 8a + 8b) — 42 Rules, limitation-Feld
+  - ✅ Schritt 9: Domain-Detektoren (Sprint 9a + 9b + 9c) — Foundation, OSS/Marketing/Plattform/Infra, Compliance-Fragen
+  - **ADR-027 vollständig implementiert (Schritte 1–11) ✅ 2026-05-05**
+  - ✅ Polish-Sprint 9-Polish-1 (2026-05-05) — Hybrid-Badge (🟡/🟢/🛑), Auto-Skip Info-Block, 0-Dateien-Stale-Data-Fix
+  - ✅ Polish-Sprint 9-Polish-2 (2026-05-05) — Pattern-Cluster (Findings by ruleId), KI-Optik raus (Border-Strich statt blauer Hintergrund), Aufwand-Klassen (Quick Win/Mittel/Größer)
+  - ✅ Polish-Sprint 9-Polish-3 (2026-05-05) — Score-Header 60/40 ("Veröffentlichungs-Check" + "Was wir von dir brauchen"), Mini-Status mit Scroll-Anchors, Compliance-Blöcke weißer Hintergrund, Doppel-Icon-Fix
+  - 🟡 Beta-Vorbereitung als nächste Phase
+  - ⊘ Schritt 6–8: UI-Pivot / Settings / Coach-Wording
+  - ⊘ Schritt 9: Domain-Detektoren (DSGVO-Scanner, OSS-License-Scanner, LAZY-Detection)
+
+⚠ **Strategische Klärung vor Phase 3** — Onboarding-Modus und Projektseite-Definition werden nach Phase 2.5 angegangen, nicht parallel.
 
 **Phase 3 — Onboarding + Projektseite konzipieren**
 - Onboarding-Flow durchdenken
@@ -89,6 +117,10 @@
 5. **L2-Outreach (3 Vibe-Coder-Calls) vor großen Architektur-Entscheidungen** — Vibe-Coder-Realität validieren
 6. **Ansatz C (Lighthouse Finding-Typen) klären vor Beta-Einladungen**
 7. **`NEXT_PUBLIC_FIX_ENGINE_ENABLED=false` in `.env.local` setzen vor Beta-Einladungen** ✅ bereits gesetzt
+8. **Validierung vor Polish-Sprint-B** — Sprint-B (Findings-Gruppierung, Titel-Übersetzung, Responsive) wird erst nach Phase 2.5 gestartet. Ohne Validierungs-Daten würden Übersetzungen im Vakuum geschehen.
+9. **Onboarding-Komplex vor Beta klären** — Onboarding-Modus → Regeln-Export-Position → Deep-Review-Architektur (in dieser Reihenfolge — alle drei zusammen, nicht einzeln)
+10. **Checker-FP-Behandlung für Stub-Routes klären vor Beta** — 410-Only-Routes triggern Auth-Checker ohne echtes Risiko. Optionen: A (Checker-Fix), B (UI-Markierung), C (Hybrid). Empfehlung: B als Coach-Feature. Details: Backlog "P4-Pattern für 410-Only-Routes".
+10. **Externe Marketing-Materialien auf Korb/Türkis-Migration prüfen vor Beta** — Pitch-Decks, Social-Media-Profile, Domain-Recherche (Limette war Sekundärfarbe bis 2026-05-04)
 
 ---
 
@@ -574,6 +606,136 @@ hat und nicht schläft weil er nicht weiß ob alles sicher ist.
 | WebPageTest | Performance | BP18+ (Q4) | Optional | ~3-5 PT | API kostenpflichtig |
 | Pa11y | Barrierefreiheit | BP19+ (Q4) | Optional | ~3-5 PT | Open Source |
 
+## Backlog — Audit-UX + Checker-Qualität
+
+### UI-Pivot-Vorbereitung: Quick-Wins-Doppelung + Reihenfolge-Empfehlung — 2026-05-04
+
+**Beobachtung (Timm):** Quick Wins als eigene Sektion fühlt sich doppelt an — Findings tauchen in Quick-Wins-Box UND Findings-Liste auf. User fragt: "wo soll ich anfangen?"
+
+**Hypothese:** Quick Wins sind kein eigener Inhalt, sondern eine Sortier-/Empfehlungs-Information für die Findings-Liste.
+
+**Für ADR-027 Schritt 6 (UI-Pivot):**
+- Eine einzige Findings-Liste, sortiert — Quick Wins kommen zuerst ("Empfohlen zuerst")
+- Keine separate Quick-Wins-Sektion mehr
+- **Default-Sortierung: Aufwand-basiert** (Quick Wins zuerst, Begründung: Aufwand ist greifbar, "15 Min" ist konkret — Impact-Score wäre für Vibe-Coder überkonstruiert)
+- Reihenfolge-Kriterium **transparent erklären**: "Diese 5 sind in <15 Min lösbar — fang hier an"
+- Hybrid (Aufwand × Impact) als mögliche Erweiterung später
+
+**Coach-Lücke heute:** Tropen OS liefert keine Reihenfolge-Empfehlung. Schritt 6 schließt das.
+Wording-Beispiel: "Du hast 17 Polish-Findings. Wir empfehlen, mit diesen 5 anzufangen — sie sind alle in unter 15 Minuten lösbar und reduzieren die Liste schnell."
+
+Architektur-Referenz: Marken-Brief Section 28.4.
+
+---
+
+### P4-Pattern für 410-Only-Routes — 2026-05-04
+**Anlass:** Dogfood-Sprint — Audit-Finding "API route may lack auth check" für `audit/tasks/route.ts` + `audit/tasks/[id]/route.ts`. Beide Routes geben ausschließlich 410 Gone zurück, greifen auf keine Daten zu. Checker sieht nur "kein Auth-Import" und nicht "Route tut nichts, was Auth bräuchte". Bereits als bekannter FP in `docs/checker-feedback.md` dokumentiert. Bei Senior-Engineer-Reflex kein Schaden — bei Vibe-Codern potenziell Verwirrung.
+
+**Optionen:**
+- **A — Checker-Korrektur:** 410/404-Only-Stubs als Exclusion erkennen. Pro: Wurzel-Fix. Contra: Komplexere Detection, ~30–60 Min.
+- **B — UI-Markierung dokumentierter FPs:** Audit-UI liest `checker-feedback.md` und markiert dokumentierte FPs visuell ("vom Repo als False Positive bestätigt"). Pro: Coach-Marketing-Feature. Contra: substantieller Aufwand (UI + Datei-Parsing).
+- **C — Hybrid:** A + B kombiniert.
+
+**Empfehlung:** B — Coach-Marketing-fähig, koppelt an Stop-and-think (s.u.). Vor Beta-Onboarding entscheiden.
+
+---
+
+### Stop-and-think im Fix-Prompt-Format — 2026-05-04
+**Anlass:** Fix-Prompts im vollen Coach-Stil können bei Vibe-Codern ohne Senior-Engineer-Reflex mechanisch ausgeführt werden — auch bei False Positives. Besonders bei Security/DSGVO/Compliance-Findings relevant.
+
+**Optionen:**
+- **A — Standard-Block in jedem Prompt:** "Bevor du fixt — kurz prüfen". Pro: konsistent. Contra: wird wie Cookie-Banner weggeklickt, verwässert Coach-Stimme.
+- **B — Reflexions-Block nur bei kritischen Domains:** Nur Sicherheit, DSGVO, Compliance. Pro: pragmatisch. Contra: Pflege-Aufwand.
+- **C — UI-Element "❓ False Positive?":** Button neben Finding öffnet kurze UI-Frage, Antwort landet in `checker-feedback.md`. Pro: eleganteste Lösung, baut FP-Doku als UX-Habit ein, koppelt direkt an P4-Pattern Option B. Contra: substantieller Aufwand.
+
+**Empfehlung:** C als Ziel-Lösung. Falls zu teuer für Phase 2: B als Übergang. A nicht empfohlen (Anti-Coach). Timing: Phase 3 UX-Polish oder gemeinsam mit P4-Pattern Option B vor Beta.
+
+---
+
+### Onboarding-Komplex (Deep Review + Regeln-Export + Onboarding-Modus) — 2026-05-04
+
+> **Update 2026-05-04:** Onboarding-Komplex ist nicht mehr vollständig Backlog. Profil-Frage (Onboarding-Modus) ist Bestandteil der Killer-Kriterien-Implementation (ADR-027, Schritt 5). **Profil-Auswahl = Onboarding-Frage** — dieser Teil ist damit entschieden.
+> Regeln-Export-Position und Deep-Review-Architektur bleiben zu klären, sind aber vom Killer-Kriterien-Pivot entkoppelt.
+
+**Frage 1 — Deep Review Architektur (offen):**
+"Deep Review"-Button suggeriert, der normale Audit könnte ungenau sein. Anti-Coach-Position.
+- A: Komitee immer dabei | B: Pro-Tier-Feature | C: Quick vs. Vollständig | D: Automatisch nach Bedingungen
+
+**Frage 2 — Regeln-Export UX-Position (offen):**
+"Regeln exportieren" im Audit ist falscher Moment — Export ist Vor-Coding-Setup.
+- A: In Onboarding-Flow | B: Eigene Setup-Seite | C: Im Audit kontextuell | D: Backlog nach Onboarding-Klärung
+
+**Frage 3 — Onboarding-Modus:** ✅ Profil-Auswahl (5 Profile + Markt-Achse) ist durch ADR-027 entschieden.
+
+**Status:** Vor Beta-Onboarding zu klären. Alle drei sind Trust-Killer bei Vibe-Coder-Skalierung.
+
+---
+
+### Feature-Guards-Linting (Backlog) — 2026-05-05
+
+**Anlass:** `pnpm lint:features` schlug fehl, weil `scripts/ci/check-feature-guards.mjs` nie angelegt wurde (Vorgriff auf nie umgesetzten Plan). Befehl aus `package.json` entfernt, `lint:all` läuft wieder durch.
+
+**Was es prüfen sollte:** dass Feature-Flags in `src/lib/features.ts` korrekt um experimentelle Features gesetzt sind und keine Feature-Flag-Leichen im Code stehen.
+
+**Sprint-Schätzung:** ~2-3h. **Wann:** vor Beta, im selben Hygiene-Block wie 820-Lint-Warnings-Welle.
+
+---
+
+### Marketing-Consent-Logik-Detection (eigener Sprint nach Beta) — 2026-05-05
+
+**Anlass:** Sprint 9b detectet Tracking-Libraries via package.json. Consent-Integration kann Tropen OS heute nicht prüfen — fixHint befähigt User, das mit ihrem KI-Assistenten zu prüfen (Selbst-Prüfungs-Befähigungs-Pattern, Section 28.1).
+
+**Substanz für eigenen Sprint:**
+- AST-Analyse: wo wird Tracking-Library initialisiert? (Module-level, useEffect, conditional)
+- Cookie-Manager-Detection (CookieYes, OneTrust, eigene Lösung, keine)
+- Conditional-Rendering-Analyse: läuft Tracking nach Consent-State?
+- Komitee-Review: ja (DSGVO-Sensibilität)
+
+**Aufwand:** ~10-15h + ~€0.50 Komitee. **Wann:** nach Beta-Feedback. Vibe-Coder-Feedback zu fixHint-Pattern abwarten — möglicherweise reicht der Prompt-Ansatz.
+
+---
+
+### Vibe-Coder-Wörterbuch — 2026-05-05
+
+**Anlass (Compliance-Domänen-Komitee):** Coach-Sprache muss radikal vereinfacht werden. Compliance-Begriffe filtern Vibe-Coder raus, bevor sie verstehen worum es geht. Top-3 Fallen identifiziert: "sensible Daten" (Vibe-Coder denken an Passwörter, nicht Art. 9 DSGVO), "Biometrie" (nicht Sentiment-Analyse), "Tracking" (unterscheidet nicht notwendig vs. Marketing).
+
+**Substanz-Anker:** Marken-Brief Section 28.5 — Übersetzungstabelle (6 Einträge als Startpunkt)
+
+**Aufwand:** ~3 Tage (Komitee-Schätzung). Validierung mit echten Vibe-Coderer-Calls (L2-Outreach).
+
+**Timing:** vor Schritt 8 (Coach-Wording-Implementation). Nach Beta-Start, nicht davor.
+
+---
+
+### Audit-Kategorie: Agent-Friendliness / Discoverability für Maschinen — 2026-05-04
+
+**Beobachtung 2026-05-04 (Timm):**
+Vibe-Coder bauen Apps, die zunehmend von AI-Agenten besucht werden (Operator,
+Computer Use, Copilot, Gemini Assistant). Wenn die App agent-blind ist, wird sie
+für eine wachsende Nutzergruppe unbenutzbar — das ist Production-Readiness-Aspekt.
+
+**Anker-Artikel:** Google web.dev — "Build agent-friendly websites" (2026-04-01)
+https://web.dev/articles/ai-agent-site-ux
+
+**Themen-Cluster (offen, zu ergänzen):**
+- A11y-Tree-Qualität (semantisches HTML, ARIA-Rollen, stabile DOM-Struktur)
+- WebMCP-Bereitschaft (Web-Standard noch in Entwicklung — Reifegrad prüfen)
+- schema.org Markup (Timm-Hinweis 2026-05-04, "wird sicherlich noch ergänzt")
+- OpenAPI / strukturierte Daten für Agent-Discovery
+- Stable-DOM-Klassen (keine Hash-Klassen, die bei jedem Build wechseln)
+- ggf. weitere Discoverability-Aspekte (SEO-Schnittmenge?)
+
+**Offene Fragen für Sparring:**
+1. Killer oder Polish? — Tendenz Polish-High (Detection heuristisch, Marken-Position zweiter Ordnung greift)
+2. Profil-Aktivierung? — Tendenz Profile 3-5 (Public-Apps)
+3. Welche konkreten Checks technisch machbar mit AST/Datei-Inspektion?
+4. Verhältnis zu bestehenden Audit-Kategorien (Accessibility-Kategorie existiert bereits — Erweitern oder neue Kategorie?)
+
+**Zustand:** Themen-Sammlung. Sparring + Eingrenzung morgen oder später.
+**Verbindung:** Coach-Position zweiter Ordnung (Marken-Brief Section 28) greift hier — bei heuristischer Detection lieber Polish mit Begrenzungs-Aussage als Killer.
+
+---
+
 ## Backlog Q3+ — Datenbank-Sicherheit-Erweiterung
 
 Anlass: ADR-025-Update 2026-04-29. Phase-1-Erweiterung im Tab-Sprint deckt ~10 Supabase-Sicherheit-Rules ab.
@@ -598,6 +760,53 @@ Nach Tab-Sprint-Abschluss kann sofort kommuniziert werden:
 - "10 Supabase-Sicherheits-Checks gelauncht — RLS, Service-Role, Storage-Buckets"
 - Vibe-Coder-Outreach (L2): konkretes Tool zum Zeigen
 - Cursor/Lovable-Communities: "Lasst euer Repo durch unseren Sicherheits-Tab laufen"
+
+---
+
+## Backlog aus ADR-027 Implementations-Phase (Sprints 5–7, 2026-05-05)
+
+Diese Items entstanden während der Implementation. Die meisten lösen sich mit Schritt 9 (Domain-Detektoren + DB-Migration) auf.
+
+### Items, die sich mit Schritt 9 auflösen
+
+#### `isKiller`-Heuristik-Doppelung
+**Anlass:** Sprint 6a — `isKiller`-Status wird zweimal berechnet: einmal vom Detektor in `audit_findings`, einmal im Renderer via `KILLER_RULE_IDS` Set in `killer-rule-ids.ts`. Zwei Quellen für dieselbe Information.
+**Lösung:** DB-Spalte `is_killer` in `audit_findings` mit Schritt 9. Dann nur noch ein Lookup aus DB, `KILLER_RULE_IDS` Set wird obsolet.
+**Status:** Übergang akzeptabel — kein FP-Risiko, nur Redundanz.
+
+#### `critical_findings` als Killer-Count-Proxy
+**Anlass:** Sprint 6b₂ — Verbundene-Projekte-Liste zeigt `critical_findings` aus `audit_runs` als Näherung für Killer-Count. `critical_findings` ist severity-basiert (critical ≥ 1), Killer ist rule-id-basiert — leichte Divergenz möglich.
+**Konsequenz:** Liste-Approximation und Detail-Seite können leicht abweichen.
+**Lösung:** mit Schritt 9 (is_killer-DB-Migration): echten `killer_count` in `scan_projects.last_killer_count` speichern.
+
+#### Aufwand-Heuristik via fixType
+**Anlass:** Sprint 6a — `effortMinutesFromFixType` (code-gen=10, code-fix=15, refactoring=45, manual=60) ist grobe Schätzung ohne echte Daten.
+**Lösung:** wenn Findings ein echtes Aufwand-Feld bekommen (aus Detektor oder Komitee), Heuristik durch Daten ersetzen. Vermutlich Schritt 9 (zusammen mit is_killer-Migration).
+
+#### Compliance-Fragen-Inhalt überarbeiten
+**Anlass:** Sprint 6b₁ — DSGVO- und KI-Act-Compliance-Fragen 1:1 aus alten Tabs wiederhergestellt. Wording war vor Marken-Brief Section 28.5 formuliert.
+**Lösung:** Sprint 8 (Coach-Wording) überarbeitet Compliance-Fragen-Wording. Inhaltliche Logik-Überarbeitung kommt mit Schritt 9 (Domain-Logik-Differenzierung).
+
+### Eigenständige Items (nicht durch Schritt 9 abgedeckt)
+
+#### Profile-Historie sichtbar machen
+**Anlass:** Sprint 5 — `scan_project_profiles` hat vollständige Änderungs-Historie, aber nirgends in der UI zugänglich.
+**Möglicher Ort:** Audit-Detail-Seite zeigt "Profil seit X geändert" oder Settings-Ansicht "Profil-Verlauf".
+**Aufwand:** ~1-2h. **Wann:** UX-Polish vor Beta.
+
+#### Quick-Wins-Heuristik überarbeitungsbedürftig?
+**Anlass:** Sprint 6a — Quick-Wins-Heuristik aus altem Stand übernommen (quickWinScore basiert auf Severity × fixType × Trio-Bonus). Nicht im Sprint-Scope überarbeitet.
+**Wann nachrüsten:** wenn UX-Tests zeigen, dass "Empfohlen zuerst"-Sortierung nicht User-Erwartungen entspricht.
+**Aufwand:** ~2-3h + eventuell Komitee-Sprint.
+
+#### `window.location.reload()` statt `router.refresh()` bei Profil-Änderung
+**Anlass:** Schritt 7 — nach Profil-Änderung wird `window.location.reload()` genutzt statt Next.js `router.refresh()` (wäre sauberer und ohne Flash).
+**Wann nachrüsten:** wenn UX-Tests häufigere Profil-Änderungen zeigen oder Flash stört.
+**Aufwand:** ~30 Min — Server Action mit `revalidatePath`.
+
+### Bereits dokumentiert
+
+**Feature-Guards-Linting** — `pnpm lint:features`-Befehl referenzierte nicht-existierendes `check-feature-guards.mjs`. Befehl entfernt (BP-Lint-Features-Fix, 2026-05-05). Neubau als ~2-3h Sprint vor Beta-Phase. → Eintrag in Backlog-Bereich oben.
 
 ---
 

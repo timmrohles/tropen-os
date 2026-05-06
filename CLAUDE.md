@@ -153,7 +153,7 @@ Alle Dokumente liegen in `docs/webapp-manifest/`:
 | 60–79% | 🟠 Risky |
 | < 60% | 🔴 Prototype |
 
-**Letzter Audit:** 2026-04-28 — **93.6% Production Grade** (Report: `docs/audit-reports/2026-04-28-audit-report.md`)
+**Letzter Audit:** 2026-05-04 — **96.8% Production Grade** (Report: `docs/audit-reports/2026-05-04-audit-report.md`)
 
 Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
 
@@ -167,7 +167,7 @@ Kein einziger Punkt ist optional.
 ```
 [ ] content-max / content-narrow / content-wide / content-full gesetzt?
 [ ] page-header mit page-header-title + page-header-actions vorhanden?
-[ ] H1-Icon: 22px, color="var(--text-primary)", weight="fill", aria-hidden="true"?
+[ ] H1-Icon: 30px, color="var(--text-primary)", weight="fill", aria-hidden="true"?
 [ ] Kein marginBottom/padding override auf page-header — CSS-Klasse regelt das?
 [ ] Chips: nur Text, KEINE Icons in Chips?
 [ ] Kein Sidebar-Layout — flaches Layout mit Card-Grid + Edit-Card darunter?
@@ -200,7 +200,7 @@ Jede App-Seite (außer Auth/Legal/Chat) folgt diesem Aufbau:
   <div className="page-header">
     <div className="page-header-text">
       <h1 className="page-header-title">
-        <IconName size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+        <IconName size={30} color="var(--text-primary)" weight="fill" aria-hidden="true" />
         Seitentitel
       </h1>
       <p className="page-header-sub">Kurzer Untertitel</p>
@@ -400,11 +400,11 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 
 ## Design System
 
-### Farbpalette (helles Theme — Stand März 2026)
+### Farbpalette (helles Theme — Stand Mai 2026)
 
 | Variable | Wert | Verwendung |
 |----------|------|------------|
-| `var(--bg-base)` | `#EAE9E5` | Seitenhintergrund |
+| `var(--bg-base)` | `#D8DCE0` | Seitenhintergrund (kühl) |
 | `var(--bg-surface)` | `rgba(255,255,255,0.80)` | Cards, Panels **in der Seite** (kein Floating) |
 | `var(--bg-surface-solid)` | `#FFFFFF` | Modals, Drawer, Dropdowns, Sheets — alle schwebenden Elemente |
 | `var(--bg-tooltip)` | `#FFFFFF` | Tooltips, Popovers, Inline-Hinweisboxen |
@@ -412,12 +412,15 @@ Dify wurde vollständig entfernt. `jungle-order` nutzt jetzt Anthropic direkt (`
 | `var(--text-primary)` | `#1A1714` | Haupttext, H1-Icons |
 | `var(--text-secondary)` | `#4A4540` | Sekundärtext |
 | `var(--text-tertiary)` | `#6B6560` | Hilfstext, Labels |
-| `var(--accent)` | `#3F4A55` | **Schiefer** — Primär: CTAs, Buttons, aktive Zustände |
+| `var(--accent)` | `#3F4A55` | **Schiefer** — Texte, Indikatoren, aktive Zustände, Focus-Rings |
 | `var(--accent-hover)` | `#2D3640` | Schiefer Hover |
-| `var(--accent-light)` | `#E8EAEC` | Schiefer Hell — Subtle Highlights, Chip-Active |
+| `var(--accent-light)` | `#E8EAEC` | Schiefer Hell — Hover-Hintergrund Tabellen/Rows, Chip-Active |
 | `var(--accent-dark)` | `#1E2530` | Schiefer Dunkel — Sidebar, Chat-Bubble |
-| `var(--secondary)` | `#A8B852` | **Limette** — Trend-Indikatoren, Progress-Bars |
-| `var(--secondary-light)` | `#EEF2DD` | Limette Hell |
+| `var(--teal)` | `#1E7070` | **Türkis** — ALLE primären Action-Buttons (btn-primary, Send, Modal-OK etc.) |
+| `var(--teal-hover)` | `#165858` | Türkis Hover |
+| `var(--teal-light)` | `#E0F4F4` | Türkis Hell |
+| `var(--secondary)` | `#fffad3` | **Korb** — Trend-Indikatoren, Progress-Bars, Severity-Balken |
+| `var(--secondary-light)` | `#FFFEF5` | Korb Hell |
 | `var(--active-bg)` | `#1E2530` | Schiefer-Dark — Hero, Code-Panel, Active-States |
 | `var(--surface-warm)` | `#FAF7F2` | Sektion-Hintergrund warm |
 | `var(--surface-cool)` | `#F2F4F1` | Sektion-Hintergrund kühl (leicht limettig) |
@@ -480,7 +483,7 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 <div className="page-header">
   <div className="page-header-text">
     <h1 className="page-header-title">
-      <IconName size={22} color="var(--text-primary)" weight="fill" />
+      <IconName size={30} color="var(--text-primary)" weight="fill" />
       Seitentitel
     </h1>
     <p className="page-header-sub">Untertitel</p>
@@ -562,6 +565,11 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 {/* AppSection mit Limette-Accent (Quick Wins) */}
 <AppSection header="⚡ QUICK WINS" accent>...</AppSection>
 
+{/* AppSection mit dunklem Header (#5c6b78, weiße Schrift) — Score, Sprint-Boxen */}
+<AppSection header="SCORE" dark headerRight={<span style={{ color: '#ffffff' }}>Projekt · vor 2h</span>}>
+  ...
+</AppSection>
+
 {/* AppTabs (sticky, Sentry-Stil) */}
 <AppTabs tabs={[
   { id: 'findings', label: 'Findings', count: 42, sectionId: 'findings' },
@@ -570,7 +578,8 @@ Immer `className="card"` — nie eigene box-styles erfinden.
 ```
 
 **Komponenten:** `src/components/app-ui/AppSection.tsx`, `AppTable.tsx`, `AppTabs.tsx`
-**CSS-Klassen:** `.app-table`, `.app-section`, `.app-section__header`, `.app-section__header--accent`, `.app-tabs`, `.app-tab`, `.app-tab--active`, `.severity-dot--critical/high/medium/low`
+**CSS-Klassen:** `.app-table`, `.app-section`, `.app-section__header`, `.app-section__header--accent`, `.app-section__header--dark`, `.app-tabs`, `.app-tab`, `.app-tab--active`, `.severity-dot--critical/high/medium/low`
+**AppSection Props:** `accent` (Korb-getönt), `dark` (Schiefer #5c6b78, weiße Schrift — für Score/Sprint-Header). Bei `dark` muss `headerRight`-Content explizit `color: '#ffffff'` setzen.
 **App-Welt-Regeln:** max 4px Radius · keine Drop-Shadows · Borders statt Schatten · Mono als Daten-Standard · Surface-Wechsel nur --bg-base / --surface-warm
 
 **Anker-Frage für App-UI-Entscheidungen:** "Wie würde Sentry oder DataDog das anzeigen — funktional, klar, ohne Marketing-Polish, mit Tabellen statt Cards?"
@@ -645,7 +654,7 @@ codeSnippets?: Array<{ code: string; tool: string; language?: string }>
 #### Icons
 - **Ausschließlich Phosphor Icons** (`@phosphor-icons/react`)
 - `weight="bold"` oder `weight="fill"` — nie andere weights
-- Größen: NavBar 18px · H1 22px · Cards/Listen 16px · Inline 14px
+- Größen: NavBar 18px · H1 30px · Cards/Listen 16px · Inline 14px
 - **`var(--accent)` (Schiefer) für CTAs, Buttons, aktive Zustände — nie in H1 als Textfarbe**
 - ❌ **Emoji als Icons verboten** — kein `📁`, `✅`, `🔔` o.ä. als funktionale UI-Icons
 - ❌ **Andere Icon-Libraries verboten** — kein Tailwind HeroIcons, Lucide, React Icons, Radix Icons
@@ -1103,6 +1112,8 @@ Letzte relevante Migrationen:
 | 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
 | 20260415000112_audit_findings_not_relevant_reason.sql | audit_findings: not_relevant_reason TEXT Spalte fuer "Nicht relevant"-Begruendungen |
 | 20260417000113_beta_tables.sql | beta_waitlist (email/platform/message, RLS public insert + superadmin read) + beta_feedback (user_id/audit_run_id/ratings/message/platform) + user_preferences: beta_onboarding_done + is_beta_user |
+| 20260505000116_scan_project_profiles.sql | scan_project_profiles: profile_type_enum + geo_scope_enum + 5 Felder (profile_type, geo_scope, has_user_data, has_ai nullable, has_ecommerce nullable) + RLS org-scoped. ADR-027 Schritt 5. |
+| 20260505000117_audit_findings_killer_effort.sql | audit_findings: is_killer BOOLEAN + effort_minutes INTEGER (beide nullable, Heuristik-Fallback für alte Findings). ADR-027 Schritt 9a. |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.

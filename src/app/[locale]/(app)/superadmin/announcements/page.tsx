@@ -156,7 +156,7 @@ export default function SuperadminAnnouncementsPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <Megaphone size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <Megaphone size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('announcements.title')}
           </h1>
           <p className="page-header-sub">{t('announcements.subtitle')}</p>

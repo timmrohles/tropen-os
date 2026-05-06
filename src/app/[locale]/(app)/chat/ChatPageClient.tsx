@@ -133,7 +133,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
         <div className="page-header">
           <div className="page-header-text">
             <h1 className="page-header-title">
-              <ChatCircle size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+              <ChatCircle size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
               Chats
             </h1>
             <p className="page-header-sub">Deine Konversationen mit Toro</p>

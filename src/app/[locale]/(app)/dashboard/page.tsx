@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<ScoreStatus, string> = {
   prototype:        'Prototype',
 }
 
-// Score number + progress text color — risky uses --warning (#8C5A00) for contrast
+// Score number + progress text color — risky uses var(--warning) for contrast
 const STATUS_COLOR: Record<ScoreStatus, string> = {
   production_grade: 'var(--accent)',
   stable:           'var(--accent)',
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <House size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <House size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('title')}
           </h1>
           <p className="page-header-sub">
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
             fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
             color: 'var(--accent)', marginBottom: 20, letterSpacing: '0.02em',
           }}>
-            <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} />
+            <span style={{ width: 28, height: 1, background: 'rgba(63,74,85,0.3)', flexShrink: 0 }} aria-hidden="true" />
             {t('yourProjects')}
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>

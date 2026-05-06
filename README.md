@@ -67,6 +67,11 @@ Audit-Architektur: 26 Kategorien, 242 Regeln (178 automatisiert / 64 manuell), g
 
 Aktueller Score: **93.6% — Production Grade** (2026-04-28)
 
+## Backup & Disaster Recovery
+
+Backup: Supabase PITR aktiv (Pro-Plan), tägliche Snapshots, 30-Tage-Retention.
+Restore-Test: offen (Backlog).
+
 ## Deployment
 
 Vercel — automatisch bei Push auf `main`.

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 
 interface Props {
-  projectId: string
+  projectId: string | null
   questionKey: string
   question: string
   type: 'boolean' | 'text' | 'select'
@@ -23,6 +23,7 @@ export function ComplianceQuestion({ projectId, questionKey, question, type, opt
   const [saved, setSaved] = useState(false)
 
   async function save(newValue: unknown) {
+    if (!projectId) return
     setSaving(true)
     setValue(newValue)
     try {

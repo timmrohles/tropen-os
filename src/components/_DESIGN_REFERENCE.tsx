@@ -187,7 +187,7 @@ export default function DesignReference() {
             <div className="page-header" style={{ marginBottom: 0 }}>
               <div className="page-header-text">
                 <h1 className="page-header-title">
-                  <FolderOpen size={22} color="var(--text-primary)" weight="fill" />
+                  <FolderOpen size={30} color="var(--text-primary)" weight="fill" />
                   Projekte
                 </h1>
                 <p className="page-header-sub">Alle deine Projekte auf einen Blick</p>
@@ -206,12 +206,12 @@ export default function DesignReference() {
         <Code>{`<div className="page-header">
   <div className="page-header-text">
     <h1 className="page-header-title">
-      {/* Icon: size=22, color="var(--text-primary)", weight="fill" */}
+      {/* Icon: size=30, color="var(--text-primary)", weight="fill" */}
       {/* ❌ KEIN var(--accent) für H1-Icons */}
-      <FolderOpen size={22} color="var(--text-primary)" weight="fill" />
-      Seitentitel
+      <FolderOpen size={30} color="var(--text-primary)" weight="fill" />
+      Seitentitel  {/* 36px, fontWeight 800 */}
     </h1>
-    <p className="page-header-sub">Untertitel</p>
+    <p className="page-header-sub">Untertitel  {/* 16px, text-tertiary */}</p>
   </div>
   <div className="page-header-actions">
     <button className="btn btn-ghost">Einstellungen</button>
@@ -240,8 +240,21 @@ export default function DesignReference() {
             Disabled
           </button>
         </Row>
-        <Row label="Größen">
-          <button className="btn btn-primary">Standard (13px)</button>
+        <Row label="App-Welt-Standard (Audit-Seite — verbindlich)">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--active-bg)', padding: '12px 16px', borderRadius: 8 }}>
+            <button className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <Plus size={12} weight="bold" /> Primär (12px)
+            </button>
+            <button className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              Ghost (12px)
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '8px 0 0' }}>
+            App-Welt: immer <code>fontSize: 12</code>, <code>padding: &apos;4px 12px&apos;</code> — Türkis für Primary, neutral für Ghost
+          </p>
+        </Row>
+        <Row label="Größen (Marketing)">
+          <button className="btn btn-primary">Standard (15px)</button>
           <button className="btn btn-sm btn-ghost">Small (12px)</button>
           <button className="btn-icon" aria-label="Einstellungen">
             <Gear size={16} weight="bold" />
@@ -250,20 +263,23 @@ export default function DesignReference() {
             <DotsThree size={16} weight="bold" />
           </button>
         </Row>
-        <Code>{`<button className="btn btn-primary">
-  <Plus size={14} weight="bold" /> Neu
+        <Code>{`{/* App-Welt: Audit, Dashboard — verbindliche Größe */}
+<button className="btn btn-primary"
+  style={{ fontSize: 12, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}>
+  <Plus size={12} weight="bold" /> Audit starten
 </button>
-<button className="btn btn-ghost">Ghost</button>
-<button className="btn btn-danger">Löschen</button>
-<button className="btn btn-sm btn-ghost">Klein</button>
-<button className="btn-icon" aria-label="Einstellungen">
-  <Gear size={16} weight="bold" />
+<button className="btn btn-ghost"
+  style={{ fontSize: 12, padding: '4px 12px' }}>
+  Ghost
 </button>
 
-{/* ❌ FALSCH — nie eigene button-styles */}
-<button style={{ background: '#2D7A50', color: '#fff', padding: '8px 16px' }}>
-  Falsch
-</button>`}
+{/* Marketing / Landing — volle Größe */}
+<button className="btn btn-primary">Primär (15px)</button>
+<button className="btn btn-ghost">Ghost</button>
+<button className="btn btn-danger">Löschen</button>
+
+{/* ❌ FALSCH — nie eigene button-styles, nie Hex-Farben */}
+<button style={{ background: '#1E7070', color: '#fff', padding: '8px 16px' }}>Falsch</button>`}
         </Code>
       </Section>
 
@@ -592,12 +608,14 @@ import { HomeIcon } from '@heroicons/react/24/outline'  // verbotene Library
             { var: '--text-primary',  hex: '#1A1714',             label: 'Text Primary' },
             { var: '--text-secondary',hex: '#4A4540',             label: 'Text Secondary' },
             { var: '--text-tertiary', hex: '#6B6560',             label: 'Text Tertiary' },
-            { var: '--accent',         hex: '#3F4A55',  label: 'Schiefer — Primär (Buttons, CTAs)' },
+            { var: '--teal',           hex: '#1E7070',  label: 'Türkis — ALLE primären Action-Buttons' },
+            { var: '--teal-hover',     hex: '#165858',  label: 'Türkis Hover' },
+            { var: '--accent',         hex: '#3F4A55',  label: 'Schiefer — Text, Indikatoren, aktive Zustände' },
             { var: '--accent-hover',   hex: '#2D3640',  label: 'Schiefer Hover' },
-            { var: '--accent-light',   hex: '#E8EAEC',  label: 'Schiefer Hell — Highlights' },
+            { var: '--accent-light',   hex: '#E8EAEC',  label: 'Schiefer Hell — Hover, Chip-Active' },
             { var: '--accent-dark',    hex: '#1E2530',  label: 'Schiefer Dunkel — Sidebar, Bubbles' },
-            { var: '--secondary',      hex: '#A8B852',  label: 'Limette — Trend, Progress' },
-            { var: '--secondary-light',hex: '#EEF2DD',  label: 'Limette Hell' },
+            { var: '--secondary',      hex: '#fffad3',  label: 'Korb — Severity-Balken, Highlights' },
+            { var: '--secondary-light',hex: '#FFFEF5',  label: 'Korb Hell' },
             { var: '--active-bg',      hex: '#1E2530',  label: 'Active/Selected (Schiefer-Dark)' },
             { var: '--surface-warm',   hex: '#FAF7F2',  label: 'Surface Warm (Sektionen)' },
             { var: '--surface-cool',   hex: '#F2F4F1',  label: 'Surface Cool (Sektionen)' },
@@ -1307,6 +1325,107 @@ const STATUS_COLOR = {
         <Code>{`<div className="data-highlight">
   <span className="data-highlight__number">183</span>
   <span className="data-highlight__label">Regeln in 25 Kategorien</span>
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          26. APP-BLÖCKE — Audit-Welt (Radius, AppSection, Wrapper)
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="26. App-Blöcke — Radius & AppSection (Audit-Welt)">
+        <Row label="Radius-Standard: 8px überall">
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 8, padding: '16px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+              Inhaltsblock — <code style={{ fontSize: 11 }}>borderRadius: 8</code>
+            </div>
+            <button className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px' }}>
+              Button — <code style={{ fontSize: 11 }}>borderRadius: 8</code>
+            </button>
+          </div>
+        </Row>
+        <Row label="AppSection — dark Header (#5c6b78)">
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', width: '100%', maxWidth: 480 }}>
+            <div style={{ background: '#5c6b78', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#ffffff' }}>Score</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>Projektname · vor 2h</span>
+            </div>
+            <div style={{ padding: '16px 20px', background: '#ffffff', fontSize: 13, color: 'var(--text-secondary)' }}>
+              Inhalt des Blocks
+            </div>
+          </div>
+        </Row>
+        <Code>{`{/* AppSection mit dark Header — Score, Sprint-Box */}
+<AppSection
+  header="SCORE"
+  dark
+  headerRight={<span style={{ color: '#ffffff' }}>Projekt · vor 2h</span>}
+  style={{ borderRadius: 8 }}
+  headerStyle={{ background: '#5c6b78', color: '#ffffff' }}
+>
+  ...
+</AppSection>
+
+{/* Haupt-Wrapper Audit-Seite */}
+<div style={{
+  background: '#ffffff',
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  overflow: 'hidden',
+}}>
+  <AppTabs ... />
+  <section>{/* Tab-Inhalt */}</section>
+</div>`}
+        </Code>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          27. SEVERITY-FILTERBALKEN — Audit-Welt
+      ══════════════════════════════════════════════════════════════════ */}
+      <Section title="27. Severity-Filterbalken — Korb-Balken mit dunklem Text">
+        <Row label="Beispiel">
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 0,
+            padding: '10px 20px', background: 'var(--secondary)',
+            fontFamily: 'var(--font-mono)', fontSize: 11,
+            flexWrap: 'wrap', rowGap: 4, width: '100%',
+          }}>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 10px 2px 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)', fontWeight: 700, borderRight: '1px solid rgba(30,37,48,0.15)', marginRight: 10 }}>
+              12 Findings
+            </button>
+            {[
+              { label: 'kritisch', cls: 'severity-dot--critical' },
+              { label: 'hoch',     cls: 'severity-dot--high' },
+              { label: 'mittel',   cls: 'severity-dot--medium' },
+              { label: 'niedrig',  cls: 'severity-dot--low' },
+            ].map(({ label, cls }) => (
+              <button key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', cursor: 'pointer', padding: '2px 8px', borderRadius: 3, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)', background: 'transparent' }}>
+                <span className={`severity-dot ${cls}`} style={{ width: 7, height: 7 }} />
+                {label}
+              </button>
+            ))}
+            <span style={{ marginLeft: 'auto', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--active-bg)' }}>×N = Vorkommen</span>
+          </div>
+        </Row>
+        <Code>{`{/* Severity-Filterbalken — var(--secondary) = Korb #fffad3, dunkler Text */}
+<div style={{
+  display: 'flex', alignItems: 'center',
+  padding: '10px 20px', background: 'var(--secondary)',
+  fontFamily: 'var(--font-mono)', fontSize: 11,
+  flexWrap: 'wrap', rowGap: 4,
+}}>
+  <button style={{ color: 'var(--active-bg)', fontWeight: 700,
+    borderRight: '1px solid rgba(30,37,48,0.15)', marginRight: 10 }}>
+    {count} Findings
+  </button>
+  <button style={{
+    color: 'var(--active-bg)',
+    background: isActive ? 'rgba(30,37,48,0.1)' : 'transparent',
+    borderRadius: 3,
+  }}>
+    <span className="severity-dot severity-dot--critical" style={{ width: 7, height: 7 }} />
+    kritisch
+  </button>
+  <span style={{ marginLeft: 'auto', color: 'var(--active-bg)' }}>×N = Vorkommen</span>
 </div>`}
         </Code>
       </Section>

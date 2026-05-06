@@ -3,14 +3,16 @@ import type { AuditRule, RuleResult, CategoryScore, AuditReport, Finding } from 
 
 export type AuditStatus = 'production-grade' | 'stable' | 'risky' | 'prototype'
 
-// ─── Killer Criteria ──────────────────────────────────────────────────────────
-// If any of these categories falls below its threshold, the status is capped at "risky"
-// regardless of the overall score. Thresholds in automatedPercentage (0–100).
-// minPct = minScore/5 * 100:  3.0/5 = 60%, 2.5/5 = 50%, 2.0/5 = 40%
+/**
+ * @deprecated ADR-027: Threshold-based status-cap replaced by Finding.isKiller flag.
+ * Diese Konstante wird mit ADR-027 Schritt 6 (UI-Pivot) entfernt.
+ * Sie beeinflusst weiterhin den `status`-String (production-grade/stable/risky/prototype),
+ * hat aber keinen Einfluss mehr auf die Score-Zahl selbst.
+ */
 const KILLER_CRITERIA: Record<number, { name: string; minPct: number }> = {
-  3:  { name: 'Sicherheit',              minPct: 60 }, // Security < 3.0/5
-  10: { name: 'Testing',                 minPct: 50 }, // Testing < 2.5/5
-  13: { name: 'Backup & Disaster Recovery', minPct: 40 }, // Backup/DR < 2.0/5
+  3:  { name: 'Sicherheit',              minPct: 60 },
+  10: { name: 'Testing',                 minPct: 50 },
+  13: { name: 'Backup & Disaster Recovery', minPct: 40 },
 }
 
 // ─── Not-Applicable Categories ───────────────────────────────────────────────
@@ -57,8 +59,14 @@ export function calculateCategoryScore(
       manualRuleCount++
     } else {
       automatedRuleCount++
-      weightedScore += result.score * rule.weight
-      weightedMax += 5 * rule.weight
+      // ADR-027: Killer-Findings excluded from Polish score.
+      // Rules with any isKiller finding are not counted — Killer-Status is a
+      // separate signal shown in the UI (Schritt 6). Score reflects Polish only.
+      const hasKillerFindings = result.findings.some(f => f.isKiller)
+      if (!hasKillerFindings) {
+        weightedScore += result.score * rule.weight
+        weightedMax += 5 * rule.weight
+      }
     }
   }
 

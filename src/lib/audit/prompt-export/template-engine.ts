@@ -77,6 +77,11 @@ function buildWhySection(rec: ReturnType<typeof findRecommendation>): string | n
   return `## Warum das wichtig ist\n${rec.impact}`
 }
 
+function buildLimitationSection(rec: ReturnType<typeof findRecommendation>): string | null {
+  if (!rec?.limitation) return null
+  return `## Hinweis\n⚠️ ${rec.limitation}`
+}
+
 function buildFixSection(
   finding: PromptFinding,
   rec: ReturnType<typeof findRecommendation>,
@@ -203,6 +208,9 @@ export function buildFixPrompt(
 
   const why = buildWhySection(rec)
   if (why) { sections.push('', why) }
+
+  const limitation = buildLimitationSection(rec)
+  if (limitation) { sections.push('', limitation) }
 
   sections.push('', buildFixSection(finding, rec, tool, repoCtx))
   sections.push('', buildValidationSection(finding, rec))

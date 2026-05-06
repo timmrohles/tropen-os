@@ -311,7 +311,7 @@ export default function FeedsPage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <Rss size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <Rss size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             {t('title')}
           </h1>
           <p className="page-header-sub">{t('subtitle')}</p>

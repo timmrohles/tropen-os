@@ -136,7 +136,10 @@ export async function checkPropDrilling(ctx: AuditContext): Promise<RuleResult> 
       const isDrilling = forwardedProps.length >= 3 || (hasPropSpread && propNames.length > 5)
       if (!isDrilling) continue
 
-      const severity = forwardedProps.length >= 6 || (hasPropSpread && propNames.length > 15) ? 'high' as const : 'info' as const
+      // Severity: low — Prop Drilling hat konkrete Fix-Aktion (React Context oder Zustand).
+      // "info" wäre falsch — info = "kein Fix nötig", aber hier IST eine Aktion empfohlen.
+      // Komitee 2026-05-04 (einig): info → low.
+      const severity = forwardedProps.length >= 6 || (hasPropSpread && propNames.length > 15) ? 'high' as const : 'low' as const
       const what = hasPropSpread
         ? 'spreads all props to children'
         : `forwards ${forwardedProps.length} props unchanged (${forwardedProps.slice(0, 3).join(', ')}${forwardedProps.length > 3 ? '...' : ''})`

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench, DownloadSimple } from '@phosphor-icons/react'
+import { ProfileOnboardingModal } from '@/components/audit/ProfileOnboardingModal'
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
 
@@ -13,10 +14,14 @@ interface AuditActionsProps {
   scanProjectId?: string | null
   initialLighthouseUrl?: string | null
   isVercelEnv?: boolean
+  needsOnboarding?: boolean
+  isExistingProject?: boolean
 }
 
-export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl }: AuditActionsProps) {
+export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl, needsOnboarding, isExistingProject }: AuditActionsProps) {
   const router = useRouter()
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [profileJustSet, setProfileJustSet] = useState(false)
   const [auditState, setAuditState] = useState<TriggerState>('idle')
   const [reviewState, setReviewState] = useState<TriggerState>('idle')
   const [auditResult, setAuditResult] = useState<{ percentage?: number } | null>(null)
@@ -26,6 +31,9 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [lighthouseUrl, setLighthouseUrl] = useState(initialLighthouseUrl ?? '')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   // Restore from localStorage on mount (fallback when no server-side URL)
   useEffect(() => {
@@ -37,6 +45,11 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   }, [initialLighthouseUrl, scanProjectId])
 
   async function handleTrigger() {
+    // Onboarding-Check: nur für externe Scan-Projekte mit fehlendem Profil
+    if (needsOnboarding && !profileJustSet && scanProjectId) {
+      setShowOnboarding(true)
+      return
+    }
     setAuditState('running')
     setAuditResult(null)
     setErrorMsg(null)
@@ -143,12 +156,13 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {/* Primär: Audit starten — immer */}
         <button
+          key="audit-trigger"
           className="btn btn-primary"
           onClick={handleTrigger}
           disabled={isAuditRunning || isReviewRunning}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          style={{ fontSize: 12, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
         >
-          <ArrowClockwise size={15} weight="bold" aria-hidden="true"
+          <ArrowClockwise size={12} weight="bold" aria-hidden="true"
             style={{ animation: isAuditRunning ? 'spin 1s linear infinite' : 'none' }} />
           {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
         </button>
@@ -156,6 +170,7 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         {/* Sekundär: Deep Review */}
         {runId && (
           <button
+            key="deep-review"
             className="btn btn-ghost"
             onClick={handleDeepReview}
             disabled={isReviewRunning || isAuditRunning}
@@ -167,7 +182,7 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         )}
 
         {/* Tertiär: Regeln exportieren — Text-Link-Stil */}
-        <div style={{ position: 'relative' }}>
+        <div key="export-wrapper" style={{ position: 'relative' }}>
           <button
             onClick={() => setExportOpen((v) => !v)}
             disabled={isAuditRunning || isReviewRunning}
@@ -288,6 +303,21 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
             style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
           4 Modelle analysieren den Code — bitte warten (bis zu 2 min)…
         </div>
+      )}
+
+      {/* Profil-Onboarding-Modal */}
+      {showOnboarding && scanProjectId && (
+        <ProfileOnboardingModal
+          scanProjectId={scanProjectId}
+          isExistingProject={isExistingProject}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => {
+            setShowOnboarding(false)
+            setProfileJustSet(true)
+            // Profil gesetzt → Audit sofort starten (profileJustSet verhindert erneutes Modal)
+            void handleTrigger()
+          }}
+        />
       )}
     </div>
   )

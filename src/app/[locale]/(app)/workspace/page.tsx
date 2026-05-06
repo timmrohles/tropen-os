@@ -9,7 +9,7 @@ export default function WorkspacePage() {
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-header-title">
-            <SquaresFour size={22} color="var(--text-primary)" weight="fill" aria-hidden="true" />
+            <SquaresFour size={22} color="var(--accent)" weight="fill" aria-hidden="true" />
             Workspace
           </h1>
           <p className="page-header-sub">Visuelles Karten-System für strukturiertes Arbeiten</p>
