@@ -24,7 +24,7 @@ supersedes: []
 - **conference-intelligence.md** (`docs/active/conference-intelligence.md`) — Strategische Entscheidungen und Wettbewerbs-Monitoring 2026 · status: active · review_by: 2026-08-07
 - **email-setup.md** (`docs/active/email-setup.md`) — E-Mail-Setup-Anleitung für Resend und SMTP-Adapter · status: active · review_by: 2026-08-07
 - **engineering-standard.md** (`docs/active/engineering-standard.md`) — 25 Kategorien mit konkreten Regeln und Warnsignalen pro Kategorie · status: active · review_by: 2026-08-07
-- **feature-bestand.md** (`docs/active/feature-bestand.md`) — Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) für alle implementierten Features · status: active · review_by: 2026-08-07
+- **feature-inventory.md** (`docs/active/feature-inventory.md`) — Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) für alle implementierten Features · status: active · review_by: 2026-08-07
 - **github-secrets.md** (`docs/active/github-secrets.md`) — GitHub Actions Secrets und Environment Variables Referenz · status: active · review_by: 2026-08-07
 - **manifesto.md** (`docs/active/manifesto.md`) — 10 Kernprinzipien (Philosophie) des Webapp-Manifests · status: active · review_by: 2026-08-07
 - **manual-checks.md** (`docs/active/manual-checks.md`) — 64 manuelle Checks die statisch nicht prüfbar sind · status: active · review_by: 2026-08-07

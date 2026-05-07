@@ -74,7 +74,7 @@ Sie sind nicht widersprüchlich, sondern ergänzen sich:
 | `docs/active/roadmap.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
 | `docs/active/marken-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
 | `docs/archive/2026-05/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
-| `docs/active/feature-bestand.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
+| `docs/active/feature-inventory.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
 
 Wenn ein neues Feature vorgeschlagen wird, erste Frage: passt es zur Roadmap-MVP-Vision?
 - Ja → bauen
@@ -1323,7 +1323,7 @@ Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extra
 ### Feature-Dokumentation
 
 Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
-→ **`docs/active/feature-bestand.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
+→ **`docs/active/feature-inventory.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
 
 Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
 
@@ -1682,7 +1682,7 @@ eslint src/           # keine Fehler
 | `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
 | `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-027) — nach Aufräum-Sprint 2026-05-07 |
 | `docs/active/marken-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
-| `docs/active/feature-bestand.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
+| `docs/active/feature-inventory.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
 | `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
 | `docs/synthese/anhang-b-migrations.md` | DB-Migrations-Block für Sprint 1+ |
