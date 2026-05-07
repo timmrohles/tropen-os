@@ -45,10 +45,10 @@ score = Σ(rule_score × weight) / Σ(max_score × weight) × 100
 
 | Score | Status | Bedeutung |
 |-------|--------|-----------|
-| 85–100 | 🟢 **Production Grade** | Industriestandard erfüllt |
-| 70–84 | 🟡 **Stable** | Produktionsfähig mit dokumentierten Risiken |
-| 50–69 | 🟠 **Risky** | Maßnahmenplan erforderlich vor weiterer Skalierung |
-| < 50 | 🔴 **Prototype** | Nicht produktionsreif |
+| 90–100 | 🟢 **Production Grade** | Industriestandard erfüllt |
+| 80–89 | 🟡 **Stable** | Produktionsfähig mit dokumentierten Risiken |
+| 60–79 | 🟠 **Risky** | Maßnahmenplan erforderlich vor weiterer Skalierung |
+| < 60 | 🔴 **Prototype** | Nicht produktionsreif |
 
 ---
 
