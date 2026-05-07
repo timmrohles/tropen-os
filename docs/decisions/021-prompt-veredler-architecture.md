@@ -1,6 +1,9 @@
 # ADR-021: Prompt-Veredler-Architektur
 
-**Status:** Proposed
+> **Status 2026-05-07:** Konzept durch Zielbild v3 (docs/active/zielbild.md) abgelöst. Veredler in Phase 2 verschoben. ADR-Inhalt historisch erhalten.
+
+**Status:** superseded
+**Superseded by:** docs/active/zielbild.md
 **Datum:** 2026-04-27
 **Entscheider:** Timm Rotter
 **Tags:** architecture · prompt-engineering · core-product

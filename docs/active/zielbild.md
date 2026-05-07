@@ -343,13 +343,21 @@ Sechs Bausteine: (1) Daten-Eigentum User 100%, (2) Free/Pro-Audit lokal, (3) Kom
 
 ## Teil H — Quellen-Lücken aus Inventur
 
-1. **Regelzahl-Diskrepanz** — Code: 255, Audit-Report: 250, CLAUDE.md: 242. CLAUDE.md aktualisieren.
-2. **Skills 4–6** — nicht direkt im Code verifiziert (Wissensextraktion / Berichterstellung / Social-Media).
-3. **ADR-Nummern-Lücken 028–030** — existierten? verworfen? nie angelegt?
-4. **`connections`-Tabelle** — Migrations-Quelldatei nicht identifiziert.
-5. **`workspace_assets/exports/messages/participants`** — nicht einzeln verifiziert.
-6. **`docs/inventory/` vs. `docs/inventur/`** — durch Aufräum-Sprint behoben.
-7. **ADR-021 Prompt-Veredler vs. v3 "Phase 2"** — Inkonsistenz zwischen aktivem ADR und Zielbild. ADR-Status klären.
+*Geklärt 2026-05-07. Handover: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`*
+
+1. ✅ **GESCHLOSSEN — Regelzahl-Diskrepanz:** Verifizierter Wert: **255 Regeln** in `src/lib/audit/rule-registry.ts` (Python-Zählung aller rule IDs, keine Duplikate). CLAUDE.md aktualisiert auf 255 (Stand 2026-05-07).
+
+2. ✅ **GESCHLOSSEN — Skills 4–6:** Vollständig verifiziert in `supabase/migrations/20260318000047_skills.sql`. Skill 4: `knowledge_extract` / Wissensextraktion (scope: system, output: json). Skill 5: `report_write` / Berichterstellung (scope: system, output: artifact). Skill 6: `social_media_adapt` / Social-Media-Adaption (scope: package, requires_package: marketing).
+
+3. ✅ **GESCHLOSSEN — ADR-Nummern-Lücken 028–030:** `docs/decisions/` enthält ADR-001 bis ADR-027. Nummern 028–030 existieren nicht — nie angelegt, keine Lücke durch verworfene ADRs. Nächste freie Nummer: ADR-028.
+
+4. ✅ **GESCHLOSSEN — `connections`-Tabelle:** Definiert in `supabase/migrations/031_workspaces_schema.sql`. Aktiv produktiv genutzt in `src/actions/connections.ts`, `src/lib/workspace-context.ts`, `src/lib/stale-propagation.ts` und mehreren API-Routes.
+
+5. ✅ **GESCHLOSSEN — `workspace_assets/exports/messages/participants`:** Alle vier Tabellen verifiziert. `workspace_assets`: in `031_workspaces_schema.sql` (nein — in `20260314000035_workspace_plan_c.sql`), aktiv genutzt in `/api/workspaces/[id]/assets/`. `workspace_exports`: in `20260314000035_workspace_plan_c.sql`, aktiv genutzt in `/api/workspaces/[id]/export/`. `workspace_messages`: in `20260314000035_workspace_plan_c.sql`, aktiv genutzt (Kern-Chat-Tabelle). `workspace_participants`: in `031_workspaces_schema.sql`, aktiv genutzt in `src/actions/workspaces.ts`. Zusätzlich: `messages` (aus `001_initial.sql`) und `project_participants` (aus `030_projects_schema.sql`) ebenfalls aktiv.
+
+6. ✅ **GESCHLOSSEN — `docs/inventory/` vs. `docs/inventur/`:** Beide Verzeichnisse existieren und sind vollständig leer (keine Dateien). Keine Verschiebung nötig. Verzeichnisse können bei Bedarf entfernt werden.
+
+7. ✅ **GESCHLOSSEN — ADR-021 Prompt-Veredler vs. v3:** ADR-021 auf `status: superseded` / `superseded_by: docs/active/zielbild.md` gesetzt. Status-Notiz oben im Body ergänzt.
 
 ---
 

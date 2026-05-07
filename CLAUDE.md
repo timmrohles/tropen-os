@@ -1388,7 +1388,7 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 
 ### Audit Checker-Stack (Stand 2026-04-22)
 
-242 Regeln (178 automatisiert, 64 manuell), 26 Kategorien, 29 Agenten.
+255 Regeln (Stand 2026-05-07), 26 Kategorien, 29 Agenten.
 Vollstaendige Coverage-Tabelle: `docs/audit-reports/checker-coverage-2026-04-15.md`
 Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGENT)
 

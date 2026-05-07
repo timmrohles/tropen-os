@@ -2240,3 +2240,6 @@ Repo-Inventur erstellt. Pfad: docs/inventur/repo-bestandsaufnahme-2026-05-07.md.
 
 ## 2026-05-07 — K0.6 Sprint
 K0.6 Doku-Konvention-Komitee gelaufen. Output: docs/audit-reports/k06-doku-konvention-komitee-2026-05-07.md. Kosten: €1.5386.
+
+## 2026-05-07 — Quellen-Lücken-Klärungs-Sprint
+7 Lücken aus Zielbild v3 Teil H geklärt. Hand-Over: docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md
