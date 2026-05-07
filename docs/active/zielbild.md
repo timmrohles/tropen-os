@@ -137,9 +137,11 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 **Substanz-Stand (aus Inventur):**
 - ✅ Chat-Interface vorhanden (eingefroren)
 - ✅ Quick-Chips, Intention-System (`conversations.intention`)
+- ✅ Workspace-Chat-Substanz vorhanden (`workspace_messages`, `workspace_participants`, `workspace_assets`, `workspace_exports` — aktiv produktiv) — Recycling-Basis für Begleiter-Chat
 - ❌ Email-Digest-System fehlt
 - ❌ Lautstärke-Regler fehlt
 - ❌ Kontext-Trigger im Chat fehlt
+- ⚠ Begleiter-Chat als v3-Konzept noch nicht zugeschnitten — Workspace-Chat-Substanz vorhanden, Recycling möglich (siehe Teil B)
 - 🔄 Eingefrorenes **Feeds-System** (vollständig gebaut, Cron alle 6h) ist starker Recycling-Kandidat für Email-Digest
 
 ### Achse 6 — Projekt-Hygiene über Zeit
@@ -243,7 +245,7 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 | **Skill-System** (6 geseedet) | nur Schema | ❌ Streichen für Phase 1 |
 | **Bookmarks / Inbox** | eingefroren | ❌ Streichen für Phase 1 |
 | **MCP-Plan** | nur Konzept | 🟡 Phase 2 (wartet auf OAuth-Keys) |
-| **Toro-Chat / Canvas-Chat** | eingefroren | 🟡 Mögl. Substanz für Begleiter-Chat (Achse 5) |
+| **Toro-Chat / Canvas-Chat** | eingefroren | 🟡 Mögl. Substanz für Begleiter-Chat (Achse 5). Konkreter: `workspace_messages`, `workspace_participants`, `workspace_assets`, `workspace_exports` sind aktiv produktiv — Tabellen-Substanz bereits vorhanden, kein Neubau nötig. |
 | **Perspectives-System** (vollständig gebaut) | eingefroren | 🔄 Recycling für Komitee-User-Facing (Achse 8 Phase 2) |
 | **Feeds-System** (vollständig gebaut) | eingefroren | 🔄 **Höchste Recycling-Priorität** — Email-Digest (Achse 5) + CVE-Feeds (Achse 8) |
 | **Cockpit-Widgets** (10 Komponenten) | teilweise aktiv | 🔄 Recycling für Dashboard nach Eintritt (Achse 1) |
