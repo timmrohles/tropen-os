@@ -1,6 +1,6 @@
 # Tropen OS
 
-Production Readiness Platform für Vibe-Coded Apps. Automatisiertes Audit-System mit 242 Regeln, Multi-Model-Review, Fix-Engine und interaktivem Dashboard — gebaut für Teams die schnell bauen und trotzdem production-grade bleiben wollen.
+Production Readiness Platform für Vibe-Coded Apps. Automatisiertes Audit-System mit 255 Regeln, Multi-Model-Review, Fix-Engine und interaktivem Dashboard — gebaut für Teams die schnell bauen und trotzdem production-grade bleiben wollen.
 
 ## Was es tut
 
@@ -56,16 +56,16 @@ pnpm exec tsx src/scripts/run-audit.ts --with-tools --lighthouse-url http://loca
 pnpm lint:all
 ```
 
-Audit-Architektur: 26 Kategorien, 242 Regeln (178 automatisiert / 64 manuell), gewichtetes Scoring 0–100%.
+Audit-Architektur: 26 Kategorien, 255 Regeln (187 automatisiert / 68 manuell), gewichtetes Scoring 0–100%.
 
 | Score | Status |
 |-------|--------|
-| 85–100% | 🟢 Production Grade |
-| 70–84% | 🟡 Stable |
-| 50–69% | 🟠 Risky |
-| < 50% | 🔴 Prototype |
+| 90–100% | 🟢 Production Grade |
+| 80–89% | 🟡 Stable |
+| 60–79% | 🟠 Risky |
+| < 60% | 🔴 Prototype |
 
-Aktueller Score: **93.6% — Production Grade** (2026-04-28)
+Aktueller Score: **~96% — Production Grade** (2026-05-06)
 
 ## Backup & Disaster Recovery
 
@@ -108,10 +108,11 @@ supabase/
   functions/    Edge Functions (ai-chat)
   migrations/   DB-Schema (001–113+)
 docs/
-  agents/       21 Agent Rule Packs (Multi-Model-Komitee)
+  active/       Normative Dokumente (Zielbild, Roadmap, Marken-Brief …)
+  decisions/    Architecture Decision Records (ADR-001–027)
+  archive/      Archivierte Snapshots und veraltete Pläne
+  agents/       29 Agent Rule Packs (Multi-Model-Komitee)
   audit-reports/ Audit-Reports + Benchmark-Ergebnisse
-  runbooks/     Incident Response, Rollback, Disaster Recovery
-  webapp-manifest/ Engineering Standard + Scoring-System
 ```
 
 ## Docs
@@ -120,9 +121,10 @@ docs/
 |-------|--------|
 | `CLAUDE.md` | Vollständige Codebase-Referenz für Claude Code |
 | `ARCHITECT.md` | System-Architekt-Review-Protokoll |
-| `docs/webapp-manifest/engineering-standard.md` | 26 Audit-Kategorien mit Regeln |
-| `docs/webapp-manifest/audit-system.md` | Scoring-System + Gewichtung |
-| `docs/product/migrations.md` | Vollständige DB-Migrations-Übersicht |
-| `docs/runbooks/` | Incident Response, Rollback, Disaster Recovery |
-| `docs/agents/` | 21 Agent Rule Packs |
-| `docs/checker-design-patterns.md` | P1–P12 strukturelle Checker-Fehlertypen |
+| `docs/active/engineering-standard.md` | 26 Audit-Kategorien mit Regeln |
+| `docs/active/audit-system.md` | Scoring-System + Gewichtung |
+| `docs/active/migrations.md` | Vollständige DB-Migrations-Übersicht |
+| `docs/active/runbook-*.md` | Incident Response, Rollback, Disaster Recovery |
+| `docs/agents/` | 29 Agent Rule Packs |
+| `docs/active/checker-design-patterns.md` | P1–P10 strukturelle Checker-Fehlertypen |
+| `docs/INDEX.md` | Vollständiger Aktiv-Bestand (Doku-Konvention) |
