@@ -38,10 +38,10 @@ Kein Build ohne Eintrag in `docs/architect-log.md`.
 **Keine Ausnahme. Kein optionaler Schritt.**
 
 ```
-Schritt 1  cat docs/webapp-manifest/manifesto.md
-Schritt 2  cat docs/webapp-manifest/engineering-standard.md
-Schritt 3  cat docs/webapp-manifest/audit-system.md
-Schritt 4  cat docs/phase2-plans.md
+Schritt 1  cat docs/active/manifesto.md
+Schritt 2  cat docs/active/engineering-standard.md
+Schritt 3  cat docs/active/audit-system.md
+Schritt 4  cat docs/active/roadmap.md
 Schritt 5  cat ARCHITECT.md
 Schritt 6  ls supabase/migrations/ | tail -5 → letzte Migrations lesen
 Schritt 7  Architektur-Review durchführen (Template in ARCHITECT.md)
@@ -51,7 +51,7 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 Bei UI-Änderungen zusätzlich:
 ```
 Schritt UI-1  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
-Schritt UI-2  Read docs/product/marken-brief.md  ← PFLICHT bei Design/Copy-Entscheidungen
+Schritt UI-2  Read docs/active/marken-brief.md  ← PFLICHT bei Design/Copy-Entscheidungen
 Schritt UI-3  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
 Schritt UI-4  CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
@@ -71,10 +71,10 @@ Sie sind nicht widersprüchlich, sondern ergänzen sich:
 
 | Dokument | Rolle | Bei Konflikt |
 |----------|-------|--------------|
-| `docs/product/roadmap-2026-q2.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
-| `docs/product/marken-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
-| `docs/product/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
-| `docs/product/feature-bestand.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
+| `docs/active/roadmap.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
+| `docs/active/marken-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
+| `docs/archive/2026-05/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
+| `docs/active/feature-bestand.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
 
 Wenn ein neues Feature vorgeschlagen wird, erste Frage: passt es zur Roadmap-MVP-Vision?
 - Ja → bauen
@@ -134,7 +134,7 @@ Wenn Claude beim Update eine Entscheidung von Timm braucht:
 ## Qualitätsstandards — Webapp Manifest
 
 Das Projekt verwendet ein eigenes Audit-System mit 25 Kategorien und gewichtetem Scoring.
-Alle Dokumente liegen in `docs/webapp-manifest/`:
+Alle Dokumente liegen in `docs/active/` (nach Aufräum-Sprint 2026-05-07 migriert):
 
 | Datei | Inhalt |
 |-------|--------|
@@ -153,7 +153,7 @@ Alle Dokumente liegen in `docs/webapp-manifest/`:
 | 60–79% | 🟠 Risky |
 | < 60% | 🔴 Prototype |
 
-**Letzter Audit:** 2026-05-04 — **96.8% Production Grade** (Report: `docs/audit-reports/2026-05-04-audit-report.md`)
+**Letzter Audit:** 2026-05-06 — **~96%+ Production Grade** (--skip-cli; Report: `docs/audit-reports/2026-05-06-audit-report.md`) · Regelwerk: **255 Regeln in 26 Kategorien** (Stand 2026-05-07)
 
 Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
 
@@ -286,7 +286,7 @@ Aktueller Stand ist **Feature-zentrisch** (Ziel), aber noch nicht konsistent:
 - ADR-021 (Prompt-Veredler)
 - ADR-022 (Markdown + YAML + Wikilinks)
 - ADR-023 (Interface-Strategie: CLI-First + Pull-MCP)
-- `docs/adr/ADR-025-tab-architektur.md` — Tab-Architektur, Compliance-Strategie, Drittanbieter-Aggregator-Ziel
+- `docs/decisions/025-tab-architektur.md` — Tab-Architektur, Compliance-Strategie, Drittanbieter-Aggregator-Ziel
 
 ### DB-Zugriff — kritische Constraint
 
@@ -1051,7 +1051,7 @@ Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Mig
 - Migration-Nummern: Legacy-Migrationen 001–033 nutzen einfache Nummern (`030_name.sql`). Ab Migration 034+ gilt Timestamp-Format (`YYYYMMDDHHMMSS_name.sql`) — Supabase CLI Standard.
 
 ### Migrations-Übersicht (001–033+)
-→ Vollständige Liste: `docs/product/migrations.md`
+→ Vollständige Liste: `docs/active/migrations.md`
 
 Letzte relevante Migrationen:
 | Datei | Inhalt |
@@ -1323,7 +1323,7 @@ Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extra
 ### Feature-Dokumentation
 
 Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
-→ **`docs/product/feature-bestand.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
+→ **`docs/active/feature-bestand.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
 
 Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
 
@@ -1609,7 +1609,7 @@ Konsequenz: Plan F (Workspaces) und Plan J (Feeds/Agenten) erst deployen wenn di
 
 **7. Empirische Benchmarks schlagen theoretische Diskussionen**
 Der /ultrareview-Vergleich (2026-04-17) hat die Positionierungsfrage in ~1 Stunde empirisch beantwortet: 1.136 vs. 62 Findings, <25% Überlappung — Komplementarität belegt, keine Integration nötig. Drei Monate Diskussion hätten das gleiche Ergebnis nicht schneller erreicht.
-Konsequenz: Positionierungsfragen immer mit echten Benchmark-Daten beantworten, bevor Committee-Zeit investiert wird. Eigener Score muss Production Grade (85%+) sein bevor erste Beta-User eingeladen werden — Dogfooding ist die härteste Benchmark.
+Konsequenz: Positionierungsfragen immer mit echten Benchmark-Daten beantworten, bevor Committee-Zeit investiert wird. Eigener Score muss Production Grade (90%+) sein bevor erste Beta-User eingeladen werden — Dogfooding ist die härteste Benchmark.
 
 ---
 
@@ -1669,8 +1669,8 @@ eslint src/           # keine Fehler
 
 | Dokument | Inhalt |
 |----------|--------|
-| `docs/webapp-manifest/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
-| `docs/webapp-manifest/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
+| `docs/active/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
+| `docs/active/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/phase-2-vision.md` |
 | `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/phase-2-vision.md` |
 | `docs/product/roadmap-2026-q2.md` | **Normative Roadmap** — Single Source of Truth: Bauphasen, Sprint-Status, strategische Klärungen, Sequenz-Constraints, GTM |
@@ -1679,10 +1679,10 @@ eslint src/           # keine Fehler
 | `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
-| `docs/plans/agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/adr/*.md` | Architecture Decision Records (ADR-001 bis ADR-024) |
-| `docs/product/marken-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
-| `docs/product/feature-bestand.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) — umbenannt von feature-registry.md |
+| `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
+| `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-027) — nach Aufräum-Sprint 2026-05-07 |
+| `docs/active/marken-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
+| `docs/active/feature-bestand.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
 | `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
 | `docs/synthese/anhang-b-migrations.md` | DB-Migrations-Block für Sprint 1+ |
@@ -1699,9 +1699,9 @@ eslint src/           # keine Fehler
 | `src/scripts/committee-review.ts` | Generisches Komitee-Review-Framework: 4 Reviewer (Sonnet, GPT-4o, Gemini 2.5 Flash, Grok 4) + Opus-Judge; Config-basiert; ~€0.35–0.50/Review |
 | `src/scripts/reviews/*.ts` | Review-Configs: `claude-md.ts`, `audit-scoring.ts`, `fix-engine.ts`, `agent-checker-alignment.ts`, `repo-map.ts`, `dogfooding-feedback.ts` — jede Config definiert contextFiles, systemPrompt, userPrompt, judgePrompt |
 | `docs/committee-reviews/` | Komitee-Review-Ergebnisse: `*-review.md` mit Konsens-Levels (EINIG/MEHRHEIT/GESPALTEN), Empfehlungen, Kosten-Tabelle |
-| `docs/checker-feedback.md` | Checker Feedback Log: FP-Tracking, bekannte FP-Regeln, Prozess-Beschreibung |
-| `docs/checker-design-patterns.md` | 10 strukturelle Checker-Fehlertypen (P1–P10) mit Praxis-Belegen + Entwicklungs-Checkliste — Pflichtlektuere vor jedem neuen Checker |
-| `docs/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
+| `docs/active/checker-feedback.md` | Checker Feedback Log: FP-Tracking, bekannte FP-Regeln, Prozess-Beschreibung |
+| `docs/active/checker-design-patterns.md` | 10 strukturelle Checker-Fehlertypen (P1–P10) mit Praxis-Belegen + Entwicklungs-Checkliste — Pflichtlektuere vor jedem neuen Checker |
+| `docs/active/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
 | `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
 | `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
 | `docs/audit-reports/` | Benchmark-Ergebnisse (v1-v8), Checker-Coverage, Committee-Results, Checker-Gaps |
@@ -1721,12 +1721,12 @@ eslint src/           # keine Fehler
 ## Audit durchführen
 
 ```
-Read docs/webapp-manifest/audit-system.md and
-docs/webapp-manifest/engineering-standard.md.
+Read docs/active/audit-system.md and
+docs/active/engineering-standard.md.
 
 Run all automatable checks, analyze the codebase for
 non-automatable rules, score all 25 categories (0–5),
 calculate the weighted total, and output a completed
 audit report using the template at
-docs/webapp-manifest/templates/audit-report-template.md
+docs/active/audit-system.md
 ```
