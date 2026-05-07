@@ -13,6 +13,19 @@ supersedes: []
 
 ---
 
+### 2026-05-07 — v3-Synchronisations-Sprint (Achse 4 + 7 an ADR-028)
+**Ampel:** 🟢
+**Anlass:** ADR-028-Folge-Aktion: vision.md an ADR-028 angleichen
+**Aktionen:**
+- Achse 4: CLI + GitHub-Action aus Phase-1-Scope gestrichen, Substanz-Stand + Integrations-Architektur + Teil E + Anhang konsistent mit ADR-028
+- Achse 7: Veredler-Skelett in Foundation aufgenommen, Vollausbau bleibt Phase 2, Anhang aktualisiert
+- Pricing-Tabelle: CLI-Erwähnung in Pro-Tier korrigiert
+- Keine weiteren Inkonsistenzen zwischen v3 und ADR-028 gefunden
+**Qualitätscheck:** Doku-only
+**Lernmuster:** Pivot-Änderungen über mehrere verknüpfte Stellen verteilen — Anhang-Tabelle + Substanz-Stand + Integrations-Architektur + Teil E müssen alle gleichzeitig konsistent sein.
+
+---
+
 ### 2026-05-07 — ADR-028 Pivot to Companion Platform
 **Ampel:** 🟢
 **Anlass:** Dritter Pivot — Tropen OS wird Begleitplattform mit Audit als Eintrittstor
