@@ -122,6 +122,22 @@ Begründung: AI-Bau-Tools sind primär englisch trainiert und finden englische D
 
 ---
 
+## Tool-Memories als Wissens-Quelle
+
+Manche AI-Bau-Tools (Claude, Cursor, ChatGPT) bieten Memory-Systeme, die Projekt-Kontext über Sessions hinweg behalten. Tool-Memories sind eine wertvolle Hilfe — aber **sie sollten nicht alleinige Quelle für Projekt-Entscheidungen sein**.
+
+**Begründung:**
+- Memories sind tool-spezifisch und nicht-portabel — Tool-Wechsel verliert sie
+- Memories sind kontext-abhängig und können bei Account-Wechsel verloren gehen
+- Memories sind für Mit-Lesende unsichtbar — Co-Founder, externe Reviewer haben keinen Zugriff
+- Memories können vom Tool selbst überschrieben oder verfälscht werden
+
+**Empfohlene Praxis:** Wichtige Projekt-Entscheidungen, die im Tool-Chat besprochen werden, gehören als ADR oder Decision-Log-Eintrag ins Repo. Tool-Memories ergänzen das Repo, sie ersetzen es nicht.
+
+**Was Tropen-Audit dazu prüft (perspektivisch, Phase 2):** Wenn ein Repo lebendig ist (häufige Commits) aber das Decision-Log über Wochen nicht wächst, ist das Indikator für Wissens-Versteck in Memories. Tropen kann nicht beweisen, dass Wissen in Memories liegt — aber den Verdacht melden.
+
+---
+
 ## Drift-Schutz-Mechaniken
 
 Drei Mechaniken laufen parallel:
