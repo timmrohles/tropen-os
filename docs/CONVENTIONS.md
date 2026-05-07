@@ -99,6 +99,29 @@ superseded_by: null       # nur wenn status=superseded: Pfad zur Nachfolge-Datei
 
 ---
 
+## Sprache
+
+**Datei- und Verzeichnis-Namen sind englisch.** Lowercase mit Bindestrichen, ohne Umlaute oder ß.
+
+Begründung: AI-Bau-Tools sind primär englisch trainiert und finden englische Datei-Namen zuverlässiger. Deutsche Datei-Namen wie `dokumentation/` oder `architektur-entscheidungen/` produzieren Reibung mit der Tool-Welt.
+
+**Doku-Inhalt darf deutsch sein** — und ist es bei Tropen OS auch (Marken-Position, Schiefer-Limette-Welt). Englischer Inhalt ist erlaubt, wenn er sich an internationale Zielgruppe richtet.
+
+**Pro Datei eine Sprache.** Mischsprachige Inhalte innerhalb derselben Datei sind zu vermeiden, außer für Code-Beispiele oder zitierte Originaltexte.
+
+**Beispiele für Datei-Namen:**
+
+| Erlaubt | Verboten |
+|---|---|
+| `brand-brief.md` | `marken-brief.md` |
+| `audit-system.md` | `audit-system.md` (auch erlaubt — Wort identisch) |
+| `user-types.md` | `nutzer-typen.md` |
+| `pricing-tiers.md` | `preisstruktur.md` |
+
+**ADR-Datei-Namen folgen demselben Schema:** `028-pivot-companion-platform.md` statt `028-pivot-zur-begleitplattform.md`.
+
+---
+
 ## Drift-Schutz-Mechaniken
 
 Drei Mechaniken laufen parallel:
