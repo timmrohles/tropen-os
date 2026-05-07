@@ -1,14 +1,21 @@
+---
+status: active
+updated: 2026-05-07
+review_by: 2026-08-07
+supersedes: []
+---
+
 # Tropen OS
 
-Production Readiness Platform für Vibe-Coded Apps. Automatisiertes Audit-System mit 255 Regeln, Multi-Model-Review, Fix-Engine und interaktivem Dashboard — gebaut für Teams die schnell bauen und trotzdem production-grade bleiben wollen.
+Production Readiness Platform für Vibe-Coded Apps. Automatisiertes Audit-System mit umfangreichem Regelwerk (Kategorie-Details: `CLAUDE.md`), Multi-Model-Komitee-Agenten (Details: `docs/agents/`), Fix-Engine und interaktivem Dashboard — gebaut für Teams die schnell bauen und trotzdem production-grade bleiben wollen.
 
 ## Was es tut
 
-1. **Audit** — scannt dein Repo gegen 26 Kategorien (Architektur, Sicherheit, Testing, DSGVO, KI-Compliance …) und gibt einen gewichteten Score zurück
+1. **Audit** — scannt dein Repo gegen mehrere Kategorien (Architektur, Sicherheit, Testing, DSGVO, KI-Compliance …) und gibt einen gewichteten Score zurück
 2. **Fix-Engine** — generiert Cursor-/Claude-Prompts pro Finding zum manuellen Einsetzen in der IDE. Konsens-Fix-Engine (4-Modell-Komitee mit automatischer Code-Anwendung) wurde 2026-04-25 deaktiviert (siehe Tag-4-Pivot). Aktiv ist: Prompt-Export. Geplant ist: Re-Aktivierung mit Approval-Flow (Roadmap Q3+).
 3. **Cockpit** — interaktives Dashboard mit Score-Trend, Quick-Wins und Task-Tracking
 4. **Externes Projekt scannen** — verbindet jeden lokalen Ordner via File System Access API und scannt ihn in-memory (kein Upload)
-5. **Benchmark** — vergleicht gegen 49 öffentliche Repos (Lovable, Bolt, Cursor, Manuals)
+5. **Benchmark** — vergleicht gegen öffentliche Repos aus verschiedenen Kategorien (Lovable, Bolt, Cursor, Manuals)
 
 ## Stack
 
@@ -56,16 +63,10 @@ pnpm exec tsx src/scripts/run-audit.ts --with-tools --lighthouse-url http://loca
 pnpm lint:all
 ```
 
-Audit-Architektur: 26 Kategorien, 255 Regeln (187 automatisiert / 68 manuell), gewichtetes Scoring 0–100%.
+Audit-Architektur: gewichtetes Scoring über mehrere Kategorien, automatisierte und manuelle Prüfungen.
+Scoring-Logik und Bewertungsstufen: `docs/active/audit-system.md`
 
-| Score | Status |
-|-------|--------|
-| 90–100% | 🟢 Production Grade |
-| 80–89% | 🟡 Stable |
-| 60–79% | 🟠 Risky |
-| < 60% | 🔴 Prototype |
-
-Aktueller Score: **~96% — Production Grade** (2026-05-06)
+Tropen OS läuft kontinuierlich gegen den eigenen Audit (Dogfooding).
 
 ## Backup & Disaster Recovery
 
@@ -111,7 +112,7 @@ docs/
   active/       Normative Dokumente (Zielbild, Roadmap, Marken-Brief …)
   decisions/    Architecture Decision Records (ADR-001–027)
   archive/      Archivierte Snapshots und veraltete Pläne
-  agents/       29 Agent Rule Packs (Multi-Model-Komitee)
+  agents/       Agent Rule Packs (Multi-Model-Komitee)
   audit-reports/ Audit-Reports + Benchmark-Ergebnisse
 ```
 
@@ -119,12 +120,12 @@ docs/
 
 | Datei | Inhalt |
 |-------|--------|
-| `CLAUDE.md` | Vollständige Codebase-Referenz für Claude Code |
+| `CLAUDE.md` | Vollständige Codebase-Referenz für Claude Code (Regelwerk, Kategorien, Scoring) |
 | `ARCHITECT.md` | System-Architekt-Review-Protokoll |
-| `docs/active/engineering-standard.md` | 26 Audit-Kategorien mit Regeln |
-| `docs/active/audit-system.md` | Scoring-System + Gewichtung |
+| `docs/active/engineering-standard.md` | Audit-Kategorien mit Regeln |
+| `docs/active/audit-system.md` | Scoring-System + Gewichtung + Bewertungsstufen |
 | `docs/active/migrations.md` | Vollständige DB-Migrations-Übersicht |
 | `docs/active/runbook-*.md` | Incident Response, Rollback, Disaster Recovery |
-| `docs/agents/` | 29 Agent Rule Packs |
-| `docs/active/checker-design-patterns.md` | P1–P10 strukturelle Checker-Fehlertypen |
+| `docs/agents/` | Agent Rule Packs |
+| `docs/active/checker-design-patterns.md` | Strukturelle Checker-Fehlertypen |
 | `docs/INDEX.md` | Vollständiger Aktiv-Bestand (Doku-Konvention) |
