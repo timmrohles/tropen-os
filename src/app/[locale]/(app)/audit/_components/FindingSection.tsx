@@ -26,24 +26,24 @@ export type SectionVariant = 'killer' | 'quick' | 'polish'
 const SECTION_STYLES: Record<SectionVariant, React.CSSProperties> = {
   killer: {
     background: '#ffffff',
-    border: '1px solid var(--border)',
+    border: '1px solid var(--accent)',
     borderRadius: 8, overflow: 'hidden',
   },
   quick: {
     background: '#ffffff',
-    border: '1px solid var(--border)',
+    border: '1px solid var(--accent)',
     borderRadius: 8, overflow: 'hidden',
   },
   polish: {
     background: '#ffffff',
-    border: '1px solid var(--border)',
+    border: '1px solid var(--accent)',
     borderRadius: 8, overflow: 'hidden',
   },
 }
 
 export function FindingSection({
   icon, title, subtitle, findings, runId, variant, onBundle,
-  bundlePrompt, bundleLoading, bundleError, bundleCopied, onCopyBundle, onClearBundle, onFixed,
+  bundlePrompt, bundleLoading, bundleError, bundleCopied, onCopyBundle, onClearBundle, onFixed, onDeferred,
   isCommitteeStale, reviewRunAt,
 }: {
   icon: React.ReactNode
@@ -60,6 +60,7 @@ export function FindingSection({
   onCopyBundle?: () => void
   onClearBundle?: () => void
   onFixed?: (ids: string[]) => void
+  onDeferred?: (ids: string[]) => void
   isCommitteeStale?: boolean
   reviewRunAt?: string | null
 }) {
@@ -71,14 +72,14 @@ export function FindingSection({
       {/* Header als div — Bundle-Button braucht eigenen Klick-Bereich neben dem Toggle */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '9px 14px', background: 'var(--accent-light)',
-        borderBottom: open ? '1px solid var(--border)' : 'none',
+        padding: '9px 14px', background: 'var(--accent)',
+        borderBottom: open ? '1px solid rgba(255,255,255,0.10)' : 'none',
       }}>
         {icon}
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
           {title}
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 400 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 400 }}>
           · {subtitle}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -94,7 +95,7 @@ export function FindingSection({
           )}
           <button
             onClick={() => setOpen(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--text-tertiary)', padding: '2px 4px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'rgba(255,255,255,0.65)', padding: '2px 4px' }}
             aria-label={open ? 'Einklappen' : 'Aufklappen'}
           >
             {open ? '▲' : '▼'}
@@ -108,16 +109,16 @@ export function FindingSection({
           {bundleLoading && <p style={{ margin: 0, padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-tertiary)' }}>Wird generiert…</p>}
           {bundleError && <p style={{ margin: 0, padding: '10px 14px', fontSize: 12, color: 'var(--error)' }}>⚠ {bundleError}</p>}
           {bundlePrompt && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--active-bg)', overflow: 'hidden' }}>
-              <div style={{ color: '#e8e6e1', padding: '10px 14px', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 280, overflow: 'auto' }}>
-                {bundlePrompt}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--accent)', overflow: 'hidden' }}>
+              <div style={{ position: 'relative' }}>
+                <button onClick={onClearBundle} aria-label="Schließen" style={{ position: 'absolute', top: 6, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.55)', fontSize: 14, lineHeight: 1, padding: 2 }}>✕</button>
+                <div style={{ color: 'var(--code-fg)', padding: '10px 28px 10px 14px', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 280, overflow: 'auto' }}>
+                  {bundlePrompt}
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8, padding: '8px 14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                 <button onClick={onCopyBundle} style={{ fontSize: 11, color: '#ffffff', background: 'var(--teal)', border: '1px solid var(--teal)', borderRadius: 4, cursor: 'pointer', padding: '3px 10px' }}>
                   {bundleCopied ? '✓ Kopiert' : 'Kopieren'}
-                </button>
-                <button onClick={onClearBundle} style={{ fontSize: 11, fontFamily: 'inherit', color: '#ffffff', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 10px' }}>
-                  Verbergen
                 </button>
               </div>
             </div>
@@ -126,7 +127,7 @@ export function FindingSection({
       )}
 
       {open && clusters.map(cluster => (
-        <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} />
+        <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} onDeferred={onDeferred} />
       ))}
 
       {open && isCommitteeStale && reviewRunAt && clusters.some(c => c.findings.some(f => (f as Record<string, unknown>).avg_confidence != null)) && (

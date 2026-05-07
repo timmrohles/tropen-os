@@ -88,42 +88,8 @@ function buildProjectContext(rootPath: string): string | null {
 }
 
 export function buildFixContext(finding: FindingRow, rootPath: string): FixContext {
-  // Lies die Datei, wenn file_path vorhanden
-  let fileContent: string | null = null
-  let surroundingLines: string | null = null
-  let fileExists = false
+  const { fileContent, surroundingLines, fileExists } = readPrimaryFile(finding, rootPath)
 
-  if (finding.file_path) {
-    const absPath = path.join(rootPath, finding.file_path)
-    fileExists = existsSync(absPath)
-    if (fileExists) {
-      try {
-        fileContent = readFileSync(absPath, 'utf-8')
-
-        // Surrounding context: ±30 Zeilen um die Fundstelle
-        if (finding.line && fileContent) {
-          const allLines = fileContent.split('\n')
-          const targetLine = finding.line - 1 // 0-based
-          const start = Math.max(0, targetLine - 30)
-          const end = Math.min(allLines.length - 1, targetLine + 30)
-
-          surroundingLines = allLines
-            .slice(start, end + 1)
-            .map((l, i) => {
-              const lineNum = start + i + 1
-              const marker = lineNum === finding.line ? '>>>' : '   '
-              return `${marker} ${String(lineNum).padStart(4, ' ')} | ${l}`
-            })
-            .join('\n')
-        }
-      } catch (err) {
-        log.warn('Could not read file for fix context', { path: absPath, error: String(err) })
-      }
-    }
-  }
-
-  // Always load project context — prevents hallucinated imports and ensures
-  // the LLM uses actual project dependencies and code conventions
   const projectContext = buildProjectContext(rootPath)
   log.info('Building fix context', {
     ruleId: finding.rule_id,
@@ -133,23 +99,7 @@ export function buildFixContext(finding: FindingRow, rootPath: string): FixConte
     affectedFilesCount: finding.affected_files?.length ?? 0,
   })
 
-  // Load content of affected files for multi-file findings
-  let affectedFilesContent: string | null = null
-  if (finding.affected_files && finding.affected_files.length > 0 && finding.affected_files.length <= 8) {
-    const contentParts: string[] = []
-    for (const fp of finding.affected_files) {
-      // Skip the primary file — already loaded above
-      if (fp === finding.file_path) continue
-      const content = safeRead(path.join(rootPath, fp), 80)
-      if (content) {
-        contentParts.push(`### ${fp} (first 80 lines)`)
-        contentParts.push('```typescript')
-        contentParts.push(content)
-        contentParts.push('```')
-      }
-    }
-    if (contentParts.length > 0) affectedFilesContent = contentParts.join('\n')
-  }
+  const affectedFilesContent = readAffectedFiles(finding, rootPath)
 
   return {
     finding: {
@@ -172,4 +122,65 @@ export function buildFixContext(finding: FindingRow, rootPath: string): FixConte
     affectedFilesContent,
     rootPath,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers (extracted to reduce CC of buildFixContext)
+// ---------------------------------------------------------------------------
+
+interface PrimaryFileResult {
+  fileContent: string | null
+  surroundingLines: string | null
+  fileExists: boolean
+}
+
+function readPrimaryFile(finding: FindingRow, rootPath: string): PrimaryFileResult {
+  if (!finding.file_path) return { fileContent: null, surroundingLines: null, fileExists: false }
+
+  const absPath = path.join(rootPath, finding.file_path)
+  if (!existsSync(absPath)) return { fileContent: null, surroundingLines: null, fileExists: false }
+
+  try {
+    const fileContent = readFileSync(absPath, 'utf-8')
+    const surroundingLines = buildSurroundingLines(fileContent, finding.line)
+    return { fileContent, surroundingLines, fileExists: true }
+  } catch (err) {
+    log.warn('Could not read file for fix context', { path: absPath, error: String(err) })
+    return { fileContent: null, surroundingLines: null, fileExists: true }
+  }
+}
+
+/** Build ±30-line annotated context around the finding line. Returns null if no line info. */
+function buildSurroundingLines(fileContent: string, targetLineNum: number | null): string | null {
+  if (!targetLineNum) return null
+  const allLines = fileContent.split('\n')
+  const targetLine = targetLineNum - 1 // 0-based
+  const start = Math.max(0, targetLine - 30)
+  const end = Math.min(allLines.length - 1, targetLine + 30)
+  return allLines
+    .slice(start, end + 1)
+    .map((l, i) => {
+      const lineNum = start + i + 1
+      const marker = lineNum === targetLineNum ? '>>>' : '   '
+      return `${marker} ${String(lineNum).padStart(4, ' ')} | ${l}`
+    })
+    .join('\n')
+}
+
+/** Load content of affected files (max 8, skip primary). Returns null if none. */
+function readAffectedFiles(finding: FindingRow, rootPath: string): string | null {
+  const files = finding.affected_files
+  if (!files || files.length === 0 || files.length > 8) return null
+
+  const contentParts: string[] = []
+  for (const fp of files) {
+    if (fp === finding.file_path) continue
+    const content = safeRead(path.join(rootPath, fp), 80)
+    if (!content) continue
+    contentParts.push(`### ${fp} (first 80 lines)`)
+    contentParts.push('```typescript')
+    contentParts.push(content)
+    contentParts.push('```')
+  }
+  return contentParts.length > 0 ? contentParts.join('\n') : null
 }

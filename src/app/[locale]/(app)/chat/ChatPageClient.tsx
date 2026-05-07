@@ -33,6 +33,240 @@ function formatRelative(dateStr: string): string {
   return `vor ${months} Monat${months === 1 ? '' : 'en'}`
 }
 
+// ─── Shared button styles ─────────────────────────────────────────────────────
+
+const iconBtnBase: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+  background: 'transparent', border: 'none', cursor: 'pointer',
+  transition: 'all var(--t-fast)',
+}
+
+// ─── FolderDropdown ───────────────────────────────────────────────────────────
+
+interface FolderDropdownProps {
+  conv: ConvItem
+  projects: ProjectItem[]
+  isOpen: boolean
+  menuRef: React.RefObject<HTMLDivElement | null>
+  onToggle: () => void
+  onAssign: (convId: string, projectId: string | null) => void
+}
+
+function FolderDropdown({ conv, projects, isOpen, menuRef, onToggle, onAssign }: FolderDropdownProps) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        aria-label="Ordner zuweisen"
+        title="Ordner zuweisen"
+        onClick={onToggle}
+        style={{
+          ...iconBtnBase,
+          background: isOpen ? 'var(--bg-inset, rgba(0,0,0,0.06))' : 'transparent',
+          color: isOpen ? 'var(--accent)' : 'var(--text-tertiary)',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.06))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+        onMouseLeave={e => {
+          if (!isOpen) {
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'
+          }
+        }}
+      >
+        <FolderSimple size={15} weight="bold" />
+      </button>
+
+      {isOpen && (
+        <div
+          ref={menuRef}
+          style={{
+            position: 'absolute', top: '100%', right: 0, zIndex: 100,
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)',
+            minWidth: 180, padding: '4px 0', marginTop: 4,
+          }}
+        >
+          <div style={{ padding: '6px 12px 4px', fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Ordner zuweisen
+          </div>
+          <FolderOption
+            label="Kein Ordner"
+            active={conv.project_id === null}
+            onClick={() => onAssign(conv.id, null)}
+          />
+          {projects.length > 0 && <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />}
+          {projects.map(p => (
+            <FolderOption
+              key={p.id}
+              label={p.title}
+              active={conv.project_id === p.id}
+              onClick={() => onAssign(conv.id, p.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FolderOption({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
+        fontSize: 13, color: active ? 'var(--accent)' : 'var(--text-secondary)',
+        fontWeight: active ? 600 : 400,
+        background: 'transparent', border: 'none', cursor: 'pointer',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.04))' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ─── DeleteAction ─────────────────────────────────────────────────────────────
+
+interface DeleteActionProps {
+  convId: string
+  isConfirming: boolean
+  onConfirm: () => void
+  onDelete: () => void
+  onCancel: () => void
+}
+
+function DeleteAction({ convId, isConfirming, onConfirm, onDelete, onCancel }: DeleteActionProps) {
+  if (isConfirming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 12, color: 'var(--error)' }}>Löschen?</span>
+        <button
+          onClick={onDelete}
+          style={{
+            padding: '2px 8px', fontSize: 12, fontWeight: 600,
+            background: 'var(--error)', color: 'var(--text-inverse)',
+            border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+          }}
+        >
+          Ja
+        </button>
+        <button
+          onClick={onCancel}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          <X size={13} weight="bold" />
+        </button>
+      </div>
+    )
+  }
+  return (
+    <button
+      aria-label="Chat löschen"
+      title="Chat löschen"
+      onClick={onConfirm}
+      style={{ ...iconBtnBase, color: 'var(--text-tertiary)' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--error-bg)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--error)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
+    >
+      <Trash size={15} weight="bold" />
+    </button>
+  )
+}
+
+// ─── ConvRow ──────────────────────────────────────────────────────────────────
+
+interface ConvRowProps {
+  conv: ConvItem
+  projects: ProjectItem[]
+  workspaceName: string
+  isLast: boolean
+  isFolderOpen: boolean
+  isConfirmDelete: boolean
+  folderMenuRef: React.RefObject<HTMLDivElement | null>
+  onNavigate: (id: string) => void
+  onToggleFolder: () => void
+  onAssign: (convId: string, projectId: string | null) => void
+  onWorkspacePicker: () => void
+  onConfirmDelete: () => void
+  onDelete: () => void
+  onCancelDelete: () => void
+}
+
+function ConvRow({
+  conv, projects, workspaceName, isLast, isFolderOpen, isConfirmDelete,
+  folderMenuRef, onNavigate, onToggleFolder, onAssign,
+  onWorkspacePicker, onConfirmDelete, onDelete, onCancelDelete,
+}: ConvRowProps) {
+  const assignedProject = projects.find(p => p.id === conv.project_id)
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        borderBottom: isLast ? 'none' : '1px solid var(--border)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', gap: 8 }} className="chat-list-row">
+        <button
+          onClick={() => onNavigate(conv.id)}
+          style={{ flex: 1, textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 0 }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {conv.title || 'Neuer Chat'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+            {formatRelative(conv.created_at)}
+            {assignedProject && (
+              <> · <span style={{ color: 'var(--accent)' }}>{assignedProject.title}</span></>
+            )}
+            {workspaceName && (
+              <> in <strong style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{workspaceName}</strong></>
+            )}
+          </div>
+        </button>
+
+        <div className="chat-list-actions" style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+          <FolderDropdown
+            conv={conv}
+            projects={projects}
+            isOpen={isFolderOpen}
+            menuRef={folderMenuRef}
+            onToggle={onToggleFolder}
+            onAssign={onAssign}
+          />
+
+          <button
+            aria-label="In Workspace ablegen"
+            title="In Workspace ablegen"
+            onClick={onWorkspacePicker}
+            style={{ ...iconBtnBase, color: 'var(--text-tertiary)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
+          >
+            <ShareNetwork size={14} weight="bold" />
+          </button>
+
+          <DeleteAction
+            convId={conv.id}
+            isConfirming={isConfirmDelete}
+            onConfirm={onConfirmDelete}
+            onDelete={onDelete}
+            onCancel={onCancelDelete}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── ChatListClient ───────────────────────────────────────────────────────────
+
 export default function ChatListClient({ workspaceId }: { workspaceId: string }) {
   const router = useRouter()
   const [supabase] = useState(() => createClient())
@@ -73,7 +307,6 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
     load()
   }, [workspaceId, supabase])
 
-  // Close folder menu on outside click
   useEffect(() => {
     if (!openFolderMenuId) return
     function onDown(e: MouseEvent) {
@@ -91,9 +324,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
     return matchesSearch && matchesProject
   })
 
-  function handleNewChat() {
-    router.push('/chat/new')
-  }
+  function handleNewChat() { router.push('/chat/new') }
 
   async function handleDelete(id: string) {
     setConversations(prev => prev.filter(c => c.id !== id))
@@ -115,8 +346,43 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
       .eq('id', convId)
   }
 
+  function renderList() {
+    if (loading) {
+      return (
+        <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 14 }}>
+          Lade Chats…
+        </div>
+      )
+    }
+    if (filtered.length === 0) {
+      return <EmptyChatState search={search} activeProjectId={activeProjectId} onNewChat={handleNewChat} />
+    }
+    return (
+      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'visible', background: 'var(--bg-surface)' }}>
+        {filtered.map((conv, i) => (
+          <ConvRow
+            key={conv.id}
+            conv={conv}
+            projects={projects}
+            workspaceName={workspaceName}
+            isLast={i === filtered.length - 1}
+            isFolderOpen={openFolderMenuId === conv.id}
+            isConfirmDelete={confirmDeleteId === conv.id}
+            folderMenuRef={folderMenuRef}
+            onNavigate={id => router.push(`/chat/${id}`)}
+            onToggleFolder={() => setOpenFolderMenuId(prev => prev === conv.id ? null : conv.id)}
+            onAssign={handleAssign}
+            onWorkspacePicker={() => setWorkspacePicker({ id: conv.id, title: conv.title ?? 'Chat' })}
+            onConfirmDelete={() => setConfirmDeleteId(conv.id)}
+            onDelete={() => handleDelete(conv.id)}
+            onCancelDelete={() => setConfirmDeleteId(null)}
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
-    // Outer: fills exactly the height of .app-main so it doesn't scroll itself
     <div
       className="content-max"
       style={{
@@ -127,9 +393,7 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
         paddingBottom: 0,
       }}
     >
-      {/* Non-scrolling top section */}
       <div style={{ flexShrink: 0 }}>
-        {/* Page header */}
         <div className="page-header">
           <div className="page-header-text">
             <h1 className="page-header-title">
@@ -146,12 +410,9 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
           </div>
         </div>
 
-        {/* Search */}
         <div className="search-bar-container">
           <MagnifyingGlass
-            size={14}
-            weight="bold"
-            aria-hidden="true"
+            size={14} weight="bold" aria-hidden="true"
             style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}
           />
           <input
@@ -164,7 +425,6 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
           />
         </div>
 
-        {/* Project chips — always show "Alle", then one per project */}
         <div className="page-filter-row" style={{ marginBottom: 16 }}>
           <button
             className={`chip${activeProjectId === null ? ' chip--active' : ''}`}
@@ -184,237 +444,8 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
         </div>
       </div>
 
-      {/* Scrollable list — only this part scrolls */}
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 48 }}>
-        {loading ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 14 }}>
-            Lade Chats…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <ChatCircle size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
-              {search || activeProjectId ? 'Keine Chats gefunden' : 'Noch keine Chats'}
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
-              {search || activeProjectId
-                ? 'Versuche einen anderen Suchbegriff oder Filter.'
-                : 'Starte ein neues Gespräch mit Toro.'}
-            </p>
-            {!search && !activeProjectId && (
-              <button className="btn btn-primary" onClick={handleNewChat}>
-                <Plus size={14} weight="bold" aria-hidden="true" /> Neuer Chat
-              </button>
-            )}
-          </div>
-        ) : (
-        <div style={{
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          overflow: 'visible',
-          background: 'var(--bg-surface)',
-        }}>
-          {filtered.map((conv, i) => {
-            const isFolderOpen = openFolderMenuId === conv.id
-            const isConfirmDelete = confirmDeleteId === conv.id
-            const assignedProject = projects.find(p => p.id === conv.project_id)
-
-            return (
-              <div
-                key={conv.id}
-                style={{
-                  position: 'relative',
-                  borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
-              >
-                {/* Main row */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '14px 20px',
-                    gap: 8,
-                  }}
-                  className="chat-list-row"
-                >
-                  {/* Clickable title area */}
-                  <button
-                    onClick={() => router.push(`/chat/${conv.id}`)}
-                    style={{
-                      flex: 1,
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      minWidth: 0,
-                    }}
-                  >
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {conv.title || 'Neuer Chat'}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-                      {formatRelative(conv.created_at)}
-                      {assignedProject && (
-                        <> · <span style={{ color: 'var(--accent)' }}>{assignedProject.title}</span></>
-                      )}
-                      {workspaceName && (
-                        <> in <strong style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{workspaceName}</strong></>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Actions */}
-                  <div className="chat-list-actions" style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                    {/* Folder assign */}
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        aria-label="Ordner zuweisen"
-                        title="Ordner zuweisen"
-                        onClick={() => setOpenFolderMenuId(prev => prev === conv.id ? null : conv.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-                          background: isFolderOpen ? 'var(--bg-inset, rgba(0,0,0,0.06))' : 'transparent',
-                          border: 'none', cursor: 'pointer',
-                          color: isFolderOpen ? 'var(--accent)' : 'var(--text-tertiary)',
-                          transition: 'all var(--t-fast)',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.06))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
-                        onMouseLeave={e => {
-                          if (!isFolderOpen) {
-                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'
-                          }
-                        }}
-                      >
-                        <FolderSimple size={15} weight="bold" />
-                      </button>
-
-                      {/* Folder dropdown */}
-                      {isFolderOpen && (
-                        <div
-                          ref={folderMenuRef}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            zIndex: 100,
-                            background: 'var(--bg-surface)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-md)',
-                            boxShadow: 'var(--shadow-lg)',
-                            minWidth: 180,
-                            padding: '4px 0',
-                            marginTop: 4,
-                          }}
-                        >
-                          <div style={{ padding: '6px 12px 4px', fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Ordner zuweisen
-                          </div>
-                          <button
-                            onClick={() => handleAssign(conv.id, null)}
-                            style={{
-                              display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
-                              fontSize: 13, color: conv.project_id === null ? 'var(--accent)' : 'var(--text-secondary)',
-                              fontWeight: conv.project_id === null ? 600 : 400,
-                              background: 'transparent', border: 'none', cursor: 'pointer',
-                            }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.04))' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                          >
-                            Kein Ordner
-                          </button>
-                          {projects.length > 0 && (
-                            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
-                          )}
-                          {projects.map(p => (
-                            <button
-                              key={p.id}
-                              onClick={() => handleAssign(conv.id, p.id)}
-                              style={{
-                                display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
-                                fontSize: 13, color: conv.project_id === p.id ? 'var(--accent)' : 'var(--text-secondary)',
-                                fontWeight: conv.project_id === p.id ? 600 : 400,
-                                background: 'transparent', border: 'none', cursor: 'pointer',
-                              }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset, rgba(0,0,0,0.04))' }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                            >
-                              {p.title}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Save to workspace */}
-                    <button
-                      aria-label="In Workspace ablegen"
-                      title="In Workspace ablegen"
-                      onClick={() => setWorkspacePicker({ id: conv.id, title: conv.title ?? 'Chat' })}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-                        background: 'transparent', border: 'none', cursor: 'pointer',
-                        color: 'var(--text-tertiary)', transition: 'all var(--t-fast)',
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
-                    >
-                      <ShareNetwork size={14} weight="bold" />
-                    </button>
-
-                    {/* Delete */}
-                    {isConfirmDelete ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--error)' }}>Löschen?</span>
-                        <button
-                          onClick={() => handleDelete(conv.id)}
-                          style={{
-                            padding: '2px 8px', fontSize: 12, fontWeight: 600,
-                            background: 'var(--error)', color: 'var(--text-inverse)',
-                            border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                          }}
-                        >
-                          Ja
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(null)}
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: 22, height: 22, background: 'transparent', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-tertiary)',
-                          }}
-                        >
-                          <X size={13} weight="bold" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        aria-label="Chat löschen"
-                        title="Chat löschen"
-                        onClick={() => setConfirmDeleteId(conv.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-                          background: 'transparent', border: 'none', cursor: 'pointer',
-                          color: 'var(--text-tertiary)',
-                          transition: 'all var(--t-fast)',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--error-bg)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--error)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)' }}
-                      >
-                        <Trash size={15} weight="bold" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        )}
+        {renderList()}
       </div>
 
       {workspacePicker && (
@@ -424,6 +455,30 @@ export default function ChatListClient({ workspaceId }: { workspaceId: string })
           itemTitle={workspacePicker.title}
           onClose={() => setWorkspacePicker(null)}
         />
+      )}
+    </div>
+  )
+}
+
+// ─── EmptyChatState ───────────────────────────────────────────────────────────
+
+function EmptyChatState({ search, activeProjectId, onNewChat }: { search: string; activeProjectId: string | null; onNewChat: () => void }) {
+  const hasFilter = search || activeProjectId
+  return (
+    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+      <ChatCircle size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
+        {hasFilter ? 'Keine Chats gefunden' : 'Noch keine Chats'}
+      </p>
+      <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+        {hasFilter
+          ? 'Versuche einen anderen Suchbegriff oder Filter.'
+          : 'Starte ein neues Gespräch mit Toro.'}
+      </p>
+      {!hasFilter && (
+        <button className="btn btn-primary" onClick={onNewChat}>
+          <Plus size={14} weight="bold" aria-hidden="true" /> Neuer Chat
+        </button>
       )}
     </div>
   )

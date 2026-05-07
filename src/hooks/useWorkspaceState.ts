@@ -18,6 +18,55 @@ export { PERIODS, TASK_TYPES, matchesPeriod }
 export type { Conversation, Project, ChatMessage, JungleProject, PeriodValue, TaskValue, WorkspaceState }
 export type { ChatMessage as ChatMessageType }
 
+// ── Effect helpers ─────────────────────────────────────────
+
+function shouldShowMemoryModal(
+  contextPercent: number,
+  activeConvId: string | null,
+  conversations: Conversation[],
+  warnedConvRef: React.MutableRefObject<Set<string>>,
+): boolean {
+  if (!activeConvId) return false
+  if (contextPercent < 85) return false
+  if (warnedConvRef.current.has(activeConvId)) return false
+  const activeConv = conversations.find((c) => c.id === activeConvId)
+  return !!activeConv?.project_id
+}
+
+async function maybeFireProjectIntro(
+  activeConvId: string,
+  conversations: Conversation[],
+  introCheckedRef: React.MutableRefObject<Set<string>>,
+  setMessages: (msgs: ChatMessage[]) => void,
+): Promise<void> {
+  const conv = conversations.find(c => c.id === activeConvId)
+  if (!conv?.project_id) return
+  if (introCheckedRef.current.has(activeConvId)) return
+
+  introCheckedRef.current.add(activeConvId)
+
+  const res = await fetch('/api/chat/project-intro', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ conversationId: activeConvId }),
+  }).then(r => r.ok ? r.json() as Promise<{ message: string }> : null)
+    .catch(() => null)
+
+  if (!res?.message) return
+
+  setMessages([{
+    id: `intro-${activeConvId}`,
+    role: 'assistant',
+    content: res.message,
+    model_used: 'claude-haiku-4-5-20251001',
+    cost_eur: null,
+    tokens_input: null,
+    tokens_output: null,
+  }])
+}
+
+// ── Hook ───────────────────────────────────────────────────
+
 export default function useWorkspaceState(workspaceId: string, initialConvId?: string | null): WorkspaceState {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -155,11 +204,10 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
         .select('full_name, role, organization_id')
         .eq('id', user.id)
         .maybeSingle()
-      if (profile) {
-        setUserFullName(profile.full_name ?? '')
-        setIsAdmin(['owner', 'admin'].includes(profile.role))
-        setOrganizationId(profile.organization_id ?? null)
-      }
+      if (!profile) return
+      setUserFullName(profile.full_name ?? '')
+      setIsAdmin(['owner', 'admin'].includes(profile.role))
+      setOrganizationId(profile.organization_id ?? null)
     }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -167,7 +215,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   useEffect(() => {
     if (!dropdownOpen) return
     function onDown(e: MouseEvent) {
-      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+      if (!searchWrapRef.current?.contains(e.target as Node)) {
         setDropdownOpen(false)
       }
     }
@@ -178,7 +226,7 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   useEffect(() => {
     if (!contextMenuId) return
     function onDown(e: MouseEvent) {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+      if (!contextMenuRef.current?.contains(e.target as Node)) {
         setContextMenuId(null)
         setMenuAnchor(null)
         setContextMenuSubmenu(false)
@@ -196,36 +244,33 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
   }, [])
 
   useEffect(() => {
-    if (!activeConvId) return
-    if (contextPercent < 85) return
-    if (warnedConvRef.current.has(activeConvId)) return
-    const activeConv = conversations.find((c) => c.id === activeConvId)
-    if (!activeConv?.project_id) return
-    warnedConvRef.current.add(activeConvId)
+    if (!shouldShowMemoryModal(contextPercent, activeConvId, conversations, warnedConvRef)) return
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    warnedConvRef.current.add(activeConvId!)
     setShowMemoryModal(true)
   }, [contextPercent, activeConvId, conversations])
 
   useEffect(() => {
     if (!selectMode) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setSelectMode(false); setSelectedIds(new Set()) }
+      if (e.key !== 'Escape') return
+      setSelectMode(false)
+      setSelectedIds(new Set())
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [selectMode])
 
   useEffect(() => {
-    if (editingConvId) {
-      renameInputRef.current?.focus()
-      renameInputRef.current?.select()
-    }
+    if (!editingConvId) return
+    renameInputRef.current?.focus()
+    renameInputRef.current?.select()
   }, [editingConvId])
 
   useEffect(() => {
-    if (editingProjectId) {
-      projectRenameInputRef.current?.focus()
-      projectRenameInputRef.current?.select()
-    }
+    if (!editingProjectId) return
+    projectRenameInputRef.current?.focus()
+    projectRenameInputRef.current?.select()
   }, [editingProjectId])
 
   useEffect(() => {
@@ -273,39 +318,12 @@ export default function useWorkspaceState(workspaceId: string, initialConvId?: s
       .select('id, role, content, model_used, cost_eur, tokens_input, tokens_output, created_at')
       .eq('conversation_id', activeConvId)
       .order('created_at')
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         const loaded = (data ?? []) as ChatMessage[]
         setMessages(loaded)
         // Projekt-Einstieg: fire once per new conversation with no messages
-        const conv = conversations.find(c => c.id === activeConvId)
-        if (
-          loaded.length === 0 &&
-          conv?.project_id &&
-          activeConvId &&
-          !introCheckedRef.current.has(activeConvId)
-        ) {
-          introCheckedRef.current.add(activeConvId)
-          fetch('/api/chat/project-intro', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ conversationId: activeConvId }),
-          })
-            .then(r => r.ok ? r.json() as Promise<{ message: string }> : null)
-            .then(res => {
-              if (res?.message) {
-                setMessages([{
-                  id: `intro-${activeConvId}`,
-                  role: 'assistant',
-                  content: res.message,
-                  model_used: 'claude-haiku-4-5-20251001',
-                  cost_eur: null,
-                  tokens_input: null,
-                  tokens_output: null,
-                }])
-              }
-            })
-            .catch(() => {/* non-blocking */})
-        }
+        if (loaded.length > 0) return
+        await maybeFireProjectIntro(activeConvId, conversations, introCheckedRef, setMessages)
       })).catch(() => {})
   // conversations and supabase intentionally excluded: adding them causes re-fetching on every conversation list update
   // eslint-disable-next-line react-hooks/exhaustive-deps

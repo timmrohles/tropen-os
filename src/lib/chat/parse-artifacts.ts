@@ -48,54 +48,65 @@ export function parseArtifacts(content: string): ContentSegment[] {
   let match: RegExpExecArray | null
 
   while ((match = re.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      const text = content.slice(lastIndex, match.index)
-      if (text) segments.push({ segType: 'text', content: text })
-    }
-
-    const attrs = parseAttrs(match[1])
-    const rawType = attrs.type ?? 'code'
-    const artifactType: ArtifactType = VALID_TYPES.includes(rawType as ArtifactType)
-      ? (rawType as ArtifactType)
-      : 'code'
-
-    segments.push({
-      segType: 'artifact',
-      artifactType,
-      name: attrs.name ?? attrs.title ?? 'Artefakt',
-      language: attrs.language,
-      content: stripCodeFences(match[2].trim()),
-      slideCount: attrs.slides ? parseInt(attrs.slides, 10) : undefined,
-    })
-
+    appendLeadingText(segments, content, lastIndex, match.index)
+    segments.push(buildArtifactSegment(match[1], match[2]))
     lastIndex = match.index + match[0].length
   }
 
-  if (lastIndex < content.length) {
-    const remaining = content.slice(lastIndex)
-    if (remaining) {
-      // Handle unclosed artifact (still streaming or token-truncated)
-      const unclosed = /^([\s\S]*?)<artifact\s+([^>]+)>([\s\S]*)$/i.exec(remaining)
-      if (unclosed) {
-        if (unclosed[1]) segments.push({ segType: 'text', content: unclosed[1] })
-        const attrs = parseAttrs(unclosed[2])
-        const rawType = attrs.type ?? 'code'
-        const artifactType: ArtifactType = VALID_TYPES.includes(rawType as ArtifactType)
-          ? (rawType as ArtifactType)
-          : 'code'
-        segments.push({
-          segType: 'artifact',
-          artifactType,
-          name: attrs.name ?? attrs.title ?? 'Artefakt',
-          language: attrs.language,
-          content: stripCodeFences(unclosed[3].trim()),
-          slideCount: attrs.slides ? parseInt(attrs.slides, 10) : undefined,
-        })
-      } else {
-        segments.push({ segType: 'text', content: remaining })
-      }
-    }
+  appendRemainder(segments, content, lastIndex)
+  return segments
+}
+
+// ---------------------------------------------------------------------------
+// Helpers (extracted to reduce CC of parseArtifacts)
+// ---------------------------------------------------------------------------
+
+/** Resolves a raw type string to a valid ArtifactType (fallback: 'code'). */
+function resolveArtifactType(rawType: string): ArtifactType {
+  return VALID_TYPES.includes(rawType as ArtifactType) ? (rawType as ArtifactType) : 'code'
+}
+
+/** Builds an ArtifactSegment from the matched attribute string and raw body. */
+function buildArtifactSegment(attrsStr: string, rawBody: string): ArtifactSegment {
+  const attrs = parseAttrs(attrsStr)
+  return {
+    segType: 'artifact',
+    artifactType: resolveArtifactType(attrs.type ?? 'code'),
+    name: attrs.name ?? attrs.title ?? 'Artefakt',
+    language: attrs.language,
+    content: stripCodeFences(rawBody.trim()),
+    slideCount: attrs.slides ? parseInt(attrs.slides, 10) : undefined,
+  }
+}
+
+/** Pushes a text segment if the slice between lastIndex and matchIndex is non-empty. */
+function appendLeadingText(
+  segments: ContentSegment[],
+  content: string,
+  lastIndex: number,
+  matchIndex: number,
+): void {
+  if (matchIndex <= lastIndex) return
+  const text = content.slice(lastIndex, matchIndex)
+  if (text) segments.push({ segType: 'text', content: text })
+}
+
+/**
+ * Handles the tail after the last complete match.
+ * - Detects unclosed artifacts (streaming / token-truncated).
+ * - Falls back to plain text.
+ */
+function appendRemainder(segments: ContentSegment[], content: string, lastIndex: number): void {
+  if (lastIndex >= content.length) return
+  const remaining = content.slice(lastIndex)
+  if (!remaining) return
+
+  const unclosed = /^([\s\S]*?)<artifact\s+([^>]+)>([\s\S]*)$/i.exec(remaining)
+  if (!unclosed) {
+    segments.push({ segType: 'text', content: remaining })
+    return
   }
 
-  return segments
+  if (unclosed[1]) segments.push({ segType: 'text', content: unclosed[1] })
+  segments.push(buildArtifactSegment(unclosed[2], unclosed[3]))
 }

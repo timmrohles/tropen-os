@@ -13,19 +13,127 @@ import { apiError } from '@/lib/api-error'
 
 const { modelId: DEFAULT_MODEL } = selectModel('chat')
 
+type StreamBody = {
+  workspaceId:   string
+  cardId?:       string
+  content:       string
+  capabilityId?: string
+  outcomeId?:    string
+  mode?:         'presentation'
+}
+
+async function resolveCapabilityModel(
+  capabilityId: string | undefined,
+  outcomeId: string | undefined,
+  userId: string,
+  orgId: string
+): Promise<{ modelId: string; systemPrompt: string | null }> {
+  if (!capabilityId || !outcomeId) {
+    return { modelId: DEFAULT_MODEL, systemPrompt: null }
+  }
+  try {
+    const plan = await resolveWorkflow(capabilityId, outcomeId, userId, orgId)
+    if (plan.available) {
+      return { modelId: plan.model_id, systemPrompt: plan.system_prompt }
+    }
+  } catch {
+    // non-blocking — fall back to default model
+  }
+  return { modelId: DEFAULT_MODEL, systemPrompt: null }
+}
+
+async function buildSystemPrompt(
+  workspaceId: string,
+  cardId: string | undefined,
+  mode: 'presentation' | undefined,
+  capabilitySystemPrompt: string | null
+): Promise<string> {
+  const baseSystemPrompt = cardId
+    ? await buildCardContext(cardId)
+    : mode === 'presentation'
+      ? await buildPresentationContext(workspaceId)
+      : await buildWorkspaceContext(workspaceId)
+  // Both prompts are DB-sourced (admin-controlled), not user input — safe to concatenate
+  return [capabilitySystemPrompt, baseSystemPrompt].filter(Boolean).join('\n\n')
+}
+
+async function loadHistory(
+  workspaceId: string,
+  cardId: string | undefined,
+  scope: 'card' | 'workspace'
+): Promise<{ role: 'user' | 'assistant'; content: string }[]> {
+  let query = supabaseAdmin
+    .from('workspace_messages')
+    .select()
+    .eq('workspace_id', workspaceId)
+    .eq('scope', scope)
+    .order('created_at', { ascending: true })
+    .limit(20)
+
+  if (cardId) {
+    query = query.eq('card_id', cardId)
+  } else {
+    query = query.is('card_id', null)
+  }
+
+  const { data } = await query
+  return (data ?? []).map((m: Record<string, unknown>) => ({
+    role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+    content: m.content as string,
+  }))
+}
+
+async function saveAssistantMessage(
+  workspaceId: string,
+  cardId: string | undefined,
+  scope: 'card' | 'workspace',
+  content: string,
+  contextSnapshot: unknown,
+  tokensInput: number | null,
+  tokensOutput: number | null,
+  userId: string
+): Promise<void> {
+  await supabaseAdmin.from('workspace_messages').insert({
+    workspace_id: workspaceId,
+    card_id: cardId ?? null,
+    scope,
+    role: 'assistant',
+    content,
+    context_snapshot: contextSnapshot,
+    model: 'claude-sonnet-4.6',
+    tokens_input: tokensInput,
+    tokens_output: tokensOutput,
+    user_id: userId,
+  })
+}
+
+async function saveErrorMessage(
+  workspaceId: string,
+  cardId: string | undefined,
+  scope: 'card' | 'workspace',
+  contextSnapshot: unknown,
+  userId: string
+): Promise<void> {
+  try {
+    await supabaseAdmin.from('workspace_messages').insert({
+      workspace_id: workspaceId,
+      card_id: cardId ?? null,
+      scope,
+      role: 'system',
+      content: 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.',
+      context_snapshot: contextSnapshot,
+      user_id: userId,
+    })
+  } catch {
+    // Ignore DB error during error handling
+  }
+}
+
 export async function POST(req: NextRequest) {
   const me = await getAuthUser()
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: {
-    workspaceId:   string
-    cardId?:       string
-    content:       string
-    capabilityId?: string
-    outcomeId?:    string
-    mode?:         'presentation'
-  }
-
+  let body: StreamBody
   try {
     body = await req.json()
   } catch {
@@ -36,23 +144,16 @@ export async function POST(req: NextRequest) {
   const userId = me.id
 
   if (!workspaceId || !content) {
-    return NextResponse.json(
-      { error: 'workspaceId and content are required' },
-      { status: 400 },
-    )
+    return NextResponse.json({ error: 'workspaceId and content are required' }, { status: 400 })
   }
 
-  // Budget check before any LLM work
   const budget = await checkBudget(me.organization_id, 'claude-sonnet', workspaceId)
   if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
   try {
     const scope = cardId ? 'card' : 'workspace'
-
-    // Build context snapshot
     const contextSnapshot = await buildContextSnapshot(workspaceId, cardId)
 
-    // Insert user message
     await supabaseAdmin.from('workspace_messages').insert({
       workspace_id: workspaceId,
       card_id: cardId ?? null,
@@ -63,57 +164,17 @@ export async function POST(req: NextRequest) {
       user_id: userId,
     })
 
-    // Capability + Outcome routing (optional — falls back to DEFAULT_MODEL)
-    let modelId = DEFAULT_MODEL
-    let capabilitySystemPrompt: string | null = null
-    if (capabilityId && outcomeId) {
-      try {
-        const plan = await resolveWorkflow(capabilityId, outcomeId, me.id, me.organization_id)
-        if (plan.available) {
-          modelId = plan.model_id
-          capabilitySystemPrompt = plan.system_prompt
-        }
-      } catch {
-        // non-blocking — fall back to default model
-      }
-    }
-
-    // Build system prompt
-    const baseSystemPrompt = cardId
-      ? await buildCardContext(cardId)
-      : mode === 'presentation'
-        ? await buildPresentationContext(workspaceId)
-        : await buildWorkspaceContext(workspaceId)
-
-    // Combine prompts without template interpolation — both are DB-sourced (admin-controlled), not user input
-    const systemPrompt = [capabilitySystemPrompt, baseSystemPrompt].filter(Boolean).join('\n\n')
-
-    // Load history
-    let historyQuery = supabaseAdmin
-      .from('workspace_messages')
-      .select()
-      .eq('workspace_id', workspaceId)
-      .eq('scope', scope)
-      .order('created_at', { ascending: true })
-      .limit(20)
-
-    if (cardId) {
-      historyQuery = historyQuery.eq('card_id', cardId)
-    } else {
-      historyQuery = historyQuery.is('card_id', null)
-    }
-
-    const { data: historyMessages } = await historyQuery
+    const { modelId, systemPrompt: capabilitySystemPrompt } = await resolveCapabilityModel(
+      capabilityId, outcomeId, me.id, me.organization_id
+    )
+    const systemPrompt = await buildSystemPrompt(workspaceId, cardId, mode, capabilitySystemPrompt)
+    const historyMessages = await loadHistory(workspaceId, cardId, scope as 'card' | 'workspace')
 
     const apiMessages: { role: 'user' | 'assistant'; content: string }[] = [
-      ...(historyMessages ?? []).map((m: Record<string, unknown>) => ({
-        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: m.content as string,
-      })),
+      ...historyMessages,
       { role: 'user', content: content.trim() },
     ]
 
-    // Accumulate full response for DB save
     let accumulatedText = ''
     let tokensInput: number | null = null
     let tokensOutput: number | null = null
@@ -121,7 +182,6 @@ export async function POST(req: NextRequest) {
     const routingReason = capabilityId ? `capability:${capabilityId}` : 'direct'
     const taskType = cardId ? 'card-chat' : 'workspace-chat'
     const streamStart = Date.now()
-
     const encoder = new TextEncoder()
 
     const readable = new ReadableStream({
@@ -143,27 +203,14 @@ export async function POST(req: NextRequest) {
           tokensInput = usage.inputTokens ?? null
           tokensOutput = usage.outputTokens ?? null
 
-          // Save complete response to DB
-          await supabaseAdmin.from('workspace_messages').insert({
-            workspace_id: workspaceId,
-            card_id: cardId ?? null,
-            scope: scope as 'workspace' | 'card',
-            role: 'assistant',
-            content: accumulatedText,
-            context_snapshot: contextSnapshot,
-            model: 'claude-sonnet-4.6',
-            tokens_input: tokensInput,
-            tokens_output: tokensOutput,
-            user_id: userId,
-          })
+          await saveAssistantMessage(
+            workspaceId, cardId, scope as 'card' | 'workspace',
+            accumulatedText, contextSnapshot, tokensInput, tokensOutput, userId
+          )
 
           logRoutingDecision({
-            taskType,
-            modelSelected: modelId,
-            routingReason,
-            latencyMs: Date.now() - streamStart,
-            status: 'success',
-            userId,
+            taskType, modelSelected: modelId, routingReason,
+            latencyMs: Date.now() - streamStart, status: 'success', userId,
           })
 
           controller.close()
@@ -171,29 +218,11 @@ export async function POST(req: NextRequest) {
           const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler'
 
           logRoutingDecision({
-            taskType,
-            modelSelected: modelId,
-            routingReason,
-            latencyMs: Date.now() - streamStart,
-            status: 'error',
-            errorMessage,
-            userId,
+            taskType, modelSelected: modelId, routingReason,
+            latencyMs: Date.now() - streamStart, status: 'error', errorMessage, userId,
           })
 
-          try {
-            await supabaseAdmin.from('workspace_messages').insert({
-              workspace_id: workspaceId,
-              card_id: cardId ?? null,
-              scope: scope as 'workspace' | 'card',
-              role: 'system',
-              content: 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.',
-              context_snapshot: contextSnapshot,
-              user_id: userId,
-            })
-          } catch {
-            // Ignore DB error during error handling
-          }
-
+          await saveErrorMessage(workspaceId, cardId, scope as 'card' | 'workspace', contextSnapshot, userId)
           controller.error(err)
         }
       },

@@ -41,116 +41,119 @@ export interface ApplyResult {
  */
 export async function applyDiffs(diffs: FileDiff[], rootPath: string): Promise<ApplyResult[]> {
   const results: ApplyResult[] = []
-
   for (const diff of diffs) {
-    const absPath = path.join(rootPath, diff.filePath)
-    const timestamp = Date.now()
-    const backupPath = `${absPath}.pre-fix-${timestamp}`
+    results.push(await applySingleDiff(diff, rootPath))
+  }
+  return results
+}
 
-    // ── Security guards ──────────────────────────────────────────────────────
-    if (!absPath.startsWith(rootPath)) {
-      results.push({ filePath: diff.filePath, success: false, error: 'Path traversal rejected' })
-      continue
-    }
-    if (diff.filePath.includes('node_modules/')) {
-      results.push({ filePath: diff.filePath, success: false, error: 'Writing to node_modules is forbidden' })
-      continue
-    }
-    const baseName = path.basename(diff.filePath)
-    if (baseName.startsWith('.env') && !diff.filePath.endsWith('.example')) {
-      results.push({ filePath: diff.filePath, success: false, error: 'Writing to .env files is forbidden' })
-      continue
-    }
-    if (baseName === 'package.json') {
-      log.warn('Patching package.json — review carefully before applying', { filePath: diff.filePath })
-    }
-    // ─────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Single-diff application (extracted from applyDiffs to reduce CC)
+// ---------------------------------------------------------------------------
 
-    try {
-      // ── New file creation ────────────────────────────────────────────────
-      const isNewFile = !existsSync(absPath) || diff.hunks.every((h) => h.oldStart === 0)
+async function applySingleDiff(diff: FileDiff, rootPath: string): Promise<ApplyResult> {
+  const absPath = path.join(rootPath, diff.filePath)
+  const backupPath = `${absPath}.pre-fix-${Date.now()}`
 
-      if (isNewFile) {
-        const newContent = diff.hunks
-          .flatMap((h) => h.lines)
-          .filter((l) => l.startsWith('+'))
-          .map((l) => l.slice(1))
-          .join('\n')
+  const guardResult = checkSecurityGuards(diff, absPath, rootPath)
+  if (guardResult) return guardResult
 
-        mkdirSync(path.dirname(absPath), { recursive: true })
-        atomicWrite(absPath, newContent + '\n')
-        log.info('New file created', { filePath: diff.filePath })
-        results.push({ filePath: diff.filePath, success: true })
-        continue
-      }
-      // ─────────────────────────────────────────────────────────────────────
+  try {
+    if (isNewFileDiff(absPath, diff)) return createNewFile(absPath, diff)
+    return await applyExistingFileDiff(absPath, backupPath, diff, rootPath)
+  } catch (err) {
+    restoreBackupOnError(absPath, backupPath, diff.filePath)
+    log.error('Failed to apply diff', { filePath: diff.filePath, error: String(err) })
+    return { filePath: diff.filePath, success: false, error: String(err) }
+  }
+}
 
-      // 1. Read original + write backup
-      const original = readFileSync(absPath, 'utf-8')
-      writeFileSync(backupPath, original, 'utf-8')
-      log.info('Backup created', { backupPath })
+function checkSecurityGuards(diff: FileDiff, absPath: string, rootPath: string): ApplyResult | null {
+  if (!absPath.startsWith(rootPath)) {
+    return { filePath: diff.filePath, success: false, error: 'Path traversal rejected' }
+  }
+  if (diff.filePath.includes('node_modules/')) {
+    return { filePath: diff.filePath, success: false, error: 'Writing to node_modules is forbidden' }
+  }
+  const baseName = path.basename(diff.filePath)
+  if (baseName.startsWith('.env') && !diff.filePath.endsWith('.example')) {
+    return { filePath: diff.filePath, success: false, error: 'Writing to .env files is forbidden' }
+  }
+  if (baseName === 'package.json') {
+    log.warn('Patching package.json — review carefully before applying', { filePath: diff.filePath })
+  }
+  return null
+}
 
-      // 2. Apply diff via content-based matching
-      const applyResult = applyFileDiff(original, diff)
-      if (!applyResult.success) {
-        try { unlinkSync(backupPath) } catch { /* ignore */ }
-        log.error('Content-based match failed — not applied', {
-          filePath: diff.filePath,
-          errors: applyResult.errors,
-        })
-        results.push({
-          filePath: diff.filePath,
-          success: false,
-          error: applyResult.errors.join(' | '),
-        })
-        continue
-      }
+function isNewFileDiff(absPath: string, diff: FileDiff): boolean {
+  return !existsSync(absPath) || diff.hunks.every((h) => h.oldStart === 0)
+}
 
-      atomicWrite(absPath, applyResult.newContent)
-      log.info('Diff applied (content-based)', { filePath: diff.filePath, hunks: diff.hunks.length })
+function createNewFile(absPath: string, diff: FileDiff): ApplyResult {
+  const newContent = diff.hunks
+    .flatMap((h) => h.lines)
+    .filter((l) => l.startsWith('+'))
+    .map((l) => l.slice(1))
+    .join('\n')
+  mkdirSync(path.dirname(absPath), { recursive: true })
+  atomicWrite(absPath, newContent + '\n')
+  log.info('New file created', { filePath: diff.filePath })
+  return { filePath: diff.filePath, success: true }
+}
 
-      // 3. TypeScript validation (only for .ts / .tsx files)
-      if (/\.(ts|tsx)$/.test(absPath)) {
-        const tsResult = validateTypeScript(absPath, rootPath)
-        if (!tsResult.ok) {
-          // 4. Restore backup
-          writeFileSync(absPath, original, 'utf-8')
-          try { unlinkSync(backupPath) } catch { /* ignore */ }
-          log.error('TypeScript validation failed — backup restored', {
-            filePath: diff.filePath,
-            tsErrors: tsResult.output.slice(0, 500),
-          })
-          results.push({
-            filePath: diff.filePath,
-            success: false,
-            error: 'TypeScript validation failed — Fix konnte nicht sauber angewendet werden',
-            tsErrors: tsResult.output,
-          })
-          continue
-        }
-      }
+async function applyExistingFileDiff(
+  absPath: string,
+  backupPath: string,
+  diff: FileDiff,
+  rootPath: string,
+): Promise<ApplyResult> {
+  const original = readFileSync(absPath, 'utf-8')
+  writeFileSync(backupPath, original, 'utf-8')
+  log.info('Backup created', { backupPath })
 
-      // 5. Success — delete backup
-      try { unlinkSync(backupPath) } catch { /* ignore */ }
-      log.info('Fix applied and validated', { filePath: diff.filePath })
-      results.push({ filePath: diff.filePath, success: true })
+  const applyResult = applyFileDiff(original, diff)
+  if (!applyResult.success) {
+    try { unlinkSync(backupPath) } catch { /* ignore */ }
+    log.error('Content-based match failed — not applied', { filePath: diff.filePath, errors: applyResult.errors })
+    return { filePath: diff.filePath, success: false, error: applyResult.errors.join(' | ') }
+  }
 
-    } catch (err) {
-      // Restore backup if it exists
-      if (existsSync(backupPath)) {
-        try {
-          const backup = readFileSync(backupPath, 'utf-8')
-          writeFileSync(absPath, backup, 'utf-8')
-          unlinkSync(backupPath)
-          log.info('Backup restored after unexpected error', { filePath: diff.filePath })
-        } catch { /* ignore restore errors */ }
-      }
-      log.error('Failed to apply diff', { filePath: diff.filePath, error: String(err) })
-      results.push({ filePath: diff.filePath, success: false, error: String(err) })
+  atomicWrite(absPath, applyResult.newContent)
+  log.info('Diff applied (content-based)', { filePath: diff.filePath, hunks: diff.hunks.length })
+
+  const tsFailure = validateTypeScriptIfNeeded(absPath, rootPath)
+  if (tsFailure) {
+    writeFileSync(absPath, original, 'utf-8')
+    try { unlinkSync(backupPath) } catch { /* ignore */ }
+    log.error('TypeScript validation failed — backup restored', { filePath: diff.filePath, tsErrors: tsFailure.slice(0, 500) })
+    return {
+      filePath: diff.filePath,
+      success: false,
+      error: 'TypeScript validation failed — Fix konnte nicht sauber angewendet werden',
+      tsErrors: tsFailure,
     }
   }
 
-  return results
+  try { unlinkSync(backupPath) } catch { /* ignore */ }
+  log.info('Fix applied and validated', { filePath: diff.filePath })
+  return { filePath: diff.filePath, success: true }
+}
+
+/** Returns TS error output string on failure, null on success (or non-TS file). */
+function validateTypeScriptIfNeeded(absPath: string, rootPath: string): string | null {
+  if (!/\.(ts|tsx)$/.test(absPath)) return null
+  const result = validateTypeScript(absPath, rootPath)
+  return result.ok ? null : result.output
+}
+
+function restoreBackupOnError(absPath: string, backupPath: string, filePath: string): void {
+  if (!existsSync(backupPath)) return
+  try {
+    const backup = readFileSync(backupPath, 'utf-8')
+    writeFileSync(absPath, backup, 'utf-8')
+    unlinkSync(backupPath)
+    log.info('Backup restored after unexpected error', { filePath })
+  } catch { /* ignore restore errors */ }
 }
 
 // ---------------------------------------------------------------------------

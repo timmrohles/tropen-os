@@ -121,7 +121,7 @@ function KillerStatusIsland({ killerCount, polishScore }: {
             {label}
           </span>
         </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: '#ffffff', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
           {coachSubtext}
         </p>
       </div>
@@ -157,7 +157,7 @@ function PolishScoreIsland({ polishScore, trend, isMultiModelReview }: {
           )}
 
           {isMultiModelReview && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#ffffff', background: 'rgba(255,255,255,0.20)', padding: '2px 7px', borderRadius: 4 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#ffffff', background: 'rgba(0,0,0,0.20)', padding: '2px 7px', borderRadius: 4 }}>
               <Checks size={10} weight="bold" aria-hidden="true" />
               4 Modelle
             </span>
@@ -166,17 +166,17 @@ function PolishScoreIsland({ polishScore, trend, isMultiModelReview }: {
 
         {/* Trend-Kontext-Text — immer am unteren Rand */}
         {trend.direction === 'first-audit' && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#ffffff', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             Erster Audit — das ist deine Baseline.
           </p>
         )}
         {trend.direction === 'stable' && trend.previousAuditDate && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#ffffff', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             Stabil vs. letzter Audit ({formatRelativeDate(trend.previousAuditDate)})
           </p>
         )}
         {(trend.direction === 'up' || trend.direction === 'down') && trend.previousAuditDate && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#ffffff', margin: 'auto 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             vs. letzter Audit ({formatRelativeDate(trend.previousAuditDate)})
           </p>
         )}
@@ -228,7 +228,7 @@ function SelfInputIsland({ dsgvoAnswered, kiActAnswered, lighthouseSet, hasProje
         ))}
       </div>
       {!hasProject && (
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.90)', margin: '10px 0 0', lineHeight: 1.4, textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: '#ffffff', margin: '10px 0 0', lineHeight: 1.4, textAlign: 'center' }}>
           Verbinde ein externes Projekt, um Antworten zu speichern.
         </p>
       )}

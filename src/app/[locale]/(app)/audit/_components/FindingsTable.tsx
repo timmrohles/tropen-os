@@ -2,36 +2,22 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import type { AgentSource, FixType } from '@/lib/audit/types'
+import type { AgentSource } from '@/lib/audit/types'
 import RecommendationCard from './RecommendationCard'
 import { groupFindings, cleanRuleId, type FindingGroup, type AuditFinding } from '@/lib/audit/group-findings'
 import { findRecommendation } from '@/lib/audit/finding-recommendations'
-
-interface DbFinding {
-  id: string
-  rule_id: string
-  category_id: number
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
-  message: string
-  file_path: string | null
-  line: number | null
-  suggestion: string | null
-  status: 'open' | 'acknowledged' | 'fixed' | 'dismissed'
-  resolved_at: string | null
-  agent_source?: AgentSource | null
-  agent_rule_id?: string | null
-  enforcement?: string | null
-  consensus_level?: 'unanimous' | 'majority' | 'split' | 'single' | null
-  models_flagged?: string[] | null
-  affected_files?: string[] | null
-  fix_hint?: string | null
-  fix_type?: FixType | null
-}
-
-type FixTypeFilter  = 'all' | FixType
-type SeverityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low' | 'info'
-type StatusFilter   = 'all' | 'open' | 'acknowledged' | 'fixed' | 'dismissed'
-type AgentFilter    = 'all' | AgentSource
+import {
+  type DbFinding,
+  type FixTypeFilter,
+  type SeverityFilter,
+  type StatusFilter,
+  type AgentFilter,
+  parseFixTypeFilter,
+  parseSeverityFilter,
+  parseStatusFilter,
+  applyBaseFilters,
+  SEVERITY_COUNTS,
+} from './findings-table-helpers'
 
 interface FindingsTableProps {
   findings: DbFinding[]
@@ -46,9 +32,6 @@ interface FindingsTableProps {
   deepReviewBadges?: Record<string, { level: string; count: number }>
 }
 
-const SEVERITY_COUNTS = (findings: DbFinding[], sev: string) =>
-  findings.filter((f) => f.severity === sev).length
-
 const dropdownStyle: React.CSSProperties = {
   fontSize: 12, padding: '4px 8px', borderRadius: 4,
   border: '1px solid var(--border)',
@@ -59,15 +42,26 @@ const dropdownStyle: React.CSSProperties = {
 /** Wraps a single finding as a group-of-1 for flat view. */
 function singleFindingAsGroup(f: DbFinding): FindingGroup {
   return {
-    ruleId:         f.rule_id || 'unknown',
-    baseMessage:    f.message,
-    agentSource:    f.agent_source ?? 'core',
-    severity:       f.severity,
-    findings:       [f as unknown as AuditFinding],
-    count:          1,
+    ruleId:          f.rule_id || 'unknown',
+    baseMessage:     f.message,
+    agentSource:     f.agent_source ?? 'core',
+    severity:        f.severity,
+    findings:        [f as unknown as AuditFinding],
+    count:           1,
     uniqueFileCount: f.file_path ? 1 : 0,
-    fixType:        f.fix_type ?? 'manual',
+    fixType:         f.fix_type ?? 'manual',
   }
+}
+
+function getFixTypeBadgeLabel(
+  localFixTypeFilter: FixTypeFilter,
+  t: ReturnType<typeof useTranslations<'audit'>>,
+): string {
+  if (localFixTypeFilter === 'all') return 'Findings'
+  if (localFixTypeFilter === 'code-fix') return t('fixTypeBadgeCodeFix')
+  if (localFixTypeFilter === 'code-gen') return t('fixTypeBadgeCodeGen')
+  if (localFixTypeFilter === 'refactoring') return t('fixTypeBadgeRefactoring')
+  return t('fixTypeBadgeManual')
 }
 
 export default function FindingsTable({
@@ -88,21 +82,17 @@ export default function FindingsTable({
     try { if (localStorage.getItem('audit-fixtypes-dismissed') === 'true') setFixTypeHintDismissed(true) } catch { /* ignore */ }
   }, [])
 
-  const VALID_SEVERITIES: SeverityFilter[] = ['all', 'critical', 'high', 'medium', 'low', 'info']
-  const VALID_STATUSES:   StatusFilter[]   = ['all', 'open', 'acknowledged', 'fixed', 'dismissed']
-
   const [localFixTypeFilter, setLocalFixTypeFilter] = useState<FixTypeFilter>(
-    (['all', 'code-fix', 'code-gen', 'refactoring', 'manual'] as FixTypeFilter[]).includes(fixTypeFilterProp as FixTypeFilter)
-      ? fixTypeFilterProp as FixTypeFilter : 'all'
+    () => parseFixTypeFilter(fixTypeFilterProp),
   )
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(
-    VALID_STATUSES.includes(statusFilterProp as StatusFilter) ? statusFilterProp as StatusFilter : 'open'
+    () => parseStatusFilter(statusFilterProp),
   )
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>(
-    VALID_SEVERITIES.includes(severityFilterProp as SeverityFilter) ? severityFilterProp as SeverityFilter : 'all'
+    () => parseSeverityFilter(severityFilterProp),
   )
   const [agentFilter, setAgentFilter] = useState<AgentFilter>(
-    agentFilterProp ? agentFilterProp as AgentFilter : 'all'
+    agentFilterProp ? agentFilterProp as AgentFilter : 'all',
   )
 
   // Agent sources that actually have findings in this run (used to hide empty filter options)
@@ -113,16 +103,9 @@ export default function FindingsTable({
   }, [findings])
 
   // fixType counts for tabs (based on status/severity/agent-filtered findings, not fixType-filtered)
-  const baseFiltered = useMemo(() =>
-    findings.filter((f) => {
-      if (severityFilter !== 'all' && f.severity !== severityFilter) return false
-      if (statusFilter === 'open' && f.status !== 'open' && f.status !== 'acknowledged') return false
-      if (statusFilter === 'fixed' && f.status !== 'fixed') return false
-      if (statusFilter === 'dismissed' && f.status !== 'dismissed') return false
-      if (agentFilter    !== 'all' && (f.agent_source ?? 'core') !== agentFilter) return false
-      return true
-    }),
-    [findings, severityFilter, statusFilter, agentFilter]
+  const baseFiltered = useMemo(
+    () => applyBaseFilters(findings, severityFilter, statusFilter, agentFilter),
+    [findings, severityFilter, statusFilter, agentFilter],
   )
 
   const fixTypeCounts = useMemo(() => {
@@ -139,7 +122,7 @@ export default function FindingsTable({
       if (localFixTypeFilter === 'all') return true
       return (f.fix_type ?? 'manual') === localFixTypeFilter
     }),
-    [baseFiltered, localFixTypeFilter]
+    [baseFiltered, localFixTypeFilter],
   )
 
   const groups: FindingGroup[] = useMemo(() => {
@@ -154,11 +137,11 @@ export default function FindingsTable({
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'fixed' }),
-        })
-      )
+        }),
+      ),
     )
     setFindings((prev) =>
-      prev.map((f) => group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'fixed' as const } : f)
+      prev.map((f) => group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'fixed' as const } : f),
     )
   }, [])
 
@@ -169,17 +152,16 @@ export default function FindingsTable({
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'dismissed', not_relevant_reason: reason }),
-        })
-      )
+        }),
+      ),
     )
     setFindings((prev) =>
-      prev.map((f) => group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'dismissed' as const } : f)
+      prev.map((f) => group.findings.some((gf) => gf.id === f.id) ? { ...f, status: 'dismissed' as const } : f),
     )
   }, [])
 
-  // handleCopyGroupPrompt removed — Fix-Prompt is now in the Drawer only
+  // ── Chip data ──────────────────────────────────────────────────────────────
 
-  // fixType tabs — primary filter
   const fixTypeChips: Array<{ value: FixTypeFilter; label: string }> = [
     { value: 'all',         label: `${t('fixTypeAll')} (${baseFiltered.length})` },
     { value: 'code-fix',    label: `${t('fixTypeCodeFix')} (${fixTypeCounts['code-fix']})` },
@@ -201,43 +183,45 @@ export default function FindingsTable({
   const fixedCount = findings.filter((f) => f.status === 'fixed').length
   const dismissedCount = findings.filter((f) => f.status === 'dismissed').length
   const statusChips: Array<{ value: StatusFilter; label: string }> = [
-    { value: 'all',      label: `Alle (${findings.length})` },
-    { value: 'open',     label: `Offen (${openCount})` },
-    { value: 'fixed',    label: `Erledigt (${fixedCount})` },
+    { value: 'all',       label: `Alle (${findings.length})` },
+    { value: 'open',      label: `Offen (${openCount})` },
+    { value: 'fixed',     label: `Erledigt (${fixedCount})` },
     { value: 'dismissed', label: `Nicht relevant (${dismissedCount})` },
   ]
 
   const allAgentChips: Array<{ value: AgentFilter; label: string }> = [
-    { value: 'all',                      label: t('allAgents') },
-    { value: 'core',                     label: 'Core' },
-    { value: 'security',                 label: 'Security' },
-    { value: 'security-scan',            label: 'Security Scan' },
-    { value: 'architecture',             label: 'Architektur' },
-    { value: 'observability',            label: 'Observability' },
-    { value: 'code-style',               label: 'Code Style' },
-    { value: 'testing',                  label: 'Testing' },
-    { value: 'database',                 label: 'Database' },
-    { value: 'api',                      label: 'API' },
-    { value: 'platform',                 label: 'Platform' },
-    { value: 'performance',              label: 'Performance' },
-    { value: 'legal',                    label: 'Legal' },
-    { value: 'accessibility',            label: 'A11y' },
-    { value: 'ai-integration',           label: 'AI' },
-    { value: 'npm-audit',                label: 'Pakete' },
-    { value: 'lighthouse-performance',   label: 'LH Performance' },
-    { value: 'lighthouse-accessibility', label: 'LH A11y' },
-    { value: 'lighthouse-best-practices',label: 'LH Best Practices' },
-    { value: 'lighthouse-seo',           label: 'LH SEO' },
-    { value: 'slop',                     label: 'Code Hygiene' },
-    { value: 'spec',                     label: 'Spec' },
-    { value: 'dsgvo',                    label: 'DSGVO' },
-    { value: 'bfsg',                     label: 'BFSG' },
-    { value: 'ai-act',                   label: 'AI Act' },
+    { value: 'all',                       label: t('allAgents') },
+    { value: 'core',                      label: 'Core' },
+    { value: 'security',                  label: 'Security' },
+    { value: 'security-scan',             label: 'Security Scan' },
+    { value: 'architecture',              label: 'Architektur' },
+    { value: 'observability',             label: 'Observability' },
+    { value: 'code-style',                label: 'Code Style' },
+    { value: 'testing',                   label: 'Testing' },
+    { value: 'database',                  label: 'Database' },
+    { value: 'api',                       label: 'API' },
+    { value: 'platform',                  label: 'Platform' },
+    { value: 'performance',               label: 'Performance' },
+    { value: 'legal',                     label: 'Legal' },
+    { value: 'accessibility',             label: 'A11y' },
+    { value: 'ai-integration',            label: 'AI' },
+    { value: 'npm-audit',                 label: 'Pakete' },
+    { value: 'lighthouse-performance',    label: 'LH Performance' },
+    { value: 'lighthouse-accessibility',  label: 'LH A11y' },
+    { value: 'lighthouse-best-practices', label: 'LH Best Practices' },
+    { value: 'lighthouse-seo',            label: 'LH SEO' },
+    { value: 'slop',                      label: 'Code Hygiene' },
+    { value: 'spec',                      label: 'Spec' },
+    { value: 'dsgvo',                     label: 'DSGVO' },
+    { value: 'bfsg',                      label: 'BFSG' },
+    { value: 'ai-act',                    label: 'AI Act' },
   ]
   // Only show options for agents that actually produced findings in this run
   const agentChips = allAgentChips.filter(
-    (c) => c.value === 'all' || activeAgentSources.has(c.value)
+    (c) => c.value === 'all' || activeAgentSources.has(c.value),
   )
+
+  // ── Empty state ────────────────────────────────────────────────────────────
 
   if (findings.length === 0) {
     return (
@@ -259,6 +243,8 @@ export default function FindingsTable({
       </div>
     )
   }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div id="findings-table" data-version="v2" style={{ marginBottom: 24, paddingTop: 16 }}>
@@ -302,7 +288,6 @@ export default function FindingsTable({
 
       {/* Filter row — all filters as compact dropdowns */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        {/* Fix-Typ */}
         <select
           aria-label={t('fixTypeAll')}
           value={localFixTypeFilter}
@@ -314,7 +299,6 @@ export default function FindingsTable({
           ))}
         </select>
 
-        {/* Severity */}
         <select
           aria-label="Severity"
           value={severityFilter}
@@ -326,7 +310,6 @@ export default function FindingsTable({
           ))}
         </select>
 
-        {/* Agent */}
         <select
           aria-label={t('allAgents')}
           value={agentFilter}
@@ -338,7 +321,6 @@ export default function FindingsTable({
           ))}
         </select>
 
-        {/* Status */}
         <select
           aria-label="Status"
           value={statusFilter}
@@ -364,24 +346,29 @@ export default function FindingsTable({
             <p style={{ margin: '0 0 2px' }}>{t('fixTypeExplainRefactoring')}</p>
             <p style={{ margin: 0 }}>{t('fixTypeExplainManual')}</p>
           </div>
-          <button onClick={() => { setFixTypeHintDismissed(true); try { localStorage.setItem('audit-fixtypes-dismissed', 'true') } catch { /* ignore — localStorage unavailable in private mode */ } }}
+          <button
+            onClick={() => {
+              setFixTypeHintDismissed(true)
+              try { localStorage.setItem('audit-fixtypes-dismissed', 'true') } catch { /* ignore — localStorage unavailable in private mode */ }
+            }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 2, flexShrink: 0 }}
-            aria-label="Close">
+            aria-label="Close"
+          >
             <span style={{ fontSize: 14 }}>×</span>
           </button>
         </div>
       )}
 
-      {/* Findings list */}
       {localFixTypeFilter === 'manual' && (
         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 12, lineHeight: 1.5 }}>
           {t('manualTabHint')}
         </p>
       )}
+
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px 0' }}>
           <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent)', marginBottom: 4 }}>
-            {t('emptyStateTitle', { filterDesc: localFixTypeFilter === 'all' ? 'Findings' : t(`fixTypeBadge${localFixTypeFilter === 'code-fix' ? 'CodeFix' : localFixTypeFilter === 'code-gen' ? 'CodeGen' : localFixTypeFilter === 'refactoring' ? 'Refactoring' : 'Manual'}`) })}
+            {t('emptyStateTitle', { filterDesc: getFixTypeBadgeLabel(localFixTypeFilter, t) })}
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
             {t('emptyStateBody')}

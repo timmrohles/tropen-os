@@ -92,6 +92,12 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     }
   }
 
+  const buildFetchMsg = (data: { itemsFound?: number; itemsDistributed?: number; errors?: { message: string }[] }): string => {
+    if ((data.itemsFound ?? 0) > 0) return `${data.itemsFound} Artikel gefunden, ${data.itemsDistributed ?? 0} verteilt`
+    if (data.errors?.length) return `Fehler: ${data.errors[0].message}`
+    return 'Keine neuen Artikel'
+  }
+
   const handleFetchNow = async (src: FeedSource) => {
     setMenuOpen(null)
     setFetchingId(src.id)
@@ -99,10 +105,7 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     try {
       const res = await fetch(`/api/feeds/${src.id}/run`, { method: 'POST' })
       const data = await res.json() as { itemsFound?: number; itemsDistributed?: number; errors?: { message: string }[] }
-      const msg = (data.itemsFound ?? 0) > 0
-        ? `${data.itemsFound} Artikel gefunden, ${data.itemsDistributed ?? 0} verteilt`
-        : data.errors?.length ? `Fehler: ${data.errors[0].message}` : 'Keine neuen Artikel'
-      setFetchMsg((prev) => ({ ...prev, [src.id]: msg }))
+      setFetchMsg((prev) => ({ ...prev, [src.id]: buildFetchMsg(data) }))
       setSources((prev) => prev.map((s) => s.id === src.id ? { ...s, lastFetchedAt: new Date().toISOString() } : s))
     } finally {
       setFetchingId(null)
@@ -130,19 +133,19 @@ export default function SourcesView({ topics, onTopicsChange }: Props) {
     setEditing(null)
   }
 
+  const applyTopicSourceIds = (topicId: string, sourceId: string, add: boolean) => {
+    onTopicsChange(topics.map((t) => {
+      if (t.id !== topicId) return t
+      const sourceIds = add
+        ? [...t.sourceIds, sourceId]
+        : t.sourceIds.filter((id) => id !== sourceId)
+      return { ...t, sourceIds }
+    }))
+  }
+
   const handleToggleTopic = async (topicId: string, sourceId: string, add: boolean) => {
     const res = await toggleTopicSource(topicId, sourceId, add)
-    if (!res.error) {
-      onTopicsChange(topics.map((t) => {
-        if (t.id !== topicId) return t
-        return {
-          ...t,
-          sourceIds: add
-            ? [...t.sourceIds, sourceId]
-            : t.sourceIds.filter((id) => id !== sourceId),
-        }
-      }))
-    }
+    if (!res.error) applyTopicSourceIds(topicId, sourceId, add)
   }
 
   const handleMenuToggle = (id: string) => {

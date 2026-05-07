@@ -154,12 +154,45 @@ export default function DataView() {
     setModalOpen(true)
   }
 
+  const patchSource = async (body: Record<string, unknown>): Promise<string | null> => {
+    const res = await fetch(`/api/feeds/data-sources/${editingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const j = await res.json() as { error?: string }
+      setFormError(j.error ?? 'Fehler')
+      return null
+    }
+    await load()
+    return editingId
+  }
+
+  const createSource = async (body: Record<string, unknown>): Promise<string | null> => {
+    const res = await fetch('/api/feeds/data-sources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const j = await res.json() as { error?: string }
+      setFormError(j.error ?? 'Fehler')
+      return null
+    }
+    const created = await res.json() as FeedDataSource
+    setSources((prev) => [created, ...prev])
+    await fetch(`/api/feeds/data-sources/${created.id}/fetch`, { method: 'POST' })
+    await load()
+    return created.id
+  }
+
   const handleSave = async () => {
     setFormError('')
     if (!form.name.trim()) { setFormError('Name ist erforderlich'); return }
     if (!form.url.startsWith('http')) { setFormError('URL muss mit http:// oder https:// beginnen'); return }
-    setFormSaving(true)
 
+    setFormSaving(true)
     const body = {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
@@ -172,31 +205,10 @@ export default function DataView() {
     }
 
     try {
-      let sourceId: string
-      if (editingId) {
-        const res = await fetch(`/api/feeds/data-sources/${editingId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-        if (!res.ok) { const j = await res.json() as { error?: string }; setFormError(j.error ?? 'Fehler'); return }
-        sourceId = editingId
-        await load()
-      } else {
-        const res = await fetch('/api/feeds/data-sources', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-        if (!res.ok) { const j = await res.json() as { error?: string }; setFormError(j.error ?? 'Fehler'); return }
-        const created = await res.json() as FeedDataSource
-        sourceId = created.id
-        setSources((prev) => [created, ...prev])
-        // Trigger initial fetch
-        await fetch(`/api/feeds/data-sources/${sourceId}/fetch`, { method: 'POST' })
-        await load()
-      }
-      setModalOpen(false)
+      const sourceId = editingId
+        ? await patchSource(body)
+        : await createSource(body)
+      if (sourceId) setModalOpen(false)
     } finally {
       setFormSaving(false)
     }

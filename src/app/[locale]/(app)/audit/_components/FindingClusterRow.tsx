@@ -5,13 +5,139 @@ import { Lightning } from '@phosphor-icons/react'
 import { type FindingCluster, SEV_DOT } from './audit-findings-utils'
 import { FixPromptInline } from './FixPromptInline'
 
-// ── FindingClusterRow ──────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-export function FindingClusterRow({ cluster, runId, onFixed }: {
+interface Props {
   cluster: FindingCluster
   runId?: string | null
   onFixed?: (ids: string[]) => void
+  onDeferred?: (ids: string[]) => void
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function CommitteeBadge({ finding }: { finding: FindingCluster['findings'][0] }) {
+  if (finding.avg_confidence == null) return null
+  const modelCount = Array.isArray(finding.models_flagged)
+    ? (finding.models_flagged as string[]).length
+    : '?'
+  const modelNames = Array.isArray(finding.models_flagged)
+    ? (finding.models_flagged as string[]).join(', ')
+    : ''
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600,
+        color: 'var(--teal)',
+        padding: '1px 7px', borderRadius: 10,
+        background: 'var(--teal-light)',
+        flexShrink: 0,
+      }}
+      title={`Modelle: ${modelNames}`}
+    >
+      ✨ {modelCount}M · {Math.round(Number(finding.avg_confidence))}%
+    </span>
+  )
+}
+
+function ClusterSubtitle({ cluster, isMulti, expanded }: {
+  cluster: FindingCluster
+  isMulti: boolean
+  expanded: boolean
 }) {
+  if (isMulti) {
+    return (
+      <div style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
+        {cluster.findings.length} Dateien betroffen · {expanded ? '▲ einklappen' : '▼ aufklappen'}
+      </div>
+    )
+  }
+  const first = cluster.findings[0]
+  if (first.file_path) {
+    return (
+      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {first.file_path}
+      </div>
+    )
+  }
+  return null
+}
+
+function BundlePrompt({ bundle, copied, onCopy, onClose, onFixed, onDeferred, fixing }: {
+  bundle: string
+  copied: boolean
+  onCopy: () => void
+  onClose: () => void
+  onFixed: () => void
+  onDeferred?: () => void
+  fixing: boolean
+}) {
+  return (
+    <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--accent)', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={onClose} aria-label="Schließen" style={{ position: 'absolute', top: 6, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.55)', fontSize: 14, lineHeight: 1, padding: 2 }}>✕</button>
+          <div style={{ color: 'var(--code-fg)', padding: '10px 28px 10px 12px', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 240, overflow: 'auto' }}>
+            {bundle}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <button onClick={onCopy} style={{ fontSize: 11, color: '#ffffff', background: 'var(--teal)', border: '1px solid var(--teal)', borderRadius: 4, cursor: 'pointer', padding: '3px 10px' }}>
+            {copied ? '✓ Kopiert' : 'Kopieren'}
+          </button>
+          {onDeferred && (
+            <button onClick={onDeferred} style={{ fontSize: 11, fontFamily: 'inherit', color: '#ffffff', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 10px', lineHeight: 1 }}>
+              Aufschieben
+            </button>
+          )}
+          <button onClick={onFixed} disabled={fixing} style={{ fontSize: 11, fontFamily: 'inherit', color: '#ffffff', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 10px', lineHeight: 1 }}>
+            {fixing ? '…' : 'Erledigt'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SingleFindingExpanded({ cluster, runId, onFixed, onDeferred }: {
+  cluster: FindingCluster
+  runId?: string | null
+  onFixed: () => void
+  onDeferred?: () => void
+}) {
+  const first = cluster.findings[0]
+  const hasDifferentSuggestion = first.suggestion && first.suggestion !== first.message
+  return (
+    <div style={{ padding: '8px 14px 12px', background: 'rgba(26,23,20,0.02)' }}>
+      {first.message && (
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
+          {first.message as string}
+        </p>
+      )}
+      {hasDifferentSuggestion && (
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.5 }}>
+          {first.suggestion as string}
+        </p>
+      )}
+      {runId && (
+        <FixPromptInline
+          ruleId={first.rule_id}
+          message={first.message as string}
+          severity={first.severity}
+          filePath={first.file_path}
+          onHide={() => { /* caller handles via setExpanded */ }}
+          onFixed={onFixed}
+          onDeferred={onDeferred}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── FindingClusterRow ──────────────────────────────────────────────────────────
+
+export function FindingClusterRow({ cluster, runId, onFixed, onDeferred }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null)
   const [clusterBundle, setClusterBundle] = useState<string | null>(null)
@@ -19,6 +145,7 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
   const [clusterBundleCopied, setClusterBundleCopied] = useState(false)
   const [fixing, setFixing] = useState(false)
   const isMulti = cluster.findings.length > 1
+  const first = cluster.findings[0]
 
   async function handleFixed() {
     setFixing(true)
@@ -32,6 +159,10 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
       ))
       onFixed?.(cluster.findings.map(f => f.id))
     } finally { setFixing(false) }
+  }
+
+  function handleDeferred() {
+    onDeferred?.(cluster.findings.map(f => f.id))
   }
 
   function toggleFinding(id: string) {
@@ -62,9 +193,8 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
 
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
-      {/* Cluster-Header — div statt button damit Bundle-Button rechts passt */}
+      {/* Cluster-Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px' }}>
-        {/* Klickbarer Bereich links */}
         <button
           onClick={() => setExpanded(v => !v)}
           style={{ display: 'contents', cursor: 'pointer', background: 'none', border: 'none', textAlign: 'left' }}
@@ -72,26 +202,19 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
         >
           <span className={`severity-dot ${SEV_DOT[cluster.severity] ?? ''}`} aria-label={cluster.severity} style={{ flexShrink: 0 }} />
         </button>
+
         <div style={{ minWidth: 0, flex: 1, cursor: 'pointer' }} onClick={() => setExpanded(v => !v)}>
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {cluster.title}
           </div>
-          {isMulti ? (
-            <div style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
-              {cluster.findings.length} Dateien betroffen · {expanded ? '▲ einklappen' : '▼ aufklappen'}
-            </div>
-          ) : cluster.findings[0].file_path ? (
-            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {cluster.findings[0].file_path}
-            </div>
-          ) : null}
-          {cluster.findings[0]._limitation && !isMulti && (
+          <ClusterSubtitle cluster={cluster} isMulti={isMulti} expanded={expanded} />
+          {first._limitation && !isMulti && (
             <div style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.4, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              💡 {cluster.findings[0]._limitation as string}
+              💡 {first._limitation as string}
             </div>
           )}
         </div>
-        {/* Bundle-Button rechts — nur bei aufgeklapptem Multi-Cluster */}
+
         {isMulti && expanded && !clusterBundle && (
           <button
             onClick={loadClusterBundle}
@@ -103,7 +226,7 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
             {clusterBundleLoading ? 'Wird generiert…' : `Alle ${cluster.findings.length} auf einmal fixen`}
           </button>
         )}
-        {/* Fix-Prompt anzeigen — rechtsbündig für Single-Findings, immer sichtbar */}
+
         {!isMulti && runId && (
           <button
             onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
@@ -112,46 +235,27 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
             {expanded ? 'Einklappen' : 'Fix-Prompt anzeigen'}
           </button>
         )}
-        {/* CommitteeBadge — zeigt Komitee-Konfidenz wenn avg_confidence gesetzt */}
-        {cluster.findings[0].avg_confidence != null && (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600,
-            color: 'var(--teal)',
-            padding: '1px 7px', borderRadius: 10,
-            background: 'var(--teal-light)',
-            flexShrink: 0,
-          }}
-          title={`Modelle: ${Array.isArray(cluster.findings[0].models_flagged) ? (cluster.findings[0].models_flagged as string[]).join(', ') : ''}`}
-          >
-            ✨ {Array.isArray(cluster.findings[0].models_flagged) ? (cluster.findings[0].models_flagged as string[]).length : '?'}M · {Math.round(Number(cluster.findings[0].avg_confidence))}%
-          </span>
-        )}
+
+        <CommitteeBadge finding={first} />
+
         <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
           {cluster.severity !== 'info' ? `+${cluster.totalScoreGain}` : ''}
         </span>
       </div>
 
-      {/* Multi-file: Datei-Liste mit je eigenem Fix-Prompt-Bereich darunter */}
+      {/* Multi-file expanded section */}
       {expanded && isMulti && (
         <div style={{ background: 'rgba(26,23,20,0.02)', borderTop: '1px solid var(--border)' }}>
-          {/* Bundle-Prompt wenn generiert */}
           {clusterBundle && (
-            <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--active-bg)', borderRadius: 6, overflow: 'hidden' }}>
-                <div style={{ color: '#e8e6e1', padding: '10px 12px', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 240, overflow: 'auto' }}>
-                  {clusterBundle}
-                </div>
-                <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <button onClick={copyClusterBundle} style={{ fontSize: 11, color: '#ffffff', background: 'var(--teal)', border: '1px solid var(--teal)', borderRadius: 4, cursor: 'pointer', padding: '3px 10px' }}>
-                    {clusterBundleCopied ? '✓ Kopiert' : 'Kopieren'}
-                  </button>
-                  <button onClick={() => setClusterBundle(null)} style={{ fontSize: 11, fontFamily: 'inherit', color: '#ffffff', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 10px' }}>
-                    Verbergen
-                  </button>
-                </div>
-              </div>
-            </div>
+            <BundlePrompt
+              bundle={clusterBundle}
+              copied={clusterBundleCopied}
+              onCopy={copyClusterBundle}
+              onClose={() => setClusterBundle(null)}
+              onFixed={() => void handleFixed()}
+              onDeferred={onDeferred ? handleDeferred : undefined}
+              fixing={fixing}
+            />
           )}
           {cluster.findings.map(f => (
             <div key={f.id}>
@@ -185,30 +289,14 @@ export function FindingClusterRow({ cluster, runId, onFixed }: {
         </div>
       )}
 
-      {/* Single finding: expandierbarer Fix-Prompt */}
+      {/* Single finding expanded section */}
       {expanded && !isMulti && (
-        <div style={{ padding: '8px 14px 12px', background: 'rgba(26,23,20,0.02)' }}>
-          {cluster.findings[0].message && (
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
-              {cluster.findings[0].message as string}
-            </p>
-          )}
-          {cluster.findings[0].suggestion && cluster.findings[0].suggestion !== cluster.findings[0].message && (
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.5 }}>
-              {cluster.findings[0].suggestion as string}
-            </p>
-          )}
-          {runId && (
-            <FixPromptInline
-              ruleId={cluster.findings[0].rule_id}
-              message={cluster.findings[0].message as string}
-              severity={cluster.findings[0].severity}
-              filePath={cluster.findings[0].file_path}
-              onHide={() => setExpanded(false)}
-              onFixed={() => void handleFixed()}
-            />
-          )}
-        </div>
+        <SingleFindingExpanded
+          cluster={cluster}
+          runId={runId}
+          onFixed={() => void handleFixed()}
+          onDeferred={onDeferred ? handleDeferred : undefined}
+        />
       )}
     </div>
   )

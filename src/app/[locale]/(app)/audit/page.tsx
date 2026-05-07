@@ -13,7 +13,6 @@ import {
 import { getActiveScanProjectProfile } from '@/lib/audit/project-profiles'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { findRecommendation } from '@/lib/audit/finding-recommendations'
-
 import { shouldBeKiller, effortMinutesFromFixType } from '@/lib/audit/killer-rule-ids'
 import { getDomainForRule } from '@/lib/audit/domain-filter'
 import BetaFeedbackButton from './_components/BetaFeedbackButton'
@@ -21,7 +20,108 @@ import AuditActions from './_components/AuditActions'
 import { IslandsRow } from './_components/IslandsRow'
 import { AuditFindingsClient } from './_components/AuditFindingsClient'
 import { calculateScoreTrend } from '@/lib/audit/trend'
+
 export const metadata = { title: 'Audit' }
+
+// ── Server-side helpers (no React, no client imports) ──────────────────────────
+
+type RawFinding = Record<string, unknown>
+
+interface RecCacheEntry {
+  title: string
+  problem: string
+  limitation?: string
+}
+
+/** Attach fixType + recommendation fields to each finding (memoized per ruleId). */
+function enrichFindingsWithRecommendations(findings: RawFinding[]): RawFinding[] {
+  const recCache = new Map<string, RecCacheEntry | null>()
+  return findings.map((f) => {
+    f.fix_type = getFixType(f.rule_id as string)
+    const ruleId = f.rule_id as string
+    if (!recCache.has(ruleId)) {
+      const rec = findRecommendation(ruleId, f.message as string)
+      recCache.set(ruleId, rec
+        ? { title: rec.title, problem: rec.problem, limitation: rec.limitation ?? undefined }
+        : null,
+      )
+    }
+    const cached = recCache.get(ruleId)
+    if (!cached) return f
+    f._recTitle = cached.title
+    f._recProblem = cached.problem
+    if (cached.limitation) f._limitation = cached.limitation
+    return f
+  })
+}
+
+/** Attach killer/effort/domain fields (DB values preferred, heuristic fallback). */
+function enrichFindingsWithMeta(findings: RawFinding[]): RawFinding[] {
+  return findings.map((f): RawFinding => ({
+    ...f,
+    is_killer: f.is_killer != null
+      ? Boolean(f.is_killer)
+      : shouldBeKiller(f.severity as string, f.rule_id as string),
+    effort_minutes: f.effort_minutes != null
+      ? Number(f.effort_minutes)
+      : effortMinutesFromFixType(f.fix_type as string | null),
+    domain: getDomainForRule(f.rule_id as string),
+  }))
+}
+
+interface RunData {
+  runDetail: Record<string, unknown> | null
+  findings: unknown[]
+  prevRun: { percentage: number; created_at: string } | null
+}
+
+/** Fetch run detail + findings + prev run for delta. */
+async function fetchRunWithPrev(
+  selectedRunId: string,
+  runList: Array<{ id: string; percentage: number; created_at: string }>,
+): Promise<RunData> {
+  const [runDetail, findings] = await Promise.all([
+    fetchAuditRunDetail(selectedRunId),
+    fetchAuditFindings(selectedRunId),
+  ])
+  let prevRun: { percentage: number; created_at: string } | null = null
+  if (runDetail && runList.length > 1) {
+    const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
+    prevRun = currentIdx >= 0 ? runList[currentIdx + 1] ?? null : null
+  }
+  return { runDetail, findings, prevRun }
+}
+
+interface ProfileData {
+  needsOnboarding: boolean
+  isExistingProject: boolean
+  scanProjectProfile: import('@/lib/audit/project-profiles').ScanProjectProfile | null
+}
+
+/** Fetch scan-project profile + determine onboarding state. */
+async function fetchProjectProfile(
+  activeScanProjectId: string,
+  runCount: number,
+): Promise<ProfileData> {
+  const scanProjectProfile = await getActiveScanProjectProfile(activeScanProjectId)
+  const needsOnboarding = scanProjectProfile === null
+  const isExistingProject = needsOnboarding && runCount > 0
+  return { needsOnboarding, isExistingProject, scanProjectProfile }
+}
+
+/** Fetch compliance answers for a scan project. */
+async function fetchComplianceData(activeScanProjectId: string): Promise<Record<string, unknown>> {
+  const { data: complianceRows } = await supabaseAdmin
+    .from('project_compliance_data')
+    .select('question_key, question_value')
+    .eq('project_id', activeScanProjectId)
+  if (!complianceRows) return {}
+  return Object.fromEntries(
+    complianceRows.map((r) => [r.question_key as string, r.question_value]),
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 interface PageProps {
   searchParams: Promise<{
@@ -29,11 +129,9 @@ interface PageProps {
   }>
 }
 
-export default async function AuditPage({
-  searchParams }: PageProps) {
+export default async function AuditPage({ searchParams }: PageProps) {
   const locale = await getLocale()
-  const { runId: requestedRunId, status: statusParam, project: projectParam } = await searchParams
-  const status = statusParam ?? 'open'
+  const { runId: requestedRunId, project: projectParam } = await searchParams
 
   const t = await getTranslations('audit')
   const supabase = await createClient()
@@ -56,109 +154,52 @@ export default async function AuditPage({
 
   // ── Runs list ─────────────────────────────────────────────────────────────
   const [runList] = orgId
-    ? await Promise.all([
-        fetchAuditRuns(orgId, activeScanProjectId),
-      ])
+    ? await Promise.all([fetchAuditRuns(orgId, activeScanProjectId)])
     : [[]]
 
   const selectedRunId = requestedRunId ?? runList[0]?.id ?? null
+  const hasRuns = runList.length > 0
+  const isFirstRun = runList.length === 1
 
   // ── Selected run details ──────────────────────────────────────────────────
   let runDetail: Record<string, unknown> | null = null
   let findings: unknown[] = []
-  let delta: number | null = null
   let prevRun: { percentage: number; created_at: string } | null = null
 
   if (selectedRunId) {
-    ;[runDetail, findings] = await Promise.all([
-      fetchAuditRunDetail(selectedRunId),
-      fetchAuditFindings(selectedRunId),
-    ])
-
-    if (runDetail && runList.length > 1) {
-      const currentIdx = runList.findIndex((r) => r.id === selectedRunId)
-      prevRun = currentIdx >= 0 ? runList[currentIdx + 1] ?? null : null
-      if (prevRun) {
-        delta = (runDetail.percentage as number) - prevRun.percentage
-      }
-    }
+    ;({ runDetail, findings, prevRun } = await fetchRunWithPrev(
+      selectedRunId,
+      runList as Array<{ id: string; percentage: number; created_at: string }>,
+    ))
   }
 
-  // Enrich findings server-side: fixType (Node.js only) + recommendation title/problem
-  // _recTitle / _recProblem prevent finding-recommendations.ts from entering the client bundle.
-  // Memoize per ruleId — most findings share the same ruleId, avoiding O(n×m) regex scans.
-  const recCache = new Map<string, { title: string; problem: string; limitation?: string } | null>()
-  const allFindings = (findings as Array<Record<string, unknown>>).map((f) => {
-    f.fix_type = getFixType(f.rule_id as string)
-    const ruleId = f.rule_id as string
-    if (!recCache.has(ruleId)) {
-      const rec = findRecommendation(ruleId, f.message as string)
-      recCache.set(ruleId, rec ? { title: rec.title, problem: rec.problem, limitation: rec.limitation ?? undefined } : null)
-    }
-    const cached = recCache.get(ruleId)
-    if (cached) {
-      f._recTitle = cached.title
-      f._recProblem = cached.problem
-      if (cached.limitation) f._limitation = cached.limitation
-    }
-    return f
-  })
+  // ── Enrich findings ───────────────────────────────────────────────────────
+  const allFindings = enrichFindingsWithRecommendations(findings as RawFinding[])
+  const enrichedFindings = enrichFindingsWithMeta(allFindings)
 
-  const isFirstRun = runList.length === 1
-  const hasRuns = runList.length > 0
+  const killerCount = enrichedFindings.filter((f) => {
+    const fStatus = f.status as string | undefined
+    return (fStatus === 'open' || fStatus === 'acknowledged') && f.is_killer
+  }).length
 
+  // ── Project profile ───────────────────────────────────────────────────────
   const activeProject = activeScanProjectId
     ? scanProjects.find((p) => p.id === activeScanProjectId) ?? null
     : null
-const initialLighthouseUrl = (activeProject as { live_url?: string | null } | null)?.live_url ?? null
+  const initialLighthouseUrl = (activeProject as { live_url?: string | null } | null)?.live_url ?? null
 
-  // Profile-Onboarding: prüfen ob ext. Scan-Projekt ein Profil hat
-  let needsOnboarding = false
-  let isExistingProject = false
-  let scanProjectProfile: import('@/lib/audit/project-profiles').ScanProjectProfile | null = null
+  let profileData: ProfileData = { needsOnboarding: false, isExistingProject: false, scanProjectProfile: null }
   if (activeScanProjectId) {
-    scanProjectProfile = await getActiveScanProjectProfile(activeScanProjectId)
-    needsOnboarding = scanProjectProfile === null
-    isExistingProject = needsOnboarding && runList.length > 0
+    profileData = await fetchProjectProfile(activeScanProjectId, runList.length)
   }
+  const { needsOnboarding, isExistingProject, scanProjectProfile } = profileData
 
-  // Detect if the latest run has Lighthouse data (any finding with lighthouse-* agent_source)
-  const hasLighthouseData = (findings as { agent_source?: string }[]).some(
-    (f) => typeof f.agent_source === 'string' && f.agent_source.startsWith('lighthouse-')
-  )
+  // ── Compliance data ───────────────────────────────────────────────────────
+  const complianceData = activeScanProjectId
+    ? await fetchComplianceData(activeScanProjectId)
+    : {}
 
-  // Sprint 6b₁ — Compliance-Daten laden (für Compliance-Blöcke)
-  let complianceData: Record<string, unknown> = {}
-  if (activeScanProjectId) {
-    const { data: complianceRows } = await supabaseAdmin
-      .from('project_compliance_data')
-      .select('question_key, question_value')
-      .eq('project_id', activeScanProjectId)
-    if (complianceRows) {
-      complianceData = Object.fromEntries(
-        complianceRows.map(r => [r.question_key as string, r.question_value])
-      )
-    }
-  }
-
-  // Sprint 9a — DB-Werte bevorzugen, Heuristik als Fallback für alte Findings (NULL-Spalten)
-  const enrichedFindings = allFindings.map(f => ({
-    ...f,
-    is_killer: (f as Record<string, unknown>).is_killer != null
-      ? Boolean((f as Record<string, unknown>).is_killer)
-      : shouldBeKiller(f.severity as string, f.rule_id as string),
-    effort_minutes: (f as Record<string, unknown>).effort_minutes != null
-      ? Number((f as Record<string, unknown>).effort_minutes)
-      : effortMinutesFromFixType(f.fix_type as string | null),
-    domain: getDomainForRule(f.rule_id as string),
-  }))
-
-  const killerCount = enrichedFindings.filter(f => {
-    const status = (f as Record<string, unknown>).status as string | undefined
-    return (status === 'open' || status === 'acknowledged') && f.is_killer
-  }).length
-
-  // Stale-Detection: Komitee-Findings veraltet wenn neuerer Auto-Audit existiert
+  // ── Stale-Detection ───────────────────────────────────────────────────────
   const hasCommitteeFindings = (runDetail?.review_type as string | null) === 'multi_model'
   const isCommitteeStale = hasCommitteeFindings && runList.length > 0 && runList[0]?.id !== selectedRunId
   const reviewRunAt = hasCommitteeFindings && runDetail?.created_at ? runDetail.created_at as string : null

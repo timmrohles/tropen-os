@@ -8,6 +8,81 @@ import WorkspaceCard, { type WorkspaceItem } from '@/components/workspaces/Works
 
 type ViewTab = 'active' | 'archived'
 
+// ─── Rename Modal ─────────────────────────────────────────────────────────────
+
+interface RenameModalProps {
+  value: string
+  onChange: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  fieldInp: React.CSSProperties
+  t: (key: string) => string
+  tc: (key: string) => string
+}
+
+function RenameModal({ value, onChange, onCommit, onCancel, fieldInp, t, tc }: RenameModalProps) {
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onCancel} style={{ zIndex: 499 }} aria-hidden="true" />
+      <div className="modal-overlay" style={{ zIndex: 500 }} role="dialog" aria-label={t('renameTitle')}>
+        <div className="card" style={{ padding: 20, width: '100%', maxWidth: 400 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
+            {t('renameTitle')}
+          </p>
+          <input
+            autoFocus
+            style={fieldInp}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
+          />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button className="btn btn-primary btn-sm" onClick={onCommit}>{tc('save')}</button>
+            <button className="btn btn-ghost btn-sm" onClick={onCancel}>{tc('cancel')}</button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Empty States ─────────────────────────────────────────────────────────────
+
+function EmptyActiveState({ onCreateClick, t, tc }: { onCreateClick: () => void; t: (k: string) => string; tc: (k: string) => string }) {
+  return (
+    <div className="empty-state">
+      <ShareNetwork size={32} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
+      <div className="empty-state-title">{t('emptyTitle')}</div>
+      <div className="empty-state-text">{t('emptyText')}</div>
+      <button className="btn btn-primary btn-sm" onClick={onCreateClick}>
+        <Plus size={14} weight="bold" aria-hidden="true" /> {t('createFirst')}
+      </button>
+    </div>
+  )
+}
+
+function EmptyArchivedState({ t }: { t: (k: string) => string }) {
+  return (
+    <div className="empty-state">
+      <Archive size={32} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
+      <div className="empty-state-title">{t('emptyArchiveTitle')}</div>
+      <div className="empty-state-text">{t('emptyArchiveText')}</div>
+    </div>
+  )
+}
+
+function EmptySearchState({ t }: { t: (k: string) => string }) {
+  return (
+    <div className="empty-state">
+      <X size={28} color="var(--text-tertiary)" weight="bold" aria-hidden="true" />
+      <div className="empty-state-title">{t('noResultsTitle')}</div>
+      <div className="empty-state-text">{t('noResultsText')}</div>
+    </div>
+  )
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function WorkspacesPage() {
   const t = useTranslations('workspaces')
   const tc = useTranslations('common')
@@ -98,10 +173,9 @@ export default function WorkspacesPage() {
       })
       if (!res.ok) return
       const ws = workspaces.find(w => w.id === id)
-      if (ws) {
-        setWorkspaces(prev => prev.filter(w => w.id !== id))
-        setArchived(prev => [{ ...ws, archived_at: new Date().toISOString() }, ...prev])
-      }
+      if (!ws) return
+      setWorkspaces(prev => prev.filter(w => w.id !== id))
+      setArchived(prev => [{ ...ws, archived_at: new Date().toISOString() }, ...prev])
     } catch {
       setError(t('archiveFailed'))
     }
@@ -116,10 +190,9 @@ export default function WorkspacesPage() {
       })
       if (!res.ok) return
       const ws = archived.find(w => w.id === id)
-      if (ws) {
-        setArchived(prev => prev.filter(w => w.id !== id))
-        setWorkspaces(prev => [{ ...ws, archived_at: null }, ...prev])
-      }
+      if (!ws) return
+      setArchived(prev => prev.filter(w => w.id !== id))
+      setWorkspaces(prev => [{ ...ws, archived_at: null }, ...prev])
     } catch {
       setError(t('restoreFailed'))
     }
@@ -173,6 +246,35 @@ export default function WorkspacesPage() {
     borderRadius: 6, background: 'var(--bg-surface-solid)',
     color: 'var(--text-primary)', fontSize: 13, outline: 'none',
     boxSizing: 'border-box',
+  }
+
+  function renderContent() {
+    if (loading) {
+      return <div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>{t('loading')}</div>
+    }
+    if (filtered.length === 0 && list.length === 0) {
+      return tab === 'active'
+        ? <EmptyActiveState onCreateClick={() => setCreating(true)} t={t} tc={tc} />
+        : <EmptyArchivedState t={t} />
+    }
+    if (filtered.length === 0) {
+      return <EmptySearchState t={t} />
+    }
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+        {filtered.map(ws => (
+          <WorkspaceCard
+            key={ws.id}
+            ws={ws}
+            onDelete={handleDelete}
+            onRename={handleStartRename}
+            onArchive={handleArchive}
+            onUnarchive={handleUnarchive}
+            onCopy={handleCopy}
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -255,72 +357,20 @@ export default function WorkspacesPage() {
         </div>
       )}
 
-      {/* Inline rename */}
+      {/* Rename modal */}
       {renamingId && (
-        <>
-          <div className="modal-backdrop" onClick={() => setRenamingId(null)} style={{ zIndex: 499 }} aria-hidden="true" />
-          <div className="modal-overlay" style={{ zIndex: 500 }} role="dialog" aria-label={t('renameTitle')}>
-            <div className="card" style={{ padding: 20, width: '100%', maxWidth: 400 }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
-                {t('renameTitle')}
-              </p>
-              <input
-                autoFocus
-                style={fieldInp}
-                value={renameValue}
-                onChange={e => setRenameValue(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleRenameCommit(); if (e.key === 'Escape') setRenamingId(null) }}
-              />
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button className="btn btn-primary btn-sm" onClick={handleRenameCommit}>{tc('save')}</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setRenamingId(null)}>{tc('cancel')}</button>
-              </div>
-            </div>
-          </div>
-        </>
+        <RenameModal
+          value={renameValue}
+          onChange={setRenameValue}
+          onCommit={handleRenameCommit}
+          onCancel={() => setRenamingId(null)}
+          fieldInp={fieldInp}
+          t={t}
+          tc={tc}
+        />
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>{t('loading')}</div>
-      ) : filtered.length === 0 && list.length === 0 ? (
-        tab === 'active' ? (
-          <div className="empty-state">
-            <ShareNetwork size={32} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
-            <div className="empty-state-title">{t('emptyTitle')}</div>
-            <div className="empty-state-text">{t('emptyText')}</div>
-            <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>
-              <Plus size={14} weight="bold" aria-hidden="true" /> {t('createFirst')}
-            </button>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <Archive size={32} color="var(--text-tertiary)" weight="fill" aria-hidden="true" />
-            <div className="empty-state-title">{t('emptyArchiveTitle')}</div>
-            <div className="empty-state-text">{t('emptyArchiveText')}</div>
-          </div>
-        )
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <X size={28} color="var(--text-tertiary)" weight="bold" aria-hidden="true" />
-          <div className="empty-state-title">{t('noResultsTitle')}</div>
-          <div className="empty-state-text">{t('noResultsText')}</div>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-          {filtered.map(ws => (
-            <WorkspaceCard
-              key={ws.id}
-              ws={ws}
-              onDelete={handleDelete}
-              onRename={handleStartRename}
-              onArchive={handleArchive}
-              onUnarchive={handleUnarchive}
-              onCopy={handleCopy}
-            />
-          ))}
-        </div>
-      )}
+      {renderContent()}
     </div>
   )
 }

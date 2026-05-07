@@ -72,24 +72,133 @@ function detectStack(files: z.infer<typeof fileSchema>[]): Record<string, string
   let language = 'javascript'
 
   if (paths.some((p) => p.includes('.ts') || p.includes('.tsx'))) language = 'typescript'
-  if (paths.some((p) => p.includes('.py'))) language = 'python'
-  if (paths.some((p) => p.includes('.go'))) language = 'go'
-  if (paths.some((p) => p.includes('.rs'))) language = 'rust'
+  else if (paths.some((p) => p.includes('.py'))) language = 'python'
+  else if (paths.some((p) => p.includes('.go'))) language = 'go'
+  else if (paths.some((p) => p.includes('.rs'))) language = 'rust'
 
-  if (pkgFile) {
-    try {
-      const pkg = JSON.parse(pkgFile.content) as Record<string, unknown>
-      const deps = { ...pkg.dependencies as Record<string, string>, ...pkg.devDependencies as Record<string, string> }
-      if ('next' in deps) framework = 'nextjs'
-      else if ('nuxt' in deps) framework = 'nuxt'
-      else if ('react' in deps) framework = 'react'
-      else if ('vue' in deps) framework = 'vue'
-      else if ('svelte' in deps) framework = 'svelte'
-      else if ('express' in deps || 'fastify' in deps) framework = 'node'
-    } catch { /* ignore — package.json may not be parseable */ }
-  }
+  if (!pkgFile) return { framework, language }
+
+  try {
+    const pkg = JSON.parse(pkgFile.content) as Record<string, unknown>
+    const deps = { ...pkg.dependencies as Record<string, string>, ...pkg.devDependencies as Record<string, string> }
+    if ('next' in deps) framework = 'nextjs'
+    else if ('nuxt' in deps) framework = 'nuxt'
+    else if ('react' in deps) framework = 'react'
+    else if ('vue' in deps) framework = 'vue'
+    else if ('svelte' in deps) framework = 'svelte'
+    else if ('express' in deps || 'fastify' in deps) framework = 'node'
+  } catch { /* ignore — package.json may not be parseable */ }
 
   return { framework, language }
+}
+
+async function loadDomainActivation(
+  orgId: string,
+  projectName: string
+): Promise<Record<string, 'active' | 'lazy' | 'inactive'> | undefined> {
+  const { data: existingProject } = await supabaseAdmin
+    .from('scan_projects')
+    .select('id')
+    .eq('organization_id', orgId)
+    .eq('name', projectName)
+    .maybeSingle()
+
+  if (!existingProject?.id) return undefined
+
+  const scanProfile = await getActiveScanProjectProfile(existingProject.id)
+  if (!scanProfile) return undefined
+
+  return getDomainActivation(scanProfile) as unknown as Record<string, 'active' | 'lazy' | 'inactive'>
+}
+
+function buildProjectUpsertPayload(
+  orgId: string,
+  projectName: string,
+  files: z.infer<typeof fileSchema>[],
+  totalSize: number,
+  report: AuditReport,
+  detectedStack: Record<string, string>,
+  profile: z.infer<typeof profileSchema>
+) {
+  const base = {
+    organization_id: orgId,
+    name: projectName,
+    source: 'file_system',
+    file_count: files.length,
+    total_size_bytes: totalSize,
+    last_scan_at: new Date().toISOString(),
+    last_score: report.automatedPercentage,
+    detected_stack: detectedStack,
+    updated_at: new Date().toISOString(),
+  }
+  if (!profile) return base
+  return {
+    ...base,
+    profile: profile.detectedStack,
+    is_public: profile.isPublic,
+    live_url: profile.liveUrl,
+    is_live: profile.isLive,
+    audience: profile.audience,
+    compliance_requirements: profile.complianceRequirements,
+    not_applicable_categories: profile.notApplicableCategories,
+  }
+}
+
+async function upsertOrInsertProject(
+  orgId: string,
+  projectName: string,
+  files: z.infer<typeof fileSchema>[],
+  totalSize: number,
+  report: AuditReport,
+  detectedStack: Record<string, string>,
+  profile: z.infer<typeof profileSchema>
+): Promise<string | null> {
+  const payload = buildProjectUpsertPayload(orgId, projectName, files, totalSize, report, detectedStack, profile)
+
+  const { data: upsertRow, error: projErr } = await supabaseAdmin
+    .from('scan_projects')
+    .upsert(payload, { onConflict: 'organization_id,name' })
+    .select('id')
+    .single()
+
+  if (!projErr && upsertRow) return upsertRow.id
+
+  // Fallback: plain insert (first-time or if constraint not yet present)
+  log.warn('Upsert failed — falling back to insert', { error: projErr?.message })
+  const { data: insertRow, error: insertErr } = await supabaseAdmin
+    .from('scan_projects')
+    .insert({
+      organization_id: orgId,
+      name: projectName,
+      source: 'file_system',
+      file_count: files.length,
+      total_size_bytes: totalSize,
+      last_scan_at: new Date().toISOString(),
+      last_score: report.automatedPercentage,
+      detected_stack: detectedStack,
+    })
+    .select('id')
+    .single()
+
+  if (insertErr || !insertRow) {
+    log.error('Failed to save project', { upsertErr: projErr?.message, insertErr: insertErr?.message })
+    return null
+  }
+  return insertRow.id
+}
+
+async function deduplicateOrFallback(
+  enrichedFindings: EnrichedFinding[],
+  runId: string,
+  orgId: string
+): Promise<EnrichedFinding[]> {
+  try {
+    const result = await deduplicateFindings(enrichedFindings, runId, orgId)
+    return result.newFindings
+  } catch {
+    log.warn('Deduplication failed — proceeding with all findings')
+    return enrichedFindings
+  }
 }
 
 export async function POST(request: Request) {
@@ -115,13 +224,11 @@ export async function POST(request: Request) {
 
   const { projectName, files, profile } = parsed.data
 
-  // Path traversal check
   const invalidPaths = files.filter((f) => !isValidPath(f.path))
   if (invalidPaths.length > 0) {
     return NextResponse.json({ error: 'Invalid file paths detected' }, { status: 400 })
   }
 
-  // Total size check
   const totalSize = files.reduce((s, f) => s + f.size, 0)
   if (totalSize > LIMITS.maxTotalSizeBytes) {
     return NextResponse.json({
@@ -132,25 +239,9 @@ export async function POST(request: Request) {
   log.info('Scan started', { projectName, fileCount: files.length, totalSize, orgId: orgProfile.organization_id })
 
   try {
-    // 1. Build AuditContext from in-memory files
     const ctx = await buildAuditContextFromFiles(files, 4096)
+    const domainActivation = await loadDomainActivation(orgProfile.organization_id, projectName)
 
-    // ADR-027 Schritt 9a: Domain-Activation aus bestehendem Profil laden
-    let domainActivation: Record<string, 'active' | 'lazy' | 'inactive'> | undefined
-    const { data: existingProject } = await supabaseAdmin
-      .from('scan_projects')
-      .select('id')
-      .eq('organization_id', orgProfile.organization_id)
-      .eq('name', projectName)
-      .maybeSingle()
-    if (existingProject?.id) {
-      const scanProfile = await getActiveScanProjectProfile(existingProject.id)
-      if (scanProfile) {
-        domainActivation = getDomainActivation(scanProfile) as unknown as Record<string, 'active' | 'lazy' | 'inactive'>
-      }
-    }
-
-    // 2. Run audit (skip all disk/CLI-dependent modes)
     const report = await runAudit(ctx, {
       rootPath: '',
       skipModes: EXTERNAL_SKIP_MODES,
@@ -165,64 +256,13 @@ export async function POST(request: Request) {
 
     const detectedStack = detectStack(files)
 
-    // 3. Upsert scan_project
-    let projectId: string | null = null
-    const { data: upsertRow, error: projErr } = await supabaseAdmin
-      .from('scan_projects')
-      .upsert({
-        organization_id: orgProfile.organization_id,
-        name: projectName,
-        source: 'file_system',
-        file_count: files.length,
-        total_size_bytes: totalSize,
-        last_scan_at: new Date().toISOString(),
-        last_score: report.automatedPercentage,
-        detected_stack: detectedStack,
-        updated_at: new Date().toISOString(),
-        ...(profile ? {
-          profile: profile.detectedStack,
-          is_public: profile.isPublic,
-          live_url: profile.liveUrl,
-          is_live: profile.isLive,
-          audience: profile.audience,
-          compliance_requirements: profile.complianceRequirements,
-          not_applicable_categories: profile.notApplicableCategories,
-        } : {}),
-      }, { onConflict: 'organization_id,name' })
-      .select('id')
-      .single()
-
-    if (!projErr && upsertRow) {
-      projectId = upsertRow.id
-    } else {
-      // Fallback: plain insert (first-time or if constraint not yet present)
-      log.warn('Upsert failed — falling back to insert', { error: projErr?.message })
-      const { data: insertRow, error: insertErr } = await supabaseAdmin
-        .from('scan_projects')
-        .insert({
-          organization_id: orgProfile.organization_id,
-          name: projectName,
-          source: 'file_system',
-          file_count: files.length,
-          total_size_bytes: totalSize,
-          last_scan_at: new Date().toISOString(),
-          last_score: report.automatedPercentage,
-          detected_stack: detectedStack,
-        })
-        .select('id')
-        .single()
-      if (insertErr || !insertRow) {
-        log.error('Failed to save project', { upsertErr: projErr?.message, insertErr: insertErr?.message })
-        return NextResponse.json({ error: 'Failed to save project' }, { status: 500 })
-      }
-      projectId = insertRow.id
-    }
-
+    const projectId = await upsertOrInsertProject(
+      orgProfile.organization_id, projectName, files, totalSize, report, detectedStack, profile
+    )
     if (!projectId) {
-      return NextResponse.json({ error: 'Failed to resolve project ID' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to save project' }, { status: 500 })
     }
 
-    // 4. Insert audit_run
     const { data: runRow, error: runErr } = await supabaseAdmin
       .from('audit_runs')
       .insert({
@@ -252,7 +292,6 @@ export async function POST(request: Request) {
 
     const runId = runRow.id
 
-    // 5. Insert category scores
     const categoryRows = report.categories.map((c) => {
       const score = computeScore(c)
       return {
@@ -270,15 +309,8 @@ export async function POST(request: Request) {
     })
     await supabaseAdmin.from('audit_category_scores').insert(categoryRows)
 
-    // 6. Deduplicate + insert findings
     const enrichedFindings = allFindings as EnrichedFinding[]
-    let newFindings = enrichedFindings
-    try {
-      const result = await deduplicateFindings(enrichedFindings, runId, orgProfile.organization_id)
-      newFindings = result.newFindings
-    } catch {
-      log.warn('Deduplication failed — proceeding with all findings')
-    }
+    const newFindings = await deduplicateOrFallback(enrichedFindings, runId, orgProfile.organization_id)
 
     if (newFindings.length > 0) {
       const findingRows = newFindings.map((f) => {

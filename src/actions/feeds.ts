@@ -371,30 +371,56 @@ export async function triggerFetch(sourceId: string): Promise<{
   if (!src) return { itemsFound: 0, itemsSaved: 0, errors: ['Source not found'] }
   const source = mapSource(src as Record<string, unknown>)
 
-  let rawItems: import('@/types/feeds').RawFeedItem[] = []
+  const { rawItems, errors } = await fetchRawItems(source)
+  const processOptions = source.lastFetchedAt ? undefined : { maxAgeDays: 30 }
+  const { saved } = await processRawItems(rawItems, source, processOptions, errors)
+  await updateSourceMeta(sourceId, source.errorCount, errors)
+
+  return { itemsFound: rawItems.length, itemsSaved: saved, errors }
+}
+
+// ---------------------------------------------------------------------------
+// triggerFetch helpers (extracted to reduce CC)
+// ---------------------------------------------------------------------------
+
+async function fetchRawItems(source: FeedSource): Promise<{
+  rawItems: import('@/types/feeds').RawFeedItem[]
+  errors: string[]
+}> {
   const errors: string[] = []
+  let rawItems: import('@/types/feeds').RawFeedItem[] = []
 
   try {
-    if (source.type === 'rss') {
-      rawItems = await fetchRss(source.id, source.url ?? '')
-    } else if (source.type === 'url') {
-      const config = source.config as Record<string, unknown>
-      const result = await fetchUrl(source.id, source.url ?? '', config.css_selector as string)
-      rawItems = result.items
-      if (result.robotsBlocked) errors.push('robots.txt disallows scraping for this URL')
-    } else if (source.type === 'api') {
-      rawItems = await fetchApi(source)
-    }
-    // email: handled via inbound webhook, not polled
+    rawItems = await dispatchFetcher(source, errors)
   } catch (err) {
     errors.push(err instanceof Error ? err.message : String(err))
   }
 
-  // First fetch (last_fetched_at === null): relax age limit to 30 days so new sources
-  // immediately show recent content instead of filtering almost everything out.
-  const isFirstFetch = !source.lastFetchedAt
-  const processOptions = isFirstFetch ? { maxAgeDays: 30 } : undefined
+  return { rawItems, errors }
+}
 
+async function dispatchFetcher(
+  source: FeedSource,
+  errors: string[],
+): Promise<import('@/types/feeds').RawFeedItem[]> {
+  if (source.type === 'rss') return fetchRss(source.id, source.url ?? '')
+  if (source.type === 'api') return fetchApi(source)
+  if (source.type === 'url') {
+    const config = source.config as Record<string, unknown>
+    const result = await fetchUrl(source.id, source.url ?? '', config.css_selector as string)
+    if (result.robotsBlocked) errors.push('robots.txt disallows scraping for this URL')
+    return result.items
+  }
+  // email: handled via inbound webhook, not polled
+  return []
+}
+
+async function processRawItems(
+  rawItems: import('@/types/feeds').RawFeedItem[],
+  source: FeedSource,
+  processOptions: { maxAgeDays: number } | undefined,
+  errors: string[],
+): Promise<{ saved: number }> {
   let saved = 0
   let stage3Count = 0
 
@@ -410,17 +436,18 @@ export async function triggerFetch(sourceId: string): Promise<{
     }
   }
 
+  return { saved }
+}
+
+async function updateSourceMeta(sourceId: string, prevErrorCount: number, errors: string[]): Promise<void> {
   const { error: updateErr } = await supabaseAdmin.from('feed_sources')
     .update({
       last_fetched_at: new Date().toISOString(),
-      error_count: errors.length > 0 ? source.errorCount + 1 : 0,
+      error_count: errors.length > 0 ? prevErrorCount + 1 : 0,
       last_error: errors[0] ?? null,
     })
     .eq('id', sourceId)
-
   if (updateErr) log.warn('[triggerFetch] failed to update last_fetched_at', { sourceId, error: updateErr.message })
-
-  return { itemsFound: rawItems.length, itemsSaved: saved, errors }
 }
 
 // ---------------------------------------------------------------------------

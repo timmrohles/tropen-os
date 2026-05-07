@@ -69,37 +69,58 @@ function tooManyRequests(limit: number, reset: number): NextResponse {
   )
 }
 
+// ─── Rate-limit helpers ────────────────────────────────────────────────────────
+
+function isAuthRoute(method: string, pathname: string): boolean {
+  return (
+    method === 'POST' &&
+    (
+      pathname === '/login' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password' ||
+      pathname.startsWith('/auth/')
+    )
+  )
+}
+
+function pickLimiter(method: string, pathname: string, lims: NonNullable<typeof limiters>) {
+  if (isAuthRoute(method, pathname)) return lims.auth
+  if (pathname.startsWith('/api/public/')) return lims.publicApi
+  if (pathname === '/api/chat/stream') return lims.chat
+  if (pathname.startsWith('/api/')) return lims.api
+  return null
+}
+
+async function checkRateLimit(request: NextRequest): Promise<NextResponse | null> {
+  if (!limiters) return null
+  const limiter = pickLimiter(request.method, request.nextUrl.pathname, limiters)
+  if (!limiter) return null
+  const { success, limit, reset } = await limiter.limit(getIP(request))
+  return success ? null : tooManyRequests(limit, reset)
+}
+
+// ─── Onboarding helpers ────────────────────────────────────────────────────────
+
+function redirectWithCookie(
+  dest: string,
+  requestUrl: string,
+  cookieName: string,
+  cookieValue: string,
+  cookieOptions: { maxAge: number; path: string; httpOnly?: boolean }
+): NextResponse {
+  const res = NextResponse.redirect(new URL(dest, requestUrl))
+  res.cookies.set(cookieName, cookieValue, cookieOptions)
+  return res
+}
+
 // ─── Proxy (Auth-Guard + Onboarding-Guard + Rate Limiting) ────────────────────
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Rate Limiting ────────────────────────────────────────────────────────────
-  if (limiters) {
-    const ip = getIP(request)
-
-    if (
-      request.method === 'POST' &&
-      (
-        pathname === '/login' ||
-        pathname === '/forgot-password' ||
-        pathname === '/reset-password' ||
-        pathname.startsWith('/auth/')
-      )
-    ) {
-      const { success, limit, reset } = await limiters.auth.limit(ip)
-      if (!success) return tooManyRequests(limit, reset)
-    } else if (pathname.startsWith('/api/public/')) {
-      const { success, limit, reset } = await limiters.publicApi.limit(ip)
-      if (!success) return tooManyRequests(limit, reset)
-    } else if (pathname === '/api/chat/stream') {
-      const { success, limit, reset } = await limiters.chat.limit(ip)
-      if (!success) return tooManyRequests(limit, reset)
-    } else if (pathname.startsWith('/api/')) {
-      const { success, limit, reset } = await limiters.api.limit(ip)
-      if (!success) return tooManyRequests(limit, reset)
-    }
-  }
+  const rateLimitResponse = await checkRateLimit(request)
+  if (rateLimitResponse) return rateLimitResponse
 
   // ── API-Routen brauchen keinen Auth-/Onboarding-Guard hier ──────────────────
   if (pathname.startsWith('/api/')) {
@@ -119,7 +140,6 @@ export async function proxy(request: NextRequest) {
           for (const { name, value } of cookiesToSet) request.cookies.set(name, value)
           response = NextResponse.next({ request })
           for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options)
-          
         },
       },
     }
@@ -130,14 +150,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // /auth/* ist immer öffentlich (Magic-Link-Callback)
-  if (pathname.startsWith('/auth/')) {
-    return response
-  }
+  if (pathname.startsWith('/auth/')) return response
 
   // Startseite ist öffentlich
-  if (pathname === '/') {
-    return response
-  }
+  if (pathname === '/') return response
 
   // /login + /forgot-password: eingeloggte User → /home
   if (pathname.startsWith('/login') || pathname.startsWith('/forgot-password')) {
@@ -146,14 +162,10 @@ export async function proxy(request: NextRequest) {
   }
 
   // /reset-password: immer erlaubt (nach Password-Reset-Link)
-  if (pathname.startsWith('/reset-password')) {
-    return response
-  }
+  if (pathname.startsWith('/reset-password')) return response
 
   // /superadmin/*: Layout-Guard übernimmt die Auth-Prüfung (Server Component)
-  if (pathname.startsWith('/superadmin')) {
-    return response
-  }
+  if (pathname.startsWith('/superadmin')) return response
 
   // Alle anderen Routen brauchen Auth
   if (!user) {
@@ -170,12 +182,16 @@ export async function proxy(request: NextRequest) {
     .select('role')
     .eq('id', user.id)
     .maybeSingle()
+
   if (profile?.role === 'superadmin') {
-    const target = isOnboarding
-      ? NextResponse.redirect(new URL('/superadmin/clients', request.url))
-      : response
-    target.cookies.set('is_superadmin', '1', { maxAge: 365 * 24 * 60 * 60, path: '/' })
-    return target
+    if (isOnboarding) {
+      return redirectWithCookie('/superadmin/clients', request.url, 'is_superadmin', '1', {
+        maxAge: 365 * 24 * 60 * 60,
+        path: '/',
+      })
+    }
+    response.cookies.set('is_superadmin', '1', { maxAge: 365 * 24 * 60 * 60, path: '/' })
+    return response
   }
   response.cookies.set('is_superadmin', '', { maxAge: 0, path: '/' })
 
@@ -183,9 +199,7 @@ export async function proxy(request: NextRequest) {
   const onboardingCookie = request.cookies.get('onboarding_done')?.value
 
   if (onboardingCookie === '1') {
-    if (isOnboarding) {
-      return NextResponse.redirect(new URL('/home', request.url))
-    }
+    if (isOnboarding) return NextResponse.redirect(new URL('/home', request.url))
     return response
   }
 
@@ -198,22 +212,24 @@ export async function proxy(request: NextRequest) {
 
   const completed = prefs?.onboarding_completed === true
 
-  if (completed) {
-    const target = isOnboarding
-      ? NextResponse.redirect(new URL('/chat', request.url))
-      : response
-    target.cookies.set('onboarding_done', '1', {
+  if (!completed) {
+    if (!isOnboarding) return NextResponse.redirect(new URL('/onboarding', request.url))
+    return response
+  }
+
+  // Onboarding done — set cookie and redirect if on /onboarding
+  if (isOnboarding) {
+    return redirectWithCookie('/chat', request.url, 'onboarding_done', '1', {
       maxAge: 365 * 24 * 60 * 60,
       path: '/',
       httpOnly: false,
     })
-    return target
   }
-
-  if (!isOnboarding) {
-    return NextResponse.redirect(new URL('/onboarding', request.url))
-  }
-
+  response.cookies.set('onboarding_done', '1', {
+    maxAge: 365 * 24 * 60 * 60,
+    path: '/',
+    httpOnly: false,
+  })
   return response
 }
 

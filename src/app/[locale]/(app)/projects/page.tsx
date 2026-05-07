@@ -17,6 +17,94 @@ import { MemoryTab } from './_components/MemoryTab'
 
 const log = createLogger('projects/page')
 
+// ─── CreateForm ───────────────────────────────────────────────────────────────
+
+interface CreateFormProps {
+  newTitle: string
+  newEmoji: string
+  saving: boolean
+  onTitleChange: (v: string) => void
+  onEmojiChange: (v: string) => void
+  onCreate: () => void
+  onCancel: () => void
+  inp: React.CSSProperties
+  t: (key: string) => string
+  tc: (key: string) => string
+}
+
+function CreateForm({ newTitle, newEmoji, saving, onTitleChange, onEmojiChange, onCreate, onCancel, inp, t, tc }: CreateFormProps) {
+  return (
+    <div className="card" style={{ padding: 14, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <IconPicker value={newEmoji} onChange={onEmojiChange} />
+        <input
+          autoFocus
+          placeholder={t('titlePlaceholder')}
+          value={newTitle}
+          style={inp}
+          onChange={e => onTitleChange(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') onCreate(); if (e.key === 'Escape') { onCancel(); onTitleChange('') } }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button className="btn btn-primary btn-sm" onClick={onCreate} disabled={saving || !newTitle.trim()}>{t('createProject')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => { onCancel(); onTitleChange('') }}>{tc('cancel')}</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── ProjectDetailPanel ───────────────────────────────────────────────────────
+
+interface ProjectDetailPanelProps {
+  selected: Project
+  activeTab: ProjectTab
+  memCount: number
+  allProjects: Project[]
+  onTabChange: (tab: ProjectTab) => void
+  onSaved: (updated: Project) => void
+  onDeleted: () => void
+  onArchived: (updated: Project) => void
+  onNewChat: () => void
+  t: (key: string) => string
+}
+
+function ProjectDetailPanel({ selected, activeTab, memCount, allProjects, onTabChange, onSaved, onDeleted, onArchived, onNewChat, t }: ProjectDetailPanelProps) {
+  const tabs: React.CSSProperties = { display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }
+
+  return (
+    <div className="card" style={{ padding: 24 }}>
+      <div style={tabs}>
+        <button className={`chip${activeTab === 'uebersicht'  ? ' chip--active' : ''}`} onClick={() => onTabChange('uebersicht')}>{t('tabs.overview')}</button>
+        <button className={`chip${activeTab === 'chats'       ? ' chip--active' : ''}`} onClick={() => onTabChange('chats')}>{t('tabs.chats')}</button>
+        <button className={`chip${activeTab === 'dokumente'   ? ' chip--active' : ''}`} onClick={() => onTabChange('dokumente')}>{t('tabs.documents')}</button>
+        <button className={`chip${activeTab === 'gedaechtnis' ? ' chip--active' : ''}`} onClick={() => onTabChange('gedaechtnis')}>
+          {t('tabs.memory')}{memCount > 0 ? ` (${memCount})` : ''}
+        </button>
+      </div>
+
+      {activeTab === 'uebersicht' && (
+        <OverviewTab
+          project={selected}
+          allProjects={allProjects}
+          onSaved={onSaved}
+          onDeleted={onDeleted}
+          onArchived={onArchived}
+        />
+      )}
+      {activeTab === 'chats' && (
+        <ChatsTab projectId={selected.id} onNewChat={onNewChat} />
+      )}
+      {activeTab === 'dokumente' && (
+        <DocumentsTab projectId={selected.id} />
+      )}
+      {activeTab === 'gedaechtnis' && (
+        <MemoryTab projectId={selected.id} memCount={memCount} />
+      )}
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ProjectsPage() {
@@ -33,6 +121,7 @@ export default function ProjectsPage() {
   const [newEmoji, setNewEmoji] = useState('FolderSimple')
   const [saving, setSaving]     = useState(false)
   const [activeTab, setActiveTab] = useState<ProjectTab>('uebersicht')
+  const [showArchived, setShowArchived] = useState(false)
 
   const loadProjects = useCallback(async (deptId: string) => {
     const res = await fetch(`/api/projects?department_id=${deptId}`)
@@ -99,20 +188,35 @@ export default function ProjectsPage() {
     }
   }
 
-  const [showArchived, setShowArchived] = useState(false)
   const memCount = selected?.project_memory?.[0]?.count ?? 0
-
-  const visibleProjects = projects.filter(p =>
-    showArchived ? !!p.archived_at : !p.archived_at
-  )
+  const visibleProjects = projects.filter(p => showArchived ? !!p.archived_at : !p.archived_at)
   const archivedCount = projects.filter(p => !!p.archived_at).length
 
-  const s: Record<string, React.CSSProperties> = {
-    grid:  { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 24 },
-    empty: { color: 'var(--text-tertiary)', fontSize: 13, padding: '40px 0', textAlign: 'center' },
-    detailCard: { padding: 24 },
-    tabs:  { display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' },
-    inp:   { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: 8, padding: '8px 12px', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit' },
+  const inp: React.CSSProperties = {
+    width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)',
+    borderRadius: 8, padding: '8px 12px', color: 'var(--text-primary)',
+    fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit',
+  }
+
+  function renderProjectGrid() {
+    if (loading) return <p style={{ color: 'var(--text-tertiary)', fontSize: 13, padding: '40px 0', textAlign: 'center' }}>{t('loading')}</p>
+    if (visibleProjects.length === 0 && !creating) {
+      return <p style={{ color: 'var(--text-tertiary)', fontSize: 13, padding: '40px 0', textAlign: 'center' }}>{showArchived ? t('emptyArchived') : t('emptyActive')}</p>
+    }
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 24 }}>
+        {visibleProjects.map(p => (
+          <ProjectCard
+            key={p.id}
+            project={p}
+            isSelected={selected?.id === p.id}
+            onClick={() => selectProject(p)}
+            onChatStart={() => router.push('/chat/new')}
+            onSaveToWorkspace={() => setWorkspacePicker(p)}
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -143,85 +247,46 @@ export default function ProjectsPage() {
       </div>
 
       {creating && (
-        <div className="card" style={{ padding: 14, marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <IconPicker value={newEmoji} onChange={setNewEmoji} />
-            <input
-              autoFocus
-              placeholder={t('titlePlaceholder')}
-              value={newTitle}
-              style={s.inp}
-              onChange={e => setNewTitle(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewTitle('') } }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={saving || !newTitle.trim()}>{t('createProject')}</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => { setCreating(false); setNewTitle('') }}>{tc('cancel')}</button>
-          </div>
-        </div>
+        <CreateForm
+          newTitle={newTitle}
+          newEmoji={newEmoji}
+          saving={saving}
+          onTitleChange={setNewTitle}
+          onEmojiChange={setNewEmoji}
+          onCreate={handleCreate}
+          onCancel={() => setCreating(false)}
+          inp={inp}
+          t={t}
+          tc={tc}
+        />
       )}
 
-      {loading ? (
-        <p style={s.empty}>{t('loading')}</p>
-      ) : visibleProjects.length === 0 && !creating ? (
-        <p style={s.empty}>{showArchived ? t('emptyArchived') : t('emptyActive')}</p>
-      ) : (
-        <div style={s.grid}>
-          {visibleProjects.map(p => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              isSelected={selected?.id === p.id}
-              onClick={() => selectProject(p)}
-              onChatStart={() => router.push('/chat/new')}
-              onSaveToWorkspace={() => setWorkspacePicker(p)}
-            />
-          ))}
-        </div>
-      )}
+      {renderProjectGrid()}
 
       {selected && (
-        <div className="card" style={s.detailCard}>
-          <div style={s.tabs}>
-            <button className={`chip${activeTab === 'uebersicht'  ? ' chip--active' : ''}`} onClick={() => setActiveTab('uebersicht')}>{t('tabs.overview')}</button>
-            <button className={`chip${activeTab === 'chats'       ? ' chip--active' : ''}`} onClick={() => setActiveTab('chats')}>{t('tabs.chats')}</button>
-            <button className={`chip${activeTab === 'dokumente'   ? ' chip--active' : ''}`} onClick={() => setActiveTab('dokumente')}>{t('tabs.documents')}</button>
-            <button className={`chip${activeTab === 'gedaechtnis' ? ' chip--active' : ''}`} onClick={() => setActiveTab('gedaechtnis')}>
-              {t('tabs.memory')}{memCount > 0 ? ` (${memCount})` : ''}
-            </button>
-          </div>
-
-          {activeTab === 'uebersicht' && (
-            <OverviewTab
-              project={selected}
-              allProjects={projects}
-              onSaved={updated => {
-                const withMem = { ...updated, project_memory: selected.project_memory }
-                setProjects(prev => prev.map(p => p.id === updated.id ? withMem : p))
-                setSelected(withMem)
-              }}
-              onDeleted={() => {
-                setProjects(prev => prev.filter(p => p.id !== selected.id))
-                setSelected(null)
-              }}
-              onArchived={updated => {
-                const withMem = { ...updated, project_memory: selected.project_memory }
-                setProjects(prev => prev.map(p => p.id === updated.id ? withMem : p))
-                setSelected(null)
-              }}
-            />
-          )}
-          {activeTab === 'chats' && (
-            <ChatsTab projectId={selected.id} onNewChat={() => router.push('/chat/new')} />
-          )}
-          {activeTab === 'dokumente' && (
-            <DocumentsTab projectId={selected.id} />
-          )}
-          {activeTab === 'gedaechtnis' && (
-            <MemoryTab projectId={selected.id} memCount={memCount} />
-          )}
-        </div>
+        <ProjectDetailPanel
+          selected={selected}
+          activeTab={activeTab}
+          memCount={memCount}
+          allProjects={projects}
+          onTabChange={setActiveTab}
+          onSaved={updated => {
+            const withMem = { ...updated, project_memory: selected.project_memory }
+            setProjects(prev => prev.map(p => p.id === updated.id ? withMem : p))
+            setSelected(withMem)
+          }}
+          onDeleted={() => {
+            setProjects(prev => prev.filter(p => p.id !== selected.id))
+            setSelected(null)
+          }}
+          onArchived={updated => {
+            const withMem = { ...updated, project_memory: selected.project_memory }
+            setProjects(prev => prev.map(p => p.id === updated.id ? withMem : p))
+            setSelected(null)
+          }}
+          onNewChat={() => router.push('/chat/new')}
+          t={t}
+        />
       )}
 
       {workspacePicker && (

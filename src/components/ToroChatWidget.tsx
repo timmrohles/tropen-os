@@ -76,6 +76,43 @@ export default function ToroChatWidget() {
   const limitReached = sentCount >= MAX_MSGS
   const remaining = MAX_MSGS - sentCount
 
+  function replaceLast(content: string, pending?: boolean): void {
+    setMsgs((prev) => [
+      ...prev.slice(0, -1),
+      { role: 'assistant', content, ...(pending !== undefined ? { pending } : {}) },
+    ])
+  }
+
+  async function processStream(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let fullContent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6)
+        if (data === '[DONE]') continue
+        try {
+          const parsed = JSON.parse(data)
+          if (parsed.content) {
+            fullContent += parsed.content
+            replaceLast(fullContent, true)
+          }
+        } catch {
+          // chunk ignorieren
+        }
+      }
+    }
+    return fullContent
+  }
+
   async function send() {
     const text = input.trim()
     if (!text || sending || limitReached) return
@@ -104,49 +141,13 @@ export default function ToroChatWidget() {
 
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({ error: 'Fehler beim Senden.' }))
-        setMsgs((prev) => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: err.error ?? 'Etwas ist schiefgelaufen.' },
-        ])
+        replaceLast(err.error ?? 'Etwas ist schiefgelaufen.')
         setSending(false)
         return
       }
 
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let fullContent = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6)
-          if (data === '[DONE]') continue
-          try {
-            const parsed = JSON.parse(data)
-            if (parsed.content) {
-              fullContent += parsed.content
-              setMsgs((prev) => [
-                ...prev.slice(0, -1),
-                { role: 'assistant', content: fullContent, pending: true },
-              ])
-            }
-          } catch {
-            // chunk ignorieren
-          }
-        }
-      }
-
-      setMsgs((prev) => [
-        ...prev.slice(0, -1),
-        { role: 'assistant', content: fullContent },
-      ])
+      const fullContent = await processStream(res.body.getReader())
+      replaceLast(fullContent)
 
       if (newCount >= MAX_MSGS) {
         ctaTimerRef.current = setTimeout(() => {
@@ -154,10 +155,7 @@ export default function ToroChatWidget() {
         }, 400)
       }
     } catch {
-      setMsgs((prev) => [
-        ...prev.slice(0, -1),
-        { role: 'assistant', content: 'Verbindungsfehler. Bitte versuche es nochmal.' },
-      ])
+      replaceLast('Verbindungsfehler. Bitte versuche es nochmal.')
     } finally {
       setSending(false)
     }

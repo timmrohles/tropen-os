@@ -5,8 +5,11 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Buildings } from '@phosphor-icons/react'
 import type { ImpModal, ImpForm, OrgRow, EditState } from './clients.types'
-import { owner, onboardingDone, planStyle, s } from './clients.types'
+import { owner, s } from './clients.types'
+import { OrgTableRow } from './_components/OrgTableRow'
+import type { PackageItem, OrgPackageItem } from './_components/OrgTableRow'
 
+// ── Page component ────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
   const locale = useLocale()
@@ -25,8 +28,8 @@ export default function ClientsPage() {
   const [activateMsg, setActivateMsg] = useState('')
   const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set())
   const [impModal, setImpModal] = useState<ImpModal | null>(null)
-  const [packages, setPackages] = useState<{ id: string; slug: string; name: string; description: string | null; icon: string | null }[]>([])
-  const [orgPackages, setOrgPackages] = useState<Record<string, { id: string; package_id: string; is_active: boolean; activated_at: string }[]>>({})
+  const [packages, setPackages] = useState<PackageItem[]>([])
+  const [orgPackages, setOrgPackages] = useState<Record<string, OrgPackageItem[]>>({})
   const [pkgTogglingKey, setPkgTogglingKey] = useState<string | null>(null)
   const [impForm, setImpForm] = useState<ImpForm>({ ticketRef: '', durationMinutes: 30 })
   const [impLoading, setImpLoading] = useState(false)
@@ -86,6 +89,14 @@ export default function ClientsPage() {
     if (!res.ok) return
     const data = await res.json()
     setOrgPackages(prev => ({ ...prev, [orgId]: data }))
+  }
+
+  function handleLoadOrToggleView(orgId: string) {
+    if (orgPackages[orgId]) {
+      setOrgPackages(prev => { const n = { ...prev }; delete n[orgId]; return n })
+    } else {
+      void loadOrgPackages(orgId)
+    }
   }
 
   async function handleTogglePackage(orgId: string, packageId: string, currentActive: boolean) {
@@ -205,115 +216,23 @@ export default function ClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {orgs.map((org) => {
-                const ws = org.workspaces?.[0]
-                return (
-                  <tr key={org.id} style={s.tr}>
-                    <td style={s.td}>
-                      <div style={s.orgName}>{org.name}</div>
-                      <div style={s.orgId}>{org.id.slice(0, 8)}…</div>
-                    </td>
-                    <td style={s.td}>
-                      <span style={{ ...s.badge, ...(planStyle[org.plan] ?? { background: 'var(--text-secondary)', color: 'var(--text-inverse)' }) }}>
-                        {org.plan}
-                      </span>
-                    </td>
-                    <td style={s.td}>
-                      {org.budget_limit == null ? '–' : `€${org.budget_limit}/Mo`}
-                    </td>
-                    <td style={s.td}>
-                      {ws ? (
-                        <div>
-                          <div style={s.wsName}>{ws.name}</div>
-                          {ws.budget_limit != null && (
-                            <div style={s.orgId}>€{ws.budget_limit}/Mo</div>
-                          )}
-                        </div>
-                      ) : '–'}
-                    </td>
-                    <td style={s.td}>
-                      <button
-                        style={s.expandBtn}
-                        onClick={() => toggleExpand(org.id)}
-                      >
-                        {expandedOrgs.has(org.id) ? '▴' : '▾'} {org.users.length} User
-                      </button>
-                      {expandedOrgs.has(org.id) && (
-                        <div style={s.userList}>
-                          {org.users.map(u => (
-                            <div key={u.id} style={s.userRow}>
-                              <div>
-                                <div style={s.userEmail}>{u.email}</div>
-                                <div style={s.userRole}>{u.role}</div>
-                              </div>
-                              {u.role !== 'superadmin' && (
-                                <button
-                                  className="btn btn-ghost btn-sm"
-                                  onClick={() => {
-                                    setImpModal({ orgId: org.id, userId: u.id, email: u.email })
-                                    setImpForm({ ticketRef: '', durationMinutes: 30 })
-                                  }}
-                                >
-                                  {t('clients.viewOpen')}
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td style={s.td}>
-                      {onboardingDone(org) ? (
-                        <span style={s.badgeDone}>{t('clients.onboardingDone')}</span>
-                      ) : (
-                        <span style={s.badgePending}>{t('clients.onboardingPending')}</span>
-                      )}
-                    </td>
-                    <td style={s.td}>
-                      <button
-                        style={s.expandBtn}
-                        onClick={() => {
-                          if (orgPackages[org.id]) {setOrgPackages(prev => { const n = { ...prev }; delete n[org.id]; return n })}
-                          else {loadOrgPackages(org.id)}
-                        }}
-                      >
-                        📦 Pakete
-                      </button>
-                      {orgPackages[org.id] && (
-                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                          {packages.map(pkg => {
-                            const orgPkg = orgPackages[org.id]?.find(p => p.package_id === pkg.id)
-                            const active = orgPkg?.is_active ?? false
-                            const key = `${org.id}:${pkg.id}`
-                            return (
-                              <div key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }}>
-                                <span style={{ fontSize: 14 }}>{pkg.icon}</span>
-                                <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{pkg.name}</span>
-                                <button
-                                  onClick={() => handleTogglePackage(org.id, pkg.id, active)}
-                                  disabled={pkgTogglingKey === key}
-                                  style={{ background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 5, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: active ? 'var(--text-inverse)' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
-                                >
-                                  {pkgTogglingKey === key ? '…' : active ? 'Aktiv' : 'Inaktiv'}
-                                </button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </td>
-                    <td style={s.td}>
-                      <div style={s.actions}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(org)}>{t('clients.bearbeiten')}</button>
-                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)' }} onClick={() => { setActivateOrg(org); setActivateMsg('') }}>+ User</button>
-                        {!org.users.some((u) => u.role === 'superadmin') && (
-                          <button className="btn btn-danger btn-sm" onClick={() => setDeleteOrg(org)}>Löschen</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+              {orgs.map(org => (
+                <OrgTableRow
+                  key={org.id}
+                  org={org}
+                  expandedOrgs={expandedOrgs}
+                  orgPackages={orgPackages}
+                  packages={packages}
+                  pkgTogglingKey={pkgTogglingKey}
+                  onToggleExpand={toggleExpand}
+                  onOpenImp={modal => { setImpModal(modal); setImpForm({ ticketRef: '', durationMinutes: 30 }) }}
+                  onOpenEdit={openEdit}
+                  onActivate={org => { setActivateOrg(org); setActivateMsg('') }}
+                  onDelete={setDeleteOrg}
+                  onTogglePkg={handleTogglePackage}
+                  onLoadOrToggleView={handleLoadOrToggleView}
+                />
+              ))}
             </tbody>
           </table>
         )}
@@ -324,11 +243,9 @@ export default function ClientsPage() {
         <div style={s.overlay} onClick={() => { setEditOrg(null); setEditForm(null) }}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={s.modalTitle}>{t('clients.editTitle')}</h2>
-
             <label style={s.label}>{t('clients.firmenname')}</label>
             <input style={s.input} value={editForm.org_name}
               onChange={(e) => setEditForm({ ...editForm, org_name: e.target.value })} />
-
             <label style={s.label}>{t('clients.plan')}</label>
             <select style={s.input} value={editForm.plan}
               onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}>
@@ -336,23 +253,18 @@ export default function ClientsPage() {
               <option value="pro">pro</option>
               <option value="enterprise">enterprise</option>
             </select>
-
             <label style={s.label}>{t('clients.budgetOrg')}</label>
             <input style={s.input} type="number" value={editForm.org_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, org_budget_limit: e.target.value })} />
-
             <label style={s.label}>{t('clients.deptName')}</label>
             <input style={s.input} value={editForm.workspace_name}
               onChange={(e) => setEditForm({ ...editForm, workspace_name: e.target.value })} />
-
             <label style={s.label}>{t('clients.budgetDept')}</label>
             <input style={s.input} type="number" value={editForm.workspace_budget_limit}
               onChange={(e) => setEditForm({ ...editForm, workspace_budget_limit: e.target.value })} />
-
             <label style={s.label}>{t('clients.ownerEmail')}</label>
             <input style={s.input} type="email" value={editForm.owner_email}
               onChange={(e) => setEditForm({ ...editForm, owner_email: e.target.value })} />
-
             <div style={s.modalFooter}>
               <button className="btn btn-ghost" onClick={() => { setEditOrg(null); setEditForm(null) }}>
                 {t('clients.cancel')}
@@ -374,27 +286,21 @@ export default function ClientsPage() {
               Org: <strong style={{ color: 'var(--text-primary)' }}>{activateOrg.name}</strong><br />
               User muss bereits in Supabase Dashboard angelegt sein.
             </p>
-
             <label style={s.label}>{t('clients.userEmail')}</label>
             <input style={s.input} type="email" placeholder="user@example.com"
-              value={activateEmail}
-              onChange={(e) => setActivateEmail(e.target.value)} />
-
+              value={activateEmail} onChange={(e) => setActivateEmail(e.target.value)} />
             <label style={s.label}>{t('clients.role')}</label>
-            <select style={s.input} value={activateRole}
-              onChange={(e) => setActivateRole(e.target.value)}>
+            <select style={s.input} value={activateRole} onChange={(e) => setActivateRole(e.target.value)}>
               <option value="owner">owner</option>
               <option value="admin">admin</option>
               <option value="member">member</option>
               <option value="viewer">viewer</option>
             </select>
-
             {activateMsg && (
               <p style={{ ...s.confirmText, color: activateMsg.startsWith('✓') ? 'var(--accent)' : 'var(--error)', marginTop: 8 }}>
                 {activateMsg}
               </p>
             )}
-
             <div style={s.modalFooter}>
               <button className="btn btn-ghost" onClick={() => setActivateOrg(null)}>{t('clients.close')}</button>
               <button className="btn btn-primary" onClick={handleActivate} disabled={activating || !activateEmail}>
@@ -414,7 +320,6 @@ export default function ClientsPage() {
               Du siehst genau was <strong style={{ color: 'var(--text-primary)' }}>{impModal.email}</strong> sieht — nichts mehr.
               Kein Schreiben, Löschen oder Ändern. Diese Session wird protokolliert.
             </div>
-
             <label style={s.label}>{t('clients.ticketLabel')}</label>
             <input
               style={s.input}
@@ -422,7 +327,6 @@ export default function ClientsPage() {
               value={impForm.ticketRef}
               onChange={(e) => setImpForm(f => ({ ...f, ticketRef: e.target.value }))}
             />
-
             <label style={{ ...s.label, marginTop: 12 }}>{t('clients.durationLabel')}</label>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {[15, 30, 60].map(min => (
@@ -441,11 +345,9 @@ export default function ClientsPage() {
                 </button>
               ))}
             </div>
-
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 12, marginBottom: 0 }}>
               Der User sieht in seinen Einstellungen, wann und wie lange seine Ansicht geöffnet wurde.
             </p>
-
             <div style={s.modalFooter}>
               <button className="btn btn-ghost" onClick={() => setImpModal(null)}>{t('clients.cancel')}</button>
               <button className="btn btn-primary" onClick={openImpersonation} disabled={impLoading}>
@@ -477,4 +379,3 @@ export default function ClientsPage() {
     </div>
   )
 }
-

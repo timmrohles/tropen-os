@@ -18,8 +18,96 @@ interface CompleteBody {
   invite_emails?: string[]
 }
 
+async function resolveOrganizationId(
+  userId: string,
+  metaOrgId: string | undefined
+): Promise<{ organizationId: string; role: string } | null> {
+  if (metaOrgId) return null // caller handles it; only used when missing
+
+  const { data } = await supabaseAdmin
+    .from('users')
+    .select('organization_id, role')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!data?.organization_id) return null
+  return { organizationId: data.organization_id, role: data.role ?? 'member' }
+}
+
+async function upsertUserProfile(userId: string, organizationId: string, email: string, fullName: string, role: string) {
+  return supabaseAdmin.from('users').upsert(
+    { id: userId, organization_id: organizationId, email, full_name: fullName, role },
+    { onConflict: 'id' }
+  )
+}
+
+async function ensureWorkspaceMembership(organizationId: string, userId: string, role: string) {
+  const { data: orgWorkspaces } = await supabaseAdmin
+    .from('departments')
+    .select('id')
+    .eq('organization_id', organizationId)
+
+  if (!orgWorkspaces?.length) return
+
+  const wsRole = role === 'viewer' ? 'viewer' : role === 'member' ? 'member' : 'admin'
+  await supabaseAdmin
+    .from('department_members')
+    .upsert(
+      orgWorkspaces.map((ws) => ({ workspace_id: ws.id, user_id: userId, role: wsRole })),
+      { onConflict: 'workspace_id,user_id' }
+    )
+}
+
+async function upsertUserPreferences(userId: string, body: CompleteBody) {
+  return supabaseAdmin.from('user_preferences').upsert(
+    {
+      user_id: userId,
+      chat_style: body.chat_style ?? 'structured',
+      model_preference: body.model_preference ?? 'auto',
+      onboarding_completed: true,
+      ai_act_acknowledged: body.ai_act_acknowledged ?? false,
+      ai_act_acknowledged_at: body.ai_act_acknowledged
+        ? (body.ai_act_acknowledged_at ?? new Date().toISOString())
+        : null,
+    },
+    { onConflict: 'user_id' }
+  )
+}
+
+async function upsertOrgSettings(organizationId: string, body: CompleteBody) {
+  const { error } = await supabaseAdmin.from('organization_settings').upsert(
+    {
+      organization_id: organizationId,
+      organization_display_name: body.org_name?.trim() || null,
+      logo_url: body.logo_url || null,
+      primary_color: body.primary_color ?? 'var(--accent)',
+      ai_guide_name: body.guide_name?.trim() || 'Toro',
+      onboarding_completed: true,
+    },
+    { onConflict: 'organization_id' }
+  )
+  if (error) {
+    // Non-fatal: Tabelle existiert eventuell noch nicht (Migration 007 ausstehend)
+    log.error('organization_settings upsert error:', error)
+  }
+}
+
+async function sendInvites(organizationId: string, emails: string[]) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  for (const email of emails) {
+    if (!email.trim() || !email.includes('@')) continue
+    try {
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim(), {
+        data: { organization_id: organizationId, role: 'member' },
+        redirectTo: `${siteUrl}/auth/callback`,
+      })
+    } catch (e) {
+      log.error('Invite error', e)
+    }
+  }
+}
+
 export async function POST(request: Request) {
-  // 1. Auth prüfen
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -41,17 +129,11 @@ export async function POST(request: Request) {
   let organizationId = meta.organization_id
   let role = meta.role ?? 'member'
 
-  // Fallback: Organization aus public.users laden (für Owner die nicht per Einladung angelegt wurden)
   if (!organizationId) {
-    const { data: existingProfile } = await supabaseAdmin
-      .from('users')
-      .select('organization_id, role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (existingProfile?.organization_id) {
-      organizationId = existingProfile.organization_id
-      role = existingProfile.role ?? role
+    const resolved = await resolveOrganizationId(user.id, organizationId)
+    if (resolved) {
+      organizationId = resolved.organizationId
+      role = resolved.role
     }
   }
 
@@ -59,87 +141,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Kein Organisations-Link gefunden' }, { status: 400 })
   }
 
-  // 2. User-Profil erstellen / aktualisieren (Service Role – bypasses RLS)
-  const { error: userErr } = await supabaseAdmin.from('users').upsert(
-    {
-      id: user.id,
-      organization_id: organizationId,
-      email: user.email!,
-      full_name: body.full_name.trim(),
-      role,
-    },
-    { onConflict: 'id' }
-  )
+  const { error: userErr } = await upsertUserProfile(user.id, organizationId, user.email!, body.full_name.trim(), role)
   if (userErr) {
     log.error('users upsert error:', userErr)
     return NextResponse.json({ error: 'Profil konnte nicht gespeichert werden' }, { status: 500 })
   }
 
-  // 3. Workspace-Mitgliedschaft sicherstellen (falls noch nicht vorhanden)
-  const { data: orgWorkspaces } = await supabaseAdmin
-    .from('departments')
-    .select('id')
-    .eq('organization_id', organizationId)
+  await ensureWorkspaceMembership(organizationId, user.id, role)
 
-  if (orgWorkspaces?.length) {
-    const wsRole = role === 'viewer' ? 'viewer' : role === 'member' ? 'member' : 'admin'
-    await supabaseAdmin
-      .from('department_members')
-      .upsert(
-        orgWorkspaces.map((ws) => ({ workspace_id: ws.id, user_id: user.id, role: wsRole })),
-        { onConflict: 'workspace_id,user_id' }
-      )
-  }
-
-  // 4. User-Präferenzen (Service Role)
-  const { error: prefErr } = await supabaseAdmin.from('user_preferences').upsert(
-    {
-      user_id: user.id,
-      chat_style: body.chat_style ?? 'structured',
-      model_preference: body.model_preference ?? 'auto',
-      onboarding_completed: true,
-      ai_act_acknowledged: body.ai_act_acknowledged ?? false,
-      ai_act_acknowledged_at: body.ai_act_acknowledged ? (body.ai_act_acknowledged_at ?? new Date().toISOString()) : null,
-    },
-    { onConflict: 'user_id' }
-  )
+  const { error: prefErr } = await upsertUserPreferences(user.id, body)
   if (prefErr) {
     log.error('user_preferences upsert error:', prefErr)
     return NextResponse.json({ error: 'Präferenzen konnten nicht gespeichert werden' }, { status: 500 })
   }
 
-  // 5. Org-Einstellungen (nur Owner/Admin, Service Role)
   const isAdmin = ['owner', 'admin'].includes(role)
   if (isAdmin && body.org_name !== undefined) {
-    const { error: orgErr } = await supabaseAdmin.from('organization_settings').upsert(
-      {
-        organization_id: organizationId,
-        organization_display_name: body.org_name?.trim() || null,
-        logo_url: body.logo_url || null,
-        primary_color: body.primary_color ?? 'var(--accent)',
-        ai_guide_name: body.guide_name?.trim() || 'Toro',
-        onboarding_completed: true,
-      },
-      { onConflict: 'organization_id' }
-    )
-    if (orgErr) {
-      // Non-fatal: Tabelle existiert eventuell noch nicht (Migration 007 ausstehend)
-      log.error('organization_settings upsert error:', orgErr)
-    }
-
-    // 6. Einladungen versenden (best-effort)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-    for (const email of (body.invite_emails ?? [])) {
-      if (!email.trim() || !email.includes('@')) continue
-      try {
-        await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim(), {
-          data: { organization_id: organizationId, role: 'member' },
-          redirectTo: `${siteUrl}/auth/callback`,
-        })
-      } catch (e) {
-        log.error('Invite error', e)
-      }
-    }
+    await upsertOrgSettings(organizationId, body)
+    await sendInvites(organizationId, body.invite_emails ?? [])
   }
 
   return NextResponse.json({ success: true })

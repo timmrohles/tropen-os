@@ -4,7 +4,7 @@
 // Sprint 6b₁: Compliance-Blöcke + Lighthouse-URL zurück.
 // FilterChips: Multi-Select, dynamisch. FindingsSections: Killer / Empfohlen / Polish.
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Lightning, XCircle, CheckCircle } from '@phosphor-icons/react'
 import type { AuditDomain } from '@/lib/audit/types'
 import { ComplianceBlock } from './ComplianceBlock'
@@ -19,11 +19,105 @@ import {
 } from './audit-findings-utils'
 import { FindingSection } from './FindingSection'
 import { FurtherSection } from './FurtherSection'
+import { DeferredSection } from './DeferredSection'
 import { ProfileDisplayBar } from './ProfileDisplayBar'
 import { FilterChipsRow } from './FilterChipsRow'
 
 // Re-export so page.tsx can still import EnrichedFinding from here
 export type { EnrichedFinding } from './audit-findings-utils'
+
+// ── Bundle session hook ────────────────────────────────────────────────────────
+
+interface BundleSession {
+  prompt: string
+  fileCount: number
+}
+
+interface UseBundleSessionResult {
+  bundleLoading: boolean
+  bundleSession: BundleSession | null
+  bundleError: string | null
+  bundleCopied: boolean
+  handleBundle: (findingIds: string[]) => Promise<void>
+  copyBundle: () => void
+  clearBundle: () => void
+}
+
+function useBundleSession(): UseBundleSessionResult {
+  const [bundleLoading, setBundleLoading] = useState(false)
+  const [bundleSession, setBundleSession] = useState<BundleSession | null>(null)
+  const [bundleError, setBundleError] = useState<string | null>(null)
+  const [bundleCopied, setBundleCopied] = useState(false)
+
+  const handleBundle = useCallback(async (findingIds: string[]) => {
+    if (findingIds.length === 0 || bundleSession) return
+    setBundleLoading(true)
+    setBundleError(null)
+    try {
+      const res = await fetch('/api/audit/fix-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ findingIds }),
+      })
+      const data = await res.json() as { prompt?: string; fileCount?: number; error?: string }
+      if (!res.ok || !data.prompt) {
+        setBundleError(data.error ?? 'Kein Prompt generiert')
+        return
+      }
+      setBundleSession({ prompt: data.prompt, fileCount: data.fileCount ?? 0 })
+    } catch {
+      setBundleError('Netzwerkfehler')
+    } finally {
+      setBundleLoading(false)
+    }
+  }, [bundleSession])
+
+  const copyBundle = useCallback(() => {
+    if (!bundleSession?.prompt) return
+    void navigator.clipboard.writeText(bundleSession.prompt).then(() => {
+      setBundleCopied(true)
+      setTimeout(() => setBundleCopied(false), 2000)
+    }).catch(() => {})
+  }, [bundleSession])
+
+  const clearBundle = useCallback(() => {
+    setBundleSession(null)
+    setBundleError(null)
+  }, [])
+
+  return { bundleLoading, bundleSession, bundleError, bundleCopied, handleBundle, copyBundle, clearBundle }
+}
+
+// ── Ranking helpers ────────────────────────────────────────────────────────────
+
+interface RankedFindings {
+  recommendedFirst: EnrichedFinding[]
+  furtherHigh: EnrichedFinding[]
+  furtherMedium: EnrichedFinding[]
+  furtherLow: EnrichedFinding[]
+}
+
+function rankNonKillerFindings(nonKiller: EnrichedFinding[]): RankedFindings {
+  const sorted = [...nonKiller].sort((a, b) => {
+    const sevDiff = (SEV_ORDER[b.severity] ?? 0) - (SEV_ORDER[a.severity] ?? 0)
+    if (sevDiff !== 0) return sevDiff
+    // avg_confidence als sekundärer Tiebreaker: höhere Konfidenz zuerst
+    // Auto-Checker-Findings haben avg_confidence = null → als 100 behandeln
+    const confA = (a.avg_confidence as number | null) ?? 100
+    const confB = (b.avg_confidence as number | null) ?? 100
+    if (confA !== confB) return confB - confA
+    return (a.effort_minutes ?? 99) - (b.effort_minutes ?? 99)
+  })
+  const top10 = sorted.slice(0, 10)
+  const top10Set = new Set(top10.map((f) => f.id))
+  const remaining = nonKiller.filter((f) => !top10Set.has(f.id))
+  return {
+    recommendedFirst: top10,
+    furtherHigh:   remaining.filter((f) => f.severity === 'high').sort(bySev),
+    furtherMedium: remaining.filter((f) => f.severity === 'medium').sort(bySev),
+    furtherLow:    remaining.filter((f) => f.severity === 'low' || f.severity === 'info').sort(bySev),
+  }
+}
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -39,29 +133,51 @@ interface AuditFindingsClientProps {
   reviewRunAt?: string | null
 }
 
-export function AuditFindingsClient({ allFindings, runId, projectId, complianceData, initialLighthouseUrl, scanProjectId, activeProfile, isCommitteeStale, reviewRunAt }: AuditFindingsClientProps) {
+export function AuditFindingsClient({
+  allFindings, runId, projectId, complianceData, initialLighthouseUrl,
+  scanProjectId, activeProfile, isCommitteeStale, reviewRunAt,
+}: AuditFindingsClientProps) {
   const [activeCategories, setActiveCategories] = useState<AuditDomain[]>([])
-
   const [fixedIds, setFixedIds] = useState<Set<string>>(new Set())
+  const [deferredIds, setDeferredIds] = useState<Set<string>>(new Set())
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+
+  const { bundleLoading, bundleSession, bundleError, bundleCopied, handleBundle, copyBundle, clearBundle } =
+    useBundleSession()
 
   const handleFixed = (ids: string[]) => {
-    setFixedIds(prev => new Set([...prev, ...ids]))
+    setFixedIds((prev) => new Set([...prev, ...ids]))
+  }
+
+  const handleDeferred = (ids: string[]) => {
+    setDeferredIds((prev) => new Set([...prev, ...ids]))
+  }
+
+  const handleActivate = (ids: string[]) => {
+    setDeferredIds((prev) => {
+      const next = new Set(prev)
+      ids.forEach(id => next.delete(id))
+      return next
+    })
   }
 
   const openFindings = useMemo(
-    () => allFindings.filter(f =>
-      (f.status === 'open' || f.status === 'acknowledged') && !fixedIds.has(f.id)
+    () => allFindings.filter((f) =>
+      (f.status === 'open' || f.status === 'acknowledged') && !fixedIds.has(f.id) && !deferredIds.has(f.id),
     ),
-    [allFindings, fixedIds],
+    [allFindings, fixedIds, deferredIds],
+  )
+
+  const deferredFindings = useMemo(
+    () => allFindings.filter((f) => deferredIds.has(f.id)),
+    [allFindings, deferredIds],
   )
 
   // Dynamische Chip-Liste
   const availableCategories = useMemo<AuditDomain[]>(() => {
     const seen = new Set<AuditDomain>()
-    for (const f of openFindings) {
-      seen.add(f.domain)
-    }
-    return DOMAIN_ORDER.filter(d => seen.has(d))
+    for (const f of openFindings) seen.add(f.domain)
+    return DOMAIN_ORDER.filter((d) => seen.has(d))
   }, [openFindings])
 
   const categoryCounts = useMemo(() => {
@@ -75,87 +191,27 @@ export function AuditFindingsClient({ allFindings, runId, projectId, complianceD
 
   const filteredFindings = useMemo(() => {
     if (activeCategories.length === 0) return openFindings
-    return openFindings.filter(f =>
-      activeCategories.includes(f.domain),
-    )
+    return openFindings.filter((f) => activeCategories.includes(f.domain))
   }, [openFindings, activeCategories])
 
   const killerFindings = useMemo(
-    () => filteredFindings.filter(f => f.is_killer).sort(bySev),
+    () => filteredFindings.filter((f) => f.is_killer).sort(bySev),
     [filteredFindings],
   )
 
   // Top-10-Logik: Severity-Pyramide, bei Gleichstand Quick Wins (niedriger effort) zuerst
-  const { recommendedFirst, furtherHigh, furtherMedium, furtherLow } = useMemo(() => {
-    const nonKiller = filteredFindings.filter(f => !f.is_killer)
-    const sorted = [...nonKiller].sort((a, b) => {
-      const sevDiff = (SEV_ORDER[b.severity] ?? 0) - (SEV_ORDER[a.severity] ?? 0)
-      if (sevDiff !== 0) return sevDiff
-      // avg_confidence als sekundärer Tiebreaker: höhere Konfidenz zuerst
-      // Auto-Checker-Findings haben avg_confidence = null → als 100 behandeln
-      const confA = (a.avg_confidence as number | null) ?? 100
-      const confB = (b.avg_confidence as number | null) ?? 100
-      if (confA !== confB) return confB - confA  // höhere Konfidenz zuerst
-      return (a.effort_minutes ?? 99) - (b.effort_minutes ?? 99)
-    })
-    const top10 = sorted.slice(0, 10)
-    const top10Set = new Set(top10.map(f => f.id))
-    const remaining = nonKiller.filter(f => !top10Set.has(f.id))
-    return {
-      recommendedFirst: top10,
-      furtherHigh:   remaining.filter(f => f.severity === 'high').sort(bySev),
-      furtherMedium: remaining.filter(f => f.severity === 'medium').sort(bySev),
-      furtherLow:    remaining.filter(f => f.severity === 'low' || f.severity === 'info').sort(bySev),
-    }
-  }, [filteredFindings])
-
-  const [profileModalOpen, setProfileModalOpen] = useState(false)
-  const [bundleLoading, setBundleLoading] = useState(false)
-  const [bundleSession, setBundleSession] = useState<{ prompt: string; fileCount: number } | null>(null)
-  const [bundleError, setBundleError] = useState<string | null>(null)
-  const [bundleCopied, setBundleCopied] = useState(false)
-
-  async function handleBundle() {
-    if (!recommendedFirst.length) return
-    if (bundleSession) return  // already generated
-    setBundleLoading(true)
-    setBundleError(null)
-    try {
-      const res = await fetch('/api/audit/fix-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ findingIds: recommendedFirst.map(f => f.id) }),
-      })
-      const data = await res.json() as { prompt?: string; fileCount?: number; error?: string }
-      if (!res.ok || !data.prompt) { setBundleError(data.error ?? 'Kein Prompt generiert'); return }
-      setBundleSession({ prompt: data.prompt, fileCount: data.fileCount ?? 0 })
-    } catch {
-      setBundleError('Netzwerkfehler')
-    } finally {
-      setBundleLoading(false)
-    }
-  }
-
-  function copyBundle() {
-    if (!bundleSession?.prompt) return
-    void navigator.clipboard.writeText(bundleSession.prompt).then(() => {
-      setBundleCopied(true)
-      setTimeout(() => setBundleCopied(false), 2000)
-    }).catch(() => {})
-  }
-
-  // Compliance-Blöcke (DSGVO + KI-Act): immer zeigen — unabhängig von aktivem Filter.
-  // Selbst-Auskunft-Fragen haben nichts mit Findings zu tun; sie müssen immer ausgefüllt werden können.
-  const showDsgvo = true
-  const showKiAct = true
-  const showPerf = activeCategories.includes('performance')
-    || (activeCategories.length === 0 && (categoryCounts['performance'] ?? 0) > 0)
+  const { recommendedFirst, furtherHigh, furtherMedium, furtherLow } = useMemo(
+    () => rankNonKillerFindings(filteredFindings.filter((f) => !f.is_killer)),
+    [filteredFindings],
+  )
 
   function toggleCategory(cat: AuditDomain) {
-    setActiveCategories(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat],
+    setActiveCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     )
   }
+
+  const hasFurther = furtherHigh.length + furtherMedium.length + furtherLow.length > 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
@@ -199,6 +255,7 @@ export function AuditFindingsClient({ allFindings, runId, projectId, complianceD
           runId={runId}
           variant="killer"
           onFixed={handleFixed}
+          onDeferred={handleDeferred}
           isCommitteeStale={isCommitteeStale}
           reviewRunAt={reviewRunAt}
         />
@@ -213,30 +270,39 @@ export function AuditFindingsClient({ allFindings, runId, projectId, complianceD
           findings={recommendedFirst}
           runId={runId}
           variant="quick"
-          onBundle={handleBundle}
+          onBundle={() => handleBundle(recommendedFirst.map((f) => f.id))}
           bundlePrompt={bundleSession?.prompt ?? null}
           bundleLoading={bundleLoading}
           bundleError={bundleError ?? undefined}
           bundleCopied={bundleCopied}
           onCopyBundle={copyBundle}
-          onClearBundle={() => { setBundleSession(null); setBundleError(null) }}
+          onClearBundle={clearBundle}
           onFixed={handleFixed}
+          onDeferred={handleDeferred}
           isCommitteeStale={isCommitteeStale}
           reviewRunAt={reviewRunAt}
         />
       )}
 
-
       {/* Section 3: Weitere — mit Severity-Sub-Trennern */}
-      {(furtherHigh.length + furtherMedium.length + furtherLow.length) > 0 && (
+      {hasFurther && (
         <FurtherSection
           furtherHigh={furtherHigh}
           furtherMedium={furtherMedium}
           furtherLow={furtherLow}
           runId={runId}
           onFixed={handleFixed}
+          onDeferred={handleDeferred}
           isCommitteeStale={isCommitteeStale}
           reviewRunAt={reviewRunAt}
+        />
+      )}
+
+      {/* Section 4: Aufgeschobene Findings */}
+      {deferredFindings.length > 0 && (
+        <DeferredSection
+          findings={deferredFindings}
+          onActivate={handleActivate}
         />
       )}
 
@@ -267,42 +333,34 @@ export function AuditFindingsClient({ allFindings, runId, projectId, complianceD
           onClose={() => setProfileModalOpen(false)}
           onComplete={() => {
             setProfileModalOpen(false)
-            // Re-render: useRouter().refresh() wäre ideal, aber Router-Import würde den Bundle vergrößern.
-            // Einfachster Weg: window.location.reload() — akzeptabel für Profil-Änderung (seltene Aktion).
+            // Re-render: window.location.reload() — akzeptabel für Profil-Änderung (seltene Aktion).
             window.location.reload()
           }}
         />
       )}
 
       {/* ── Lighthouse-URL: vor Compliance-Blöcken, Performance-kontextuell ── */}
-      {showPerf && (
-        <LighthouseUrlBlock
-          id="lighthouse-url"
-          scanProjectId={scanProjectId}
-          initialUrl={initialLighthouseUrl}
-        />
-      )}
+      <LighthouseUrlBlock
+        id="lighthouse-url"
+        scanProjectId={scanProjectId}
+        initialUrl={initialLighthouseUrl}
+      />
 
       {/* ── Compliance-Hinweise (Sprint 6b₁) ─────────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {showDsgvo && (
-          <ComplianceBlock
-            id="dsgvo-stamm-daten"
-            domain="dsgvo"
-            projectId={projectId ?? null}
-            initialData={complianceData}
-          />
-        )}
-        {showKiAct && (
-          <ComplianceBlock
-            id="eu-ai-act"
-            domain="ki-act"
-            projectId={projectId ?? null}
-            initialData={complianceData}
-          />
-        )}
+        <ComplianceBlock
+          id="dsgvo-stamm-daten"
+          domain="dsgvo"
+          projectId={projectId ?? null}
+          initialData={complianceData}
+        />
+        <ComplianceBlock
+          id="eu-ai-act"
+          domain="ki-act"
+          projectId={projectId ?? null}
+          initialData={complianceData}
+        />
       </div>
     </div>
   )
 }
-

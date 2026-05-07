@@ -161,64 +161,94 @@ async function handleFullDoneEvent(
   ctx.setIsSearching(false)
   if (event.routing) setRouting(event.routing)
 
-  setMessages(prev => prev.map(m => m.pending
-    ? {
-        ...m,
-        pending: false,
-        cost_eur: event.usage?.cost_eur ?? null,
-        tokens_input: event.usage?.tokens_input ?? null,
-        tokens_output: event.usage?.tokens_output ?? null,
-        model_used: event.routing?.model ?? null,
-        sources: event.sources?.length ? event.sources : undefined,
-        link_previews: event.link_previews ?? true,
-        ...(event.thinking ? { thinking: event.thinking } : {}),
-      }
-    : m
-  ))
-
+  setMessages(prev => prev.map(m => m.pending ? finalisePendingMessage(m, event) : m))
   syncMessageId(supabase, convId, pendingId, setMessages)
 
-  if (conv?.project_id) {
-    setMemoryExtracting(true)
-    fetch(`/api/conversations/${convId}/extract-memory`, { method: 'POST' }).catch(() => {})
-    setTimeout(() => setMemoryExtracting(false), 3000)
+  triggerMemoryExtractionIfNeeded(conv, convId, setMemoryExtracting)
+  await updateConversationTitle(supabase, setConversations, conv, convId, currentInput)
+  await updateTaskType(supabase, setConversations, conv, convId, event.routing?.task_type)
+  loadChipsForContent(accumulatedContent, setChips)
+}
+
+// ── Done-event helpers (extracted to reduce CC of handleFullDoneEvent) ────────
+
+function finalisePendingMessage(m: ChatMessage, event: SSEDoneEvent): ChatMessage {
+  return {
+    ...m,
+    pending: false,
+    cost_eur: event.usage?.cost_eur ?? null,
+    tokens_input: event.usage?.tokens_input ?? null,
+    tokens_output: event.usage?.tokens_output ?? null,
+    model_used: event.routing?.model ?? null,
+    sources: event.sources?.length ? event.sources : undefined,
+    link_previews: event.link_previews ?? true,
+    ...(event.thinking ? { thinking: event.thinking } : {}),
+  }
+}
+
+function triggerMemoryExtractionIfNeeded(
+  conv: Conversation | undefined,
+  convId: string,
+  setMemoryExtracting: ChatActionsCtx['setMemoryExtracting'],
+): void {
+  if (!conv?.project_id) return
+  setMemoryExtracting(true)
+  fetch(`/api/conversations/${convId}/extract-memory`, { method: 'POST' }).catch(() => {})
+  setTimeout(() => setMemoryExtracting(false), 3000)
+}
+
+async function updateConversationTitle(
+  supabase: ChatActionsCtx['supabase'],
+  setConversations: ChatActionsCtx['setConversations'],
+  conv: Conversation | undefined,
+  convId: string,
+  currentInput: string,
+): Promise<void> {
+  if (!conv?.title?.startsWith('Chat · ')) return
+  const words = currentInput.trim().split(/\s+/)
+  const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '')
+  await supabase.from('conversations').update({ title }).eq('id', convId)
+  setConversations(prev => prev.map(c => c.id === convId ? { ...c, title } : c))
+}
+
+async function updateTaskType(
+  supabase: ChatActionsCtx['supabase'],
+  setConversations: ChatActionsCtx['setConversations'],
+  conv: Conversation | undefined,
+  convId: string,
+  detectedType: string | undefined,
+): Promise<void> {
+  if (!detectedType || !conv || conv.task_type) return
+  await supabase.from('conversations').update({ task_type: detectedType }).eq('id', convId).is('task_type', null)
+  setConversations(prev => prev.map(c =>
+    c.id === convId && !c.task_type ? { ...c, task_type: detectedType } : c
+  ))
+}
+
+function loadChipsForContent(
+  accumulatedContent: string,
+  setChips: ChatActionsCtx['setChips'],
+): void {
+  if (accumulatedContent.trim().length <= 20) return
+
+  if (/type=["']presentation["']/.test(accumulatedContent)) {
+    setChips([
+      { label: 'Design ändern',    prompt: 'Ändere das Design auf einen dunkleren, professionelleren Stil' },
+      { label: 'Slide hinzufügen', prompt: 'Füge eine weitere Slide mit den wichtigsten Erkenntnissen hinzu' },
+      { label: 'Kürzen',           prompt: 'Kürze auf maximal 5 Slides — nur das Wesentliche' },
+      { label: 'Auf Englisch',     prompt: 'Übersetze die gesamte Präsentation ins Englische' },
+    ])
+    return
   }
 
-  const isDefaultTitle = conv?.title?.startsWith('Chat · ')
-  if (isDefaultTitle) {
-    const words = currentInput.trim().split(/\s+/)
-    const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '')
-    await supabase.from('conversations').update({ title }).eq('id', convId)
-    setConversations(prev => prev.map(c => c.id === convId ? { ...c, title } : c))
-  }
-
-  const detectedType = event.routing?.task_type
-  if (detectedType && conv && !conv.task_type) {
-    await supabase.from('conversations').update({ task_type: detectedType }).eq('id', convId).is('task_type', null)
-    setConversations(prev => prev.map(c =>
-      c.id === convId && !c.task_type ? { ...c, task_type: detectedType } : c
-    ))
-  }
-
-  if (accumulatedContent.trim().length > 20) {
-    if (/type=["']presentation["']/.test(accumulatedContent)) {
-      setChips([
-        { label: 'Design ändern',    prompt: 'Ändere das Design auf einen dunkleren, professionelleren Stil' },
-        { label: 'Slide hinzufügen', prompt: 'Füge eine weitere Slide mit den wichtigsten Erkenntnissen hinzu' },
-        { label: 'Kürzen',           prompt: 'Kürze auf maximal 5 Slides — nur das Wesentliche' },
-        { label: 'Auf Englisch',     prompt: 'Übersetze die gesamte Präsentation ins Englische' },
-      ])
-    } else {
-      fetch('/api/chat/generate-chips', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lastMessage: accumulatedContent }),
-      })
-        .then(r => r.ok ? r.json() as Promise<{ chips: ChipItem[] }> : null)
-        .then(res => { if (res?.chips?.length) setChips(res.chips) })
-        .catch(() => {})
-    }
-  }
+  fetch('/api/chat/generate-chips', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lastMessage: accumulatedContent }),
+  })
+    .then(r => r.ok ? r.json() as Promise<{ chips: ChipItem[] }> : null)
+    .then(res => { if (res?.chips?.length) setChips(res.chips) })
+    .catch(() => {})
 }
 
 // ── createChatActions ──────────────────────────────────────────────────────────

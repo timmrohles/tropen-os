@@ -35,12 +35,13 @@ function SubSectionLabel({ children }: { children: React.ReactNode }) {
 
 // ── FurtherSection — Weitere Findings mit Severity-Sub-Trennern ───────────────
 
-export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, onFixed, isCommitteeStale, reviewRunAt }: {
+export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, onFixed, onDeferred, isCommitteeStale, reviewRunAt }: {
   furtherHigh: EnrichedFinding[]
   furtherMedium: EnrichedFinding[]
   furtherLow: EnrichedFinding[]
   runId?: string | null
   onFixed?: (ids: string[]) => void
+  onDeferred?: (ids: string[]) => void
   isCommitteeStale?: boolean
   reviewRunAt?: string | null
 }) {
@@ -48,23 +49,23 @@ export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, 
   const [open, setOpen] = useState(true)
 
   return (
-    <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+    <div style={{ background: '#ffffff', border: '1px solid var(--accent)', borderRadius: 8, overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-          padding: '9px 14px', background: 'var(--accent-light)', border: 'none', cursor: 'pointer', textAlign: 'left',
-          borderBottom: open ? '1px solid var(--border)' : 'none',
+          padding: '9px 14px', background: 'var(--accent)', border: 'none', cursor: 'pointer', textAlign: 'left',
+          borderBottom: open ? '1px solid rgba(255,255,255,0.10)' : 'none',
         }}
       >
-        <ArrowsClockwise size={14} weight="bold" color="var(--accent)" aria-hidden="true" />
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+        <ArrowsClockwise size={14} weight="bold" color="rgba(255,255,255,0.80)" aria-hidden="true" />
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
           WEITERE FINDINGS
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 400 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 400 }}>
           · {total} Findings
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)' }}>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.65)' }}>
           {open ? '▲' : '▼'}
         </span>
       </button>
@@ -77,7 +78,7 @@ export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, 
                 <SubSectionLabel>Hohe Severity</SubSectionLabel>
               </div>
               {clusterFindings(furtherHigh).map(cluster => (
-                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} />
+                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} onDeferred={onDeferred} />
               ))}
             </>
           )}
@@ -87,7 +88,7 @@ export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, 
                 <SubSectionLabel>Mittlere Severity</SubSectionLabel>
               </div>
               {clusterFindings(furtherMedium).map(cluster => (
-                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} />
+                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} onDeferred={onDeferred} />
               ))}
             </>
           )}
@@ -97,7 +98,7 @@ export function FurtherSection({ furtherHigh, furtherMedium, furtherLow, runId, 
                 <SubSectionLabel>Niedrige Severity</SubSectionLabel>
               </div>
               {clusterFindings(furtherLow).map(cluster => (
-                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} />
+                <FindingClusterRow key={cluster.ruleId} cluster={cluster} runId={runId} onFixed={onFixed} onDeferred={onDeferred} />
               ))}
             </>
           )}

@@ -4,17 +4,13 @@ import React, { useCallback, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import type { ChatMessageType } from '@/hooks/useWorkspaceState'
 import type { ChipItem, GuidedAction } from '@/lib/workspace-types'
-import ParrotIcon from '@/components/ParrotIcon'
 import { SaveArtifactModal } from './SaveArtifactModal'
 import PostToWorkspaceModal from './PostToWorkspaceModal'
-import MessageActions from './MessageActions'
-import ActionLayer from './ActionLayer'
 import SourcesBar from './SourcesBar'
-import ThinkingBlock from './ThinkingBlock'
-import { makeMdComponents, renderAssistantContent } from './ChatRenderers'
-import FlagPanel from './FlagPanel'
+import { makeMdComponents } from './ChatRenderers'
 import GuidedChatMessage from './GuidedChatMessage'
 import SuggestionPillsSection from './SuggestionPillsSection'
+import { UserBubble, AssistantBubble } from './ChatMessageBubbles'
 
 interface ChatMessageProps {
   msg: ChatMessageType
@@ -36,8 +32,6 @@ interface ChatMessageProps {
   isInSplitView?: boolean
   suggestionsEnabled?: boolean
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChatMessage({
   msg,
@@ -98,13 +92,14 @@ export default function ChatMessage({
     setActionLayerOpen(false)
   }
 
-  // Hooks must be declared before any early returns (Rules of Hooks)
   const isUser = msg.role === 'user'
   const suggestionsMatch = isUser ? null : msg.content.match(/<suggestions>([\s\S]*?)<\/suggestions>/)
   const suggestions: string[] = React.useMemo(() => {
     if (!suggestionsMatch) return []
     try { return JSON.parse(suggestionsMatch[1]) as string[] } catch { return [] }
   }, [suggestionsMatch])
+
+  // handleShareToChat — kept for future share-to-new-chat flow
   const handleShareToChat = useCallback(async () => {
     try {
       const res = await fetch('/api/conversations/new-from-message', {
@@ -119,8 +114,9 @@ export default function ChatMessage({
       // silently ignore
     }
   }, [msg.content, msg.id, router])
+  void handleShareToChat
 
-  // ── Guided Chat Mode rendering ───────────────────────────
+  // ── Guided Chat Mode ───────────────────────────────────────
   if ((msg.role === 'guided_picker' || msg.role === 'guided_step' || msg.role === 'guided_summary') && msg.guidedData && onGuidedAction && msg.id) {
     return <GuidedChatMessage msg={msg} onGuidedAction={onGuidedAction} />
   }
@@ -131,8 +127,6 @@ export default function ChatMessage({
   const displayContent = suggestionsMatch
     ? msg.content.replace(/<suggestions>[\s\S]*?<\/suggestions>/, '').trimEnd()
     : msg.content
-
-  const hasArtifact = displayContent.includes('<artifact')
 
   async function handleBookmark() {
     if (!msg.id || !conversationId || bookmarkLoading) return
@@ -149,11 +143,7 @@ export default function ChatMessage({
         await fetch('/api/bookmarks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messageId: msg.id,
-            conversationId,
-            contentPreview: msg.content.slice(0, 200),
-          }),
+          body: JSON.stringify({ messageId: msg.id, conversationId, contentPreview: msg.content.slice(0, 200) }),
         })
         onBookmarkChange?.(msg.id, true)
       }
@@ -184,78 +174,35 @@ export default function ChatMessage({
 
   return (
     <>
-      <div className={`cmsg${isUser ? ' cmsg--user' : ' cmsg--assistant'}`}>
-        {!isUser && (
-          <div className="cmsg-avatar-toro"><ParrotIcon size={22} /></div>
-        )}
-
-        <div className="cmsg-bubble-wrap">
-          <div className={`cmsg-bubble${isUser ? ' cmsg-bubble--user' : ' cmsg-bubble--assistant'}`}>
-            {!isUser && msg.thinking && <ThinkingBlock content={msg.thinking} />}
-            <div className="cmsg-content">
-              {isUser
-                ? msg.content
-                : renderAssistantContent(
-                    displayContent,
-                    mdComponents,
-                    showActions && organizationId && conversationId
-                      ? { conversationId, organizationId, messageId: msg.id ?? undefined, onSaved: onArtifactSaved, onSendDirect, isInSplitView }
-                      : undefined
-                  )
-              }
-            </div>
-            {!isUser && msg.pending && (
-              <span className="animate-pulse" style={{ opacity: 0.6 }}>▋</span>
-            )}
-            {showActions && (
-              <MessageActions
-                content={msg.content}
-                isBookmarked={isBookmarked}
-                bookmarkLoading={bookmarkLoading}
-                flagState={flagState}
-                isLastMessage={isLastAssistantMessage}
-                onBookmark={handleBookmark}
-                onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
-              />
-            )}
-            {showActions && actionLayerOpen && (
-              <ActionLayer
-                isLastMessage={isLastAssistantMessage}
-                isStreaming={isStreaming && isLastAssistantMessage}
-                onAction={handleAction}
-                onClose={() => setActionLayerOpen(false)}
-              />
-            )}
-
-          {flagState === 'confirm' && showActions && (
-            <FlagPanel
-              flagReason={flagReason}
-              onReasonChange={setFlagReason}
-              onFlag={handleFlag}
-              onCancel={() => { setFlagState('idle'); setFlagReason('') }}
-            />
-          )}
-          </div>{/* /cmsg-bubble */}
-
-          {/* ToroBadge — außen rechts an der Blase */}
-          {showActions && (
-            <button
-              className={`toro-avatar-badge${actionLayerOpen ? ' toro-avatar-badge--active' : ''}`}
-              onClick={() => setActionLayerOpen(v => !v)}
-              aria-label="Toro-Aktionen öffnen"
-              title="Was soll ich damit tun?"
-              aria-expanded={actionLayerOpen}
-              aria-haspopup="menu"
-            >
-              <ParrotIcon size={14} />
-            </button>
-          )}
-        </div>{/* /cmsg-bubble-wrap */}
-
-        {isUser && (
-          <div className="cmsg-avatar-user">{userInitial}</div>
-        )}
-      </div>
+      {isUser ? (
+        <UserBubble content={msg.content} userInitial={userInitial} />
+      ) : (
+        <AssistantBubble
+          msg={msg}
+          showActions={showActions}
+          isLastAssistantMessage={isLastAssistantMessage}
+          isStreaming={isStreaming}
+          displayContent={displayContent}
+          conversationId={conversationId}
+          organizationId={organizationId}
+          actionLayerOpen={actionLayerOpen}
+          flagState={flagState}
+          flagReason={flagReason}
+          bookmarkLoading={bookmarkLoading}
+          isBookmarked={isBookmarked}
+          mdComponents={mdComponents}
+          onArtifactSaved={onArtifactSaved}
+          onSendDirect={onSendDirect}
+          isInSplitView={isInSplitView}
+          onBookmark={handleBookmark}
+          onFlag={() => setFlagState(s => s === 'confirm' ? 'idle' : 'confirm')}
+          onFlagReasonChange={setFlagReason}
+          onFlagSubmit={handleFlag}
+          onFlagCancel={() => { setFlagState('idle'); setFlagReason('') }}
+          onAction={handleAction}
+          onToggleActionLayer={() => setActionLayerOpen(v => !v)}
+        />
+      )}
 
       {!isUser && !msg.pending && msg.sources && msg.sources.length > 0 && (msg.link_previews ?? true) && (
         <SourcesBar sources={msg.sources} />
@@ -285,14 +232,10 @@ export default function ChatMessage({
           language={saveModal.language}
           conversationId={conversationId}
           organizationId={organizationId}
-          onDone={() => {
-            setSaveModal(null)
-            onArtifactSaved?.()
-          }}
+          onDone={() => { setSaveModal(null); onArtifactSaved?.() }}
           onCancel={() => setSaveModal(null)}
         />
       )}
     </>
   )
 }
-

@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="content-narrow" style={s.wrap}>
+    <main className="content-narrow" style={s.wrap}>
       <div style={s.card}>
         <h1 style={s.logo}>Tropen OS</h1>
         <p style={s.sub}>Responsible AI Department für den Mittelstand</p>
@@ -80,7 +80,7 @@ export default function LoginPage() {
           </a>
         </p>
       </div>
-    </div>
+    </main>
   )
 }
 
@@ -126,6 +126,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   inviteLink: {
     color: 'var(--text-secondary)',
-    textDecoration: 'none',
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
   }
 }

@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, X, Spinner, WarningCircle, Info, ShieldCheck, Scales, SealCheck, ArrowCounterClockwise, Copy, XCircle, Lightbulb, Clock } from '@phosphor-icons/react'
+import { CheckCircle, X, Spinner, Info, ShieldCheck, Scales, XCircle } from '@phosphor-icons/react'
 import type { GeneratedFix, FixStatus } from '@/lib/fix-engine/types'
 import {
   RISK_CONFIG, CONFIDENCE_COLOR, CONFIDENCE_LABEL,
-  isFalsePositive, AffectedFilesList, FileDiffView,
+  AffectedFilesList,
 } from './FixPreviewParts'
+import { DiffSection, ErrorSection } from './FixPreviewSections'
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface FixPreviewProps {
   fix: GeneratedFix
@@ -14,6 +17,96 @@ interface FixPreviewProps {
   onApplied?: () => void
   onRejected?: () => void
 }
+
+// ── Sub-sections ───────────────────────────────────────────────────────────────
+
+function RiskBadge({ fix }: { fix: GeneratedFix }) {
+  if (!fix.riskLevel) return null
+  const rc = RISK_CONFIG[fix.riskLevel]
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px', borderRadius: 6, marginBottom: 10,
+      fontSize: 12, fontWeight: 600,
+      background: rc.bg, color: rc.color,
+      border: '1px solid currentColor',
+    }}>
+      <ShieldCheck size={13} weight="fill" aria-hidden="true" />
+      Risiko: {rc.label}
+      {fix.riskAssessment && ` (${fix.riskAssessment.importedByCount} Importe)`}
+    </div>
+  )
+}
+
+function ExplanationBox({ fix }: { fix: GeneratedFix }) {
+  const modelLabel = fix.fixMode === 'consensus'
+    ? 'Konsens'
+    : fix.model.split('-').slice(0, 2).join('-')
+  return (
+    <div style={{
+      display: 'flex', gap: 10, alignItems: 'flex-start',
+      padding: '10px 12px', borderRadius: 6,
+      background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+      border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+      marginBottom: 12,
+    }}>
+      <Info size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
+          {fix.explanation}
+        </p>
+        <div style={{ display: 'flex', gap: 12, marginTop: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+            Konfidenz:{' '}
+            <strong style={{ color: CONFIDENCE_COLOR[fix.confidence] }}>
+              {CONFIDENCE_LABEL[fix.confidence]}
+            </strong>
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+            Modell: {modelLabel}
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+            €{fix.costEur.toFixed(4)}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ConsensusSection({ fix }: { fix: GeneratedFix }) {
+  if (fix.fixMode !== 'consensus' || !fix.judgeExplanation) return null
+  return (
+    <div style={{
+      marginBottom: 12, padding: '10px 12px', borderRadius: 6,
+      background: 'color-mix(in srgb, var(--text-secondary) 6%, transparent)',
+      border: '1px solid var(--border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <Scales size={13} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Konsens-Fix — {fix.drafts?.length ?? 0} Modelle
+        </span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+        {fix.judgeExplanation}
+      </p>
+      {fix.riskAssessment?.reasons && fix.riskAssessment.reasons.length > 0 && (
+        <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {fix.riskAssessment.reasons.map((r, i) => (
+            <span key={i} style={{
+              fontSize: 10, padding: '2px 6px', borderRadius: 4,
+              background: 'var(--border)', color: 'var(--text-tertiary)',
+            }}>{r}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export default function FixPreview({ fix, affectedFiles, onApplied, onRejected }: FixPreviewProps) {
   const [applying, setApplying] = useState(false)
@@ -56,10 +149,7 @@ export default function FixPreview({ fix, affectedFiles, onApplied, onRejected }
         body: JSON.stringify({ findingId: fix.findingId, runId: fix.runId }),
       })
       const data = await res.json() as { error?: string }
-      if (!res.ok) {
-        setError(data.error ?? 'Generierung fehlgeschlagen')
-      }
-      // Parent (DeepReviewFindingRow) holds fix state — a page refresh shows the new fix
+      if (!res.ok) setError(data.error ?? 'Generierung fehlgeschlagen')
     } catch {
       setError('Netzwerkfehler')
     } finally {
@@ -159,206 +249,35 @@ export default function FixPreview({ fix, affectedFiles, onApplied, onRejected }
 
   return (
     <div style={{ marginTop: 12 }}>
-      {/* Risk Badge */}
-      {fix.riskLevel && (() => {
-        const rc = RISK_CONFIG[fix.riskLevel!]
-        return (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 10px', borderRadius: 6, marginBottom: 10,
-            fontSize: 12, fontWeight: 600,
-            background: rc.bg,
-            color: rc.color,
-            border: '1px solid currentColor',
-          }}>
-            <ShieldCheck size={13} weight="fill" aria-hidden="true" />
-            Risiko: {rc.label}
-            {fix.riskAssessment && ` (${fix.riskAssessment.importedByCount} Importe)`}
-          </div>
-        )
-      })()}
+      <RiskBadge fix={fix} />
 
-      {/* Affected files list (multi-file findings) */}
       {affectedFiles && affectedFiles.length > 1 && (
         <AffectedFilesList files={affectedFiles} />
       )}
 
-      {/* Explanation + confidence */}
-      <div style={{
-        display: 'flex', gap: 10, alignItems: 'flex-start',
-        padding: '10px 12px', borderRadius: 6,
-        background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-        border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-        marginBottom: 12,
-      }}>
-        <Info size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
-            {fix.explanation}
-          </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-              Konfidenz:{' '}
-              <strong style={{ color: CONFIDENCE_COLOR[fix.confidence] }}>
-                {CONFIDENCE_LABEL[fix.confidence]}
-              </strong>
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-              Modell: {fix.fixMode === 'consensus' ? 'Konsens' : fix.model.split('-').slice(0, 2).join('-')}
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-              €{fix.costEur.toFixed(4)}
-            </span>
-          </div>
-        </div>
-      </div>
+      <ExplanationBox fix={fix} />
 
-      {/* Diff view */}
-      {fix.diffs.length > 0 ? (
-        <div style={{ marginBottom: 12 }}>
-          {fix.diffs.map((diff, i) => (
-            <FileDiffView key={i} diff={diff} />
-          ))}
-        </div>
-      ) : isFalsePositive(fix) ? (
-        <div style={{ marginBottom: 12 }}>
-          {fpDismissed ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--accent)' }}>
-              <SealCheck size={14} weight="fill" aria-hidden="true" />
-              Als False Positive markiert — wird im nächsten Run nicht mehr angezeigt.
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex', gap: 10, alignItems: 'flex-start',
-              padding: '10px 12px', borderRadius: 6,
-              background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-              marginBottom: 8,
-            }}>
-              <SealCheck size={14} weight="fill" color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 8px', lineHeight: 1.5 }}>
-                  Kein Fix nötig — das Finding ist wahrscheinlich ein False Positive.
-                </p>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={handleDismissFalsePositive}
-                  disabled={dismissingFp}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-                >
-                  {dismissingFp
-                    ? <Spinner size={13} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                    : <SealCheck size={13} weight="fill" aria-hidden="true" />
-                  }
-                  Als False Positive markieren
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : later ? null : (
-        <div style={{
-          padding: '12px 14px', borderRadius: 6, marginBottom: 12,
-          border: '1px solid var(--border)',
-          background: 'color-mix(in srgb, var(--text-secondary) 5%, transparent)',
-        }}>
-          <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 4px', fontWeight: 500 }}>
-            Für dieses Finding kann kein automatischer Fix generiert werden.
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>
-            Es erfordert projektspezifische Inhalte (Dokumentation, Konfiguration, Runbooks).
-          </p>
+      <DiffSection
+        fix={fix}
+        dismissingFp={dismissingFp}
+        fpDismissed={fpDismissed}
+        later={later}
+        recommendation={recommendation}
+        fetchingRecommendation={fetchingRecommendation}
+        onDismissFp={() => void handleDismissFalsePositive()}
+        onDismiss={() => void handleDismiss()}
+        onLater={() => setLater(true)}
+        onShowRecommendation={() => void handleShowRecommendation()}
+      />
 
-          {recommendation ? (
-            <div style={{
-              padding: '10px 12px', borderRadius: 6, marginBottom: 10,
-              background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <Lightbulb size={13} weight="fill" color="var(--accent)" aria-hidden="true" />
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Empfehlung
-                </span>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-primary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                {recommendation}
-              </p>
-            </div>
-          ) : null}
+      <ConsensusSection fix={fix} />
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {!recommendation && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={handleShowRecommendation}
-                disabled={fetchingRecommendation}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-              >
-                {fetchingRecommendation
-                  ? <Spinner size={12} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                  : <Lightbulb size={12} weight="bold" aria-hidden="true" />
-                }
-                {fetchingRecommendation ? 'Lädt…' : 'Empfehlung anzeigen'}
-              </button>
-            )}
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleDismiss}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-            >
-              <XCircle size={12} weight="bold" aria-hidden="true" />
-              Nicht relevant
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setLater(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-tertiary)' }}
-            >
-              <Clock size={12} weight="bold" aria-hidden="true" />
-              Später
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Consensus Section */}
-      {fix.fixMode === 'consensus' && fix.judgeExplanation && (
-        <div style={{
-          marginBottom: 12,
-          padding: '10px 12px',
-          borderRadius: 6,
-          background: 'color-mix(in srgb, var(--text-secondary) 6%, transparent)',
-          border: '1px solid var(--border)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <Scales size={13} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Konsens-Fix — {fix.drafts?.length ?? 0} Modelle
-            </span>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-            {fix.judgeExplanation}
-          </p>
-          {fix.riskAssessment?.reasons && fix.riskAssessment.reasons.length > 0 && (
-            <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {fix.riskAssessment.reasons.map((r, i) => (
-                <span key={i} style={{
-                  fontSize: 10, padding: '2px 6px', borderRadius: 4,
-                  background: 'var(--border)', color: 'var(--text-tertiary)',
-                }}>{r}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Actions */}
+      {/* Apply / Reject actions */}
       {localStatus === 'pending' && fix.diffs.length > 0 && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             className="btn btn-primary btn-sm"
-            onClick={handleApply}
+            onClick={() => void handleApply()}
             disabled={applying || rejecting}
             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
           >
@@ -370,7 +289,7 @@ export default function FixPreview({ fix, affectedFiles, onApplied, onRejected }
           </button>
           <button
             className="btn btn-ghost btn-sm"
-            onClick={handleReject}
+            onClick={() => void handleReject()}
             disabled={applying || rejecting}
             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
           >
@@ -395,55 +314,14 @@ export default function FixPreview({ fix, affectedFiles, onApplied, onRejected }
       )}
 
       {error && !dismissed && (
-        <div style={{
-          marginTop: 10,
-          padding: '12px 14px',
-          borderRadius: 6,
-          border: '1px solid color-mix(in srgb, var(--error) 25%, transparent)',
-          background: 'color-mix(in srgb, var(--error) 6%, transparent)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <WarningCircle size={14} weight="fill" color="var(--error)" aria-hidden="true" />
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
-              Fix konnte nicht automatisch angewendet werden.
-            </span>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
-            Der vorgeschlagene Code stimmt nicht mit deiner Datei überein — das passiert wenn das Modell den Dateiinhalt nicht korrekt rekonstruiert hat.
-          </p>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleRetry}
-              disabled={retrying}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-            >
-              {retrying
-                ? <Spinner size={12} weight="bold" style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
-                : <ArrowCounterClockwise size={12} weight="bold" aria-hidden="true" />
-              }
-              {retrying ? 'Generiert…' : 'Erneut generieren'}
-            </button>
-            {fix.diffs.length > 0 && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={handleCopyDiff}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-              >
-                <Copy size={12} weight="bold" aria-hidden="true" />
-                {copied ? 'Kopiert!' : 'Diff kopieren'}
-              </button>
-            )}
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleDismiss}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-tertiary)' }}
-            >
-              <XCircle size={12} weight="bold" aria-hidden="true" />
-              Nicht relevant
-            </button>
-          </div>
-        </div>
+        <ErrorSection
+          retrying={retrying}
+          hasDiffs={fix.diffs.length > 0}
+          copied={copied}
+          onRetry={() => void handleRetry()}
+          onCopyDiff={handleCopyDiff}
+          onDismiss={() => void handleDismiss()}
+        />
       )}
 
       {dismissed && (

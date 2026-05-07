@@ -19,6 +19,258 @@ interface TemplateDrawerProps {
   onAccept: (prompt: string) => void
 }
 
+// ─── CoreTab ──────────────────────────────────────────────────────────────────
+
+interface CoreTabProps {
+  activeCore: Template | null
+  values: Record<string, string>
+  requiredFilled: boolean
+  preview: string | null
+  onSelect: (t: Template) => void
+  onFieldChange: (id: string, val: string) => void
+  onAccept: (prompt: string) => void
+}
+
+function CoreTab({ activeCore, values, requiredFilled, preview, onSelect, onFieldChange, onAccept }: CoreTabProps) {
+  return (
+    <>
+      <div className="tdrawer-template-list">
+        {TEMPLATES.map((t) => (
+          <button
+            key={t.id}
+            className={`tdrawer-template-pill${activeCore?.id === t.id ? ' tdrawer-template-pill--active' : ''}`}
+            onClick={() => onSelect(t)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeCore && (
+        <>
+          <div className="tdrawer-fields">
+            {activeCore.fields.map((field) => (
+              <div key={field.id} className="tdrawer-field">
+                <label className="tdrawer-label">
+                  {field.label}
+                  {field.optional && <span className="tdrawer-optional">optional</span>}
+                </label>
+
+                {field.type === 'select' ? (
+                  <select
+                    className="tdrawer-select"
+                    value={values[field.id] ?? field.options[0]}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  >
+                    {field.options.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : field.type === 'textarea' ? (
+                  <textarea
+                    className="tdrawer-textarea"
+                    placeholder={field.placeholder}
+                    value={values[field.id] ?? ''}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                    rows={5}
+                  />
+                ) : (
+                  <input
+                    className="tdrawer-input"
+                    type="text"
+                    placeholder={field.placeholder}
+                    value={values[field.id] ?? ''}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {preview && (
+            <div className="tdrawer-preview">
+              <span className="tdrawer-preview-label">Vorschau</span>
+              <p className="tdrawer-preview-text">{preview}</p>
+            </div>
+          )}
+
+          <button
+            className="tdrawer-accept"
+            disabled={!requiredFilled}
+            onClick={() => onAccept(activeCore.assemble(values))}
+          >
+            Prompt übernehmen →
+          </button>
+        </>
+      )}
+    </>
+  )
+}
+
+// ─── MineTab ──────────────────────────────────────────────────────────────────
+
+interface MineTabProps {
+  saved: SavedTemplate[]
+  loading: boolean
+  creating: boolean
+  saving: boolean
+  deletingId: string | null
+  togglingId: string | null
+  newName: string
+  newContent: string
+  newShared: boolean
+  onNewNameChange: (v: string) => void
+  onNewContentChange: (v: string) => void
+  onNewSharedChange: (v: boolean) => void
+  onSaveNew: () => void
+  onCancelCreate: () => void
+  onStartCreate: () => void
+  onDelete: (id: string) => void
+  onToggleShare: (t: SavedTemplate) => void
+  onUse: (content: string) => void
+}
+
+function MineTab({
+  saved, loading, creating, saving, deletingId, togglingId,
+  newName, newContent, newShared,
+  onNewNameChange, onNewContentChange, onNewSharedChange,
+  onSaveNew, onCancelCreate, onStartCreate,
+  onDelete, onToggleShare, onUse,
+}: MineTabProps) {
+  return (
+    <div className="tdrawer-mine">
+      {creating ? (
+        <div className="tdrawer-new-form">
+          <input
+            className="tdrawer-input"
+            placeholder="Name der Vorlage…"
+            value={newName}
+            onChange={e => onNewNameChange(e.target.value)}
+          />
+          <textarea
+            className="tdrawer-textarea"
+            placeholder="Prompt-Text…"
+            value={newContent}
+            onChange={e => onNewContentChange(e.target.value)}
+            rows={4}
+          />
+          <label className="tdrawer-share-toggle">
+            <input
+              type="checkbox"
+              checked={newShared}
+              onChange={e => onNewSharedChange(e.target.checked)}
+            />
+            <span>Mit Team teilen</span>
+          </label>
+          <div className="tdrawer-new-actions">
+            <button
+              className="tdrawer-accept"
+              disabled={!newName.trim() || !newContent.trim() || saving}
+              onClick={onSaveNew}
+            >
+              {saving ? 'Speichern…' : 'Speichern'}
+            </button>
+            <button className="tdrawer-cancel" onClick={onCancelCreate}>
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button className="tdrawer-new-btn" onClick={onStartCreate}>
+          <Plus size={14} weight="bold" /> Neue Vorlage
+        </button>
+      )}
+
+      {loading ? (
+        <p className="tdrawer-empty">Laden…</p>
+      ) : saved.length === 0 ? (
+        <p className="tdrawer-empty">Noch keine eigenen Vorlagen gespeichert.</p>
+      ) : (
+        <div className="tdrawer-saved-list">
+          {saved.map((t) => (
+            <div key={t.id} className="tdrawer-saved-item">
+              <div className="tdrawer-saved-info">
+                <span className="tdrawer-saved-name">
+                  {t.name}
+                  {t.is_shared && <span className="tdrawer-shared-badge">geteilt</span>}
+                </span>
+                <span className="tdrawer-saved-preview">{t.content.slice(0, 80)}{t.content.length > 80 ? '…' : ''}</span>
+              </div>
+              <div className="tdrawer-saved-actions">
+                <button
+                  className="tdrawer-use-btn"
+                  onClick={() => onUse(t.content)}
+                  title="Verwenden"
+                >
+                  <BookmarkSimple size={14} weight="bold" /> Verwenden
+                </button>
+                <button
+                  className={`tdrawer-share-btn${t.is_shared ? ' tdrawer-share-btn--active' : ''}`}
+                  onClick={() => onToggleShare(t)}
+                  disabled={togglingId === t.id}
+                  title={t.is_shared ? 'Nicht mehr teilen' : 'Mit Team teilen'}
+                >
+                  <ShareNetwork size={13} weight="bold" />
+                </button>
+                <button
+                  className="tdrawer-del-btn"
+                  onClick={() => onDelete(t.id)}
+                  disabled={deletingId === t.id}
+                  title="Löschen"
+                >
+                  <Trash size={13} weight="bold" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── TeamTab ──────────────────────────────────────────────────────────────────
+
+interface TeamTabProps {
+  team: SavedTemplate[]
+  loading: boolean
+  onUse: (content: string) => void
+}
+
+function TeamTab({ team, loading, onUse }: TeamTabProps) {
+  return (
+    <div className="tdrawer-mine">
+      {loading ? (
+        <p className="tdrawer-empty">Laden…</p>
+      ) : team.length === 0 ? (
+        <p className="tdrawer-empty">Noch keine Team-Vorlagen. Teile eigene Vorlagen unter &bdquo;Meine Vorlagen&ldquo;.</p>
+      ) : (
+        <div className="tdrawer-saved-list">
+          {team.map((t) => (
+            <div key={t.id} className="tdrawer-saved-item">
+              <div className="tdrawer-saved-info">
+                <span className="tdrawer-saved-name">{t.name}</span>
+                <span className="tdrawer-saved-preview">{t.content.slice(0, 80)}{t.content.length > 80 ? '…' : ''}</span>
+              </div>
+              <div className="tdrawer-saved-actions">
+                <button
+                  className="tdrawer-use-btn"
+                  onClick={() => onUse(t.content)}
+                  title="Verwenden"
+                >
+                  <BookmarkSimple size={14} weight="bold" /> Verwenden
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── TemplateDrawer ───────────────────────────────────────────────────────────
+
 export default function TemplateDrawer({ template, onClose, onAccept }: TemplateDrawerProps) {
   const [values, setValues] = useState<Record<string, string>>({})
   const [tab, setTab] = useState<'core' | 'mine' | 'team'>('core')
@@ -73,7 +325,7 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
       .finally(() => setLoadingTeam(false))
   }, [tab])
 
-  function set(id: string, val: string) {
+  function setField(id: string, val: string) {
     setValues((prev) => ({ ...prev, [id]: val }))
   }
 
@@ -127,6 +379,11 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
     }
   }
 
+  function handleUse(content: string) {
+    onAccept(content)
+    onClose()
+  }
+
   const requiredFilled = activeCore
     ? activeCore.fields.filter(f => !f.optional).every(f => (values[f.id] ?? '').trim().length > 0)
     : false
@@ -163,202 +420,47 @@ export default function TemplateDrawer({ template, onClose, onAccept }: Template
         </button>
       </div>
 
-      {/* ── Tab: Core-Vorlagen ── */}
       {tab === 'core' && (
-        <>
-          <div className="tdrawer-template-list">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                className={`tdrawer-template-pill${activeCore?.id === t.id ? ' tdrawer-template-pill--active' : ''}`}
-                onClick={() => setActiveCore(t)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {activeCore && (
-            <>
-              <div className="tdrawer-fields">
-                {activeCore.fields.map((field) => (
-                  <div key={field.id} className="tdrawer-field">
-                    <label className="tdrawer-label">
-                      {field.label}
-                      {field.optional && <span className="tdrawer-optional">optional</span>}
-                    </label>
-
-                    {field.type === 'select' ? (
-                      <select
-                        className="tdrawer-select"
-                        value={values[field.id] ?? field.options[0]}
-                        onChange={(e) => set(field.id, e.target.value)}
-                      >
-                        {field.options.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        className="tdrawer-textarea"
-                        placeholder={field.placeholder}
-                        value={values[field.id] ?? ''}
-                        onChange={(e) => set(field.id, e.target.value)}
-                        rows={5}
-                      />
-                    ) : (
-                      <input
-                        className="tdrawer-input"
-                        type="text"
-                        placeholder={field.placeholder}
-                        value={values[field.id] ?? ''}
-                        onChange={(e) => set(field.id, e.target.value)}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {preview && (
-                <div className="tdrawer-preview">
-                  <span className="tdrawer-preview-label">Vorschau</span>
-                  <p className="tdrawer-preview-text">{preview}</p>
-                </div>
-              )}
-
-              <button
-                className="tdrawer-accept"
-                disabled={!requiredFilled}
-                onClick={() => onAccept(activeCore.assemble(values))}
-              >
-                Prompt übernehmen →
-              </button>
-            </>
-          )}
-        </>
+        <CoreTab
+          activeCore={activeCore}
+          values={values}
+          requiredFilled={requiredFilled}
+          preview={preview}
+          onSelect={setActiveCore}
+          onFieldChange={setField}
+          onAccept={onAccept}
+        />
       )}
 
-      {/* ── Tab: Meine Vorlagen ── */}
       {tab === 'mine' && (
-        <div className="tdrawer-mine">
-          {creating ? (
-            <div className="tdrawer-new-form">
-              <input
-                className="tdrawer-input"
-                placeholder="Name der Vorlage…"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-              />
-              <textarea
-                className="tdrawer-textarea"
-                placeholder="Prompt-Text…"
-                value={newContent}
-                onChange={e => setNewContent(e.target.value)}
-                rows={4}
-              />
-              <label className="tdrawer-share-toggle">
-                <input
-                  type="checkbox"
-                  checked={newShared}
-                  onChange={e => setNewShared(e.target.checked)}
-                />
-                <span>Mit Team teilen</span>
-              </label>
-              <div className="tdrawer-new-actions">
-                <button
-                  className="tdrawer-accept"
-                  disabled={!newName.trim() || !newContent.trim() || saving}
-                  onClick={handleSaveNew}
-                >
-                  {saving ? 'Speichern…' : 'Speichern'}
-                </button>
-                <button className="tdrawer-cancel" onClick={() => setCreating(false)}>
-                  Abbrechen
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button className="tdrawer-new-btn" onClick={() => setCreating(true)}>
-              <Plus size={14} weight="bold" /> Neue Vorlage
-            </button>
-          )}
-
-          {loadingSaved ? (
-            <p className="tdrawer-empty">Laden…</p>
-          ) : saved.length === 0 ? (
-            <p className="tdrawer-empty">Noch keine eigenen Vorlagen gespeichert.</p>
-          ) : (
-            <div className="tdrawer-saved-list">
-              {saved.map((t) => (
-                <div key={t.id} className="tdrawer-saved-item">
-                  <div className="tdrawer-saved-info">
-                    <span className="tdrawer-saved-name">
-                      {t.name}
-                      {t.is_shared && <span className="tdrawer-shared-badge">geteilt</span>}
-                    </span>
-                    <span className="tdrawer-saved-preview">{t.content.slice(0, 80)}{t.content.length > 80 ? '…' : ''}</span>
-                  </div>
-                  <div className="tdrawer-saved-actions">
-                    <button
-                      className="tdrawer-use-btn"
-                      onClick={() => { onAccept(t.content); onClose() }}
-                      title="Verwenden"
-                    >
-                      <BookmarkSimple size={14} weight="bold" /> Verwenden
-                    </button>
-                    <button
-                      className={`tdrawer-share-btn${t.is_shared ? ' tdrawer-share-btn--active' : ''}`}
-                      onClick={() => handleToggleShare(t)}
-                      disabled={togglingId === t.id}
-                      title={t.is_shared ? 'Nicht mehr teilen' : 'Mit Team teilen'}
-                    >
-                      <ShareNetwork size={13} weight="bold" />
-                    </button>
-                    <button
-                      className="tdrawer-del-btn"
-                      onClick={() => handleDelete(t.id)}
-                      disabled={deletingId === t.id}
-                      title="Löschen"
-                    >
-                      <Trash size={13} weight="bold" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MineTab
+          saved={saved}
+          loading={loadingSaved}
+          creating={creating}
+          saving={saving}
+          deletingId={deletingId}
+          togglingId={togglingId}
+          newName={newName}
+          newContent={newContent}
+          newShared={newShared}
+          onNewNameChange={setNewName}
+          onNewContentChange={setNewContent}
+          onNewSharedChange={setNewShared}
+          onSaveNew={handleSaveNew}
+          onCancelCreate={() => setCreating(false)}
+          onStartCreate={() => setCreating(true)}
+          onDelete={handleDelete}
+          onToggleShare={handleToggleShare}
+          onUse={handleUse}
+        />
       )}
 
-      {/* ── Tab: Team-Vorlagen ── */}
       {tab === 'team' && (
-        <div className="tdrawer-mine">
-          {loadingTeam ? (
-            <p className="tdrawer-empty">Laden…</p>
-          ) : team.length === 0 ? (
-            <p className="tdrawer-empty">Noch keine Team-Vorlagen. Teile eigene Vorlagen unter &bdquo;Meine Vorlagen&ldquo;.</p>
-          ) : (
-            <div className="tdrawer-saved-list">
-              {team.map((t) => (
-                <div key={t.id} className="tdrawer-saved-item">
-                  <div className="tdrawer-saved-info">
-                    <span className="tdrawer-saved-name">{t.name}</span>
-                    <span className="tdrawer-saved-preview">{t.content.slice(0, 80)}{t.content.length > 80 ? '…' : ''}</span>
-                  </div>
-                  <div className="tdrawer-saved-actions">
-                    <button
-                      className="tdrawer-use-btn"
-                      onClick={() => { onAccept(t.content); onClose() }}
-                      title="Verwenden"
-                    >
-                      <BookmarkSimple size={14} weight="bold" /> Verwenden
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <TeamTab
+          team={team}
+          loading={loadingTeam}
+          onUse={handleUse}
+        />
       )}
     </div>
   )

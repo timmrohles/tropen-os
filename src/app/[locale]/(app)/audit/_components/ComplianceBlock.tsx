@@ -139,7 +139,7 @@ export function ComplianceBlock({ domain, projectId, initialData = {}, id }: Com
     <div
       id={id}
       style={{
-        border: '1px solid var(--border)',
+        border: '1px solid var(--accent)',
         borderRadius: 8, overflow: 'hidden', marginTop: 0,
         background: '#ffffff',
       }}>
@@ -148,18 +148,18 @@ export function ComplianceBlock({ domain, projectId, initialData = {}, id }: Com
         onClick={() => setOpen(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-          padding: '9px 14px', background: 'var(--accent-light)', border: 'none', cursor: 'pointer',
-          textAlign: 'left', borderBottom: open ? `1px solid ${cfg.borderColor}` : 'none',
+          padding: '9px 14px', background: 'var(--accent)', border: 'none', cursor: 'pointer',
+          textAlign: 'left', borderBottom: open ? '1px solid rgba(255,255,255,0.10)' : 'none',
         }}
       >
-        <ClipboardText size={14} weight="fill" color="var(--text-tertiary)" aria-hidden="true" style={{ flexShrink: 0 }} />
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+        <ClipboardText size={14} weight="fill" color="rgba(255,255,255,0.80)" aria-hidden="true" style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#ffffff' }}>
           {cfg.title}
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 400 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 400 }}>
           · {answeredCount}/{cfg.questions.length} beantwortet
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)' }}>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.65)' }}>
           {open ? '▲' : '▼'}
         </span>
       </button>

@@ -102,23 +102,10 @@ export function createJungleActions(ctx: JungleActionsCtx) {
   async function jungleApply() {
     ctx.setJungleSaving(true)
     try {
+      const { data: { user: jUser } } = await supabase.auth.getUser()
+      const createdBy = jUser?.id ?? ''
       for (let i = 0; i < ctx.jungleProjects.length; i++) {
-        const proj = ctx.jungleProjects[i]
-        const name = (ctx.jungleEditName[i] ?? proj.name).trim()
-        if (!name || proj.conversations.length === 0) continue
-        const { data: { user: jUser } } = await supabase.auth.getUser()
-        const { data: newProj } = await supabase
-          .from('projects')
-          .insert({ department_id: workspaceId, title: name, goal: null, instructions: null, meta: {}, created_by: jUser?.id ?? '' })
-          .select('id, title, goal, instructions, meta, department_id, created_by, created_at, updated_at')
-          .single()
-        if (newProj) {
-          ctx.setProjects((prev) => [...prev, newProj as Project])
-          await supabase.from('conversations').update({ project_id: (newProj as Project).id }).in('id', proj.conversations)
-          ctx.setConversations((prev) => prev.map((c) =>
-            proj.conversations.includes(c.id) ? { ...c, project_id: (newProj as Project).id } : c
-          ))
-        }
+        await applyJungleProject(ctx, supabase, workspaceId, i, createdBy)
       }
       ctx.setJungleModal(false)
     } finally {
@@ -156,22 +143,7 @@ export function createJungleActions(ctx: JungleActionsCtx) {
         action: 'merge', conversation_ids: ids, workspace_id: workspaceId,
         merge_title: ctx.mergeTitle.trim(), project_id: ctx.mergeProjectId, after_action: ctx.mergeAfterAction,
       })
-      const newConv = data.conversation as Conversation
-      const content = (data.content as string) ?? ''
-      if (ctx.mergeAfterAction !== 'keep') {
-        ctx.setConversations((prev) => prev.filter((c) => !ctx.selectedIds.has(c.id)))
-      }
-      ctx.setConversations((prev) => [newConv, ...prev])
-      ctx.setActiveConvId(newConv.id)
-      ctx.setMessages([{
-        id: crypto.randomUUID(), role: 'assistant', content, pending: false,
-        model_used: null, cost_eur: null, tokens_input: null, tokens_output: null,
-      }])
-      ctx.setSelectMode(false)
-      ctx.setSelectedIds(new Set())
-      ctx.setMergeModal(false)
-      ctx.setToastMsg(`🦜 ${ids.length} Chat${ids.length === 1 ? '' : 's'} erfolgreich zusammengeführt`)
-      setTimeout(() => ctx.setToastMsg(''), 4000)
+      applyMergeResult(ctx, data, ids)
     } catch (e) {
       ctx.setError(e instanceof Error ? e.message : 'Fehler beim Zusammenführen')
     } finally {
@@ -180,4 +152,58 @@ export function createJungleActions(ctx: JungleActionsCtx) {
   }
 
   return { openJungleModal, jungleProjectName, jungleMoveConv, jungleRemoveConv, jungleRemoveProject, jungleApply, openMergeModal, applyMerge }
+}
+
+// ---------------------------------------------------------------------------
+// Module-level helpers (extracted from createJungleActions to reduce CC)
+// ---------------------------------------------------------------------------
+
+async function applyJungleProject(
+  ctx: JungleActionsCtx,
+  supabase: JungleActionsCtx['supabase'],
+  workspaceId: string,
+  index: number,
+  createdBy: string,
+): Promise<void> {
+  const proj = ctx.jungleProjects[index]
+  const name = (ctx.jungleEditName[index] ?? proj.name).trim()
+  if (!name || proj.conversations.length === 0) return
+
+  const { data: newProj } = await supabase
+    .from('projects')
+    .insert({ department_id: workspaceId, title: name, goal: null, instructions: null, meta: {}, created_by: createdBy })
+    .select('id, title, goal, instructions, meta, department_id, created_by, created_at, updated_at')
+    .single()
+
+  if (!newProj) return
+
+  ctx.setProjects((prev) => [...prev, newProj as Project])
+  await supabase.from('conversations').update({ project_id: (newProj as Project).id }).in('id', proj.conversations)
+  ctx.setConversations((prev) => prev.map((c) =>
+    proj.conversations.includes(c.id) ? { ...c, project_id: (newProj as Project).id } : c
+  ))
+}
+
+function applyMergeResult(
+  ctx: JungleActionsCtx,
+  data: Record<string, unknown>,
+  ids: string[],
+): void {
+  const newConv = data.conversation as Conversation
+  const content = (data.content as string) ?? ''
+
+  if (ctx.mergeAfterAction !== 'keep') {
+    ctx.setConversations((prev) => prev.filter((c) => !ctx.selectedIds.has(c.id)))
+  }
+  ctx.setConversations((prev) => [newConv, ...prev])
+  ctx.setActiveConvId(newConv.id)
+  ctx.setMessages([{
+    id: crypto.randomUUID(), role: 'assistant', content, pending: false,
+    model_used: null, cost_eur: null, tokens_input: null, tokens_output: null,
+  }])
+  ctx.setSelectMode(false)
+  ctx.setSelectedIds(new Set())
+  ctx.setMergeModal(false)
+  ctx.setToastMsg(`🦜 ${ids.length} Chat${ids.length === 1 ? '' : 's'} erfolgreich zusammengeführt`)
+  setTimeout(() => ctx.setToastMsg(''), 4000)
 }

@@ -1,17 +1,14 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { FloppyDisk, ArrowsOut, Code, FileText, Table, ListBullets, Atom, Play, ChatCircle, ArrowSquareOut, ProjectorScreen, CaretLeft, CaretRight, DownloadSimple, ChartBar, Warning, ArrowClockwise } from '@phosphor-icons/react'
-
-const CodeBlock = dynamic(() => import('./CodeBlock'), { ssr: false })
+import { FloppyDisk } from '@phosphor-icons/react'
 import type { ArtifactSegment } from '@/lib/chat/parse-artifacts'
-
-interface ArtifactActionEvent {
-  type: string
-  value: unknown
-}
+import {
+  ArtifactToolbar, ChartContent, PresentationContent, ReactContent, CodeContent,
+  typeIcon, typeLabel,
+  type ArtifactActionEvent,
+} from './ArtifactContent'
 
 interface ArtifactRendererProps {
   artifact: ArtifactSegment
@@ -24,7 +21,6 @@ interface ArtifactRendererProps {
 }
 
 // Strips ES module export syntax so Babel can eval the code in a script context.
-// "export default function App" → "function App", "export const X" → "const X", etc.
 function normalizeArtifactCode(code: string): string {
   return code
     .replace(/export\s+default\s+function\s+(\w+)/g, 'function $1')
@@ -54,17 +50,9 @@ function buildReactIframeHtml(transformedCode: string): string {
   <div id="root"></div>
   <div id="error" style="display:none"></div>
   <script>
-  function onAction(event) {
-    window.parent.postMessage({ type: 'artifact-action', event }, '*');
-  }
-  function __showError(msg) {
-    var el = document.getElementById('error');
-    if (el) { el.style.display = 'block'; el.textContent = String(msg); }
-  }
-  function __sendHeight() {
-    var h = document.body.scrollHeight;
-    window.parent.postMessage({ type: 'iframe-resize', height: h }, '*');
-  }
+  function onAction(event) { window.parent.postMessage({ type: 'artifact-action', event }, '*'); }
+  function __showError(msg) { var el=document.getElementById('error'); if(el){el.style.display='block';el.textContent=String(msg);} }
+  function __sendHeight() { window.parent.postMessage({ type: 'iframe-resize', height: document.body.scrollHeight }, '*'); }
   try {
     ${transformedCode}
     var __el = document.getElementById('root');
@@ -73,13 +61,8 @@ function buildReactIframeHtml(transformedCode: string): string {
     if (__C) {
       __root.render(React.createElement(__C, { onAction }));
       setTimeout(__sendHeight, 50);
-      if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(__sendHeight).observe(document.body);
-      }
-    } else {
-      __showError('Kein Component gefunden — erwartet: function App() { ... }');
-      __sendHeight();
-    }
+      if (typeof ResizeObserver !== 'undefined') { new ResizeObserver(__sendHeight).observe(document.body); }
+    } else { __showError('Kein Component gefunden — erwartet: function App() { ... }'); __sendHeight(); }
   } catch(e) { __showError(e.stack || e.message || String(e)); __sendHeight(); }
   </script>
 </body>
@@ -93,11 +76,7 @@ function buildChartIframeHtml(config: object): string {
 <head>
   <meta charset="UTF-8">
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; background: transparent; }
-    #chart { width: 100%; height: 100%; }
-  </style>
+  <style>* { box-sizing: border-box; } body { margin: 0; background: transparent; } #chart { width: 100%; height: 100%; }</style>
 </head>
 <body>
   <div id="chart"></div>
@@ -113,47 +92,11 @@ function buildChartIframeHtml(config: object): string {
     chart.setOption(option)
     window.addEventListener('resize', function() { chart.resize() })
     chart.on('click', function(params) {
-      window.parent.postMessage({
-        type: 'artifact-action',
-        event: { type: 'click', value: params.name || params.value }
-      }, '*')
+      window.parent.postMessage({ type: 'artifact-action', event: { type: 'click', value: params.name || params.value } }, '*')
     })
   </script>
 </body>
 </html>`
-}
-
-function typeIcon(type: ArtifactSegment['artifactType']) {
-  switch (type) {
-    case 'react':        return <Atom size={14} weight="bold" aria-hidden="true" />
-    case 'chart':        return <ChartBar size={14} weight="bold" aria-hidden="true" />
-    case 'code':         return <Code size={14} weight="bold" aria-hidden="true" />
-    case 'document':     return <FileText size={14} weight="bold" aria-hidden="true" />
-    case 'table':        return <Table size={14} weight="bold" aria-hidden="true" />
-    case 'list':         return <ListBullets size={14} weight="bold" aria-hidden="true" />
-    case 'presentation': return <ProjectorScreen size={14} weight="bold" aria-hidden="true" />
-    default:             return <Code size={14} weight="bold" aria-hidden="true" />
-  }
-}
-
-function typeLabel(type: ArtifactSegment['artifactType']): string {
-  switch (type) {
-    case 'react':        return 'React'
-    case 'chart':        return 'Chart'
-    case 'code':         return 'Code'
-    case 'document':     return 'Dokument'
-    case 'table':        return 'Tabelle'
-    case 'list':         return 'Liste'
-    case 'presentation': return 'Präsentation'
-    default:             return 'Artefakt'
-  }
-}
-
-function codeLanguage(artifact: ArtifactSegment): string {
-  if (artifact.language) return artifact.language
-  if (artifact.artifactType === 'react') return 'jsx'
-  if (artifact.artifactType === 'table') return 'html'
-  return 'text'
 }
 
 export default function ArtifactRenderer({
@@ -196,33 +139,20 @@ export default function ArtifactRenderer({
     })
       .then(r => r.json())
       .then((data: { code?: string; error?: string }) => {
-        if (data.error) {
-          setTransformError(data.error)
-        } else if (data.code) {
-          setIframeHtml(buildReactIframeHtml(data.code))
-        }
+        if (data.error) { setTransformError(data.error) }
+        else if (data.code) { setIframeHtml(buildReactIframeHtml(data.code)) }
       })
-      .catch(err => {
-        setTransformError(String(err))
-      })
+      .catch(err => setTransformError(String(err)))
   }, [artifact.content, artifact.artifactType, retryCount])
 
   // Listen for postMessage events from the sandboxed iframe
   useEffect(() => {
     if (!previewOpen) return
     function handleMessage(e: MessageEvent) {
-      // Sandboxed iframes have null origin; same-origin iframes use window.location.origin
       if (e.origin !== 'null' && e.origin !== window.location.origin) return
-      if (e.data?.type === 'artifact-action' && onSendDirect) {
-        setLastAction(e.data.event as ArtifactActionEvent)
-      }
-      if (e.data?.type === 'slide-changed') {
-        setCurrentSlide((e.data.indexh as number) + 1)
-        setTotalSlides(e.data.total as number)
-      }
-      if (e.data?.type === 'iframe-resize' && typeof e.data.height === 'number') {
-        setDynamicHeight(Math.min(e.data.height + 32, 800))
-      }
+      if (e.data?.type === 'artifact-action' && onSendDirect) setLastAction(e.data.event as ArtifactActionEvent)
+      if (e.data?.type === 'slide-changed') { setCurrentSlide((e.data.indexh as number) + 1); setTotalSlides(e.data.total as number) }
+      if (e.data?.type === 'iframe-resize' && typeof e.data.height === 'number') setDynamicHeight(Math.min(e.data.height + 32, 800))
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
@@ -233,30 +163,14 @@ export default function ArtifactRenderer({
   const isChart = artifact.artifactType === 'chart'
   const canSave = !!conversationId && !!organizationId && !saved
 
-  // Parse chart config once — null on invalid JSON
-  // Must be before any early returns (Rules of Hooks)
+  // Must be before early returns (Rules of Hooks)
   const chartIframeHtml = React.useMemo(() => {
     if (!isChart) return null
-    try {
-      const config = JSON.parse(artifact.content)
-      return buildChartIframeHtml(config)
-    } catch {
-      return buildChartIframeHtml({ title: { text: 'Ungültige Chart-Konfiguration' }, series: [] })
-    }
+    try { return buildChartIframeHtml(JSON.parse(artifact.content)) }
+    catch { return buildChartIframeHtml({ title: { text: 'Ungültige Chart-Konfiguration' }, series: [] }) }
   }, [isChart, artifact.content])
 
-  function handleExportHtml() {
-    if (!iframeHtml) return
-    const blob = new Blob([iframeHtml], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${artifact.name.replace(/\s+/g, '_')}.html`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // ── Compact header — shown in chat when split-view is active ──────────────
+  // ── Compact header for split-view ────────────────────────────────────────
   if (isInSplitView && (isReact || isPresentation || isChart)) {
     return (
       <div className="artifact-header-only">
@@ -277,6 +191,15 @@ export default function ArtifactRenderer({
 
   const previewHeight = isPresentation ? 480 : isChart ? 350 : (dynamicHeight ?? (expanded ? 520 : 300))
 
+  function handleExportHtml() {
+    if (!iframeHtml) return
+    const blob = new Blob([iframeHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${artifact.name.replace(/\s+/g, '_')}.html`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function handleSave() {
     if (!conversationId || !organizationId || saving) return
     setSaving(true)
@@ -285,20 +208,13 @@ export default function ArtifactRenderer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationId,
-          organizationId,
-          name: artifact.name,
-          type: artifact.artifactType,
-          language: artifact.language ?? (isReact ? 'jsx' : null),
-          content: artifact.content,
-          messageId: messageId ?? undefined,
+          conversationId, organizationId, name: artifact.name,
+          type: artifact.artifactType, language: artifact.language ?? (isReact ? 'jsx' : null),
+          content: artifact.content, messageId: messageId ?? undefined,
         }),
       })
-      setSaved(true)
-      onSaved?.()
-    } finally {
-      setSaving(false)
-    }
+      setSaved(true); onSaved?.()
+    } finally { setSaving(false) }
   }
 
   async function handleExportPptx() {
@@ -314,181 +230,42 @@ export default function ArtifactRenderer({
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `${artifact.name.replace(/\s+/g, '_')}.pptx`
-      a.click()
+      a.href = url; a.download = `${artifact.name.replace(/\s+/g, '_')}.pptx`; a.click()
       URL.revokeObjectURL(url)
-    } finally {
-      setExporting(false)
+    } finally { setExporting(false) }
+  }
+
+  function renderContent() {
+    if (isChart && previewOpen) return <ChartContent chartIframeHtml={chartIframeHtml} previewHeight={previewHeight} name={artifact.name} />
+    if (isPresentation && previewOpen) return <PresentationContent content={artifact.content} previewHeight={previewHeight} name={artifact.name} currentSlide={currentSlide} totalSlides={totalSlides} />
+    if (isReact && previewOpen) {
+      return (
+        <ReactContent
+          iframeRef={iframeRef} transformError={transformError} iframeHtml={iframeHtml}
+          showErrorDetails={showErrorDetails} previewHeight={previewHeight} name={artifact.name}
+          lastAction={lastAction} onSendDirect={onSendDirect}
+          onRetry={() => setRetryCount(c => c + 1)}
+          onToggleErrorDetails={() => setShowErrorDetails(v => !v)}
+          onDismissAction={() => setLastAction(null)} t={t}
+        />
+      )
     }
+    return <CodeContent artifact={artifact} />
   }
 
   return (
     <div className="artifact-block" aria-label={`Artefakt: ${artifact.name}`}>
-      {/* Header */}
-      <div className="artifact-header">
-        <span className="artifact-type-icon">{typeIcon(artifact.artifactType)}</span>
-        <span className="artifact-type-label">{typeLabel(artifact.artifactType)}</span>
-        <span className="artifact-name">{artifact.name}</span>
-
-        <div className="artifact-actions">
-          {(isReact || isPresentation || isChart) && (
-            <button
-              onClick={() => { setPreviewOpen(s => !s); setExpanded(false) }}
-              title={previewOpen ? t('showSource') : t('openPreview')}
-              className="artifact-action-btn"
-            >
-              {previewOpen ? <Code size={13} weight="bold" /> : <Play size={13} weight="bold" />}
-              <span>{previewOpen ? t('code') : t('preview')}</span>
-            </button>
-          )}
-          {isReact && previewOpen && (
-            <button
-              onClick={() => setExpanded(s => !s)}
-              title={expanded ? t('collapse') : t('expand')}
-              className="artifact-action-btn artifact-action-btn--icon"
-              aria-label={expanded ? t('collapse') : t('expand')}
-            >
-              <ArrowsOut size={13} weight="bold" />
-            </button>
-          )}
-          {canSave && (
-            <button
-              onClick={() => void handleSave()}
-              disabled={saving}
-              title={t('saveArtifact')}
-              className="artifact-action-btn"
-            >
-              <FloppyDisk size={13} weight="bold" />
-              <span>{saving ? t('saving') : t('save')}</span>
-            </button>
-          )}
-          {saved && (
-            <span className="artifact-saved-badge">{t('saved')}</span>
-          )}
-          {isPresentation && (
-            <button
-              onClick={() => void handleExportPptx()}
-              disabled={exporting}
-              title={t('exportPptx')}
-              className="artifact-action-btn"
-            >
-              <DownloadSimple size={13} weight="bold" />
-              <span>{exporting ? t('exporting') : 'PPTX'}</span>
-            </button>
-          )}
-          {isReact && iframeHtml && (
-            <button
-              onClick={handleExportHtml}
-              title={t('exportHtml')}
-              className="artifact-action-btn"
-            >
-              <DownloadSimple size={13} weight="bold" />
-              <span>HTML</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Content */}
-      {isChart && previewOpen ? (
-        <iframe
-          srcDoc={chartIframeHtml ?? ''}
-          sandbox="allow-scripts allow-same-origin"
-          style={{ width: '100%', height: previewHeight, border: 'none', display: 'block' }}
-          title={artifact.name}
-        />
-      ) : isPresentation && previewOpen ? (
-        <>
-          <iframe
-            srcDoc={artifact.content}
-            sandbox="allow-scripts allow-same-origin"
-            style={{ width: '100%', height: previewHeight, border: 'none', display: 'block' }}
-            title={artifact.name}
-          />
-          {totalSlides > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 12px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-tertiary)' }}>
-              <CaretLeft size={13} weight="bold" aria-hidden="true" />
-              <span>Slide {currentSlide} / {totalSlides}</span>
-              <CaretRight size={13} weight="bold" aria-hidden="true" />
-            </div>
-          )}
-        </>
-      ) : isReact && previewOpen ? (
-        <>
-          {transformError ? (
-            <div className="artifact-error-card">
-              <div className="artifact-error-card__header">
-                <Warning size={14} weight="fill" aria-hidden="true" />
-                <span>{t('loadError')}</span>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                  <button className="artifact-action-btn" onClick={() => setRetryCount(c => c + 1)}>
-                    <ArrowClockwise size={13} weight="bold" />
-                    <span>{t('retry')}</span>
-                  </button>
-                  <button className="artifact-action-btn artifact-action-btn--ghost" onClick={() => setShowErrorDetails(v => !v)}>
-                    {showErrorDetails ? t('hideDetails') : t('showDetails')}
-                  </button>
-                </div>
-              </div>
-              {showErrorDetails && (
-                <pre className="artifact-error-card__details">{transformError}</pre>
-              )}
-            </div>
-          ) : iframeHtml ? (
-            <iframe
-              ref={iframeRef}
-              srcDoc={iframeHtml}
-              sandbox="allow-scripts"
-              style={{ width: '100%', height: previewHeight, border: 'none', display: 'block' }}
-              title={artifact.name}
-            />
-          ) : (
-            <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
-              {t('compiling')}
-            </div>
-          )}
-          {lastAction && onSendDirect && (
-            <div className="artifact-action-choice">
-              <span className="artifact-action-choice__label">
-                {t('selectionLabel')} <strong>{String(lastAction.value)}</strong>
-              </span>
-              <button
-                className="artifact-action-btn"
-                onClick={() => {
-                  onSendDirect(`Lass uns "${String(lastAction.value)}" besprechen.`)
-                  setLastAction(null)
-                }}
-              >
-                <ChatCircle size={13} weight="bold" />
-                <span>{t('discussWithToro')}</span>
-              </button>
-              <button
-                className="artifact-action-btn"
-                onClick={() => {
-                  onSendDirect(`Öffne "${String(lastAction.value)}" in einem neuen Chat mit mehr Details.`)
-                  setLastAction(null)
-                }}
-              >
-                <ArrowSquareOut size={13} weight="bold" />
-                <span>{t('deepDive')}</span>
-              </button>
-              <button
-                className="artifact-action-btn artifact-action-btn--ghost"
-                onClick={() => setLastAction(null)}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="artifact-code">
-          <CodeBlock language={codeLanguage(artifact)} customStyle={{ borderRadius: 0, margin: 0 }}>
-            {artifact.content}
-          </CodeBlock>
-        </div>
-      )}
+      <ArtifactToolbar
+        artifact={artifact} isReact={isReact} isPresentation={isPresentation} isChart={isChart}
+        previewOpen={previewOpen} expanded={expanded} iframeHtml={iframeHtml}
+        canSave={canSave} saved={saved} saving={saving} exporting={exporting} t={t}
+        onTogglePreview={() => { setPreviewOpen(s => !s); setExpanded(false) }}
+        onToggleExpand={() => setExpanded(s => !s)}
+        onSave={() => void handleSave()}
+        onExportPptx={() => void handleExportPptx()}
+        onExportHtml={handleExportHtml}
+      />
+      {renderContent()}
     </div>
   )
 }

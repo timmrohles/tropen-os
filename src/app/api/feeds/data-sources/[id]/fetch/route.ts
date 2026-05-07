@@ -31,6 +31,80 @@ function applyJsonPath(data: unknown, path: string): unknown {
   return current
 }
 
+function buildAuthHeaders(
+  authType: string | null,
+  authConfig: Record<string, string>
+): Record<string, string> {
+  if (authType === 'bearer' && authConfig.token) {
+    return { 'Authorization': `Bearer ${authConfig.token}` }
+  }
+  if (authType === 'api_key' && authConfig.header && authConfig.key) {
+    return { [authConfig.header]: authConfig.key }
+  }
+  if (authType === 'basic' && authConfig.username && authConfig.password) {
+    const encoded = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64')
+    return { 'Authorization': `Basic ${encoded}` }
+  }
+  return {}
+}
+
+function countRecords(data: unknown): number | null {
+  if (Array.isArray(data)) return data.length
+  if (data !== null && typeof data === 'object') return 1
+  return null
+}
+
+function extractSchemaPreview(rawData: unknown): unknown {
+  if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) return rawData
+  if (Array.isArray(rawData) && rawData.length > 0) return rawData[0]
+  return null
+}
+
+type FetchResult = {
+  rawData: unknown
+  httpStatus: number | null
+  fetchError: string | null
+  recordCount: number | null
+}
+
+async function fetchDataSource(src: Record<string, unknown>, headers: Record<string, string>): Promise<FetchResult> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(src.url as string, {
+      method: src.method as string,
+      headers,
+      body: src.method === 'POST' && src.request_body ? src.request_body as string : undefined,
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      return {
+        rawData: null,
+        httpStatus: response.status,
+        fetchError: `HTTP ${response.status} ${response.statusText}`,
+        recordCount: null,
+      }
+    }
+
+    const json = await response.json()
+    const rawData = src.schema_path ? applyJsonPath(json, src.schema_path as string) : json
+    return {
+      rawData,
+      httpStatus: response.status,
+      fetchError: null,
+      recordCount: countRecords(rawData),
+    }
+  } catch (err: unknown) {
+    clearTimeout(timeout)
+    const msg = err instanceof Error ? err.message : String(err)
+    const fetchError = msg.includes('aborted') ? 'Timeout nach 15 Sekunden' : 'Abruf fehlgeschlagen'
+    return { rawData: null, httpStatus: null, fetchError, recordCount: null }
+  }
+}
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -40,7 +114,6 @@ export async function POST(
 
   const { id } = await params
 
-  // Load source — user ownership check
   const { data: source, error: sourceError } = await supabaseAdmin
     .from('feed_data_sources')
     .select('*')
@@ -61,52 +134,16 @@ export async function POST(
   const headers: Record<string, string> = {
     'Accept': 'application/json',
     ...requestHeaders,
-  }
-  if (authType === 'bearer' && authConfig.token) {
-    headers['Authorization'] = `Bearer ${authConfig.token}`
-  } else if (authType === 'api_key' && authConfig.header && authConfig.key) {
-    headers[authConfig.header] = authConfig.key
-  } else if (authType === 'basic' && authConfig.username && authConfig.password) {
-    headers['Authorization'] = `Basic ${Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64')}`
+    ...buildAuthHeaders(authType, authConfig),
   }
 
   const startMs = Date.now()
-  let httpStatus: number | null = null
-  let fetchError: string | null = null
-  let rawData: unknown = null
-  let recordCount: number | null = null
+  const { rawData, httpStatus, fetchError, recordCount } = await fetchDataSource(src, headers)
+  const durationMs = Date.now() - startMs
 
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-
-    const response = await fetch(src.url as string, {
-      method: src.method as string,
-      headers,
-      body: src.method === 'POST' && src.request_body ? src.request_body as string : undefined,
-      signal: controller.signal,
-    })
-    clearTimeout(timeout)
-    httpStatus = response.status
-
-    if (response.ok) {
-      const json = await response.json()
-      rawData = src.schema_path ? applyJsonPath(json, src.schema_path as string) : json
-      if (Array.isArray(rawData)) {
-        recordCount = rawData.length
-      } else if (rawData !== null && typeof rawData === 'object') {
-        recordCount = 1
-      }
-    } else {
-      fetchError = `HTTP ${response.status} ${response.statusText}`
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err)
-    fetchError = msg.includes('aborted') ? 'Timeout nach 15 Sekunden' : 'Abruf fehlgeschlagen'
+  if (fetchError) {
     log.warn('data source fetch error', { id, error: fetchError })
   }
-
-  const durationMs = Date.now() - startMs
 
   // Insert record (APPEND ONLY — always insert, even on error)
   await supabaseAdmin.from('feed_data_records').insert({
@@ -120,18 +157,11 @@ export async function POST(
     error: fetchError,
   })
 
-  // Update source status
-  const schemaPreview = rawData && typeof rawData === 'object' && !Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData) && rawData.length > 0
-      ? rawData[0]
-      : null
-
   await supabaseAdmin.from('feed_data_sources').update({
     last_fetched_at: new Date().toISOString(),
     last_error: fetchError,
     record_count: recordCount ?? 0,
-    schema_preview: schemaPreview,
+    schema_preview: extractSchemaPreview(rawData),
     updated_at: new Date().toISOString(),
   }).eq('id', id)
 

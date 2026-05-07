@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench, DownloadSimple } from '@phosphor-icons/react'
+import { ArrowClockwise, CheckCircle, WarningCircle, Brain, Spinner, Wrench } from '@phosphor-icons/react'
 import { ProfileOnboardingModal } from '@/components/audit/ProfileOnboardingModal'
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 type TriggerState = 'idle' | 'running' | 'done' | 'error'
 
@@ -26,6 +28,63 @@ interface AuditActionsProps {
   isExistingProject?: boolean
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function buildReviewButtonTitle(rls: RateLimitStatus | null, cooldownLabel: string | null): string | undefined {
+  if (!rls) return undefined
+  if (rls.reason === 'cooldown' && cooldownLabel) return cooldownLabel
+  if (rls.reason === 'monthly-limit') return `${rls.usedThisMonth}/${rls.monthlyLimit} genutzt — monatliches Limit erreicht`
+  return undefined
+}
+
+function buildReviewButtonLabel(rls: RateLimitStatus | null, alreadyReviewed: boolean): string {
+  if (rls?.reason === 'monthly-limit') return `${rls.usedThisMonth}/${rls.monthlyLimit} genutzt`
+  return alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'
+}
+
+function buildCooldownLabel(rls: RateLimitStatus | null): string | null {
+  if (rls?.reason !== 'cooldown' || !rls.cooldownExpires) return null
+  return `Verfügbar ab ${new Date(rls.cooldownExpires).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr`
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ state, result }: {
+  state: TriggerState
+  result: { percentage?: number } | { findings?: number; costEur?: number } | { generated: number; totalCostEur: number } | null
+}) {
+  if (state !== 'done' || !result) return null
+
+  let label: string
+  if ('percentage' in result && result.percentage !== undefined) {
+    label = `${result.percentage.toFixed(1)}%`
+  } else if ('findings' in result && result.findings !== undefined) {
+    const r = result as { findings: number; costEur?: number }
+    label = `${r.findings} Findings · €${r.costEur?.toFixed(3)}`
+  } else {
+    const r = result as { generated: number; totalCostEur: number }
+    label = `${r.generated} Fixes · €${r.totalCostEur.toFixed(3)}`
+  }
+
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--accent)' }}>
+      <CheckCircle size={15} weight="fill" aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+function ReviewUsageHint({ rls }: { rls: RateLimitStatus }) {
+  if (!rls.allowed || rls.usedThisMonth === 0) return null
+  return (
+    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+      {rls.monthlyLimit - rls.usedThisMonth}/{rls.monthlyLimit}
+    </span>
+  )
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function AuditActions({ runId, reviewType, criticalCount, scanProjectId, initialLighthouseUrl, needsOnboarding, isExistingProject }: AuditActionsProps) {
   const router = useRouter()
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -37,14 +96,9 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [batchState, setBatchState] = useState<TriggerState>('idle')
   const [batchResult, setBatchResult] = useState<{ generated: number; totalCostEur: number } | null>(null)
-  const [exportOpen, setExportOpen] = useState(false)
   const [lighthouseUrl, setLighthouseUrl] = useState(initialLighthouseUrl ?? '')
-  const [mounted, setMounted] = useState(false)
   const [rateLimitStatus, setRateLimitStatus] = useState<RateLimitStatus | null>(null)
 
-  useEffect(() => { setMounted(true) }, [])
-
-  // Restore from localStorage on mount (fallback when no server-side URL)
   useEffect(() => {
     if (!initialLighthouseUrl) {
       const key = `lh_url_${scanProjectId ?? 'default'}`
@@ -53,7 +107,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     }
   }, [initialLighthouseUrl, scanProjectId])
 
-  // Fetch rate-limit status on mount (only when runId available = review button shown)
   useEffect(() => {
     if (!runId) return
     fetch('/api/audit/review/status')
@@ -63,7 +116,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
   }, [runId])
 
   async function handleTrigger() {
-    // Onboarding-Check: nur für externe Scan-Projekte mit fehlendem Profil
     if (needsOnboarding && !profileJustSet && scanProjectId) {
       setShowOnboarding(true)
       return
@@ -82,7 +134,7 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         body: JSON.stringify(body),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string; code?: string; hint?: string }
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string }
         if (data.code === 'LOCAL_ONLY') {
           setErrorMsg('Audit nur lokal ausführen: pnpm exec tsx src/scripts/run-audit.ts --skip-cli')
         } else {
@@ -157,29 +209,22 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
     }
   }
 
-  function handleExport(format: 'cursorrules' | 'claude-md') {
-    setExportOpen(false)
-    const params = new URLSearchParams({ format })
-    if (scanProjectId) params.set('projectId', scanProjectId)
-    window.location.href = `/api/audit/export-rules?${params.toString()}`
-  }
-
+  // Derived state
   const isAuditRunning  = auditState === 'running'
   const isReviewRunning = reviewState === 'running'
   const alreadyReviewed = reviewType === 'multi_model' && reviewState === 'idle'
-  const reviewBlocked = rateLimitStatus !== null && !rateLimitStatus.allowed
-  const reviewCooldownLabel = rateLimitStatus?.reason === 'cooldown' && rateLimitStatus.cooldownExpires
-    ? `Verfügbar ab ${new Date(rateLimitStatus.cooldownExpires).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr`
-    : null
-  const reviewUsageLabel = rateLimitStatus
-    ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} verbraucht`
-    : null
+  const reviewBlocked   = rateLimitStatus !== null && !rateLimitStatus.allowed
+  const cooldownLabel   = buildCooldownLabel(rateLimitStatus)
+  const reviewTitle     = buildReviewButtonTitle(rateLimitStatus, cooldownLabel)
+  const reviewLabel     = buildReviewButtonLabel(rateLimitStatus, alreadyReviewed)
+  const showDeepReviewHint = !alreadyReviewed && !!runId && reviewState === 'idle'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
       {/* Button row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* Primär: Audit starten — immer */}
+
+        {/* Audit starten */}
         <button
           key="audit-trigger"
           className="btn btn-primary"
@@ -192,36 +237,23 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
           {isAuditRunning ? 'Audit läuft…' : 'Audit starten'}
         </button>
 
-        {/* Sekundär: Deep Review */}
+        {/* Deep Review */}
         {runId && (
           <button
             key="deep-review"
             className="btn btn-ghost"
             onClick={handleDeepReview}
             disabled={isReviewRunning || isAuditRunning || reviewBlocked}
-            title={
-              rateLimitStatus?.reason === 'cooldown' && reviewCooldownLabel
-                ? reviewCooldownLabel
-                : rateLimitStatus?.reason === 'monthly-limit'
-                  ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} genutzt — monatliches Limit erreicht`
-                  : undefined
-            }
+            title={reviewTitle}
             style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: reviewBlocked ? 0.5 : 1 }}
           >
             <Brain size={15} weight="bold" aria-hidden="true" />
-            {rateLimitStatus?.reason === 'monthly-limit'
-              ? `${rateLimitStatus.usedThisMonth}/${rateLimitStatus.monthlyLimit} genutzt`
-              : alreadyReviewed ? 'Deep Review wiederholen' : 'Deep Review'}
-            {rateLimitStatus?.allowed && rateLimitStatus.usedThisMonth > 0 && (
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                {rateLimitStatus.monthlyLimit - rateLimitStatus.usedThisMonth}/{rateLimitStatus.monthlyLimit}
-              </span>
-            )}
+            {reviewLabel}
+            {rateLimitStatus && <ReviewUsageHint rls={rateLimitStatus} />}
           </button>
         )}
 
-        {/* Regeln exportieren — temporär ausgeblendet (gehört zu "Vibecoden von Beginn an"-Bereich, noch nicht konzeptioniert) */}
-
+        {/* Batch-Fix */}
         {runId && (criticalCount ?? 0) > 0 && (
           <button
             className="btn btn-ghost"
@@ -234,27 +266,12 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
           </button>
         )}
 
-        {auditState === 'done' && auditResult && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--accent)' }}>
-            <CheckCircle size={15} weight="fill" aria-hidden="true" />
-            {auditResult.percentage?.toFixed(1)}%
-          </span>
-        )}
+        {/* Result badges */}
+        <StatusBadge state={auditState} result={auditResult} />
+        <StatusBadge state={reviewState} result={reviewResult} />
+        <StatusBadge state={batchState} result={batchResult} />
 
-        {reviewState === 'done' && reviewResult && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--accent)' }}>
-            <CheckCircle size={15} weight="fill" aria-hidden="true" />
-            {reviewResult.findings} Findings · €{reviewResult.costEur?.toFixed(3)}
-          </span>
-        )}
-
-        {batchState === 'done' && batchResult && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--accent)' }}>
-            <CheckCircle size={15} weight="fill" aria-hidden="true" />
-            {batchResult.generated} Fixes · €{batchResult.totalCostEur.toFixed(3)}
-          </span>
-        )}
-
+        {/* Error */}
         {(auditState === 'error' || reviewState === 'error') && errorMsg && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--error)' }}>
             <WarningCircle size={15} weight="fill" aria-hidden="true" />
@@ -263,8 +280,8 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
         )}
       </div>
 
-      {/* Deep Review hint — shown before first review */}
-      {!alreadyReviewed && !!runId && reviewState === 'idle' && (
+      {/* Deep Review hint */}
+      {showDeepReviewHint && (
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '4px 10px', borderRadius: 4,
@@ -302,7 +319,6 @@ export default function AuditActions({ runId, reviewType, criticalCount, scanPro
           onComplete={() => {
             setShowOnboarding(false)
             setProfileJustSet(true)
-            // Profil gesetzt → Audit sofort starten (profileJustSet verhindert erneutes Modal)
             void handleTrigger()
           }}
         />

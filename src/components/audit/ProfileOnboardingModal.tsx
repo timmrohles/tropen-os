@@ -63,24 +63,35 @@ export function ProfileOnboardingModal({ scanProjectId, isExistingProject, initi
   const [error, setError] = useState<string | null>(null)
 
   const profileTypes: ProfileType[] = ['solo', 'internal', 'public', 'b2c', 'b2b_regulated']
+
+  function modalTitle(): string {
+    if (isEdit) return 'Welches Profil passt jetzt?'
+    if (isExistingProject) return 'Profil prüfen'
+    return 'Welche Art App baust du?'
+  }
   const geoScopes: GeoScope[] = ['eu', 'global', 'non_eu', 'none']
 
+
   function resolveWizardProfile(w: WizardState): ProfileType | null {
-    if (w.q1 === false) {
+    if (w.q1 === undefined) return null
+
+    if (!w.q1) {
       if (w.q2 === false) return 'solo'
       if (w.q2 === true) return 'internal'
       return null
     }
-    if (w.q1 === true) {
-      if (w.q2 === false) return 'public'
-      if (w.q2 === true) {
-        if (w.q3 === false) return 'public'
-        if (w.q3 === true) {
-          if (w.q4 === false) return 'b2c'
-          if (w.q4 === true) return 'b2b_regulated'
-        }
-      }
-    }
+
+    // q1 === true (publicly accessible)
+    if (w.q2 === false) return 'public'
+    if (w.q2 !== true) return null
+
+    // q1 && q2 === true (has login)
+    if (w.q3 === false) return 'public'
+    if (w.q3 !== true) return null
+
+    // q1 && q2 && q3 === true (data beyond login)
+    if (w.q4 === false) return 'b2c'
+    if (w.q4 === true) return 'b2b_regulated'
     return null
   }
 
@@ -138,7 +149,7 @@ export function ProfileOnboardingModal({ scanProjectId, isExistingProject, initi
               {isEdit ? 'PROFIL ÄNDERN' : 'PROFIL EINRICHTEN'}
             </p>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              {isEdit ? 'Welches Profil passt jetzt?' : (isExistingProject ? 'Profil prüfen' : 'Welche Art App baust du?')}
+              {modalTitle()}
             </h2>
             {isEdit && (
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6, marginBottom: 0 }}>

@@ -19,6 +19,67 @@ interface UseParallelTabsProps {
   onSendDirectToNewConv?: (text: string, convId: string, overrideClientPrefs?: Record<string, unknown>, displayText?: string) => void
 }
 
+// ── Shared helpers ─────────────────────────────────────────
+
+function buildTopicSnippet(text: string): string {
+  const firstLine = text.split('\n').find(l => l.trim()) ?? text
+  return firstLine.slice(0, 40).trim()
+}
+
+function withDirectInstruction(text: string): string {
+  return `${text}\n\n[Bitte antworte direkt und vollständig ohne Rückfragen.]`
+}
+
+async function createConversation(title: string, extraBody?: Record<string, unknown>): Promise<{ conversation_id: string } | null> {
+  try {
+    const r = await fetch('/api/conversations/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, ...extraBody }),
+    })
+    if (!r.ok) return null
+    return r.json() as Promise<{ conversation_id: string }>
+  } catch {
+    return null
+  }
+}
+
+async function drainStream(r: Response): Promise<void> {
+  if (!r.body) return
+  const reader = r.body.getReader()
+  while (true) {
+    const { done } = await reader.read()
+    if (done) break
+  }
+}
+
+async function fireAndForgetChat(
+  convId: string,
+  message: string,
+  accessToken: string,
+  workspaceId?: string,
+  clientPrefs?: Record<string, unknown>,
+): Promise<void> {
+  void fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-chat`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workspace_id: workspaceId,
+      conversation_id: convId,
+      message,
+      ...(clientPrefs ? { client_prefs: clientPrefs } : {}),
+    }),
+  }).then(drainStream).catch(() => {})
+}
+
+async function getAccessToken(): Promise<string | null> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
+// ── Hook ───────────────────────────────────────────────────
+
 export function useParallelTabs({
   workspaceId,
   input,
@@ -31,32 +92,24 @@ export function useParallelTabs({
   async function handleParallelConfirm() {
     if (!parallelConfirm || !onOpenParallelTabs || !onSendDirectToNewConv) return
     const { intent, originalInput } = parallelConfirm
+
     setParallelLoading(true)
     setParallelConfirm(null)
+
     try {
-      const firstLine = originalInput.split('\n').find(l => l.trim()) ?? originalInput
-      const topicSnippet = firstLine.slice(0, 40).trim()
-      const messageWithInstruction = `${originalInput}\n\n[Bitte antworte direkt und vollständig ohne Rückfragen.]`
+      const topicSnippet = buildTopicSnippet(originalInput)
+      const messageWithInstruction = withDirectInstruction(originalInput)
 
       // 1. Create N empty conversations
       const results = await Promise.all(
         intent.labels.map((label: string) =>
-          fetch('/api/conversations/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: `${label} — ${topicSnippet}` }),
-          }).then(async r => {
-            if (!r.ok) {
-              return null
-            }
-            return r.json() as Promise<{ conversation_id: string }>
-          }).catch(() => null)
+          createConversation(`${label} — ${topicSnippet}`)
         )
       )
 
       const items = results
-        .map((r: { conversation_id: string } | null, i: number) => r ? { convId: r.conversation_id, title: intent.labels[i] ?? `Tab ${i + 1}` } : null)
-        .filter((x: ParallelTabItem | null): x is ParallelTabItem => x !== null)
+        .map((r, i) => r ? { convId: r.conversation_id, title: intent.labels[i] ?? `Tab ${i + 1}` } : null)
+        .filter((x): x is ParallelTabItem => x !== null)
 
       if (!items.length) return
 
@@ -66,26 +119,14 @@ export function useParallelTabs({
       // 3. Active tab: initialise message list + stream response
       void onSendDirectToNewConv(messageWithInstruction, items[0].convId, undefined, originalInput)
 
-      // 4. Non-active tabs: fire-and-forget — drain stream so edge function saves to DB
-      if (items.length > 1) {
-        const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          for (const { convId } of items.slice(1)) {
-            void fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-chat`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ workspace_id: workspaceId, conversation_id: convId, message: messageWithInstruction }),
-            }).then(async r => {
-              if (!r.body) return
-              const reader = r.body.getReader()
-              while (true) {
-                const { done } = await reader.read()
-                if (done) break
-              }
-            }).catch(() => {})
-          }
-        }
+      // 4. Non-active tabs: fire-and-forget
+      if (items.length <= 1) return
+
+      const accessToken = await getAccessToken()
+      if (!accessToken) return
+
+      for (const { convId } of items.slice(1)) {
+        void fireAndForgetChat(convId, messageWithInstruction, accessToken, workspaceId)
       }
     } finally {
       setParallelLoading(false)
@@ -97,25 +138,16 @@ export function useParallelTabs({
     const trimmed = input.trim()
     if (!trimmed) return
 
-    const messageWithInstruction = `${trimmed}\n\n[Bitte antworte direkt und vollständig ohne Rückfragen.]`
-    const firstLine = trimmed.split('\n').find(l => l.trim()) ?? trimmed
-    const topicSnippet = firstLine.slice(0, 40).trim()
+    const messageWithInstruction = withDirectInstruction(trimmed)
+    const topicSnippet = buildTopicSnippet(trimmed)
 
     try {
       const results = await Promise.all(
         selectedModels.map(model =>
-          fetch('/api/conversations/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: `${model.display_name ?? model.name} — ${topicSnippet}`,
-              selected_model_id: model.id,
-            }),
-          }).then(async r => {
-            if (!r.ok) return null
-            const data = await r.json() as { conversation_id: string }
-            return { convId: data.conversation_id, model }
-          }).catch(() => null)
+          createConversation(
+            `${model.display_name ?? model.name} — ${topicSnippet}`,
+            { selected_model_id: model.id },
+          ).then(r => r ? { convId: r.conversation_id, model } : null)
         )
       )
 
@@ -131,30 +163,19 @@ export function useParallelTabs({
       void onSendDirectToNewConv(messageWithInstruction, items[0].convId, { selected_model_id: items[0].model.id }, trimmed)
 
       // Tabs 2+ — fire-and-forget with per-tab model in client_prefs
-      if (items.length > 1) {
-        const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          for (const item of items.slice(1)) {
-            void fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-chat`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                workspace_id: workspaceId,
-                conversation_id: item.convId,
-                message: messageWithInstruction,
-                client_prefs: { selected_model_id: item.model.id },
-              }),
-            }).then(async r => {
-              if (!r.body) return
-              const reader = r.body.getReader()
-              while (true) {
-                const { done } = await reader.read()
-                if (done) break
-              }
-            }).catch(() => {})
-          }
-        }
+      if (items.length <= 1) return
+
+      const accessToken = await getAccessToken()
+      if (!accessToken) return
+
+      for (const item of items.slice(1)) {
+        void fireAndForgetChat(
+          item.convId,
+          messageWithInstruction,
+          accessToken,
+          workspaceId,
+          { selected_model_id: item.model.id },
+        )
       }
     } catch { /* non-critical — tabs may partially open */ }
   }

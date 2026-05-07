@@ -38,6 +38,7 @@
   /* ─── Active/Selected (Schiefer-Pill) ───────────────── */
   --active-bg:      #1E2530;            /* Schiefer sehr dunkel — Hero, Code-Panel */
   --active-text:    #FFFFFF;
+  --code-fg:        #e8e6e1;            /* Codetext auf --active-bg */
 
   /* ─── Semantische Farben ────────────────────────────── */
   --success:        #5C8A52;            /* Grün-erfüllt — sehr sparsam */
@@ -303,7 +304,7 @@
   align-items: stretch;
 }
 .island {
-  background: color-mix(in srgb, var(--teal) 75%, white);
+  background: var(--teal);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
   padding: 18px 20px;
@@ -319,7 +320,7 @@
   font-weight: 800;
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.85);
+  color: #ffffff;
   text-transform: uppercase;
   margin: 0 0 12px;
   align-self: flex-start;

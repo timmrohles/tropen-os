@@ -143,6 +143,86 @@ function CardMenu({ wsId, onDelete, onCopy }: {
   )
 }
 
+// ── Workspace Card ────────────────────────────────────────────────────────────
+
+function WorkspaceCard({ ws, doneCount, onDelete, onCopy }: {
+  ws: Workspace
+  doneCount: number
+  onDelete: (id: string) => void
+  onCopy: (id: string) => void
+}) {
+  const cardCount = ws.cards?.[0]?.count ?? 0
+  const statusLabel = STATUS_LABEL[ws.status] ?? ws.status
+  const showProgress = !!ws.project_id && cardCount > 0
+  const progressPct = showProgress ? Math.round((doneCount / cardCount) * 100) : 0
+
+  return (
+    <div className="card" style={{ padding: '16px 18px', position: 'relative' }}>
+      {/* Clickable area — Link for proper navigation semantics */}
+      <Link
+        href={`/workspaces/${ws.id}`}
+        aria-label={`Workspace öffnen: ${ws.title}`}
+        style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+      >
+        {/* Title row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8, paddingRight: 28 }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
+            {ws.title}
+          </p>
+          <span style={{
+            fontSize: 10, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
+            background: ws.status === 'active' ? 'var(--accent)' : 'var(--bg-surface-2)',
+            color: ws.status === 'active' ? 'white' : 'var(--text-tertiary)',
+            border: `1px solid ${ws.status === 'active' ? 'var(--accent)' : 'var(--border)'}`,
+            fontWeight: 500,
+          }}>
+            {statusLabel}
+          </span>
+        </div>
+
+        {ws.goal && (
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            {ws.goal}
+          </p>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+          <SquaresFour size={12} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+            {cardCount} {cardCount === 1 ? 'Karte' : 'Karten'}
+          </span>
+        </div>
+
+        {/* Progress bar — only when workspace is linked to a project */}
+        {showProgress && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{
+              height: 4, borderRadius: 99, background: 'var(--border)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progressPct}%`,
+                background: 'var(--accent)',
+                borderRadius: 99,
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+              {doneCount} / {cardCount} bereit
+            </div>
+          </div>
+        )}
+      </Link>
+
+      {/* Menu — absolute positioned to avoid nesting inside <a> */}
+      <div style={{ position: 'absolute', top: 12, right: 12 }}>
+        <CardMenu wsId={ws.id} onDelete={onDelete} onCopy={onCopy} />
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function WorkspacesList({ workspaces: initial, doneCounts = {} }: {
@@ -258,78 +338,15 @@ export default function WorkspacesList({ workspaces: initial, doneCounts = {} }:
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-          {workspaces.map(ws => {
-            const cardCount = ws.cards?.[0]?.count ?? 0
-            const statusLabel = STATUS_LABEL[ws.status] ?? ws.status
-            const doneCount = doneCounts[ws.id] ?? 0
-            const showProgress = !!ws.project_id && cardCount > 0
-            const progressPct = showProgress ? Math.round((doneCount / cardCount) * 100) : 0
-            return (
-              <div key={ws.id} className="card" style={{ padding: '16px 18px', position: 'relative' }}>
-                {/* Clickable area — Link for proper navigation semantics */}
-                <Link
-                  href={`/workspaces/${ws.id}`}
-                  aria-label={`Workspace öffnen: ${ws.title}`}
-                  style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
-                >
-                  {/* Title row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8, paddingRight: 28 }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                      {ws.title}
-                    </p>
-                    <span style={{
-                      fontSize: 10, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
-                      background: ws.status === 'active' ? 'var(--accent)' : 'var(--bg-surface-2)',
-                      color: ws.status === 'active' ? 'white' : 'var(--text-tertiary)',
-                      border: `1px solid ${ws.status === 'active' ? 'var(--accent)' : 'var(--border)'}`,
-                      fontWeight: 500,
-                    }}>
-                      {statusLabel}
-                    </span>
-                  </div>
-
-                  {ws.goal && (
-                    <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                      {ws.goal}
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
-                    <SquaresFour size={12} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                      {cardCount} {cardCount === 1 ? 'Karte' : 'Karten'}
-                    </span>
-                  </div>
-
-                  {/* Progress bar — only when workspace is linked to a project */}
-                  {showProgress && (
-                    <div style={{ marginTop: 10 }}>
-                      <div style={{
-                        height: 4, borderRadius: 99, background: 'var(--border)',
-                        overflow: 'hidden',
-                      }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${progressPct}%`,
-                          background: progressPct === 100 ? 'var(--accent)' : 'var(--accent)',
-                          borderRadius: 99,
-                          transition: 'width 0.3s ease',
-                        }} />
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
-                        {doneCount} / {cardCount} bereit
-                      </div>
-                    </div>
-                  )}
-                </Link>
-
-                {/* Menu — absolute positioned to avoid nesting inside <a> */}
-                <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                  <CardMenu wsId={ws.id} onDelete={handleDelete} onCopy={handleCopy} />
-                </div>
-              </div>
-            )
-          })}
+          {workspaces.map(ws => (
+            <WorkspaceCard
+              key={ws.id}
+              ws={ws}
+              doneCount={doneCounts[ws.id] ?? 0}
+              onDelete={handleDelete}
+              onCopy={handleCopy}
+            />
+          ))}
         </div>
       )}
     </div>

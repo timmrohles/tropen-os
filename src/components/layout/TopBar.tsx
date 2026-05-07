@@ -16,6 +16,95 @@ interface Notif {
   createdAt: string
 }
 
+// ─── RoleSwitcher ─────────────────────────────────────────────────────────────
+
+const ROLE_LABELS: Record<string, { label: string; desc: string }> = {
+  superadmin: { label: 'Superadmin', desc: 'Vollzugriff auf alle Organisationen' },
+  admin:      { label: 'Admin',      desc: 'Organisations-Administrator' },
+  member:     { label: 'Member',     desc: 'Normales Mitglied — Chat, Projekte' },
+  viewer:     { label: 'Viewer',     desc: 'Lese-Zugriff, keine Erstellung' },
+}
+
+interface RoleSwitcherProps {
+  viewAs: AccountRole
+  onSelect: (role: AccountRole) => void
+}
+
+function RoleSwitcher({ viewAs, onSelect }: RoleSwitcherProps) {
+  return (
+    <div style={{ padding: '6px 8px 8px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: '0 6px', marginBottom: 6, fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        Ansicht als
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {(['superadmin', 'admin', 'member', 'viewer'] as const).map((role) => {
+          const active = viewAs === role
+          return (
+            <button
+              key={role}
+              type="button"
+              onClick={() => onSelect(role)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '7px 10px', border: 'none', cursor: 'pointer',
+                borderRadius: 8, textAlign: 'left',
+                fontFamily: 'var(--font-sans, system-ui)',
+                background: active ? 'var(--accent)' : 'transparent',
+                color: active ? '#fff' : 'var(--text-primary)',
+                transition: 'background var(--t-fast)',
+              }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset)' }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            >
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{ROLE_LABELS[role].label}</div>
+                <div style={{ fontSize: 11, opacity: 0.6, marginTop: 1 }}>{ROLE_LABELS[role].desc}</div>
+              </div>
+              {active && <span aria-hidden="true" style={{ fontSize: 12 }}>✓</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── TopBar ───────────────────────────────────────────────────────────────────
+
+const dropdownStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 'calc(var(--topbar-height) + 4px)',
+  right: 12,
+  background: '#ffffff',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+  boxShadow: 'var(--shadow-lg)',
+  zIndex: 300,
+  minWidth: 260,
+}
+
+const menuItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  width: '100%',
+  padding: '10px 14px',
+  fontSize: 13,
+  color: 'var(--text-secondary)',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  textAlign: 'left',
+}
+
+function resolveStoredViewAs(stored: string | null): AccountRole | null {
+  if (stored === ('solo' as string)) return 'member'
+  if (stored === ('org_admin' as string)) return 'admin'
+  if (stored) return stored as AccountRole
+  return null
+}
+
 export default function TopBar() {
   const supabase = createClient()
   const router = useRouter()
@@ -38,31 +127,32 @@ export default function TopBar() {
 
   useEffect(() => {
     setMounted(true)
-    const stored = sessionStorage.getItem(VIEW_AS_KEY) as AccountRole | null
-    if (stored === ('solo' as string)) {
-      sessionStorage.setItem(VIEW_AS_KEY, 'member')
-      setViewAs('member')
-    } else if (stored === ('org_admin' as string)) {
-      sessionStorage.setItem(VIEW_AS_KEY, 'admin')
-      setViewAs('admin')
-    } else if (stored) {
-      setViewAs(stored)
+
+    // Migrate stale sessionStorage values and restore view-as
+    const stored = sessionStorage.getItem(VIEW_AS_KEY)
+    const resolved = resolveStoredViewAs(stored)
+    if (resolved !== stored && resolved !== null) {
+      sessionStorage.setItem(VIEW_AS_KEY, resolved)
     }
+    if (resolved) setViewAs(resolved)
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role, full_name')
-        .eq('id', user.id)
-        .maybeSingle()
-      if (profile?.role === 'superadmin') setIsSuperadmin(true)
+    // Load user profile
+    supabase.auth.getUser()
+      .then(async ({ data: { user } }) => {
+        if (!user) return
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role, full_name')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (profile?.role === 'superadmin') setIsSuperadmin(true)
+        const name: string = profile?.full_name || user.email || ''
+        setUserName(name)
+        setUserInitial((name[0] ?? '?').toUpperCase())
+      })
+      .catch(() => {})
 
-      const name: string = profile?.full_name || user.email || ''
-      setUserName(name)
-      setUserInitial((name[0] ?? '?').toUpperCase())
-    }).catch(() => {})
-
+    // Load notifications
     fetch('/api/feeds/notifications?unread=true&limit=5')
       .then(r => r.ok ? r.json() : null)
       .then((data: { notifications: Notif[] } | null) => {
@@ -81,24 +171,28 @@ export default function TopBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Close panels on outside click
+  // Close panels on outside click / Escape
   useEffect(() => {
     if (!notifOpen && !accountOpen) return
+
     function onMouseDown(e: MouseEvent) {
-      if (
-        notifOpen &&
-        notifPanelRef.current && !notifPanelRef.current.contains(e.target as Node) &&
-        notifBtnRef.current && !notifBtnRef.current.contains(e.target as Node)
-      ) setNotifOpen(false)
-      if (
-        accountOpen &&
-        accountPanelRef.current && !accountPanelRef.current.contains(e.target as Node) &&
-        accountBtnRef.current && !accountBtnRef.current.contains(e.target as Node)
-      ) setAccountOpen(false)
+      const target = e.target as Node
+      if (notifOpen && notifPanelRef.current && !notifPanelRef.current.contains(target) &&
+          notifBtnRef.current && !notifBtnRef.current.contains(target)) {
+        setNotifOpen(false)
+      }
+      if (accountOpen && accountPanelRef.current && !accountPanelRef.current.contains(target) &&
+          accountBtnRef.current && !accountBtnRef.current.contains(target)) {
+        setAccountOpen(false)
+      }
     }
+
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setNotifOpen(false); setAccountOpen(false) }
+      if (e.key !== 'Escape') return
+      setNotifOpen(false)
+      setAccountOpen(false)
     }
+
     document.addEventListener('mousedown', onMouseDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
@@ -135,33 +229,6 @@ export default function TopBar() {
     document.cookie = 'onboarding_done=; max-age=0; path=/'
     document.cookie = 'is_superadmin=; max-age=0; path=/'
     router.push('/')
-  }
-
-  const dropdownStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 'calc(var(--topbar-height) + 4px)',
-    right: 12,
-    background: '#ffffff',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    boxShadow: 'var(--shadow-lg)',
-    zIndex: 300,
-    minWidth: 260,
-  }
-
-  const menuItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    width: '100%',
-    padding: '10px 14px',
-    fontSize: 13,
-    color: 'var(--text-secondary)',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    textAlign: 'left',
   }
 
   if (!mounted) return <header className="top-bar" role="banner" aria-label="App-Header" />
@@ -217,7 +284,6 @@ export default function TopBar() {
         onClick={handleAccountClick}
         className="topbar-account"
       >
-        {/* Avatar */}
         <span className="topbar-account__avatar" aria-hidden="true">
           {userInitial}
         </span>
@@ -247,48 +313,9 @@ export default function TopBar() {
             </div>
           </div>
 
-          {/* AccountSwitcher for superadmin — inline role list */}
+          {/* AccountSwitcher for superadmin */}
           {isSuperadmin && (
-            <div style={{ padding: '6px 8px 8px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ padding: '0 6px', marginBottom: 6, fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Ansicht als
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {(['superadmin', 'admin', 'member', 'viewer'] as const).map((role) => {
-                  const labels: Record<string, { label: string; desc: string }> = {
-                    superadmin: { label: 'Superadmin', desc: 'Vollzugriff auf alle Organisationen' },
-                    admin:      { label: 'Admin',      desc: 'Organisations-Administrator' },
-                    member:     { label: 'Member',     desc: 'Normales Mitglied — Chat, Projekte' },
-                    viewer:     { label: 'Viewer',     desc: 'Lese-Zugriff, keine Erstellung' },
-                  }
-                  const active = viewAs === role
-                  return (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => { handleViewAsChange(role); setAccountOpen(false) }}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: '100%', padding: '7px 10px', border: 'none', cursor: 'pointer',
-                        borderRadius: 8, textAlign: 'left',
-                        fontFamily: 'var(--font-sans, system-ui)',
-                        background: active ? 'var(--accent)' : 'transparent',
-                        color: active ? '#fff' : 'var(--text-primary)',
-                        transition: 'background var(--t-fast)',
-                      }}
-                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset)' }}
-                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 500 }}>{labels[role].label}</div>
-                        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 1 }}>{labels[role].desc}</div>
-                      </div>
-                      {active && <span aria-hidden="true" style={{ fontSize: 12 }}>✓</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <RoleSwitcher viewAs={viewAs} onSelect={handleViewAsChange} />
           )}
 
           {/* Menu items */}

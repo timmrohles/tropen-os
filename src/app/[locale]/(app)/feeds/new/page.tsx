@@ -34,6 +34,266 @@ const TYPES: Array<{ type: FeedSourceType; icon: React.ReactNode; name: string; 
   { type: 'url',   icon: <Globe size={28} weight="fill" color="var(--text-primary)" />,     name: 'Website',    desc: '⚠ Rechtl. beachten' },
 ]
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function isStep2Valid(type: FeedSourceType, name: string, url: string, disclaimerChecked: boolean): boolean {
+  if (!name.trim()) return false
+  if (type !== 'email' && !url.trim()) return false
+  if (type === 'url' && !disclaimerChecked) return false
+  return true
+}
+
+function addKeyword(kw: string, list: string[], setList: (v: string[]) => void) {
+  const trimmed = kw.trim()
+  if (trimmed && !list.includes(trimmed)) setList([...list, trimmed])
+}
+
+// ── Step sub-components ───────────────────────────────────────────────────────
+
+function StepTypeSelect({ type, onSelect }: { type: FeedSourceType; onSelect: (t: FeedSourceType) => void }) {
+  return (
+    <>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>Welche Art von Quelle möchtest du hinzufügen?</p>
+      <div style={s.types}>
+        {TYPES.map(({ type: t, icon, name: n, desc }) => (
+          <div
+            key={t}
+            role="button"
+            tabIndex={0}
+            style={{ ...s.typeCard, ...(type === t ? s.typeCardActive : {}) }}
+            onClick={() => onSelect(t)}
+            onKeyDown={(e) => e.key === 'Enter' && onSelect(t)}
+            aria-pressed={type === t}
+          >
+            <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center' }}>{icon}</div>
+            <div style={s.typeName}>{n}</div>
+            <div style={s.typeDesc}>{desc}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function UrlField({ type, url, onUrlChange }: { type: FeedSourceType; url: string; onUrlChange: (v: string) => void }) {
+  const label = type === 'rss' ? 'Feed-URL' : type === 'api' ? 'API-Endpoint' : 'Seiten-URL'
+  return (
+    <div style={s.field}>
+      <label htmlFor="source-url" style={s.label}>{label}</label>
+      <input id="source-url" style={s.input} value={url} onChange={(e) => onUrlChange(e.target.value)} placeholder="https://" type="url" />
+    </div>
+  )
+}
+
+function ScrapingDisclaimer({ cssSelector, onCssSelectorChange, disclaimerChecked, onDisclaimerChange }: {
+  cssSelector: string
+  onCssSelectorChange: (v: string) => void
+  disclaimerChecked: boolean
+  onDisclaimerChange: (v: boolean) => void
+}) {
+  return (
+    <>
+      <div style={s.warn} role="alert">
+        <strong>Rechtlicher Hinweis:</strong> Web-Scraping kann gegen die Nutzungsbedingungen einer Website verstoßen. Stelle sicher, dass du berechtigt bist, diese Seite automatisiert abzurufen. Prüfe robots.txt und AGB der Zielseite. Tropen OS prüft robots.txt automatisch und übernimmt keine Haftung.
+      </div>
+      <div style={s.field}>
+        <label style={{ ...s.label, display: 'flex', gap: 8, cursor: 'pointer', alignItems: 'flex-start' }}>
+          <input
+            type="checkbox"
+            checked={disclaimerChecked}
+            onChange={(e) => onDisclaimerChange(e.target.checked)}
+            aria-label="Rechtlichen Hinweis bestätigen"
+            style={{ marginTop: 2, flexShrink: 0 }}
+          />
+          Ich habe die rechtliche Situation geprüft und übernehme die Verantwortung.
+        </label>
+      </div>
+      <div style={s.field}>
+        <label htmlFor="css-selector" style={s.label}>CSS-Selektor (optional)</label>
+        <input id="css-selector" style={s.input} value={cssSelector} onChange={(e) => onCssSelectorChange(e.target.value)} placeholder="article.news-item" />
+        <div style={s.hint}>Welche Elemente sollen extrahiert werden? Leer = automatisch.</div>
+      </div>
+    </>
+  )
+}
+
+function StepDetails({ type, name, url, cssSelector, disclaimerChecked, onNameChange, onUrlChange, onCssSelectorChange, onDisclaimerChange }: {
+  type: FeedSourceType
+  name: string
+  url: string
+  cssSelector: string
+  disclaimerChecked: boolean
+  onNameChange: (v: string) => void
+  onUrlChange: (v: string) => void
+  onCssSelectorChange: (v: string) => void
+  onDisclaimerChange: (v: boolean) => void
+}) {
+  return (
+    <>
+      <div style={s.field}>
+        <label htmlFor="source-name" style={s.label}>Name der Quelle</label>
+        <input id="source-name" style={s.input} value={name} onChange={(e) => onNameChange(e.target.value)} placeholder="z.B. TechCrunch AI" />
+      </div>
+
+      {type === 'email' ? (
+        <div style={s.field}>
+          <label style={s.label}>Inbound-Adresse</label>
+          <div style={s.hint}>Eine eindeutige Adresse wird beim Speichern generiert. Abonniere deinen Newsletter mit dieser Adresse.</div>
+        </div>
+      ) : (
+        <UrlField type={type} url={url} onUrlChange={onUrlChange} />
+      )}
+
+      {type === 'url' && (
+        <ScrapingDisclaimer
+          cssSelector={cssSelector}
+          onCssSelectorChange={onCssSelectorChange}
+          disclaimerChecked={disclaimerChecked}
+          onDisclaimerChange={onDisclaimerChange}
+        />
+      )}
+    </>
+  )
+}
+
+function KeywordChip({ kw, onRemove, danger }: { kw: string; onRemove: () => void; danger?: boolean }) {
+  if (danger) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 20, background: 'var(--error-bg)', border: '1px solid var(--error)', fontSize: 12, color: 'var(--error)' }}>
+        {kw}
+        <button type="button" className="btn-icon" onClick={onRemove} aria-label={`${kw} entfernen`}>×</button>
+      </span>
+    )
+  }
+  return (
+    <span className="chip chip--active" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {kw}
+      <button type="button" className="btn-icon" onClick={onRemove} aria-label={`${kw} entfernen`}>×</button>
+    </span>
+  )
+}
+
+function KeywordField({ id, label, value, chips, chipsDanger, ariaChipsLabel, onValueChange, onAdd, onRemove }: {
+  id: string
+  label: string
+  value: string
+  chips: string[]
+  chipsDanger?: boolean
+  ariaChipsLabel: string
+  onValueChange: (v: string) => void
+  onAdd: () => void
+  onRemove: (kw: string) => void
+}) {
+  return (
+    <div style={s.field}>
+      <label htmlFor={id} style={s.label}>{label}</label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          id={id}
+          style={{ ...s.input, flex: 1 }}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') onAdd() }}
+          placeholder={id === 'kw-include' ? 'z.B. AI, LLM' : 'z.B. sponsored, Werbung'}
+        />
+        <button
+          className="btn btn-ghost btn-sm"
+          type="button"
+          onClick={onAdd}
+          aria-label="Keyword hinzufügen"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
+          <Plus size={14} weight="bold" aria-hidden="true" /> Hinzufügen
+        </button>
+      </div>
+      <div style={s.chips} aria-label={ariaChipsLabel}>
+        {chips.map((kw) => (
+          <KeywordChip key={kw} kw={kw} onRemove={() => onRemove(kw)} danger={chipsDanger} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StepFilters({ keywordsInclude, keywordsExclude, minScore, kwInput, kwExInput, onKwInputChange, onKwExInputChange, onAddInclude, onAddExclude, onRemoveInclude, onRemoveExclude, onMinScoreChange }: {
+  keywordsInclude: string[]
+  keywordsExclude: string[]
+  minScore: number
+  kwInput: string
+  kwExInput: string
+  onKwInputChange: (v: string) => void
+  onKwExInputChange: (v: string) => void
+  onAddInclude: () => void
+  onAddExclude: () => void
+  onRemoveInclude: (kw: string) => void
+  onRemoveExclude: (kw: string) => void
+  onMinScoreChange: (v: number) => void
+}) {
+  return (
+    <>
+      <KeywordField
+        id="kw-include"
+        label="Keywords — mindestens eines muss vorkommen"
+        value={kwInput}
+        chips={keywordsInclude}
+        ariaChipsLabel="Ausgewählte Keywords"
+        onValueChange={onKwInputChange}
+        onAdd={onAddInclude}
+        onRemove={onRemoveInclude}
+      />
+      <KeywordField
+        id="kw-exclude"
+        label="Keywords ausschließen"
+        value={kwExInput}
+        chips={keywordsExclude}
+        chipsDanger
+        ariaChipsLabel="Ausgeschlossene Keywords"
+        onValueChange={onKwExInputChange}
+        onAdd={onAddExclude}
+        onRemove={onRemoveExclude}
+      />
+      <div style={s.field}>
+        <label htmlFor="min-score" style={s.label}>Relevanz-Schwelle: {minScore}/10</label>
+        <input
+          id="min-score"
+          type="range"
+          min={1}
+          max={10}
+          value={minScore}
+          onChange={(e) => onMinScoreChange(Number(e.target.value))}
+          style={{ width: '100%', accentColor: 'var(--accent)' }}
+          aria-valuemin={1}
+          aria-valuemax={10}
+          aria-valuenow={minScore}
+          aria-label={`Relevanz-Schwelle: ${minScore} von 10`}
+        />
+        <p className="form-hint">
+          Artikel werden von KI auf Relevanz bewertet (Score 1–10).{' '}
+          Nur Artikel <strong>ab diesem Score</strong> werden angezeigt.{' '}
+          <span className="form-hint-option">5 – großzügig</span>{' '}
+          <span className="form-hint-recommended">6 – empfohlen</span>{' '}
+          <span className="form-hint-option">8 – streng</span>
+        </p>
+      </div>
+    </>
+  )
+}
+
+function StepOutputs() {
+  return (
+    <div>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>
+        Soll dieser Feed automatisch Wissen in ein Projekt oder einen Workspace einspeisen?
+      </p>
+      <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+        Zuordnungen können nach dem Speichern in den Quellen-Einstellungen konfiguriert werden.
+      </p>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function NewFeedPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
@@ -52,19 +312,16 @@ export default function NewFeedPage() {
   const [fetchResult, setFetchResult] = useState<{ itemsSaved: number } | null>(null)
   const [error, setError] = useState('')
 
-  const addKw = (kw: string, list: string[], setList: (v: string[]) => void) => {
-    const trimmed = kw.trim()
-    if (trimmed && !list.includes(trimmed)) setList([...list, trimmed])
-  }
-
   const handleSubmit = async () => {
     setError('')
     if (!name.trim()) { setError('Name ist erforderlich'); return }
     if (type !== 'email' && !url.trim()) { setError('URL ist erforderlich'); return }
     if (type === 'url' && !disclaimerChecked) { setError('Bitte bestätige den Disclaimer'); return }
+
     setSaving(true)
     const config: Record<string, unknown> = { polling_interval_minutes: type === 'url' ? 360 : 60 }
     if (type === 'url') { config.css_selector = cssSelector; config.disclaimer_acknowledged = true }
+
     const result = await createFeedSource({ name, type, url: url || undefined, config, keywordsInclude, keywordsExclude, minScore })
     setSaving(false)
     if ('error' in result) { setError(result.error ?? ''); return }
@@ -82,9 +339,10 @@ export default function NewFeedPage() {
     router.push('/feeds')
   }
 
-  const canNext = step === 1 ? true
-    : step === 2 ? (name.trim().length > 0 && (type === 'email' || url.trim().length > 0) && (type !== 'url' || disclaimerChecked))
-    : true
+  const canNext = step !== 2 || isStep2Valid(type, name, url, disclaimerChecked)
+
+  const addInclude = () => { addKeyword(kwInput, keywordsInclude, setKeywordsInclude); setKwInput('') }
+  const addExclude = () => { addKeyword(kwExInput, keywordsExclude, setKeywordsExclude); setKwExInput('') }
 
   return (
     <div className="content-narrow">
@@ -102,175 +360,40 @@ export default function NewFeedPage() {
         ))}
       </div>
 
-      {step === 1 && (
-        <>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>Welche Art von Quelle möchtest du hinzufügen?</p>
-          <div style={s.types}>
-            {TYPES.map(({ type: t, icon, name: n, desc }) => (
-              <div
-                key={t}
-                role="button"
-                tabIndex={0}
-                style={{ ...s.typeCard, ...(type === t ? s.typeCardActive : {}) }}
-                onClick={() => setType(t)}
-                onKeyDown={(e) => e.key === 'Enter' && setType(t)}
-                aria-pressed={type === t}
-              >
-                <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center' }}>{icon}</div>
-                <div style={s.typeName}>{n}</div>
-                <div style={s.typeDesc}>{desc}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      {step === 1 && <StepTypeSelect type={type} onSelect={setType} />}
 
       {step === 2 && (
-        <>
-          <div style={s.field}>
-            <label htmlFor="source-name" style={s.label}>Name der Quelle</label>
-            <input id="source-name" style={s.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="z.B. TechCrunch AI" />
-          </div>
-
-          {type === 'email' ? (
-            <div style={s.field}>
-              <label style={s.label}>Inbound-Adresse</label>
-              <div style={s.hint}>Eine eindeutige Adresse wird beim Speichern generiert. Abonniere deinen Newsletter mit dieser Adresse.</div>
-            </div>
-          ) : (
-            <div style={s.field}>
-              <label htmlFor="source-url" style={s.label}>{type === 'rss' ? 'Feed-URL' : type === 'api' ? 'API-Endpoint' : 'Seiten-URL'}</label>
-              <input id="source-url" style={s.input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" type="url" />
-            </div>
-          )}
-
-          {type === 'url' && (
-            <>
-              <div style={s.warn} role="alert">
-                <strong>Rechtlicher Hinweis:</strong> Web-Scraping kann gegen die Nutzungsbedingungen einer Website verstoßen. Stelle sicher, dass du berechtigt bist, diese Seite automatisiert abzurufen. Prüfe robots.txt und AGB der Zielseite. Tropen OS prüft robots.txt automatisch und übernimmt keine Haftung.
-              </div>
-              <div style={s.field}>
-                <label style={{ ...s.label, display: 'flex', gap: 8, cursor: 'pointer', alignItems: 'flex-start' }}>
-                  <input
-                    type="checkbox"
-                    checked={disclaimerChecked}
-                    onChange={(e) => setDisclaimerChecked(e.target.checked)}
-                    aria-label="Rechtlichen Hinweis bestätigen"
-                    style={{ marginTop: 2, flexShrink: 0 }}
-                  />
-                  Ich habe die rechtliche Situation geprüft und übernehme die Verantwortung.
-                </label>
-              </div>
-              <div style={s.field}>
-                <label htmlFor="css-selector" style={s.label}>CSS-Selektor (optional)</label>
-                <input id="css-selector" style={s.input} value={cssSelector} onChange={(e) => setCssSelector(e.target.value)} placeholder="article.news-item" />
-                <div style={s.hint}>Welche Elemente sollen extrahiert werden? Leer = automatisch.</div>
-              </div>
-            </>
-          )}
-        </>
+        <StepDetails
+          type={type}
+          name={name}
+          url={url}
+          cssSelector={cssSelector}
+          disclaimerChecked={disclaimerChecked}
+          onNameChange={setName}
+          onUrlChange={setUrl}
+          onCssSelectorChange={setCssSelector}
+          onDisclaimerChange={setDisclaimerChecked}
+        />
       )}
 
       {step === 3 && (
-        <>
-          <div style={s.field}>
-            <label htmlFor="kw-include" style={s.label}>Keywords — mindestens eines muss vorkommen</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                id="kw-include"
-                style={{ ...s.input, flex: 1 }}
-                value={kwInput}
-                onChange={(e) => setKwInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { addKw(kwInput, keywordsInclude, setKeywordsInclude); setKwInput('') } }}
-                placeholder="z.B. AI, LLM"
-              />
-              <button
-                className="btn btn-ghost btn-sm"
-                type="button"
-                onClick={() => { addKw(kwInput, keywordsInclude, setKeywordsInclude); setKwInput('') }}
-                aria-label="Keyword hinzufügen"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              >
-                <Plus size={14} weight="bold" aria-hidden="true" /> Hinzufügen
-              </button>
-            </div>
-            <div style={s.chips} aria-label="Ausgewählte Keywords">
-              {keywordsInclude.map((kw) => (
-                <span key={kw} className="chip chip--active" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  {kw}
-                  <button type="button" className="btn-icon" onClick={() => setKeywordsInclude(keywordsInclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div style={s.field}>
-            <label htmlFor="kw-exclude" style={s.label}>Keywords ausschließen</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                id="kw-exclude"
-                style={{ ...s.input, flex: 1 }}
-                value={kwExInput}
-                onChange={(e) => setKwExInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { addKw(kwExInput, keywordsExclude, setKeywordsExclude); setKwExInput('') } }}
-                placeholder="z.B. sponsored, Werbung"
-              />
-              <button
-                className="btn btn-ghost btn-sm"
-                type="button"
-                onClick={() => { addKw(kwExInput, keywordsExclude, setKeywordsExclude); setKwExInput('') }}
-                aria-label="Ausschluss-Keyword hinzufügen"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              >
-                <Plus size={14} weight="bold" aria-hidden="true" /> Hinzufügen
-              </button>
-            </div>
-            <div style={s.chips} aria-label="Ausgeschlossene Keywords">
-              {keywordsExclude.map((kw) => (
-                <span key={kw} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 20, background: 'var(--error-bg)', border: '1px solid var(--error)', fontSize: 12, color: 'var(--error)' }}>
-                  {kw}
-                  <button type="button" className="btn-icon" onClick={() => setKeywordsExclude(keywordsExclude.filter((k) => k !== kw))} aria-label={`${kw} entfernen`}>×</button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div style={s.field}>
-            <label htmlFor="min-score" style={s.label}>Relevanz-Schwelle: {minScore}/10</label>
-            <input
-              id="min-score"
-              type="range"
-              min={1}
-              max={10}
-              value={minScore}
-              onChange={(e) => setMinScore(Number(e.target.value))}
-              style={{ width: '100%', accentColor: 'var(--accent)' }}
-              aria-valuemin={1}
-              aria-valuemax={10}
-              aria-valuenow={minScore}
-              aria-label={`Relevanz-Schwelle: ${minScore} von 10`}
-            />
-            <p className="form-hint">
-              Artikel werden von KI auf Relevanz bewertet (Score 1–10).{' '}
-              Nur Artikel <strong>ab diesem Score</strong> werden angezeigt.{' '}
-              <span className="form-hint-option">5 – großzügig</span>{' '}
-              <span className="form-hint-recommended">6 – empfohlen</span>{' '}
-              <span className="form-hint-option">8 – streng</span>
-            </p>
-          </div>
-        </>
+        <StepFilters
+          keywordsInclude={keywordsInclude}
+          keywordsExclude={keywordsExclude}
+          minScore={minScore}
+          kwInput={kwInput}
+          kwExInput={kwExInput}
+          onKwInputChange={setKwInput}
+          onKwExInputChange={setKwExInput}
+          onAddInclude={addInclude}
+          onAddExclude={addExclude}
+          onRemoveInclude={(kw) => setKeywordsInclude(keywordsInclude.filter((k) => k !== kw))}
+          onRemoveExclude={(kw) => setKeywordsExclude(keywordsExclude.filter((k) => k !== kw))}
+          onMinScoreChange={setMinScore}
+        />
       )}
 
-      {step === 4 && (
-        <div>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>
-            Soll dieser Feed automatisch Wissen in ein Projekt oder einen Workspace einspeisen?
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-            Zuordnungen können nach dem Speichern in den Quellen-Einstellungen konfiguriert werden.
-          </p>
-        </div>
-      )}
+      {step === 4 && <StepOutputs />}
 
       {error && (
         <div style={{ padding: '12px 16px', background: 'var(--error-bg)', border: '1px solid var(--error)', borderRadius: 8, fontSize: 13, color: 'var(--error)', marginTop: 12, lineHeight: 1.5 }} role="alert">
