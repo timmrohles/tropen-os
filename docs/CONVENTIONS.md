@@ -138,6 +138,27 @@ Manche AI-Bau-Tools (Claude, Cursor, ChatGPT) bieten Memory-Systeme, die Projekt
 
 ---
 
+## Brainstorms und Roh-Material
+
+Brainstorms, Ideen-Sammlungen, Sparring-Notizen sind kein Singleton-Material — mehrere parallele Dateien zum gleichen Thema sind erlaubt, weil sie Roh-Material sind, keine normative Aussage.
+
+**Sonderbereich:** `docs/active/brainstorms/[thema]/`
+
+- Singleton-Regel ausgesetzt — mehrere Dateien zum gleichen Thema möglich
+- Frontmatter trotzdem Pflicht (`status: draft` Default)
+- `review_by` default 30 Tage (kürzer als bei sonstigen drafts) — Brainstorms sind Roh-Material, das schnell entweder zu einer normativen Datei reift oder ins Archive wandert
+- Datei-Namen: `[YYYY-MM-DD]-[kurz-titel].md`
+
+**Lifecycle:**
+1. Brainstorm wird in `docs/active/brainstorms/[thema]/` angelegt (`status: draft`)
+2. Wenn aus Brainstorms eine Entscheidung erwächst → ADR oder normative Datei in `docs/active/`
+3. Brainstorm-Quelldatei nach Entscheidung: `status: archived`, nach `docs/archive/YYYY-MM/brainstorms/`
+4. Wenn Brainstorm 30 Tage liegt ohne Aktion: archivieren oder löschen, kein "schwebendes Roh-Material"
+
+**Was Brainstorms nicht sind:** keine Roadmaps, keine Strategien, keine Pläne. Wenn ein Dokument Roadmap-Charakter bekommt, gehört es nach `docs/active/`, nicht in den Brainstorm-Bereich.
+
+---
+
 ## Drift-Schutz-Mechaniken
 
 Drei Mechaniken laufen parallel:
