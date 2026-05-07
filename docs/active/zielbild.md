@@ -13,7 +13,7 @@ superseded_by: null
 > **Vorgänger:** `docs/archive/2026-05/zielbild-2026-q3-v2.md`
 > **Erstellt:** 2026-05-07
 > **Quelle:** Sparring (8 Achsen) + K0 + K0.5 + K0.6 + Repo-Bestandsaufnahme 2026-05-07
-> **Status:** Entwurf für ADR-031. 24h-Wait nach Doku-Fertigstellung.
+> **Status:** Entwurf für ADR-028. 24h-Wait nach Doku-Fertigstellung.
 
 ---
 
@@ -208,6 +208,16 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 | 6 | Abgelaufenes `review_by` bei `status: active` | Info |
 | 7 | Inkonsistente Status-Werte (außerhalb erlaubter Liste) | Should |
 | 8 | Supersedes-Link zeigt auf nicht-existente Datei | Should |
+| 9 | Außen-Sicht-Drift: Top-Level-Doku-Dateien (README, CHANGELOG, package.json) enthalten Fakten/Zahlen/Pfade, die von normativen Quellen abweichen | Should/Critical |
+
+**Severity-Differenzierung Finding 9:**
+
+- **Critical** — Außen-Sicht und normative Quelle dokumentieren unterschiedliche Werte zum *gleichen* Schwellwert/Konzept (z.B. README sagt "85% = Production Grade", CLAUDE.md sagt "90% = Production Grade").
+- **Should** — Außen-Sicht enthält veraltete Zahlen oder Pfade ohne direkten Widerspruch.
+
+**Erkennung:** Pattern-Match: Zahlen, Pfade, Schwellwerte in README/CHANGELOG/package.json. Cross-Check gegen `docs/active/` und CLAUDE.md. Falsifikation manuell — daher Should-Default, Critical nur bei strikt identischer Begriffs-Verwendung.
+
+**Empirisch validiert:** Im README-Mini-Sprint 2026-05-07 war die Score-Schwellen-Diskrepanz (README 85% vs. CLAUDE.md 90%) ein Finding-9-Critical-Treffer.
 
 **Was Tropen nicht tut:** Inhaltliche Bewertung, automatische Datei-Löschung ohne User-Bestätigung, Eingriff in Code-Inline-Doku.
 
@@ -343,21 +353,25 @@ Sechs Bausteine: (1) Daten-Eigentum User 100%, (2) Free/Pro-Audit lokal, (3) Kom
 
 ## Teil H — Quellen-Lücken aus Inventur
 
-*Geklärt 2026-05-07. Handover: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`*
+Stand 2026-05-07: Alle sieben Lücken aus der Repo-Inventur (2026-05-07) sind geschlossen.
 
-1. ✅ **GESCHLOSSEN — Regelzahl-Diskrepanz:** Verifizierter Wert: **255 Regeln** in `src/lib/audit/rule-registry.ts` (Python-Zählung aller rule IDs, keine Duplikate). CLAUDE.md aktualisiert auf 255 (Stand 2026-05-07).
+| # | Lücke | Status | Befund |
+|---|---|---|---|
+| 1 | Regelzahl-Diskrepanz | ✅ Geschlossen | 255 Regeln im Code bestätigt (rule-registry.ts). CLAUDE.md aktualisiert. |
+| 2 | Skills 4–6 | ✅ Geschlossen | Vollständig: `knowledge_extract`, `report_write`, `social_media_adapt`. Migration `20260318000047_skills.sql` verifiziert. |
+| 3 | ADR-Nummern-Lücken 028–030 | ✅ Geschlossen | Wurden nie angelegt — keine echte Lücke. Nächste freie Nummer: ADR-028 (für Pivot zur Begleitplattform). |
+| 4 | `connections`-Tabelle | ✅ Geschlossen | Quelle: `031_workspaces_schema.sql`. Aktiv produktiv genutzt. |
+| 5 | `workspace_*`-Tabellen | ✅ Geschlossen | `workspace_assets`, `workspace_exports`, `workspace_messages`, `workspace_participants` — alle vier aktiv produktiv. `workspace_messages` ist Kern-Chat-Tabelle (Recycling-Basis für Begleiter-Chat). |
+| 6 | `docs/inventory/` vs. `docs/inventur/` | ✅ Geschlossen | Beide Verzeichnisse leer, werden in Aktion 4 entfernt. |
+| 7 | ADR-021 Veredler vs. v3 "Phase 2" | ✅ Geschlossen | ADR-021 auf `status: superseded` gesetzt mit Verweis auf v3. |
 
-2. ✅ **GESCHLOSSEN — Skills 4–6:** Vollständig verifiziert in `supabase/migrations/20260318000047_skills.sql`. Skill 4: `knowledge_extract` / Wissensextraktion (scope: system, output: json). Skill 5: `report_write` / Berichterstellung (scope: system, output: artifact). Skill 6: `social_media_adapt` / Social-Media-Adaption (scope: package, requires_package: marketing).
+**Plus ein Folge-Drift entdeckt und korrigiert:**
 
-3. ✅ **GESCHLOSSEN — ADR-Nummern-Lücken 028–030:** `docs/decisions/` enthält ADR-001 bis ADR-027. Nummern 028–030 existieren nicht — nie angelegt, keine Lücke durch verworfene ADRs. Nächste freie Nummer: ADR-028.
+| Drift | Status | Aktion |
+|---|---|---|
+| `docs/active/audit-system.md` zeigte 85%-Schwelle, Code sagt 90% | ✅ Korrigiert 2026-05-07 | Doku auf 90/80/60 angepasst — Code ist Wahrheit |
 
-4. ✅ **GESCHLOSSEN — `connections`-Tabelle:** Definiert in `supabase/migrations/031_workspaces_schema.sql`. Aktiv produktiv genutzt in `src/actions/connections.ts`, `src/lib/workspace-context.ts`, `src/lib/stale-propagation.ts` und mehreren API-Routes.
-
-5. ✅ **GESCHLOSSEN — `workspace_assets/exports/messages/participants`:** Alle vier Tabellen verifiziert. `workspace_assets`: in `031_workspaces_schema.sql` (nein — in `20260314000035_workspace_plan_c.sql`), aktiv genutzt in `/api/workspaces/[id]/assets/`. `workspace_exports`: in `20260314000035_workspace_plan_c.sql`, aktiv genutzt in `/api/workspaces/[id]/export/`. `workspace_messages`: in `20260314000035_workspace_plan_c.sql`, aktiv genutzt (Kern-Chat-Tabelle). `workspace_participants`: in `031_workspaces_schema.sql`, aktiv genutzt in `src/actions/workspaces.ts`. Zusätzlich: `messages` (aus `001_initial.sql`) und `project_participants` (aus `030_projects_schema.sql`) ebenfalls aktiv.
-
-6. ✅ **GESCHLOSSEN — `docs/inventory/` vs. `docs/inventur/`:** Beide Verzeichnisse existieren und sind vollständig leer (keine Dateien). Keine Verschiebung nötig. Verzeichnisse können bei Bedarf entfernt werden.
-
-7. ✅ **GESCHLOSSEN — ADR-021 Prompt-Veredler vs. v3:** ADR-021 auf `status: superseded` / `superseded_by: docs/active/zielbild.md` gesetzt. Status-Notiz oben im Body ergänzt.
+Quellen: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`, `docs/archive/2026-05/readme-mini-sprint-handover-2026-05-07.md`.
 
 ---
 
@@ -399,14 +413,14 @@ Sechs Bausteine: (1) Daten-Eigentum User 100%, (2) Free/Pro-Audit lokal, (3) Kom
 
 **Was diese Version 3 ist:**
 - Ergebnis aus Sparring + drei Komitee-Sprints (€3.50, 14 Modell-Aggregationen) + vollständiger Repo-Inventur.
-- Grundlage für ADR-031. **24h-Wait nach v3-Fertigstellung.**
+- Grundlage für ADR-028. **24h-Wait nach v3-Fertigstellung.**
 - Normative Quelle bis durch ADR ersetzt.
 - **Vier markierte Wetten** mit Falsifikations-Kriterien.
 - **Sieben Quellen-Lücken** offen dokumentiert.
 
 **Was sie nicht ist:** Keine Build-Anweisung. Keine endgültige Roadmap.
 
-**Pivot-Disziplin:** ADR-031 + 24h-Wait sind Pflicht.
+**Pivot-Disziplin:** ADR-028 + 24h-Wait sind Pflicht.
 
 ---
 
