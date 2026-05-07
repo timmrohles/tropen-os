@@ -170,14 +170,16 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 **Vier Use-Cases nach MVP-Priorität:**
 1. Audit (heute aktiv) — Kern, läuft mit 255 Regeln
 2. Fix-Prompts copy-paste-fähig — heute aktiv
-3. Prompt-Veredler — Phase 2
+3. Veredler-Skelett — Foundation Phase 1. Vollausbau (Tag-/Embedding-Selektion) ist Phase 2.
 4. Initial-Compliance-Checkliste im "Idee/nichts"-Eintritt — Phase 1, neu
+
+> **ADR-028:** Mit dem Pivot zur Begleitplattform braucht Achse 5 (Begleiter-Chat) den Veredler als Differenzierer. Das Skelett geht daher in Foundation (Phase 1). Die technische Selektions-Architektur (Tag vs. Embedding) bleibt Phase 2 — K2-Komitee ist erst bei Vollausbau relevant.
 
 **Substanz-Stand (aus Inventur):**
 - ✅ 255 Regeln (im Code gezählt), 18 Komitee-Agenten
 - ✅ `finding-recommendations.ts` (2400+ Zeilen) als Wissens-Asset
 - ✅ Use-Cases 1+2 aktiv
-- ❌ Prompt-Veredler (Use-Case 3) — Phase 2
+- 🟡 Veredler-Skelett (Use-Case 3) — Foundation Phase 1. Vollausbau Phase 2 (ADR-028).
 - ❌ Initial-Compliance-Checkliste (Use-Case 4) fehlt
 
 ### Achse 8 — Lernfähigkeit
@@ -441,7 +443,7 @@ Quellen: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`, `docs/ar
 | 4 | Tool-Verhältnis | Hilfs-Artefakte only, Web-Plattform, keine Plugins (CLI Phase 2) |
 | 5 | Schweigen-by-Default | Schweigen außerhalb Chat, proaktiv im Chat (Wette 4) |
 | 6 | Projekt-Hygiene | Decision-Log + Müll/Drift |
-| 7 | Regelwerk | 255 Regeln Kern-Asset |
+| 7 | Regelwerk | 255 Regeln Kern-Asset, Veredler-Skelett in Foundation |
 | 8 | Lernfähigkeit | Komitee + Extern Phase 1, Repo Phase 2/3 |
 | 9 | **Doku-Hygiene** (NEU) | Acht Audit-Findings, Konvention via AGENTS.md + CONVENTIONS.md |
 
