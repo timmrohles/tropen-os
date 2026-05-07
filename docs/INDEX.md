@@ -73,6 +73,7 @@ supersedes: []
 - **025-tab-architecture.md** (`docs/decisions/025-tab-architecture.md`) — ADR: Tab-Architektur für das Audit-System (7 Domain-Tabs) · status: active
 - **026-docs-hygiene-tab.md** (`docs/decisions/026-docs-hygiene-tab.md`) — ADR: Doku-Hygiene-Tab im Audit-System · status: active
 - **027-killer-criteria-score-pivot.md** (`docs/decisions/027-killer-criteria-score-pivot.md`) — ADR: Killer-Kriterien und Score-Pivot (ADR-027) · status: active
+- **028-pivot-to-companion-platform.md** (`docs/decisions/028-pivot-to-companion-platform.md`) — ADR: Pivot zur Begleitplattform — neun Achsen, vier Wetten, Foundation/Build/Beta-Sequenzierung · status: accepted
 
 ---
 

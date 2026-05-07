@@ -13,6 +13,19 @@ supersedes: []
 
 ---
 
+### 2026-05-07 — ADR-028 Pivot to Companion Platform
+**Ampel:** 🟢
+**Anlass:** Dritter Pivot — Tropen OS wird Begleitplattform mit Audit als Eintrittstor
+**Aktionen:**
+- `docs/decisions/028-pivot-to-companion-platform.md` angelegt (status: accepted)
+- INDEX.md ergänzt
+- Kernentscheidungen: CLI vollständig aus Phase 1, Veredler-Skelett in Foundation, fünfte Wissens-Domäne (Doku-Hygiene), Decision-Log im User-Repo
+- v3-Synchronisations-Sprint als Folge-Aktion: Achse 4 + 7 in vision.md angleichen
+**Qualitätscheck:** Doku-only, kein Code
+**Lernmuster:** CLI-Streichung macht Foundation realistisch — 4–6 Wochen statt 6–8 Wochen. Veredler-Skelett differenziert Begleiter-Chat (Achse 5) vom reinen Scanner.
+
+---
+
 ### 2026-05-07 — Konvention-Update-Sprint
 **Ampel:** 🟢
 **Anlass:** CONVENTIONS.md erweitern (Sprache, Memories, Brainstorms) + Zielbild v3 Teil J Backlog
