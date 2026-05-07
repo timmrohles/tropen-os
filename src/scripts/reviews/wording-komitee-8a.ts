@@ -40,12 +40,12 @@ export const config: CommitteeReviewConfig = {
   name: 'wording-komitee-8a',
 
   contextFiles: [
-    'docs/product/marken-brief.md',
+    'docs/active/brand-brief.md',
     'docs/audit-reports/findings-inventar-2026-05-05.md',
   ],
 
   contextTransforms: {
-    'docs/product/marken-brief.md': (c) => {
+    'docs/active/brand-brief.md': (c) => {
       // Nur Section 28.1 + 28.5 laden
       const lines = c.split('\n')
       const s281 = lines.findIndex(l => l.startsWith('### 28.1'))

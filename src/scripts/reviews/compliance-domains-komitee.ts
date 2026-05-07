@@ -84,11 +84,11 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/adr/027-killer-kriterien-score-pivot.md',
-    'docs/product/marken-brief.md',
+    'docs/active/brand-brief.md',
   ],
 
   contextTransforms: {
-    'docs/product/marken-brief.md': (c) => {
+    'docs/active/brand-brief.md': (c) => {
       // Nur Section 28 extrahieren (Coach-Position zweiter Ordnung)
       const lines = c.split('\n')
       const start = lines.findIndex(l => l.startsWith('## 28.'))

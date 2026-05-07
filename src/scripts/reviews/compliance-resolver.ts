@@ -5,7 +5,7 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/checker-feedback.md',
-    'docs/product/marken-brief.md',
+    'docs/active/brand-brief.md',
     'CLAUDE.md',
   ],
 
@@ -17,7 +17,7 @@ export const config: CommitteeReviewConfig = {
       const end = lines.findIndex((l, i) => i > start + 5 && l.startsWith('## '))
       return lines.slice(start, end > 0 ? end : start + 120).join('\n') + '\n... (Sektion Compliance-Diagnose, Stand 2026-05-06)'
     },
-    'docs/product/marken-brief.md': (c) => {
+    'docs/active/brand-brief.md': (c) => {
       // Nur Section 28.1 — Begrenzungs-Aussagen
       const lines = c.split('\n')
       const start = lines.findIndex(l => l.includes('28.1 Begrenzungs-Aussagen'))

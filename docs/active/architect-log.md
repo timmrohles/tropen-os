@@ -69,7 +69,7 @@ supersedes: []
 **Aktionen:**
 - ADR-024 geschrieben (`docs/adr/024-marken-pivot.md`)
 - Roadmap aktualisiert: Positionierung Coach, Sprint-1-Wiederaufnahme-Hinweis
-- CLAUDE.md: UI-Pflicht-Lektüre um `marken-brief.md` ergänzt; ADR-024 referenziert; marken-brief.md in Referenztabelle
+- CLAUDE.md: UI-Pflicht-Lektüre um `brand-brief.md` ergänzt; ADR-024 referenziert; brand-brief.md in Referenztabelle
 - Self-Audit gelaufen: **93.8% Production Grade** (vs. 96.9% vor BP-Design-1, Delta -3.1pp)
 - Delta erklärt: neue Landing-Page-Komponenten (HeroSection etc.) triggern möglicherweise Dateilängen-Warnungen + neue Dateien erhöhen Checker-Coverage. Kein echtes Qualitäts-Rückgang.
 **BP-Design-1 Gesamtstatus:** ✅ Phase 1 (Foundation) · ✅ Phase 2 (Coach-Stimme) · ✅ Phase 3 (Landing-Page) · ✅ Phase 4 (Doku)

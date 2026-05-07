@@ -5,11 +5,11 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/audit-reports/score-diagnose-2026-05-04.md',
-    'docs/product/marken-brief.md',
+    'docs/active/brand-brief.md',
   ],
 
   contextTransforms: {
-    'docs/product/marken-brief.md': (c) =>
+    'docs/active/brand-brief.md': (c) =>
       c.split('\n').slice(0, 80).join('\n') + '\n... (gekürzt)',
   },
 

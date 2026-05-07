@@ -80,7 +80,7 @@ superseded_by: null       # nur wenn status=superseded: Pfad zur Nachfolge-Datei
 ## Datei-Namen-Konvention
 
 **In `active/`:**
-- Stabile Namen ohne Versionssuffix: `roadmap.md`, `zielbild.md`, `marken-brief.md`
+- Stabile Namen ohne Versionssuffix: `roadmap.md`, `zielbild.md`, `brand-brief.md`
 - **Keine** `-v2`, `-new`, `-final`, `-copy`, `-old`, `-2026-q3`-Suffixe
 - Versionierung läuft über Git-Historie, nicht über Dateinamen
 - Eindeutiger Slug pro Thema — wenn das Thema sich ändert, ändert sich der Name (über Supersedes-Kette)

@@ -3,7 +3,7 @@
 **Status:** Accepted  
 **Datum:** 2026-04-28  
 **Ersetzt:** Tropen-OS-Pre-Pivot-Design (organische Tropen-Wärme, dominantes Grün #256845, dunkle Sections #1A2E23)  
-**Quellen:** `docs/product/marken-brief.md`, `docs/synthese/tag4-master-synthese.md`
+**Quellen:** `docs/active/brand-brief.md`, `docs/synthese/tag4-master-synthese.md`
 
 ---
 
@@ -19,7 +19,7 @@ Im Anschluss an die Tag-4-Synthese und das Sparring vom 2026-04-27 wurde festges
 
 ## Entscheidung
 
-Marken-Pivot mit zehn Pfeilern (vollständige Spezifikation: `docs/product/marken-brief.md`):
+Marken-Pivot mit zehn Pfeilern (vollständige Spezifikation: `docs/active/brand-brief.md`):
 
 1. **Position:** Coach (statt Werkzeug oder Buddy)
 2. **Charakter:** Älteres Geschwister — 2-3 Jahre voraus, auf Augenhöhe

@@ -28,7 +28,7 @@ supersedes: []
 - **github-secrets.md** (`docs/active/github-secrets.md`) — GitHub Actions Secrets und Environment Variables Referenz · status: active · review_by: 2026-08-07
 - **manifesto.md** (`docs/active/manifesto.md`) — 10 Kernprinzipien (Philosophie) des Webapp-Manifests · status: active · review_by: 2026-08-07
 - **manual-checks.md** (`docs/active/manual-checks.md`) — 64 manuelle Checks die statisch nicht prüfbar sind · status: active · review_by: 2026-08-07
-- **marken-brief.md** (`docs/active/marken-brief.md`) — Normatives Markendokument: Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags · status: active · review_by: 2026-08-07
+- **brand-brief.md** (`docs/active/brand-brief.md`) — Normatives Markendokument: Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags · status: active · review_by: 2026-08-07
 - **migrations.md** (`docs/active/migrations.md`) — Vollständige Migrations-Übersicht 001 bis aktuell · status: active · review_by: 2026-08-07
 - **onboarding.md** (`docs/active/onboarding.md`) — Onboarding-Schritte, AI Act, E-Mail-Templates · status: active · review_by: 2026-08-07
 - **open-todos.md** (`docs/active/open-todos.md`) — Offene manuelle TODOs (PITR Restore-Test, rechtliche Pflichten etc.) · status: active · review_by: 2026-08-07

@@ -213,7 +213,7 @@ Nach Tab-Sprint-Abschluss:
 
 ## Referenzen
 
-- `docs/marken-brief.md` — Coach-Stimme, App-Welt-Disziplinen
+- `docs/brand-brief.md` — Coach-Stimme, App-Welt-Disziplinen
 - `docs/audit/domain-mapping.md` — Rule-zu-Domain-Mapping (Tab-Sprint Phase 1)
 - `docs/superpowers/plans/2026-04-29-tab-sprint-domain-architektur.md` — vollständiger Build-Prompt
 - ADR-024 — Marken-Pivot

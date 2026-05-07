@@ -51,7 +51,7 @@ Schritt 8  Ampel bestimmen → dann bauen oder fragen
 Bei UI-Änderungen zusätzlich:
 ```
 Schritt UI-1  Read src/components/_DESIGN_REFERENCE.tsx  ← PFLICHT, keine Ausnahme
-Schritt UI-2  Read docs/active/marken-brief.md  ← PFLICHT bei Design/Copy-Entscheidungen
+Schritt UI-2  Read docs/active/brand-brief.md  ← PFLICHT bei Design/Copy-Entscheidungen
 Schritt UI-3  CLAUDE.md → Abschnitt "Komponenten-Patterns" lesen
 Schritt UI-4  CLAUDE.md → Abschnitt "Code-Regeln" lesen
 ```
@@ -72,7 +72,7 @@ Sie sind nicht widersprüchlich, sondern ergänzen sich:
 | Dokument | Rolle | Bei Konflikt |
 |----------|-------|--------------|
 | `docs/active/roadmap.md` | **Normativ** — was wir bauen | Roadmap gewinnt |
-| `docs/active/marken-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
+| `docs/active/brand-brief.md` | **Normativ** — Marken-Position, Stimme, Farben, Komposition | Brief gewinnt (Änderung nur per ADR) |
 | `docs/archive/2026-05/user-story-idea-to-production.md` | **Marketing-Narrativ** — wie wir es erklären | Roadmap gewinnt |
 | `docs/active/feature-inventory.md` | **Bestand** — was technisch ist | Roadmap gewinnt |
 
@@ -1681,7 +1681,7 @@ eslint src/           # keine Fehler
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
 | `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-027) — nach Aufräum-Sprint 2026-05-07 |
-| `docs/active/marken-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
+| `docs/active/brand-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
 | `docs/active/feature-inventory.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
 | `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
