@@ -20,7 +20,7 @@ supersedes: []
 - `docs/CONVENTIONS.md`: Sektion "Sprache" — englische Datei- und Verzeichnis-Namen, Begründung + Beispiele
 - `docs/CONVENTIONS.md`: Sektion "Tool-Memories als Wissens-Quelle" — Memories ergänzen Repo, ersetzen es nicht
 - `docs/CONVENTIONS.md`: Sektion "Brainstorms und Roh-Material" — Sonderbereich `docs/active/brainstorms/[thema]/`, 30-Tage review_by, Lifecycle
-- `docs/active/zielbild.md` (v3, Teil J): Einträge 8+9 ergänzt — Schlüssel-Rotation-Policy + Lint-Konventions-Tiefe als Backlog-Audit-Regeln
+- `docs/active/vision.md` (v3, Teil J): Einträge 8+9 ergänzt — Schlüssel-Rotation-Policy + Lint-Konventions-Tiefe als Backlog-Audit-Regeln
 - Bestands-Migration (18 deutsche Datei-Namen): inventarisiert, auf User-Bestätigung wartend (>5 Dateien → zwingend Bestätigung)
 - Handover-Datei: `docs/archive/2026-05/convention-update-handover-2026-05-07.md`
 **Qualitätscheck:** keine Code-Änderungen

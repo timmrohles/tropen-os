@@ -40,7 +40,7 @@ supersedes: []
 - **runbook-rollback.md** (`docs/active/runbook-rollback.md`) — Runbook: Rollback-Prozeduren für Deployments · status: active · review_by: 2026-08-07
 - **security-tenant-isolation.md** (`docs/active/security-tenant-isolation.md`) — Tenant Isolation Audit 2026-03-25: RLS-Überprüfung aller Tabellen · status: active · review_by: 2026-08-07
 - **tech-debt.md** (`docs/active/tech-debt.md`) — Technische Schulden: Known Debt, Priorisierung, Frozen-Code-Phase · status: active · review_by: 2026-08-07
-- **zielbild.md** (`docs/active/zielbild.md`) — Zielbild Q3 2026: Produktvision, Zielgruppe, Differenzierung · status: active · review_by: 2026-08-07
+- **vision.md** (`docs/active/vision.md`) — Zielbild Q3 2026: Produktvision, Zielgruppe, Differenzierung · status: active · review_by: 2026-08-07
 
 ---
 

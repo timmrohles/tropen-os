@@ -9,7 +9,7 @@ superseded_by: null
 
 # Tropen OS — Zielbild Q3 2026 (Version 3)
 
-> **Repo-Pfad:** `docs/active/zielbild.md` (normativ)
+> **Repo-Pfad:** `docs/active/vision.md` (normativ)
 > **Vorgänger:** `docs/archive/2026-05/zielbild-2026-q3-v2.md`
 > **Erstellt:** 2026-05-07
 > **Quelle:** Sparring (8 Achsen) + K0 + K0.5 + K0.6 + Repo-Bestandsaufnahme 2026-05-07
