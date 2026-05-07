@@ -47,32 +47,32 @@ supersedes: []
 ## Entscheidungen (`docs/decisions/`)
 
 - **001-nextjs-app-router.md** (`docs/decisions/001-nextjs-app-router.md`) — ADR: Next.js App Router als primäres Routing-System · status: active
-- **002-vercel-deployment-plattform.md** (`docs/decisions/002-vercel-deployment-plattform.md`) — ADR: Vercel als Deployment-Plattform · status: active
-- **003-supabase-als-auth-und-db.md** (`docs/decisions/003-supabase-als-auth-und-db.md`) — ADR: Supabase für Auth und Datenbank · status: active
+- **002-vercel-deployment-platform.md** (`docs/decisions/002-vercel-deployment-platform.md`) — ADR: Vercel als Deployment-Plattform · status: active
+- **003-supabase-as-auth-and-db.md** (`docs/decisions/003-supabase-as-auth-and-db.md`) — ADR: Supabase für Auth und Datenbank · status: active
 - **004-drizzle-schema-only.md** (`docs/decisions/004-drizzle-schema-only.md`) — ADR: Drizzle nur für Schema-Definition, keine Queries · status: active
 - **005-append-only-tables.md** (`docs/decisions/005-append-only-tables.md`) — ADR: Append-Only-Tabellen für unveränderliche Logs · status: active
-- **006-ai-sdk-als-llm-layer.md** (`docs/decisions/006-ai-sdk-als-llm-layer.md`) — ADR: Vercel AI SDK als LLM-Abstraktionsschicht · status: active
-- **007-rollen-architektur.md** (`docs/decisions/007-rollen-architektur.md`) — ADR: Rollen-Architektur (Superadmin / OrgRole / WorkspaceRole) · status: active
-- **008-chart-bibliotheken.md** (`docs/decisions/008-chart-bibliotheken.md`) — ADR: Tremor für App-Charts, ECharts für Artifact-Charts · status: active
+- **006-ai-sdk-as-llm-layer.md** (`docs/decisions/006-ai-sdk-as-llm-layer.md`) — ADR: Vercel AI SDK als LLM-Abstraktionsschicht · status: active
+- **007-role-architecture.md** (`docs/decisions/007-role-architecture.md`) — ADR: Rollen-Architektur (Superadmin / OrgRole / WorkspaceRole) · status: active
+- **008-chart-libraries.md** (`docs/decisions/008-chart-libraries.md`) — ADR: Tremor für App-Charts, ECharts für Artifact-Charts · status: active
 - **009-artifact-system-iframe-sucrase.md** (`docs/decisions/009-artifact-system-iframe-sucrase.md`) — ADR: Artifact-System mit iFrame und Sucrase-Transform · status: active
 - **010-anthropic-direct-no-dify.md** (`docs/decisions/010-anthropic-direct-no-dify.md`) — ADR: Direkter Anthropic-Zugriff statt Dify · status: active
-- **011-conversations-fuer-workspace-chats.md** (`docs/decisions/011-conversations-fuer-workspace-chats.md`) — ADR: Conversations-Tabelle für Workspace-Chats · status: active
-- **012-feeds-pipeline-architektur.md** (`docs/decisions/012-feeds-pipeline-architektur.md`) — ADR: Feeds-Pipeline-Architektur mit Stage-System · status: active
-- **013-library-system-rolle-capability-skill.md** (`docs/decisions/013-library-system-rolle-capability-skill.md`) — ADR: Library-System mit Rolle, Capability und Skill · status: active
+- **011-conversations-for-workspace-chats.md** (`docs/decisions/011-conversations-for-workspace-chats.md`) — ADR: Conversations-Tabelle für Workspace-Chats · status: active
+- **012-feeds-pipeline-architecture.md** (`docs/decisions/012-feeds-pipeline-architecture.md`) — ADR: Feeds-Pipeline-Architektur mit Stage-System · status: active
+- **013-library-system-role-capability-skill.md** (`docs/decisions/013-library-system-role-capability-skill.md`) — ADR: Library-System mit Rolle, Capability und Skill · status: active
 - **014-smart-model-router-multi-provider.md** (`docs/decisions/014-smart-model-router-multi-provider.md`) — ADR: Smart Model Router für Multi-Provider-Unterstützung · status: active
-- **015-perspectives-parallele-ki-antworten.md** (`docs/decisions/015-perspectives-parallele-ki-antworten.md`) — ADR: Perspectives-System für parallele KI-Antworten · status: active
+- **015-perspectives-parallel-ai-responses.md** (`docs/decisions/015-perspectives-parallel-ai-responses.md`) — ADR: Perspectives-System für parallele KI-Antworten · status: active
 - **016-web-search-anthropic-server-tool.md** (`docs/decisions/016-web-search-anthropic-server-tool.md`) — ADR: Web-Search via Anthropic Server Tool · status: active
 - **017-i18n-deferred.md** (`docs/decisions/017-i18n-deferred.md`) — ADR: i18n zurückgestellt, next-intl als zukünftige Lösung · status: active
-- **018-windmill-statt-n8n.md** (`docs/decisions/018-windmill-statt-n8n.md`) — ADR: Windmill statt n8n als Workflow-Engine · status: active
+- **018-windmill-instead-of-n8n.md** (`docs/decisions/018-windmill-instead-of-n8n.md`) — ADR: Windmill statt n8n als Workflow-Engine · status: active
 - **019-nextjs-16-downgrade.md** (`docs/decisions/019-nextjs-16-downgrade.md`) — ADR: Next.js 16 Downgrade wegen Turbopack NFT-Bug · status: active
 - **020-six-layer-knowledge-architecture.md** (`docs/decisions/020-six-layer-knowledge-architecture.md`) — ADR: Sechs-Schichten-Wissens-Modell · status: active
-- **021-prompt-veredler-architecture.md** (`docs/decisions/021-prompt-veredler-architecture.md`) — ADR: Prompt-Veredler-Architektur · status: active
+- **021-prompt-enricher-architecture.md** (`docs/decisions/021-prompt-enricher-architecture.md`) — ADR: Prompt-Veredler-Architektur · status: active
 - **022-markdown-format.md** (`docs/decisions/022-markdown-format.md`) — ADR: Markdown-Format und Obsidian-Bridge · status: active
 - **023-interface-strategy.md** (`docs/decisions/023-interface-strategy.md`) — ADR: Interface-Strategie (CLI-First + Pull-MCP) · status: active
-- **024-marken-pivot.md** (`docs/decisions/024-marken-pivot.md`) — ADR: Marken-Pivot zur Schiefer-Limette-Welt · status: active
-- **025-tab-architektur.md** (`docs/decisions/025-tab-architektur.md`) — ADR: Tab-Architektur für das Audit-System (7 Domain-Tabs) · status: active
-- **026-doku-hygiene-tab.md** (`docs/decisions/026-doku-hygiene-tab.md`) — ADR: Doku-Hygiene-Tab im Audit-System · status: active
-- **027-killer-kriterien-score-pivot.md** (`docs/decisions/027-killer-kriterien-score-pivot.md`) — ADR: Killer-Kriterien und Score-Pivot (ADR-027) · status: active
+- **024-brand-pivot.md** (`docs/decisions/024-brand-pivot.md`) — ADR: Marken-Pivot zur Schiefer-Limette-Welt · status: active
+- **025-tab-architecture.md** (`docs/decisions/025-tab-architecture.md`) — ADR: Tab-Architektur für das Audit-System (7 Domain-Tabs) · status: active
+- **026-docs-hygiene-tab.md** (`docs/decisions/026-docs-hygiene-tab.md`) — ADR: Doku-Hygiene-Tab im Audit-System · status: active
+- **027-killer-criteria-score-pivot.md** (`docs/decisions/027-killer-criteria-score-pivot.md`) — ADR: Killer-Kriterien und Score-Pivot (ADR-027) · status: active
 
 ---
 
