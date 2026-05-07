@@ -13,6 +13,21 @@ supersedes: []
 
 ---
 
+### 2026-05-07 — Konvention-Update-Sprint
+**Ampel:** 🟢
+**Anlass:** CONVENTIONS.md erweitern (Sprache, Memories, Brainstorms) + Zielbild v3 Teil J Backlog
+**Aktionen:**
+- `docs/CONVENTIONS.md`: Sektion "Sprache" — englische Datei- und Verzeichnis-Namen, Begründung + Beispiele
+- `docs/CONVENTIONS.md`: Sektion "Tool-Memories als Wissens-Quelle" — Memories ergänzen Repo, ersetzen es nicht
+- `docs/CONVENTIONS.md`: Sektion "Brainstorms und Roh-Material" — Sonderbereich `docs/active/brainstorms/[thema]/`, 30-Tage review_by, Lifecycle
+- `docs/active/zielbild.md` (v3, Teil J): Einträge 8+9 ergänzt — Schlüssel-Rotation-Policy + Lint-Konventions-Tiefe als Backlog-Audit-Regeln
+- Bestands-Migration (18 deutsche Datei-Namen): inventarisiert, auf User-Bestätigung wartend (>5 Dateien → zwingend Bestätigung)
+- Handover-Datei: `docs/archive/2026-05/convention-update-handover-2026-05-07.md`
+**Qualitätscheck:** keine Code-Änderungen
+**Lernmuster:** Brainstorms-Sonderbereich ist explizite Ausnahme zur Flat-File-Regel — Konvention enthält sich selbst dokumentierende Ausnahmen statt rigider Mono-Regeln.
+
+---
+
 ### 2026-04-28 — Audit-Tabellen-Welt-Umbau (bp-audit-tabellen-welt, Phasen A–E)
 **Ampel:** 🟢
 **Anlass:** Marken-Brief-Update — "Zwei visuelle Welten": Marketing=Plakat, App=Tabelle (Sentry/DataDog-Stil)

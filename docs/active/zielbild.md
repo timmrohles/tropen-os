@@ -408,6 +408,8 @@ Quellen: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`, `docs/ar
 | 5 | **K0.8 Retention-Komitee** | Wann? Adressiert Wette 1. |
 | 6 | **CLAUDE.md-Migration** | Bleibt Pointer + Code-Inhalt, oder Code nach `docs/active/code-rules.md`? |
 | 7 | **`docs/audit-reports/` Sonderstatus** | Eigene Lifecycle-Regel für Tool-Outputs? |
+| 8 | **Audit-Regel Schlüssel-Rotation-Policy** (Achse 3 Domäne 2 — Security) | Phase 1 oder Phase 2: Tropen prüft, ob im Repo eine Schlüssel-Rotations-Policy dokumentiert ist (z.B. via `SECURITY.md` oder ADR). Detection: Existenz-Check + `review_by`-artiger Verfallsdaten-Check. Aufwand: ~3 Tage. |
+| 9 | **Audit-Regel Lint-Konventions-Tiefe** (Achse 3 Domäne 1 — Architektur) | Phase 2: MVP prüft heute Lint-Existenz (ESLint, Prettier, TypeScript-Strict). Erweiterung: prüft Lint-Regel-Inhalt gegen Standards (z.B. `airbnb`-Preset, projekt-konsistente Rules). Aufwand: ~1 Woche. |
 
 ---
 
@@ -440,4 +442,4 @@ Quellen: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`, `docs/ar
 | 8 | Lernfähigkeit | Komitee + Extern Phase 1, Repo Phase 2/3 |
 | 9 | **Doku-Hygiene** (NEU) | Acht Audit-Findings, Konvention via AGENTS.md + CONVENTIONS.md |
 
-**Vier Wetten** · **Drei Recycling-Prioritäten** · **Sieben Quellen-Lücken** · **Sieben Strategie-offene Punkte**
+**Vier Wetten** · **Drei Recycling-Prioritäten** · **Sieben Quellen-Lücken** · **Neun Strategie-offene Punkte**
