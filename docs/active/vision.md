@@ -119,10 +119,12 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 - ✅ Copy-to-Clipboard in `FixPromptDrawer.tsx` + `PromptCopyButton.tsx`
 - ✅ Compliance-Checklisten-Komponenten (`ComplianceBlock`, `ComplianceQuestion`)
 - ✅ Prompt-Templates-System (`prompt_templates`-Tabelle + UI)
-- ❌ CLI-Tool fehlt
-- ❌ Decision-Log als `.tropen/decision-log.yml` fehlt
-- ❌ GitHub-Action fehlt
+- ❌ CLI-Tool — Phase 2 (mit ADR-028 vollständig aus Phase-1-Scope gestrichen)
+- ❌ Decision-Log als `.tropen/decision-log.yml` fehlt — Foundation-Item
+- ❌ GitHub-Action — Phase 2 (ADR-028)
 - 🔄 Eingefrorene **Cockpit-Widgets** (10 Komponenten) potenziell recycelbar
+
+> **ADR-028:** Beta läuft web-basiert mit Copy-Paste-Workflow ins Bau-Tool des Users. CLI und GitHub-Action sind Phase-2-Items.
 
 ### Achse 5 — Schweigen-by-Default mit Chat-Differenzierung
 
@@ -279,7 +281,7 @@ Verbindlich seit 2026-05-07. Bestand im Aufräum-Sprint migriert.
 |---|---|---|
 | **Free** | €0 | Single-Model-Audit, kein Komitee. Lokale Verarbeitung. |
 | **Starter** | €19–29 | 5 Komitee-Runs/Monat, Hard-Cap. |
-| **Pro** | €49–89 | 10–20 Komitee-Runs/Monat + CLI + GitHub-Action. |
+| **Pro** | €49–89 | 10–20 Komitee-Runs/Monat + erweiterte Features. CLI + GitHub-Action ab Phase 2. |
 | **Team** | €89–99 | 50 Runs + erweiterte Features. |
 
 **Kalkulation:** Komitee-Run €0.30–€0.80. Marge 55–72%. Keine Pay-as-you-go. Beta: kostenfrei mit 10-Run-Limit.
@@ -292,9 +294,9 @@ Sechs Bausteine: (1) Daten-Eigentum User 100%, (2) Free/Pro-Audit lokal, (3) Kom
 
 ### Integrations-Architektur
 
-**MVP in 6 Monaten:** Web-Plattform mit File System Access API + CLI-Tool (4 Wochen Aufwand) + GitHub-Action über CLI.
+**Phase-1-MVP:** Web-Plattform mit File System Access API. CLI-Tool und GitHub-Action sind Phase-2-Items (ADR-028). Beta läuft web-basiert mit Copy-Paste-Workflow ins Bau-Tool des Users.
 
-**Ausgeschlossen aus MVP:** native IDE-Plugins, Browser-Extension, Echtzeit-Linting, Background-Watcher.
+**Ausgeschlossen aus MVP:** native IDE-Plugins, Browser-Extension, Echtzeit-Linting, Background-Watcher, CLI-Tool, GitHub-Action.
 
 ---
 
@@ -311,7 +313,8 @@ Sechs Bausteine: (1) Daten-Eigentum User 100%, (2) Free/Pro-Audit lokal, (3) Kom
 9. Mehrstündiges "Idee/nichts"-Coaching-Onboarding (max. 5-Minuten-Wizard)
 10. UX/UI-Konsistenz als Wissens-Domäne
 11. UI mit Per-Modell-Drill-Down im Komitee-Output (nur Aggregat + Dissens)
-12. Prompt-Veredler in Phase 1 (Phase 2)
+12. CLI-Tool (`tropen audit`, `tropen gate`) und GitHub-Action — Phase 2 (ADR-028)
+13. Prompt-Veredler-Vollausbau (Tag-/Embedding-Selektion) in Phase 1 — Veredler-Skelett ist Foundation-Item (ADR-028)
 
 ---
 
@@ -435,7 +438,7 @@ Quellen: `docs/archive/2026-05/quellen-luecken-handover-2026-05-07.md`, `docs/ar
 | 1 | Eintritts-Architektur | Ein Eintritt mit Verzweigungs-Frage |
 | 2 | Eingriffs-Logik | Gate-getrieben, drei Severity-Klassen |
 | 3 | Wissens-Asymmetrie | **Fünf-Domänen-Spezialist** (neu: Doku-Hygiene) |
-| 4 | Tool-Verhältnis | Hilfs-Artefakte, Web + CLI, keine Plugins |
+| 4 | Tool-Verhältnis | Hilfs-Artefakte only, Web-Plattform, keine Plugins (CLI Phase 2) |
 | 5 | Schweigen-by-Default | Schweigen außerhalb Chat, proaktiv im Chat (Wette 4) |
 | 6 | Projekt-Hygiene | Decision-Log + Müll/Drift |
 | 7 | Regelwerk | 255 Regeln Kern-Asset |
