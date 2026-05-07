@@ -192,6 +192,36 @@ Ergebnis-Bericht wird im Sparring mit Claude.ai bewertet, Aktionen werden einzel
 
 ---
 
+## Top-Level-Außen-Sicht-Dateien
+
+Drei Dateien am Repo-Root unterliegen einer abgeleiteten Form der Konvention, weil sie Doku-Charakter mit Außen-Sicht haben:
+
+- `README.md` — Erstkontakt für Menschen, die das Projekt besuchen
+- `CHANGELOG.md` — Versions-Historie für User
+- `package.json` Feld `description` — npm/Tool-Discovery
+
+**Pflicht für diese Dateien:**
+
+1. **Frontmatter wo möglich.** README.md und CHANGELOG.md beginnen mit YAML-Frontmatter (status, updated, review_by). package.json kann kein Frontmatter — fällt aus diesem Punkt heraus.
+
+2. **Keine isolierten konkreten Zahlen.** Folgende Werte gehören NICHT in die Außen-Sicht-Dateien als isolierte Aussage:
+   - Anzahl von Regeln, Agenten, Kategorien, Skills, Tabellen
+   - Score-Werte, Schwellen, Grade-Definitionen
+   - Konkrete Datei-Pfade in `docs/`
+   - Zahlen aus laufendem Audit-Stand
+
+   Wenn diese Werte erwähnt werden müssen: Verweis auf normative Quelle, nicht eigene Zahl.
+
+3. **Verweis-Pattern.** Statt "242 Regeln in 26 Kategorien" steht in README: "Regelwerk und Kategorien: siehe `CLAUDE.md`."
+
+4. **review_by 90 Tage** wie bei jeder active-Datei.
+
+**Begründung:** Außen-Sicht-Dateien driften erfahrungsgemäß schneller als interne Doku, weil sie weniger oft angefasst werden. Ohne Drift-Schutz entsteht Glaubwürdigkeits-Schaden.
+
+**Achse-9-Audit-Regel:** Tropen scannt diese Dateien auf Drift gegenüber `docs/active/` und `CLAUDE.md` (Finding 9 im Zielbild).
+
+---
+
 ## Migrations-Hinweis (für Aufräum-Sprint)
 
 Beim ersten Inkraftsetzen dieser Konvention liegt der Tropen-Repo-Bestand in der alten Struktur (Themen-Ordner unter `docs/`). Der Aufräum-Sprint migriert wie folgt:
