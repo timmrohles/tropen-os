@@ -61,6 +61,7 @@ updated: 2026-05-07       # ISO-Datum letzter inhaltlicher Update
 review_by: 2026-08-07     # ISO-Datum, bis wann Re-Review fällig
 supersedes: []            # Liste von Pfaden zu abgelösten Dateien
 superseded_by: null       # nur wenn status=superseded: Pfad zur Nachfolge-Datei
+extends: null             # optional: Pfad zur übergeordneten ADR (für thematische Erweiterungen)
 ---
 ```
 

@@ -115,6 +115,23 @@ Items, die Beta-Launch direkt blockieren — Compliance-Voraussetzungen, Backup-
 - **Wann lösen:** Phase 2 frühestens, Phase 3 wahrscheinlicher.
 - **Abhängigkeit:** Privacy-Architektur-Komitee-Sprint vorab.
 
+### ADR-030 — Profil-System formal definieren
+
+- **Status:** open
+- **Severity:** must
+- **Effort:** S
+- **Beschreibung:** ADR-029 setzt Profil-Schwellen (≥ 2, ≥ 3, ≥ 4) für Kategorie 27, aber das Profil-System selbst (Profile 1–4, Definitionen, Übergangs-Logik, Default-Bindungen für bestehende Regeln) ist nicht formal definiert. ADR-030 schließt diese Lücke.
+- **Wann lösen:** Vor Build-Start Kategorie 27 — als Sparring-Session, nicht als Build-Sprint.
+- **Abhängigkeit:** ADR-029 (accepted).
+
+### Komitee-Wiederholung mit Opus-Judge (ai-discoverability)
+
+- **Status:** open
+- **Severity:** info
+- **Effort:** S
+- **Beschreibung:** Run 2 des ai-discoverability-Followup lief mit Sonnet als Judge-Fallback, weil Opus persistent Internal Server Error hatte (2026-05-08). Für Robustheits-Validierung der Konvergenz wäre eine Wiederholung mit Opus-Judge wertvoll.
+- **Wann lösen:** Phase 2, sobald Opus-API wieder stabil — kein Blocker für Build.
+
 ### Checker-Kategorie 27 — Web Discoverability & AI Readiness
 
 - **Status:** open
@@ -172,11 +189,12 @@ Drei zusammenhängende Punkte aus dem Findings-UX-Bereich, vor Beta-Einladungen 
 ### Ansatz C — Lighthouse Findings nach Typ trennen
 
 - **Status:** open
-- **Severity:** should
+- **Severity:** must
 - **Effort:** M
 - **Plan:** `docs/archive/2026-04/ansatz-c-lh-finding-types.md` (im Aufräum-Sprint archiviert — vor Umsetzung in `docs/active/` zurückspielen)
 - **Beschreibung:** Lighthouse-Findings nach Typ trennen — Metriken / Opportunities / Diagnostics. Aktuell entstehen ~57 LH-Findings pro Run, die meisten werden dismissed weil unstrukturiert. Trennung würde Severity und Aktion klar zuordbar machen.
-- **Wann lösen:** Beta-Polish, vor Beta-Einladungen.
+- **ADR-029-Verknüpfung:** Voraussetzung für Build von Kategorie 27 (Web Discoverability). Ohne Ansatz C schweigen Web-Discoverability-Findings. Severity von `should` auf `must` angehoben.
+- **Wann lösen:** Vor Build-Start Kategorie 27 — nicht mehr Beta-Polish-optional.
 
 ### Listen-Ansicht — Truncation, Gruppierung, Titel-Sprache
 
