@@ -1,6 +1,6 @@
 ---
 status: active
-updated: 2026-05-07
+updated: 2026-05-08
 review_by: 2026-08-07
 supersedes: []
 ---
@@ -280,6 +280,70 @@ Drei Dateien am Repo-Root unterliegen einer abgeleiteten Form der Konvention, we
 **Begründung:** Außen-Sicht-Dateien driften erfahrungsgemäß schneller als interne Doku, weil sie weniger oft angefasst werden. Ohne Drift-Schutz entsteht Glaubwürdigkeits-Schaden.
 
 **Achse-9-Audit-Regel:** Tropen scannt diese Dateien auf Drift gegenüber `docs/active/` und `CLAUDE.md` (Finding 9 im Zielbild).
+
+---
+
+## Backlog-Schema
+
+`docs/active/backlog.md` ist die **Single-Source für alle Backlog-Items** in Tropen. Pro Repo genau eine Backlog-Datei.
+
+**Was ins Backlog gehört:**
+
+- Code-Schulden (konkrete TODOs mit Datei-Referenz)
+- Phase-2-Features (Funktionen, die ADRs aus aktueller Phase ausgeschlossen haben)
+- UX-Items (Anpassungen, die nicht akut sind)
+- Technische Hygiene (Tests, Refactoring, Performance)
+- Vor erstem Kunden (Beta-Voraussetzungen, Compliance, Backup-Disziplin)
+
+**Was nicht ins Backlog gehört:**
+
+- Aktive Sprint-Aufgaben (gehören in Sprint-Plan oder Build-Prompt)
+- Strategische Entscheidungen (gehören in ADR)
+- Vision-Items (gehören in `docs/active/vision.md`)
+- Brainstorms (gehören in `docs/active/brainstorms/`)
+
+**Format pro Item:**
+
+```
+### [Titel]
+
+- **Datei:** [optional, falls Code-Schuld]
+- **Status:** open | in-progress | blocked | done
+- **Severity:** must | critical | should | info
+- **Effort:** S | M | L (optional)
+- **Beschreibung:** [1-3 Sätze, was zu tun ist]
+- **Wann lösen:** [Phase, Trigger oder Datum]
+- **Abhängigkeit:** [optional, falls von ADR / Komitee / anderem Item abhängig]
+- **Verknüpfung:** [optional, Verweis auf andere Backlog-Items oder ADRs]
+```
+
+**Vier Status-Werte:**
+
+- `open` — noch nicht begonnen
+- `in-progress` — aktiv in Bearbeitung in einem Sprint
+- `blocked` — wartet auf Voraussetzung (mit Verweis im Item)
+- `done` — abgeschlossen, bleibt sichtbar bis Quartals-Audit (Drift-Schutz)
+
+**Vier Severity-Werte:**
+
+- `must` — blockt einen anderen ADR oder Sprint-Item, das ohne diese Lösung nicht starten kann. Höchste Dringlichkeit, weil strukturelle Blockade.
+- `critical` — blockiert Beta-Release oder substantielle Funktion. Ohne Lösung kein Live-Schalten.
+- `should` — sollte vor Beta gelöst sein, aber nicht blocking. Beta läuft auch ohne, aber mit Schmerz.
+- `info` — Nice-to-have, Polish, langfristig. Kein Beta-Bezug.
+
+**Lifecycle:**
+
+- **Anlegen:** Item entsteht aus Sparring, Sprint-Befund oder Code-TODO. `status: open`
+- **Aktivierung:** Wird Item Teil eines Build-Prompts, wechselt es auf `in-progress` mit Verweis auf Sprint
+- **Abschluss:** Nach Erfolg `status: done`. Bleibt im Backlog bis Quartals-Audit
+- **Quartals-Audit (alle 90 Tage):** `done`-Items archivieren, `open`-Items mit hohem Alter prüfen
+
+**Drift-Schutz:**
+
+- Items ohne `wann lösen`-Feld sind unvollständig — Quartals-Audit fragt aktiv nach
+- Items mit `blocked`-Status ohne `Abhängigkeit`-Feld sind unvollständig
+- `must`- und `critical`-Items älter als 30 Tage werden im Quartals-Audit eskaliert
+- Backlog-Datei ohne `updated`-Frontmatter-Update in 90 Tagen ist Indikator für unbearbeiteten Bestand
 
 ---
 
