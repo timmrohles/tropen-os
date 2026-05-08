@@ -2302,3 +2302,6 @@ Audit-Kategorie 27 "Web Discoverability & AI Readiness" formal gesetzt. 6 Regeln
 
 ## 2026-05-08 — AI-Discoverability Komitee (Erstbefragung + Mini-Followup)
 Kategorie-27-Regelwerk durch 4-Modell-Komitee + Fallback-Judge (Sonnet, Opus hatte API-Ausfall) erarbeitet. Reihenfolge + llms.txt-Trigger-Logik geklärt. Gesamt: €1.04. Hand-Over: docs/archive/2026-05/ai-discoverability-followup-handover-2026-05-08.md. Nächster Schritt: ADR-029.
+
+## 2026-05-08 — Live-Site-Audit-Idee festgehalten
+Brainstorm in docs/active/brainstorms/live-site-audit/, Backlog-Anker in Phase-2-Features.

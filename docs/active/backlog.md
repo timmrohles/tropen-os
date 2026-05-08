@@ -180,6 +180,15 @@ Items, die Beta-Launch direkt blockieren — Compliance-Voraussetzungen, Backup-
 - **Beschreibung:** Detection von Spacing-Werten (margin, padding, gap), die nicht Design-Token nutzen. Erweitert Design-System-Kategorie.
 - **Wann lösen:** Phase 2 oder Beta-Polish.
 
+### Live-Site-Audit via Browser-Inspektion (Brainstorm)
+
+- **Status:** open
+- **Severity:** info
+- **Effort:** L
+- **Beschreibung:** Idee aus Sparring 2026-05-08 — Tropen prüft gerenderte Live-Site direkt (per Headless-Browser, AI-Vision oder Hybrid), nicht nur den Code dahinter. Fügt neue Erkenntnis-Quelle zu bestehenden Audit-Kategorien hinzu. Methodisch noch offen.
+- **Wann lösen:** Phase 2, frühestens nach Beta. Vorher methodische Klärung nötig.
+- **Verknüpfung:** Brainstorm-Substanz in `docs/active/brainstorms/live-site-audit/2026-05-08-erste-skizze.md`
+
 ---
 
 ## UX-Items
