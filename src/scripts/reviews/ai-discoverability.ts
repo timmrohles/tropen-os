@@ -57,37 +57,37 @@ Sechs Kandidaten-Regeln stehen zur Diskussion. Das Komitee soll für jede Regel 
 Pro Kandidaten-Regel: Aufnehmen (ja/nein)? Gewicht (1–3)? Severity (low/medium/high)? Begründung in einem Satz.
 
 **Kandidat A — robots.txt**
-Datei `public/robots.txt` vorhanden. Enthält mindestens eine `User-agent:` + `Disallow:` Direktive.
+Datei \`public/robots.txt\` vorhanden. Enthält mindestens eine \`User-agent:\` + \`Disallow:\` Direktive.
 Optional: Erkennung von AI-Crawler-Direktiven (GPTBot, anthropic-ai, PerplexityBot, Googlebot).
 
 **Kandidat B — llms.txt**
-Datei `public/llms.txt` vorhanden. Standard aus late 2024 (llmstxt.org) — maschinenlesbare Zusammenfassung der App für LLM-Crawl-Zwecke. Noch kein offizieller Standard, aber rapid adoption.
+Datei \`public/llms.txt\` vorhanden. Standard aus late 2024 (llmstxt.org) — maschinenlesbare Zusammenfassung der App für LLM-Crawl-Zwecke. Noch kein offizieller Standard, aber rapid adoption.
 
 **Kandidat C — OpenGraph / Meta-Tags**
-`public/` oder `app/layout.tsx` enthält OG-Tags: `og:title`, `og:description`, `og:image`.
-Prüfbar via Regex auf `layout.tsx` + Next.js `metadata`-Export.
+\`public/\` oder \`app/layout.tsx\` enthält OG-Tags: \`og:title\`, \`og:description\`, \`og:image\`.
+Prüfbar via Regex auf \`layout.tsx\` + Next.js \`metadata\`-Export.
 
 **Kandidat D — sitemap.xml**
-Datei `public/sitemap.xml` vorhanden, oder Next.js `app/sitemap.ts` vorhanden.
+Datei \`public/sitemap.xml\` vorhanden, oder Next.js \`app/sitemap.ts\` vorhanden.
 Optional: Sitemap referenziert in robots.txt.
 
 **Kandidat E — Canonical URLs**
-Canonical-URL gesetzt in `app/layout.tsx` via Next.js `metadata.alternates.canonical`.
+Canonical-URL gesetzt in \`app/layout.tsx\` via Next.js \`metadata.alternates.canonical\`.
 Verhindert Duplicate-Content-Probleme bei AI-Indexierung.
 
 **Kandidat F — Structured Data / JSON-LD**
-JSON-LD Script-Tag in `app/layout.tsx` oder seitenspezifischen Layouts vorhanden.
+JSON-LD Script-Tag in \`app/layout.tsx\` oder seitenspezifischen Layouts vorhanden.
 Schema.org-Typ erkennbar (WebApplication, Organization, SoftwareApplication).
 
 ---
 
 ## FRAGE 2 — REIFEGRAD UND TIMING
 
-`llms.txt` ist noch kein RFC-Standard. Drei Positionen stehen zur Wahl:
+\`llms.txt\` ist noch kein RFC-Standard. Drei Positionen stehen zur Wahl:
 
 **Option I:** Jetzt aufnehmen — Adoption ist schnell, Vibe-Coder die früh compliant sind haben Vorteil. Severity: low.
 
-**Option II:** Aufnehmen aber als `advisory` flaggen — Checker zeigt Finding, kein Score-Impact bis Standard stabilisiert.
+**Option II:** Aufnehmen aber als \`advisory\` flaggen — Checker zeigt Finding, kein Score-Impact bis Standard stabilisiert.
 
 **Option III:** Noch nicht aufnehmen — zu früh, zu viel Unsicherheit über den endgültigen Format-Standard.
 
@@ -102,7 +102,7 @@ Web Discoverability ist nicht für alle Projekte gleich relevant:
 - Public B2C-App (Profil 4): alles relevant
 - Demo/Solo-Tool (Profil 1): wenig relevant, eher noise
 
-Soll Kategorie 27 profil-gebunden sein (Regeln nur aktiv wenn Profil ≥ 3)?
+Soll Kategorie 27 profil-gebunden sein (Regeln nur aktiv wenn Profil >= 3)?
 Oder pauschal für alle Profile mit angepasster Severity?
 
 ---
@@ -113,8 +113,8 @@ Für jeden aufgenommenen Kandidaten: Welcher Prüfansatz ist robust gegen False 
 
 Bekannte Fallen:
 - robots.txt kann leer sein oder nur Kommentare enthalten → kein valider Inhalt
-- OG-Tags in Next.js können in `metadata`-Export oder als JSX `<meta>`-Tags stehen → beide Formen erkennen
-- sitemap.xml kann dynamisch generiert sein (`app/sitemap.ts`) → Datei-Existenz-Check reicht nicht
+- OG-Tags in Next.js können in \`metadata\`-Export oder als JSX \`<meta>\`-Tags stehen → beide Formen erkennen
+- sitemap.xml kann dynamisch generiert sein (\`app/sitemap.ts\`) → Datei-Existenz-Check reicht nicht
 - JSON-LD kann inline oder als externe Datei eingebunden sein
 
 Empfehlung pro Kandidat: Welcher Prüfansatz minimiert False Positives bei vertretbarem Implementierungsaufwand?`,
