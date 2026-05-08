@@ -20,6 +20,29 @@ export function FilterChipsRow({
       {available.map(cat => {
         const isActive = active.includes(cat)
         const count = counts[cat] ?? 0
+        const isDone = count === 0
+
+        if (isDone) {
+          return (
+            <span
+              key={cat}
+              title={`${DOMAIN_LABELS[cat]}: keine offenen Findings`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 10px', borderRadius: 20,
+                fontSize: 12, fontWeight: 400,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-tertiary)',
+                userSelect: 'none',
+              }}
+            >
+              {DOMAIN_LABELS[cat]}
+              <span style={{ fontSize: 9, color: 'var(--teal)', fontWeight: 700 }}>✓</span>
+            </span>
+          )
+        }
+
         return (
           <button
             key={cat}

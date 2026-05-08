@@ -110,7 +110,10 @@ function rankNonKillerFindings(nonKiller: EnrichedFinding[]): RankedFindings {
   })
   const top10 = sorted.slice(0, 10)
   const top10Set = new Set(top10.map((f) => f.id))
-  const remaining = nonKiller.filter((f) => !top10Set.has(f.id))
+  // Suppress rules already represented in top10 from WEITERE FINDINGS
+  // (prevents the same rule title appearing in both sections)
+  const top10RuleIds = new Set(top10.map((f) => f.rule_id).filter((id): id is string => !!id))
+  const remaining = nonKiller.filter((f) => !top10Set.has(f.id) && !top10RuleIds.has(f.rule_id))
   return {
     recommendedFirst: top10,
     furtherHigh:   remaining.filter((f) => f.severity === 'high').sort(bySev),
@@ -173,12 +176,14 @@ export function AuditFindingsClient({
     [allFindings, deferredIds],
   )
 
-  // Dynamische Chip-Liste
+  // Core domains always visible; extra domains only when they have findings
+  const CORE_DOMAINS: AuditDomain[] = ['security', 'dsgvo', 'code-quality', 'accessibility', 'ki-act', 'performance', 'documentation']
   const availableCategories = useMemo<AuditDomain[]>(() => {
     const seen = new Set<AuditDomain>()
     for (const f of openFindings) seen.add(f.domain)
-    return DOMAIN_ORDER.filter((d) => seen.has(d))
-  }, [openFindings])
+    // Always include core domains; add extra domains only if they have findings
+    return DOMAIN_ORDER.filter((d) => CORE_DOMAINS.includes(d) || seen.has(d))
+  }, [openFindings]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const categoryCounts = useMemo(() => {
     const counts: Partial<Record<AuditDomain, number>> = {}

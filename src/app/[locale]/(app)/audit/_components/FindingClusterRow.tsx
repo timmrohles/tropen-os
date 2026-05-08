@@ -238,8 +238,11 @@ export function FindingClusterRow({ cluster, runId, onFixed, onDeferred }: Props
 
         <CommitteeBadge finding={first} />
 
-        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
-          {cluster.severity !== 'info' ? `+${cluster.totalScoreGain}` : ''}
+        <span
+          title="Potentielle Score-Punkte wenn diese Findings behoben werden"
+          style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}
+        >
+          {cluster.severity !== 'info' ? `+${cluster.totalScoreGain} Pkt.` : ''}
         </span>
       </div>
 
