@@ -91,6 +91,14 @@ supersedes: []
 
 ---
 
+## Brainstorms (`docs/active/brainstorms/`)
+
+Sonderbereich: Singleton-Regel ausgesetzt, mehrere Dateien pro Thema erlaubt. Status immer `draft`. review_by default 30 Tage.
+
+- **live-site-audit/** — Idee: Tropen-Audit prüft gerenderte Live-Site direkt (Headless-Browser / AI-Vision / Hybrid) · `2026-05-08-erste-skizze.md` · status: draft · review_by: 2026-06-08
+
+---
+
 ## Ausnahmen (nicht unter die Konvention fallend)
 
 Diese Verzeichnisse enthalten Tool-Outputs und keine Doku im engen Sinn. Für sie gilt die Konvention nicht 1:1:
