@@ -14,7 +14,7 @@ import { buildAuditContext, runAudit } from '@/lib/audit'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
 import { deduplicateFindings } from '@/lib/audit/deduplicator'
 import { effortMinutesFromFixType, shouldBeKiller } from '@/lib/audit/killer-rule-ids'
-import type { AuditReport, CategoryScore } from '@/lib/audit/types'
+import type { AuditReport, CategoryScore, ComplianceAnswers } from '@/lib/audit/types'
 import type { EnrichedFinding } from '@/lib/audit/deduplicator'
 
 const log = createLogger('api:audit:trigger')
@@ -38,6 +38,69 @@ function toDbStatus(status: AuditReport['status']): 'production_grade' | 'stable
 function computeScore(cat: CategoryScore): number {
   if (cat.automatedRuleCount === 0) return 0
   return parseFloat(((cat.automatedPercentage ?? 0) / 100 * 5).toFixed(2))
+}
+
+async function loadComplianceAnswers(scanProjectId: string | undefined): Promise<ComplianceAnswers | undefined> {
+  if (!scanProjectId) return undefined
+  try {
+    const { data: rows } = await supabaseAdmin
+      .from('project_compliance_data')
+      .select('question_key, question_value')
+      .eq('project_id', scanProjectId)
+
+    if (!rows || rows.length === 0) return undefined
+
+    const parsed: Record<string, unknown> = {}
+    for (const row of rows) {
+      if (!row.question_key || row.question_value === undefined) continue
+      const val = row.question_value
+      parsed[row.question_key] = typeof val === 'object' && val !== null && 'value' in val
+        ? (val as { value: unknown }).value
+        : val
+    }
+    log.info('Compliance answers loaded', { scanProjectId, keys: Object.keys(parsed) })
+    return parsed as ComplianceAnswers
+  } catch (err) {
+    log.warn('Failed to load compliance answers — proceeding without', { error: String(err) })
+    return undefined
+  }
+}
+
+async function insertFindings(runId: string, findings: EnrichedFinding[]): Promise<void> {
+  if (findings.length === 0) return
+  const rows = findings.map((f) => {
+    const rule = AUDIT_RULES.find((r) => r.id === f.ruleId)
+    return {
+      run_id: runId,
+      rule_id: f.ruleId,
+      category_id: f.categoryId,
+      severity: f.severity,
+      message: f.message,
+      file_path: f.filePath ?? null,
+      line: f.line ?? null,
+      suggestion: f.suggestion ?? null,
+      agent_source: f.agentSource ?? rule?.agentSource ?? 'core',
+      agent_rule_id: f.agentRuleId ?? rule?.agentRuleId ?? null,
+      enforcement: f.enforcement ?? rule?.enforcement ?? null,
+      affected_files: f.affectedFiles ?? null,
+      fix_hint: f.fixHint ?? null,
+      is_killer: shouldBeKiller(f.severity, f.ruleId),
+      effort_minutes: effortMinutesFromFixType(rule?.fixType ?? (f as { fixType?: string }).fixType ?? null),
+      ...(f.frozen
+        ? { status: 'dismissed', not_relevant_reason: 'frozen-path' }
+        : f.inheritedStatus ? { status: f.inheritedStatus } : {}),
+    }
+  })
+  const { error } = await supabaseAdmin.from('audit_findings').insert(rows)
+  if (error) log.error('Failed to insert findings', { error: error.message })
+}
+
+async function updateRunTotals(runId: string, newFindings: EnrichedFinding[]): Promise<void> {
+  const actualCritical = newFindings.filter((f) => f.severity === 'critical').length
+  await supabaseAdmin
+    .from('audit_runs')
+    .update({ total_findings: newFindings.length, critical_findings: actualCritical })
+    .eq('id', runId)
 }
 
 export async function POST(request: Request) {
@@ -88,38 +151,10 @@ export async function POST(request: Request) {
 
     log.info('Audit options', { withTools: body.withTools, skipModes })
 
-    // Load compliance answers for external scan projects.
-    // For internal Tropen OS audits (no scanProjectId): complianceAnswers = undefined.
-    let complianceAnswers: import('@/lib/audit/types').ComplianceAnswers | undefined
-    if (body.scanProjectId) {
-      try {
-        const { data: complianceRows } = await supabaseAdmin
-          .from('project_compliance_data')
-          .select('question_key, question_value')
-          .eq('project_id', body.scanProjectId)
-
-        if (complianceRows && complianceRows.length > 0) {
-          const parsed: Record<string, unknown> = {}
-          for (const row of complianceRows) {
-            if (row.question_key && row.question_value !== undefined) {
-              const val = row.question_value
-              parsed[row.question_key] = typeof val === 'object' && val !== null && 'value' in val
-                ? (val as { value: unknown }).value
-                : val
-            }
-          }
-          complianceAnswers = parsed as import('@/lib/audit/types').ComplianceAnswers
-          log.info('Compliance answers loaded', { scanProjectId: body.scanProjectId, keys: Object.keys(parsed) })
-        }
-      } catch (compErr) {
-        log.warn('Failed to load compliance answers — proceeding without', { error: String(compErr) })
-      }
-    }
-
+    const complianceAnswers = await loadComplianceAnswers(body.scanProjectId)
     const ctx = await buildAuditContext(REPO_ROOT, undefined, 8192)
     const report = await runAudit(ctx, { rootPath: REPO_ROOT, skipModes, externalTools, complianceAnswers })
 
-    // Compute aggregated values
     const allFindings = report.categories.flatMap((c) =>
       c.ruleResults.flatMap((r) =>
         r.findings.map((f) => ({ ...f, ruleId: r.ruleId, categoryId: c.categoryId }))
@@ -128,7 +163,7 @@ export async function POST(request: Request) {
     const totalScore = report.categories.reduce((s, c) => s + c.weightedScore * c.weight, 0)
     const totalMax = report.categories.reduce((s, c) => s + c.weightedMax * c.weight, 0)
 
-    // 1. Insert audit_runs
+    // 1. Insert audit_run
     const { data: runRow, error: runErr } = await supabaseAdmin
       .from('audit_runs')
       .insert({
@@ -173,16 +208,10 @@ export async function POST(request: Request) {
         manual_rule_count: c.manualRuleCount,
       }
     })
+    const { error: catErr } = await supabaseAdmin.from('audit_category_scores').insert(categoryRows)
+    if (catErr) log.error('Failed to insert category scores', { error: catErr.message })
 
-    const { error: catErr } = await supabaseAdmin
-      .from('audit_category_scores')
-      .insert(categoryRows)
-
-    if (catErr) {
-      log.error('Failed to insert category scores', { error: catErr.message })
-    }
-
-    // 3. Deduplicate findings against the previous run
+    // 3. Deduplicate + insert findings
     const enrichedFindings = allFindings as EnrichedFinding[]
     let newFindings = enrichedFindings
     let skippedCount = 0
@@ -194,55 +223,10 @@ export async function POST(request: Request) {
       log.warn('Deduplication failed — proceeding with all findings', { error: String(dedupErr) })
     }
 
-    // Update audit_runs totals to reflect deduplicated counts
-    if (skippedCount > 0) {
-      const actualCritical = newFindings.filter((f) => f.severity === 'critical').length
-      await supabaseAdmin
-        .from('audit_runs')
-        .update({ total_findings: newFindings.length, critical_findings: actualCritical })
-        .eq('id', runId)
-    }
+    if (skippedCount > 0) await updateRunTotals(runId, newFindings)
+    await insertFindings(runId, newFindings)
 
-    // 4. Insert deduplicated findings (with agent attribution + inherited status)
-    if (newFindings.length > 0) {
-      const findingRows = newFindings.map((f) => {
-        const rule = AUDIT_RULES.find((r) => r.id === f.ruleId)
-        return {
-          run_id: runId,
-          rule_id: f.ruleId,
-          category_id: f.categoryId,
-          severity: f.severity,
-          message: f.message,
-          file_path: f.filePath ?? null,
-          line: f.line ?? null,
-          suggestion: f.suggestion ?? null,
-          agent_source: f.agentSource ?? rule?.agentSource ?? 'core',
-          agent_rule_id: f.agentRuleId ?? rule?.agentRuleId ?? null,
-          enforcement: f.enforcement ?? rule?.enforcement ?? null,
-          affected_files: f.affectedFiles ?? null,
-          fix_hint: f.fixHint ?? null,
-          is_killer: shouldBeKiller(f.severity, f.ruleId),
-          effort_minutes: effortMinutesFromFixType(rule?.fixType ?? (f as { fixType?: string }).fixType ?? null),
-          ...(f.frozen
-            ? { status: 'dismissed', not_relevant_reason: 'frozen-path' }
-            : f.inheritedStatus ? { status: f.inheritedStatus } : {}),
-        }
-      })
-
-      const { error: findErr } = await supabaseAdmin
-        .from('audit_findings')
-        .insert(findingRows)
-
-      if (findErr) {
-        log.error('Failed to insert findings', { error: findErr.message })
-      }
-    }
-
-    log.info('Audit trigger complete', {
-      runId,
-      percentage: report.automatedPercentage,
-      status: report.status,
-    })
+    log.info('Audit trigger complete', { runId, percentage: report.automatedPercentage, status: report.status })
 
     return NextResponse.json({
       runId,

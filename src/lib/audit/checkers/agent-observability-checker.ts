@@ -24,8 +24,9 @@ export async function checkConsoleLogs(ctx: AuditContext): Promise<RuleResult> {
       // Exclude files that legitimately use console: the logger itself + Next.js error boundaries
       && !f.path.endsWith('logger.ts') && !f.path.endsWith('logger.tsx')
       && !f.path.endsWith('error.tsx') && !f.path.endsWith('global-error.tsx')
-      // build-time-rules.ts contains console.log() as instruction text (string literal, not a call)
+      // these files contain console.* inside string literals (recommendation/prompt text, not real calls)
       && !f.path.endsWith('build-time-rules.ts')
+      && !f.path.endsWith('finding-recommendations.ts')
   )
 
   const violations: Finding[] = []

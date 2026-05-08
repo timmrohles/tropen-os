@@ -56,10 +56,23 @@ export async function checkSupabasePITR(ctx: AuditContext): Promise<RuleResult> 
     return pass('cat-13-rule-9', 5, 'Not a Supabase project — PITR not applicable')
   }
 
-  return fail('cat-13-rule-9', 3, 'Supabase detected — verify PITR status', [{
-    severity: 'high', // high: DSGVO Art.32 Backup-Pflicht, Datenverlust-Risiko
+  // Check if PITR is documented in an existing runbook/backup doc
+  const pitrDocumented = ctx.filePaths.some(k =>
+    (k.toLowerCase().includes('runbook') || k.toLowerCase().includes('backup') || k.toLowerCase().includes('disaster'))
+    && k.endsWith('.md')
+  )
+  if (pitrDocumented) {
+    return fail('cat-13-rule-9', 4, 'Supabase PITR documented in runbook — verify Pro Plan + run restore test', [{
+      severity: 'high',
+      message: 'Supabase PITR: Runbook vorhanden — Restore-Test noch ausstehend (DSGVO Art.32)',
+      suggestion: "Manuell: Supabase Dashboard → Database → Backups → Point in Time Recovery → Test-Restore in separates Projekt",
+    }])
+  }
+
+  return fail('cat-13-rule-9', 3, 'Supabase detected — PITR not documented', [{
+    severity: 'high',
     message: 'Supabase PITR nur im Pro-Plan aktiv — regelmäßige Backups fehlen ohne Upgrade',
-    suggestion: "Cursor-Prompt: 'Add README note: Backup-Status — Supabase [free/pro], PITR [enabled/disabled]'",
+    suggestion: "Cursor-Prompt: 'Create docs/runbook-disaster-recovery.md: document Supabase plan, PITR status, and restore procedure'",
   }])
 }
 

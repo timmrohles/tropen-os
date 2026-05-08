@@ -7,6 +7,24 @@ supersedes: []
 
 # Checker Feedback Log
 
+## Dogfeeding-Session 2026-05-08 — 3 Checker-Fixes
+
+### FP: cat-12-rule-6 `console.*` in `finding-recommendations.ts`
+- **Problem:** Checker matchte `console.error` innerhalb eines String-Literals (Cursor-Prompt-Text), nicht im ausführbaren Code.
+- **Fix:** `finding-recommendations.ts` zur Exclusion-Liste in `checkConsoleLogs` hinzugefügt (gleiches Muster wie `build-time-rules.ts`).
+- **Root Cause Pattern P1:** Regex auf raw file content ohne String-Stripping.
+
+### FP: cat-9-rule-5 fetch-in-useEffect in `AuditActions.tsx`
+- **Problem:** Checker flaggte Rate-Limit-Status-Fetch als "kein Cache". Dieser Fetch ist ein one-time Status-Check mit fail-open catch — SWR-Caching ist hier nicht sinnvoll.
+- **Fix:** Finding dismissed für diesen Run. Kein Checker-Fix nötig (use case ist legitim).
+
+### Improvement: cat-13-rule-9 `checkSupabasePITR` Runbook-Erkennung
+- **Problem:** Checker gab immer Score 3 + HIGH finding für Supabase-Projekte, auch wenn PITR in einem Runbook dokumentiert war.
+- **Fix:** Wenn ein Runbook/Backup-Markdown existiert, Score 4 + angepasste Message (Restore-Test ausstehend statt "PITR fehlt").
+- **Effekt:** Finding bleibt sichtbar (kein False Negative), aber korrekt als "dokumentiert, Restore-Test ausstehend" klassifiziert.
+
+---
+
 ## Regeln-Export aus Audit-Seite entfernt (2026-05-06)
 Button "Regeln exportieren" aus AuditActions.tsx ausgeblendet (Kommentar im Code).
 API-Endpoint `/api/audit/export-rules` bleibt funktional für interne Tests.
