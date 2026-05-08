@@ -2288,6 +2288,9 @@ K0.6 Doku-Konvention-Komitee gelaufen. Output: docs/audit-reports/k06-doku-konve
 ## 2026-05-08 — Backlog-Update-Sprint
 7 neue Items eingetragen, 1 neue Kategorie "Vor erstem Kunden" angelegt. Hand-Over: docs/archive/2026-05/backlog-update-handover-2026-05-07.md
 
+## 2026-05-08 — CONVENTIONS-Drift-Behebung
+Backlog-Schema-Sektion eingebaut (must als vierte Severity-Stufe), extends-Feld vollständig dokumentiert (Abgrenzung zu supersedes), INDEX.md mit thematischen ADR-Gruppen umstrukturiert, ADR-029 ergänzt.
+
 ## 2026-05-08 — CONVENTIONS-Konsolidierungs-Lese-Sprint
 Drei Drifts identifiziert: (1) Backlog-Schema-Abschnitt fehlt + must-Severity undefiniert, (2) extends-Feld ohne Erläuterung, (3) decisions/INDEX.md-Frage bei 29 ADRs. Hand-Over: docs/archive/2026-05/conventions-konsolidierung-handover-2026-05-08.md
 
