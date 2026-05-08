@@ -2287,3 +2287,6 @@ K0.6 Doku-Konvention-Komitee gelaufen. Output: docs/audit-reports/k06-doku-konve
 
 ## 2026-05-08 — Backlog-Update-Sprint
 7 neue Items eingetragen, 1 neue Kategorie "Vor erstem Kunden" angelegt. Hand-Over: docs/archive/2026-05/backlog-update-handover-2026-05-07.md
+
+## 2026-05-08 — AI-Discoverability Komitee (Erstbefragung + Mini-Followup)
+Kategorie-27-Regelwerk durch 4-Modell-Komitee + Fallback-Judge (Sonnet, Opus hatte API-Ausfall) erarbeitet. Reihenfolge + llms.txt-Trigger-Logik geklärt. Gesamt: €1.04. Hand-Over: docs/archive/2026-05/ai-discoverability-followup-handover-2026-05-08.md. Nächster Schritt: ADR-029.

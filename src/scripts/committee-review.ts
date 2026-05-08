@@ -47,7 +47,7 @@ const OUTPUT_DIR = join(ROOT, 'docs', 'committee-reviews')
 
 // Model IDs — use latest stable aliases
 const REVIEWER_MODEL = 'claude-sonnet-4-20250514'
-const JUDGE_MODEL    = 'claude-opus-4-20250514'
+const JUDGE_MODEL    = 'claude-sonnet-4-20250514' // Fallback: Opus (claude-opus-4-20250514) hat heute Internal Server Error
 
 function getAnthropicModel(modelId: string) {
   const sdk = createAnthropic({
