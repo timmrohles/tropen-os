@@ -74,6 +74,21 @@ extends: null             # optional: Pfad zur übergeordneten ADR (für themati
 | `superseded` | Abgelöst durch Nachfolge-Dokument, im Archiv | `docs/archive/YYYY-MM/` |
 | `archived` | Historisch relevant, nicht mehr aktiv, ohne Nachfolge | `docs/archive/YYYY-MM/` |
 
+**`extends`-Feld (optional):**
+
+Wird gesetzt, wenn eine ADR thematisch auf einer anderen aufbaut, ohne sie abzulösen. Die referenzierte ADR bleibt aktiv und normativ.
+
+**Abgrenzung zu `supersedes`:**
+
+| Feld | Bedeutung | Wann benutzen |
+|---|---|---|
+| `supersedes` | Diese Datei löst eine andere vollständig ab. Die alte ist nicht mehr normativ. | Kompletter Ersatz oder Pivot |
+| `extends` | Diese ADR baut thematisch auf einer anderen auf. Beide bleiben aktiv. | Thematische Vertiefung ohne Ablösung |
+
+Beispiel: ADR-029 (Audit-Kategorie 27) setzt `extends: docs/decisions/028-pivot-to-companion-platform.md`, weil sie eine Kategorie-Entscheidung im Rahmen des Pivots ist — nicht weil sie ADR-028 ablöst.
+
+`extends` ist optional. Nicht jede ADR braucht es — nur wenn die Lesbarkeit davon abhängt, dass die Vorgänger-ADR bekannt ist.
+
 **Frontmatter ist Pflicht, nicht Empfehlung.** Eine Datei in `active/` oder `decisions/` ohne gültiges Frontmatter ist ein Verstoß gegen die Konvention.
 
 ---
