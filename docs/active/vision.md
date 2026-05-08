@@ -202,7 +202,7 @@ v3 ist deshalb vollständig — alle neun Achsen, Recycling-Mapping, Inventur-Er
 
 **Position:** Doku-Wildwuchs ist typisches Vibe-Coding-Phänomen. Tropen scannt User-Repos auf Verstöße gegen Doku-Konvention. Acht konkrete Findings als MVP-Substanz.
 
-**Acht Audit-Findings:**
+**Neun Audit-Findings:**
 
 | # | Finding | Severity |
 |---|---|---|
