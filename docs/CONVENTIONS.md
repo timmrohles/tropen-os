@@ -228,25 +228,9 @@ Tropen-Doku-Wahrheit liegt in `docs/active/` und `docs/decisions/`. Bau-Agenten 
 
 ---
 
-## Tropen-Audit-Feature (Achse 9 in Zielbild v3)
+## Tropen-Audit-Feature
 
-Tropen scannt User-Repos auf Doku-Wildwuchs. Die folgenden acht Findings sind die MVP-Substanz für Achse 9 — als neue Audit-Kategorie zu den heutigen 26 Kategorien.
-
-| # | Finding | Severity |
-|---|---|---|
-| 1 | Mehrere `status: active`-Dateien gleichen Themas (Levenshtein/Wortstamm) | Critical |
-| 2 | Datei in `active/`/`decisions/` ohne gültiges Frontmatter | Should |
-| 3 | Verwaiste Datei (in `docs/`, nicht in `INDEX.md` eingetragen) | Should |
-| 4 | Parallele Doku-Verzeichnisse (`docs/`, `documents/`, `notes/`, `wiki/`, deutsche+englische Varianten) | Critical |
-| 5 | Datei-Suffixe `-v2`, `-new`, `-final`, `-copy`, `-old` | Should |
-| 6 | Abgelaufenes `review_by` bei `status: active` | Info |
-| 7 | Inkonsistente Status-Werte (außerhalb erlaubter Liste) | Should |
-| 8 | Supersedes-Link zeigt auf nicht-existente Datei | Should |
-
-**Was Tropen nicht tut:**
-- Inhaltliche Bewertung ("schlechte Strategie")
-- Automatische Datei-Löschung oder Merge ohne User-Bestätigung
-- Eingriff in Code-Inline-Doku (JSDoc, Kommentare)
+Die Doku-Hygiene-Audit-Findings (Achse 9) werden in `docs/active/vision.md` Abschnitt "Achse 9 — Doku-Hygiene als fünfte Wissens-Domäne" verwaltet — dort sind die vollständigen 9 Findings, Severity-Differenzierungen und der Substanz-Stand.
 
 ---
 
