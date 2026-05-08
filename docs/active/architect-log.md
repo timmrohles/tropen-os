@@ -2288,6 +2288,9 @@ K0.6 Doku-Konvention-Komitee gelaufen. Output: docs/audit-reports/k06-doku-konve
 ## 2026-05-08 — Backlog-Update-Sprint
 7 neue Items eingetragen, 1 neue Kategorie "Vor erstem Kunden" angelegt. Hand-Over: docs/archive/2026-05/backlog-update-handover-2026-05-07.md
 
+## 2026-05-08 — CONVENTIONS-Konsolidierungs-Lese-Sprint
+Drei Drifts identifiziert: (1) Backlog-Schema-Abschnitt fehlt + must-Severity undefiniert, (2) extends-Feld ohne Erläuterung, (3) decisions/INDEX.md-Frage bei 29 ADRs. Hand-Over: docs/archive/2026-05/conventions-konsolidierung-handover-2026-05-08.md
+
 ## 2026-05-08 — ADR-029 accepted
 Audit-Kategorie 27 "Web Discoverability & AI Readiness" formal gesetzt. 6 Regeln, Profil-Bindung, llms.txt-Hybrid-Trigger, Implementierungs-Reihenfolge (OpenGraph → robots.txt → sitemap → JSON-LD → llms.txt → Canonical). Folge-ADR: ADR-030 (Profil-System). Ansatz C auf `must` angehoben.
 
