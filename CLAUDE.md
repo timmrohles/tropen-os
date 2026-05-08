@@ -153,7 +153,7 @@ Alle Dokumente liegen in `docs/active/` (nach Aufräum-Sprint 2026-05-07 migrier
 | 60–79% | 🟠 Risky |
 | < 60% | 🔴 Prototype |
 
-**Letzter Audit:** 2026-05-06 — **~96%+ Production Grade** (--skip-cli; Report: `docs/audit-reports/2026-05-06-audit-report.md`) · Regelwerk: **255 Regeln in 26 Kategorien** (Stand 2026-05-07)
+**Letzter Audit:** 2026-05-07 — **96.70% Production Grade** (Run `e9b7bb9c`, --skip-cli) · Regelwerk: **255 Regeln in 26 Kategorien**
 
 Bei neuen Features oder größeren Änderungen: relevante Audit-Kategorien berücksichtigen.
 
@@ -1411,6 +1411,12 @@ Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGEN
 - **`ConsensusFixResult.tsx`**: `RISK_COLOR.moderate` von `'#E5A000'` auf `'var(--status-risky)'` geändert — Hex-Werte in Komponenten verboten
 - **`distributor.ts`** + **`cron/feed-process/route.ts`**: N+1-Queries beseitigt — DB-Calls aus Loop entfernt, stattdessen Batch-Insert/-Upsert nach dem Loop
 - **`external-tools-checker.ts`** `run()`-Funktion: `stdio: ['pipe', 'pipe', 'pipe']` — Chrome-EPERM-Fehler beim Temp-Cleanup leaken nicht mehr ans Terminal (Windows-Fix)
+
+**Checker-Fixes 2026-05-08 (Dogfeeding-Session):**
+- **`checkConsoleLogs`** (`agent-observability-checker.ts`): `finding-recommendations.ts` zur Exclusion-Liste hinzugefügt — enthält `console.*` in String-Literalen (Cursor-Prompt-Text), nicht in ausführbarem Code
+- **`checkSupabasePITR`** (`final-category-checkers.ts`): Score 4 wenn Runbook/Backup-Dokument existiert (statt immer 3); Score 3 nur wenn keine Doku vorhanden
+- **`audit/trigger/route.ts`** CC-Reduktion: `loadComplianceAnswers()` + `insertFindings()` + `updateRunTotals()` als private Helfer extrahiert — POST-Handler CC von ~56 auf <25 reduziert
+- **Audit-UX**: `FilterChipsRow` — 7 Core-Domains immer sichtbar (0-Findings = grauer ✓-Span); `rankNonKillerFindings` — `top10RuleIds`-Dedup verhindert gleiche rule_id in EMPFOHLEN ZUERST + WEITERE FINDINGS; Score-Badge `+N` → `+N Pkt.`
 
 **Checker-Fixes 2026-04-23 (Dogfeeding-Session — False-Positive-Bereinigung):**
 - **`isExemptFile()`** (`repo-map-checker.ts`): `src/scripts/` zu Ausnahmen hinzugefügt — CLI-Scripts sind Infrastruktur, kein App-Code. Konsistent mit CC-Ausschluss in `ast-quality-checker.ts:41`
