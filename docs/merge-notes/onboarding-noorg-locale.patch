@@ -1,0 +1,47 @@
+--- a/src/app/[locale]/onboarding/page.tsx
++++ b/src/app/[locale]/onboarding/page.tsx
+@@ -19,6 +19,7 @@
+   const [userId, setUserId] = useState('')
+   const [orgId, setOrgId] = useState('')
+   const [userRole, setUserRole] = useState('member')
++  const [noOrg, setNoOrg] = useState(false)
+ 
+   // ── UI State ────────────────────────────────────────────
+   const [step, setStep] = useState(1)
+@@ -69,6 +70,12 @@
+           orgIdVal = profile.organization_id
+           roleVal = profile.role ?? roleVal
+         }
++      }
++
++      // Invite-only: Ohne Organisation kein Onboarding möglich
++      if (!orgIdVal) {
++        setNoOrg(true)
++        return
+       }
+ 
+       setOrgId(orgIdVal)
+@@ -133,6 +140,23 @@
+   }
+ 
+   // ── Render ───────────────────────────────────────────────
++  if (noOrg) {
++    return (
++      <div className="content-narrow" style={s.page}>
++        <div style={s.content}>
++          <div style={s.step}>
++            <span style={s.stepLabel}>Onboarding</span>
++            <h1 style={s.h1}>Noch keine Organisation</h1>
++            <p style={s.sub}>
++              Dein Account ist noch keiner Organisation zugeordnet. Bitte wende dich an
++              deine:n Administrator:in, damit du eingeladen und freigeschaltet wirst.
++            </p>
++          </div>
++        </div>
++      </div>
++    )
++  }
++
+   return (
+     <div className="content-narrow" style={s.page}>
+       {userId && (
