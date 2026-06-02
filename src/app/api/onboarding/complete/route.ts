@@ -1,6 +1,7 @@
 import { createLogger } from '@/lib/logger'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isAssignableRole } from '@/lib/roles'
 import { NextResponse } from 'next/server'
 const log = createLogger('onboarding')
 
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
   const meta = user.user_metadata as { organization_id?: string; role?: string }
   let organizationId = meta.organization_id
   let role = meta.role ?? 'member'
+  if (!isAssignableRole(role)) role = 'member'
 
   // Fallback: Organization aus public.users laden (für Owner die nicht per Einladung angelegt wurden)
   if (!organizationId) {

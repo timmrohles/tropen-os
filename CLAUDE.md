@@ -1026,6 +1026,11 @@ supabase functions deploy ai-chat
 **WICHTIG: Edge Function muss nach jeder Änderung an `supabase/functions/ai-chat/index.ts` manuell deployed werden!**
 Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Migration 071)
 
+**⚠️ Verbindliche Regel: Git zuerst, dann DB**
+- Jede Schema-Änderung **immer zuerst als Datei** in `supabase/migrations/` committen, **dann** anwenden.
+- **Nie** direkt auf die geteilte DB migrieren, ohne dass ein Git-File existiert — sonst driftet Git↔DB. (Reconciliation 02.06.2026: 4 Migrationen `…116`–`…119` lebten nur in der DB und mussten aus `schema_migrations.statements` rekonstruiert werden.)
+- Wird ausnahmsweise via MCP `apply_migration` angewendet, vergibt Supabase eine **eigene Timestamp-Version** (≠ Dateiversion). Danach die History-Version an die Dateiversion angleichen, sonst legt ein späterer `db push` ein Doppel-Entry an.
+
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
 - Migration-Nummern: Legacy-Migrationen 001–033 nutzen einfache Nummern (`030_name.sql`). Ab Migration 034+ gilt Timestamp-Format (`YYYYMMDDHHMMSS_name.sql`) — Supabase CLI Standard.
@@ -1103,6 +1108,8 @@ Letzte relevante Migrationen:
 | 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
 | 20260415000112_audit_findings_not_relevant_reason.sql | audit_findings: not_relevant_reason TEXT Spalte fuer "Nicht relevant"-Begruendungen |
 | 20260417000113_beta_tables.sql | beta_waitlist (email/platform/message, RLS public insert + superadmin read) + beta_feedback (user_id/audit_run_id/ratings/message/platform) + user_preferences: beta_onboarding_done + is_beta_user |
+| 20260505000116–119 (nachgezogen aus DB 02.06.) | Audit-/Deep-Review-System: scan_project_profiles, audit_findings.is_killer/effort_minutes, Critical→Killer-Backfill, deep_review_invocations |
+| 20260602000049_role_not_null_guard.sql | users.role NOT NULL + Trigger `guard_superadmin_role` (verhindert superadmin-Zuweisung via Application) |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
