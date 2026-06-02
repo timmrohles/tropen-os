@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isAssignableRole } from '@/lib/roles'
 
 async function requireSuperadmin() {
   const supabase = await createClient()
@@ -20,6 +21,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!email || !role) {
     return NextResponse.json({ error: 'email und role erforderlich' }, { status: 400 })
+  }
+
+  if (!isAssignableRole(role)) {
+    return NextResponse.json({ error: `Ungültige Rolle: ${role}. Erlaubt: owner, admin, member, viewer` }, { status: 400 })
   }
 
   // Auth-User per Email suchen

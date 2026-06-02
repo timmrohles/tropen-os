@@ -1,6 +1,7 @@
 import { createLogger } from '@/lib/logger'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isAssignableRole } from '@/lib/roles'
 import { NextResponse } from 'next/server'
 const log = createLogger('admin/users')
 
@@ -41,6 +42,9 @@ export async function POST(request: Request) {
   const { email, role } = await request.json()
   if (!email || !role)
     return NextResponse.json({ error: 'Email und Rolle erforderlich' }, { status: 400 })
+
+  if (!isAssignableRole(role))
+    return NextResponse.json({ error: `Ungültige Rolle: ${role}. Erlaubt: owner, admin, member, viewer` }, { status: 400 })
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
