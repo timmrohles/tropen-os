@@ -119,7 +119,7 @@ import {
 import {
   checkRlsOnUserTables, checkNoServiceRoleInFrontend, checkAnonKeyNoWriteWildcard,
   checkStorageBucketPolicies, checkEdgeFunctionsNoServiceRoleInUserContext,
-  checkDbBackupStrategyDocumented,
+  checkDbBackupStrategyDocumented, checkSecurityDefinerViews, checkFunctionSearchPath,
 } from './checkers/db-security-checker'
 
 function manual(
@@ -560,6 +560,14 @@ export const AUDIT_RULES: AuditRule[] = [
   manual('sec-db-09', 3, 'Realtime-Subscriptions serverseitig gefiltert', 2, 'code-fix', 'code', undefined, 'security'),
   { id: 'sec-db-10', categoryId: 3, name: 'Backup-Strategie dokumentiert (PITR-Status)', weight: 2,
     checkMode: 'documentation' as const, automatable: true, check: checkDbBackupStrategyDocumented,
+    agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-gen' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  { id: 'sec-db-11', categoryId: 3, name: 'Views ohne SECURITY DEFINER (security_invoker gesetzt)', weight: 3,
+    checkMode: 'cli' as const, automatable: true, check: checkSecurityDefinerViews,
+    agentSource: 'security' as const, enforcement: 'blocked' as const, fixType: 'code-gen' as const,
+    tier: 'code' as const, domain: 'security' as const },
+  { id: 'sec-db-12', categoryId: 3, name: 'DB-Funktionen mit festem search_path', weight: 2,
+    checkMode: 'cli' as const, automatable: true, check: checkFunctionSearchPath,
     agentSource: 'security' as const, enforcement: 'reviewed' as const, fixType: 'code-gen' as const,
     tier: 'code' as const, domain: 'security' as const },
 ]
