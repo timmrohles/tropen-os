@@ -25,6 +25,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS guard_superadmin_role ON public.users;
 CREATE TRIGGER guard_superadmin_role
   BEFORE INSERT OR UPDATE ON public.users
   FOR EACH ROW
