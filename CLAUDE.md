@@ -471,6 +471,11 @@ cd "/c/Users/timmr/tropen OS" && supabase db push
 supabase migration repair --status applied <nummer> → dann db push
 ```
 
+**⚠️ Verbindliche Regel: Git zuerst, dann DB**
+- Jede Schema-Änderung **immer zuerst als Datei** in `supabase/migrations/` committen, **dann** anwenden.
+- **Nie** direkt auf die geteilte DB migrieren, ohne dass ein Git-File existiert — sonst driftet Git↔DB. (Reconciliation 02.06.2026: 4 Migrationen `…116`–`…119` lebten nur in der DB und mussten aus `schema_migrations.statements` rekonstruiert werden.)
+- Wird ausnahmsweise via MCP `apply_migration` angewendet, vergibt Supabase eine **eigene Timestamp-Version** (≠ Dateiversion). Danach die History-Version an die Dateiversion angleichen, sonst legt ein späterer `db push` ein Doppel-Entry an.
+
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
 - Migration-Nummern: einfache Zahlen (001, 002...), kein Timestamp-Format
@@ -495,6 +500,8 @@ Letzte relevante Migrationen:
 | 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
 | 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
 | 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
+| 20260505000116–119 (rekonstruiert aus DB, siehe `docs/merge-notes/`) | Audit-/Deep-Review-System: scan_project_profiles, audit_findings.is_killer/effort_minutes, Critical→Killer-Backfill, deep_review_invocations |
+| 20260602000049_role_not_null_guard.sql | users.role NOT NULL + Trigger `guard_superadmin_role` (verhindert superadmin-Zuweisung via Application) |
 
 **APPEND ONLY Tabellen** (niemals UPDATE oder DELETE): `card_history`, `project_memory`, `feed_processing_log`, `feed_data_records`, `feed_runs`, `agent_runs`
 
