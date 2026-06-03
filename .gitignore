@@ -46,3 +46,7 @@ coverage/
 package-lock.json
 package-lock.json
 .worktrees/
+
+# Secret-Scan-Reports (enthalten Klartext-Secrets) — niemals committen
+.gitleaks-report.json
+*gitleaks*.json
