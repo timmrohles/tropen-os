@@ -25,18 +25,26 @@ function readContent(ctx: AuditContext, path: string): string | null {
 
 function getAllMigrationContent(ctx: AuditContext): string {
   const migrationsDir = 'supabase/migrations'
+  const parts: string[] = []
+  // In-memory-Migrationen (externe Projekt-Scans laufen ohne Disk-Zugriff)
+  if (ctx.fileContents) {
+    for (const [p, content] of ctx.fileContents) {
+      if (/supabase[\\/]migrations[\\/].+\.sql$/i.test(p)) parts.push(content)
+    }
+  }
   try {
      
     const fs = require('fs') as typeof import('fs')
      
     const nodePath = require('path') as typeof import('path')
     const dir = nodePath.join(ctx.rootPath ?? process.cwd(), migrationsDir)
-    if (!fs.existsSync(dir)) return ''
-    return (fs.readdirSync(dir) as string[])
-      .filter(f => f.endsWith('.sql'))
-      .map(f => fs.readFileSync(nodePath.join(dir, f), 'utf-8'))
-      .join('\n')
-  } catch { return '' }
+    if (fs.existsSync(dir)) {
+      for (const f of (fs.readdirSync(dir) as string[])) {
+        if (f.endsWith('.sql')) parts.push(fs.readFileSync(nodePath.join(dir, f), 'utf-8'))
+      }
+    }
+  } catch { /* ignore */ }
+  return parts.join('\n')
 }
 
 function getClientCodePaths(ctx: AuditContext): Array<{ path: string; content: string }> {
@@ -104,25 +112,29 @@ export async function checkNoServiceRoleInFrontend(ctx: AuditContext): Promise<R
   return fail('sec-db-02', 1, `${violations.length} Client-Datei(en) mit Service-Role-Key`, violations)
 }
 
-// sec-db-03: Anon key no wildcard write access
+// sec-db-03: Keine Wildcard-Schreib-Policies (USING/WITH CHECK true) für nicht-service_role
 export async function checkAnonKeyNoWriteWildcard(ctx: AuditContext): Promise<RuleResult> {
   const migrations = getAllMigrationContent(ctx)
   if (!migrations) return pass('sec-db-03', 3, 'Keine Migrationen — manuell prüfen')
 
-  // Look for policies granting anon INSERT/UPDATE/DELETE with USING (true)
-  const dangerPattern = /CREATE\s+POLICY[^;]*FOR\s+(?:INSERT|UPDATE|DELETE)[^;]*TO\s+anon[^;]*(?:USING|WITH\s+CHECK)\s*\(\s*true\s*\)/gi
+  // Schreib-Policies (ALL/INSERT/UPDATE/DELETE) mit USING/WITH CHECK (true) — für JEDE Rolle,
+  // außer service_role (dort ist USING(true) gewollt, da serverseitig). SELECT(true) ist ok (Public-Read).
+  const dangerPattern = /CREATE\s+POLICY[^;]*?\bFOR\s+(?:ALL|INSERT|UPDATE|DELETE)\b[^;]*?(?:USING|WITH\s+CHECK)\s*\(\s*true\s*\)/gi
   const violations: Finding[] = []
   let _m: RegExpExecArray | null
   while ((_m = dangerPattern.exec(migrations)) !== null) {
+    const stmt = _m[0]
+    if (/\bservice_role\b/i.test(stmt)) continue // service_role-Wildcard ist gewollt
+    const role = /\bTO\s+(\w+)/i.exec(stmt)?.[1] ?? 'public/authenticated'
     violations.push({
       severity: 'high',
-      message: 'Anon-User hat unkontrollierten Schreibzugriff — unauthentifizierte Requests können Daten ändern',
+      message: `Over-permissive RLS-Policy (USING/WITH CHECK (true)) für Schreibzugriff der Rolle "${role}" — jeder dieser User kann beliebige Zeilen ändern`,
       filePath: 'supabase/migrations/',
-      suggestion: "Cursor-Prompt: 'Ersetze USING (true) in der anon-Schreib-Policy durch eine sinnvolle Bedingung oder entferne die Policy und nutze nur auth.uid()-basierte Policies'",
+      suggestion: "Cursor-Prompt: 'Ersetze USING (true) / WITH CHECK (true) in der Schreib-Policy durch eine sinnvolle Bedingung (z.B. organization_id = get_my_organization_id() oder auth.uid() = user_id), oder entferne die Policy und nutze die Service-Role serverseitig'",
     })
   }
-  if (violations.length === 0) return pass('sec-db-03', 5, 'Keine wilden Anon-Schreib-Policies')
-  return fail('sec-db-03', 2, `${violations.length} unsichere Anon-Schreib-Policy(s)`, violations)
+  if (violations.length === 0) return pass('sec-db-03', 5, 'Keine Wildcard-Schreib-Policies (USING/WITH CHECK true)')
+  return fail('sec-db-03', 2, `${violations.length} over-permissive Schreib-Policy(s) — RLS effektiv umgangen`, violations)
 }
 
 // sec-db-07: Storage buckets have policies
@@ -192,4 +204,69 @@ export async function checkDbBackupStrategyDocumented(ctx: AuditContext): Promis
     filePath: 'README.md',
     suggestion: "Cursor-Prompt: 'Füge eine Backup-Sektion in README.md ein: Supabase Plan (Free/Pro), PITR (enabled/disabled), letzter Restore-Test'",
   }])
+}
+
+// sec-db-11: Views ohne SECURITY DEFINER (security_invoker gesetzt)
+// Eine View ohne security_invoker läuft mit den Rechten/RLS des Erstellers (postgres) statt des
+// abfragenden Users → RLS-Bypass. Entspricht Supabase-Linter 'security_definer_view' (ERROR).
+export async function checkSecurityDefinerViews(ctx: AuditContext): Promise<RuleResult> {
+  const migrations = getAllMigrationContent(ctx)
+  if (!migrations) return pass('sec-db-11', 3, 'Keine Migrationen — manuell prüfen')
+
+  const createViewPattern = /CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+)?VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?(\w+)/gi
+  const invokerPattern = /(?:CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+)?VIEW|ALTER\s+VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?(\w+)[^;]*security_invoker\s*=\s*(?:on|true)/gi
+
+  const views = new Set<string>()
+  const invokerViews = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = createViewPattern.exec(migrations)) !== null) views.add(m[1].toLowerCase())
+  while ((m = invokerPattern.exec(migrations)) !== null) invokerViews.add(m[1].toLowerCase())
+
+  const unsafe = [...views].filter(v => !invokerViews.has(v))
+  if (unsafe.length === 0) return pass('sec-db-11', 5, 'Alle Views nutzen security_invoker (keine SECURITY DEFINER-Views)')
+
+  const violations: Finding[] = unsafe.slice(0, 5).map(v => ({
+    severity: 'critical' as const,
+    message: `View "${v}" läuft als SECURITY DEFINER (kein security_invoker=on) — Abfragen umgehen die RLS des aufrufenden Users`,
+    filePath: 'supabase/migrations/',
+    suggestion: `Cursor-Prompt: 'Erstelle eine Migration: ALTER VIEW ${v} SET (security_invoker = on); — damit greift die RLS des abfragenden Users statt der des Erstellers'`,
+  }))
+  const score = unsafe.length >= 3 ? 1 : 2
+  return fail('sec-db-11', score, `${unsafe.length} View(s) als SECURITY DEFINER — RLS-Bypass-Risiko`, violations)
+}
+
+// sec-db-12: DB-Funktionen mit festem search_path
+// Funktionen ohne 'SET search_path' sind anfällig für search_path-Hijacking.
+// Entspricht Supabase-Linter 'function_search_path_mutable' (WARN).
+export async function checkFunctionSearchPath(ctx: AuditContext): Promise<RuleResult> {
+  const migrations = getAllMigrationContent(ctx)
+  if (!migrations) return pass('sec-db-12', 3, 'Keine Migrationen — manuell prüfen')
+
+  const createFnPattern = /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:\w+\.)?(\w+)\s*\(/gi
+  const fns = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = createFnPattern.exec(migrations)) !== null) fns.add(m[1].toLowerCase())
+
+  // Eine Funktion gilt als geschützt, wenn 'SET search_path' innerhalb der Optionen (CREATE) oder
+  // via 'ALTER FUNCTION ... SET search_path' gesetzt ist (Options stehen vor dem AS-Body).
+  const protectedFns = new Set<string>()
+  for (const name of fns) {
+    const re = new RegExp(
+      '(?:CREATE\\s+(?:OR\\s+REPLACE\\s+)?FUNCTION|ALTER\\s+FUNCTION)\\s+(?:\\w+\\.)?' + name + '\\b[\\s\\S]{0,400}?SET\\s+search_path',
+      'i'
+    )
+    if (re.test(migrations)) protectedFns.add(name)
+  }
+
+  const unsafe = [...fns].filter(f => !protectedFns.has(f))
+  if (unsafe.length === 0) return pass('sec-db-12', 5, 'Alle Funktionen haben einen festen search_path')
+
+  const violations: Finding[] = unsafe.slice(0, 8).map(f => ({
+    severity: 'medium' as const,
+    message: `Funktion "${f}()" hat keinen festen search_path — anfällig für search_path-Hijacking`,
+    filePath: 'supabase/migrations/',
+    suggestion: `Cursor-Prompt: 'Erstelle eine Migration: ALTER FUNCTION ${f}(<signatur>) SET search_path = public; — gegen search_path-Hijacking'`,
+  }))
+  const score = unsafe.length >= 6 ? 2 : 3
+  return fail('sec-db-12', score, `${unsafe.length} Funktion(en) ohne festen search_path`, violations)
 }

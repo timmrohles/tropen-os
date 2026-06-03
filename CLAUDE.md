@@ -1046,6 +1046,11 @@ supabase functions deploy ai-chat
 **WICHTIG: Edge Function muss nach jeder Änderung an `supabase/functions/ai-chat/index.ts` manuell deployed werden!**
 Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Migration 071)
 
+**⚠️ Verbindliche Regel: Git zuerst, dann DB**
+- Jede Schema-Änderung **immer zuerst als Datei** in `supabase/migrations/` committen, **dann** anwenden.
+- **Nie** direkt auf die geteilte DB migrieren, ohne dass ein Git-File existiert — sonst driftet Git↔DB. (Reconciliation 02.06.2026: 4 Migrationen `…116`–`…119` lebten nur in der DB und mussten aus `schema_migrations.statements` rekonstruiert werden.)
+- Wird ausnahmsweise via MCP `apply_migration` angewendet, vergibt Supabase eine **eigene Timestamp-Version** (≠ Dateiversion). Danach die History-Version an die Dateiversion angleichen, sonst legt ein späterer `db push` ein Doppel-Entry an.
+
 **Fallstricke:**
 - `.env.local` muss Unix-Zeilenenden (LF) haben — CRLF bricht den Parser
 - Migration-Nummern: Legacy-Migrationen 001–033 nutzen einfache Nummern (`030_name.sql`). Ab Migration 034+ gilt Timestamp-Format (`YYYYMMDDHHMMSS_name.sql`) — Supabase CLI Standard.
@@ -1126,6 +1131,9 @@ Letzte relevante Migrationen:
 | 20260505000116_scan_project_profiles.sql | scan_project_profiles: profile_type_enum + geo_scope_enum + 5 Felder (profile_type, geo_scope, has_user_data, has_ai nullable, has_ecommerce nullable) + RLS org-scoped. ADR-027 Schritt 5. |
 | 20260505000117_audit_findings_killer_effort.sql | audit_findings: is_killer BOOLEAN + effort_minutes INTEGER (beide nullable, Heuristik-Fallback für alte Findings). ADR-027 Schritt 9a. |
 | 20260506000118_critical_findings_killer_coupling.sql | UPDATE audit_findings SET is_killer=true WHERE severity='critical'. Severity-Coupling: alle Critical-Findings nachträglich als Killer klassifiziert. ADR-027 Sprint 9-Critical-Killer. |
+| 20260506000119_deep_review_rate_limits.sql | deep_review_invocations: Rate-Limiting für Deep Review (24h Cooldown + 10/Monat pro User) + RLS |
+| 20260602000049_role_not_null_guard.sql | users.role NOT NULL + Trigger `guard_superadmin_role` (verhindert superadmin-Zuweisung via Application) |
+| 20260602000050_security_advisor_fixes.sql | Supabase-Advisor-Fixes: projects_with_stats security_invoker, search_path auf 9 Funktionen, EXECUTE-Härtung, qa_compliance_checks over-permissive Policy entfernt |
 
 **Navigation — Produkt-Pivot (Stand 2026-04-10):**
 Tropen OS ist ein "Production Readiness Guide für Vibe-Coders". Die Nav spiegelt die 3 Kern-Features.
