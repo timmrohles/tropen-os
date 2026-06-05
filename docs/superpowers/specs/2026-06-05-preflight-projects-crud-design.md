@@ -118,6 +118,26 @@ Daten: GET `/api/preflight/projects/[id]`.
 - `PreflightResult.tsx` wird zur Detail-Komposition umgebaut (Einordnung + Lücken + ArtifactBrowser); die bisherige „Path B (kommt bald)"-Schaltfläche entfällt — die Artefakte **sind** die generierten Dateien.
 - `GapCard`/`GapsSection` unverändert.
 
+### Wiederverwendung vs. Neubau (Recycling-Audit)
+
+Es gibt bereits eine Artefakt-Infrastruktur (`artifacts`-Tabelle, `/api/artifacts`, `ArtifactRenderer`, Artifacts-Seite). Entscheidung pro Baustein:
+
+**Wiederverwenden (direkt importieren/extrahieren):**
+- `src/components/workspace/CodeBlock.tsx` — Lazy-Syntax-Highlighter. Direkt für die Datei-Vorschau (`<CodeBlock language="markdown">…</CodeBlock>`). Kein `dynamic()` nötig (kein Chat-Kontext).
+- `downloadArtifact()` aus `artifacts/_components/ArtifactCard.tsx` — Blob-Download. Generisch extrahieren nach `src/lib/download.ts` als `downloadTextFile(filename, content)` und im ArtifactBrowser nutzen.
+- CSS-Klassen: `btn-icon`, `dropdown`, `dropdown-item`, `dropdown-item--danger`, `animate-dropdown`, `card`, `chip`.
+
+**Referenzieren (Muster spiegeln, nicht importieren):**
+- `[···]`-Menü + Inline-Rename + `dropdown-item--danger` aus `ArtifactCard.tsx` → Vorlage für `ProjectCard` (DotsThree/PencilSimple/Trash). Ohne „In Workspace speichern".
+- Clipboard: kein wiederverwendbarer Hook vorhanden — `navigator.clipboard.writeText` + 1,8 s-Feedback inline (Muster aus `PerspectivesBottomSheet.tsx`).
+
+**Neu bauen:**
+- `ArtifactBrowser` (Split-Pane: Dateiliste + Vorschau, Datei-Auswahl-State) — es gibt keinen Repo-Browser; `ArtifactRenderer` ist für interaktive Renderables (Charts/React/Slides via iframe) und damit overkill für statische Textdateien.
+- `ProjectGrid`/`ProjectCard`, `IntakePanel` (Extraktion aus heutiger Seite), die CRUD-Routen.
+
+**Bewusst NICHT wiederverwenden:**
+- `artifacts`-Tabelle / `/api/artifacts`: an `conversation_id`/`message_id` gekoppelt und Teil der **eingefrorenen** Phase-2-Navigation. Pre-Flight-Dateien leben bereits in `preflight_runs.result.startpaket` (JSONB) — kein zweiter Speicherort, keine Kopplung an deprecated Surface. Der Artefakt-Bereich ist eine **Sicht** auf dieses JSONB, kein eigener Store.
+
 ---
 
 ## 5. Datenfluss (Happy Path)

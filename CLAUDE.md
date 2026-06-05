@@ -351,6 +351,8 @@ Veredler transformiert (TRANSFORMATION-Status, nicht WEGFALL).
 - `ANTHROPIC_API_KEY` → Vercel Environment Variables
 - `ANTHROPIC_API_KEY` → Supabase Edge Function Secrets
 
+**Lokaler Dev-Start:** `pnpm dev` läuft über `scripts/dev.mjs`. Der Wrapper löscht vor `next dev` nur **leere** API-Key-Variablen (ANTHROPIC/OPENAI/XAI/GOOGLE/AI_GATEWAY). Grund: manche Shells exportieren z.B. `ANTHROPIC_API_KEY=""`; dotenv (`@next/env`) überschreibt vorhandene `process.env`-Keys nicht → der Leerwert würde `.env.local` überschatten und LLM-Calls lokal mit `x-api-key header is required` scheitern lassen. Echte Werte bleiben unangetastet; Vercel-Prod unberührt.
+
 **Budget-System:**
 - `check_and_reserve_budget(org_id, p_workspace_id, estimated_cost)` RPC (Migration 005 + 012)
 - Kosten-Schätzungen: `src/lib/budget.ts` — `ESTIMATED_COSTS`
@@ -1729,6 +1731,7 @@ eslint src/           # keine Fehler
 | `src/lib/audit/compliance-domains.ts` | 6 Compliance-Domaenen mit Relevanz-Funktionen |
 | `src/lib/benchmark/` | Automatisierte Benchmark-Testbench (Tarball + Discovery + Runner + Stats) |
 | `docs/features/status.md` | **Feature-Inventar** — konsolidierter Status aller Features (A/B/C/D), Schichten-Check, Offene Punkte — vor jeder V1-Roadmap-Entscheidung lesen |
+| `docs/superpowers/specs/2026-06-05-preflight-projects-crud-design.md` | **Pre-Flight Projekt-Fläche** (Slice, Branch `claude/preflight-impl`) — Design-Spec: benannte Projekte, CRUD, Repo-Artefakt-Browser, Datenmodell `preflight_projects` + `preflight_runs.project_id`, Recycling-Audit. Freigegeben 2026-06-05, Implementierung offen |
 
 ---
 
