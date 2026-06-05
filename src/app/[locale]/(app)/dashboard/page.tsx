@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { House, ArrowUp, ArrowDown, Minus, Plus, FolderOpen, Lightning, Target } from '@phosphor-icons/react/dist/ssr'
+import { House, ArrowUp, ArrowDown, Minus, Plus, FolderOpen, Lightning, Target, Compass } from '@phosphor-icons/react/dist/ssr'
 import { Link } from '@/i18n/navigation'
 import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/utils/supabase/server'
@@ -179,6 +179,10 @@ export default async function DashboardPage() {
         </div>
         {hasProjects && (
           <div className="page-header-actions">
+            <Link href="/preflight" className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+              <Compass size={15} weight="bold" aria-hidden="true" />
+              Pre-Flight
+            </Link>
             <Link href="/audit/scan" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
               <Plus size={15} weight="bold" aria-hidden="true" />
               {t('scanProject')}
@@ -206,6 +210,14 @@ export default async function DashboardPage() {
               >
                 <FolderOpen size={16} weight="bold" aria-hidden="true" />
                 {t('scanFolder')}
+              </Link>
+              <Link
+                href="/preflight"
+                className="btn btn-ghost"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '10px 20px', fontSize: 14 }}
+              >
+                <Compass size={16} weight="bold" aria-hidden="true" />
+                Pre-Flight
               </Link>
               <button className="btn btn-ghost" disabled style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.5, cursor: 'default' }}>
                 {t('connectGitHub')}
