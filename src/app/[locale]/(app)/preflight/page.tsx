@@ -65,7 +65,7 @@ function DropZone({ onFile, disabled }: DropZoneProps) {
   const handleFile = useCallback(async (file: File) => {
     setFileError(null)
     if (!isAcceptedFile(file)) {
-      setFileError('Nur .md und .txt-Dateien werden unterstützt. PDF-Import kommt in einer späteren Version.')
+      setFileError('Direkt gelesen werden nur .md und .txt. Für .docx/.pdf bitte den Text per Copy-Paste oben einfügen — Datei-Import für weitere Formate folgt.')
       return
     }
     try {
