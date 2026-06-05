@@ -5,14 +5,11 @@ import {
   Warning,
   CheckCircle,
   Clock,
-  Copy,
-  DownloadSimple,
-  FileText,
-  Database,
-  Key,
-  Notepad,
+  Export,
+  HardDrives,
 } from '@phosphor-icons/react'
 import type { PreflightResult } from '@/lib/preflight/types'
+import { buildDecisionPrompt } from '@/lib/preflight/export-prompt'
 import { GapsSection } from './GapCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -21,80 +18,52 @@ interface Props {
   result: PreflightResult
 }
 
-type StartpaketTab = 'decision-log' | 'conventions' | 'migration' | 'env-example'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function downloadText(content: string, filename: string) {
-  const blob = new Blob([content], { type: 'text/plain; charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = useCallback(() => {
-    void navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    })
-  }, [text])
-
-  return (
-    <button
-      type="button"
-      className="btn btn-ghost"
-      onClick={handleCopy}
-      style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-    >
-      <Copy size={12} weight="bold" aria-hidden="true" />
-      {copied ? 'Kopiert' : 'Kopieren'}
-    </button>
-  )
-}
-
 // ─── Result Summary ───────────────────────────────────────────────────────────
 
 function ResultSummaryBox({ summary }: { summary: PreflightResult['summary'] }) {
   return (
     <div
       style={{
-        padding: '20px 24px',
+        padding: '24px 28px',
         background: 'var(--surface-tint)',
-        border: '1px solid var(--border)',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: 'var(--border)',
         borderRadius: 8,
         marginBottom: 20,
       }}
     >
-      <span
+      <p
         style={{
-          display: 'inline-block',
+          margin: '0 0 6px',
           fontFamily: 'var(--font-mono)',
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 700,
-          color: 'var(--accent)',
-          letterSpacing: '0.08em',
+          color: 'var(--text-tertiary)',
           textTransform: 'uppercase',
-          marginBottom: 8,
-          padding: '2px 8px',
-          background: 'var(--accent-light)',
-          borderRadius: 4,
+          letterSpacing: '0.08em',
+        }}
+      >
+        Bevor du loslegst
+      </p>
+      <h2
+        style={{
+          margin: '0 0 8px',
+          fontSize: 20,
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          lineHeight: 1.3,
+          fontFamily: 'var(--font-display)',
         }}
       >
         {summary.projectLabel}
-      </span>
+      </h2>
       <p
         style={{
           margin: 0,
-          fontSize: 15,
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          lineHeight: 1.55,
+          fontSize: 14,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
         }}
       >
         {summary.headline}
@@ -117,7 +86,9 @@ function ReifegradSignal({ gaps }: { gaps: PreflightResult['gaps'] }) {
         gap: 16,
         padding: '14px 20px',
         background: hasBlockers ? 'var(--surface-warm)' : 'var(--teal-light)',
-        border: `1px solid ${hasBlockers ? 'var(--border)' : 'rgba(30,112,112,0.18)'}`,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: hasBlockers ? 'var(--border)' : 'rgba(30,112,112,0.18)',
         borderRadius: 8,
         marginBottom: 24,
         flexWrap: 'wrap',
@@ -168,171 +139,132 @@ function ReifegradSignal({ gaps }: { gaps: PreflightResult['gaps'] }) {
   )
 }
 
-// ─── Code Panel ───────────────────────────────────────────────────────────────
+// ─── Action Paths ─────────────────────────────────────────────────────────────
 
-interface CodePanelProps {
-  content: string
-  filename: string
-  language?: string
-}
+function ActionPaths({ result }: { result: PreflightResult }) {
+  const [copied, setCopied] = useState(false)
 
-function CodePanel({ content, filename, language = 'text' }: CodePanelProps) {
+  const handleCopyPrompt = useCallback(() => {
+    const prompt = buildDecisionPrompt(result)
+    void navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [result])
+
   return (
-    <div>
-      <div
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: 12,
+        marginBottom: 32,
+      }}
+    >
+      {/* Path A — primary: Prompt kopieren */}
+      <button
+        type="button"
+        onClick={handleCopyPrompt}
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--surface-warm)',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '20px 22px',
+          background: copied ? 'var(--teal-light)' : 'var(--bg-surface-solid)',
+          borderWidth: '2px',
+          borderStyle: 'solid',
+          borderColor: copied ? 'rgba(30,112,112,0.35)' : 'var(--teal)',
+          borderRadius: 8,
+          cursor: 'pointer',
+          textAlign: 'left',
+          transition: 'background 200ms, border-color 200ms',
         }}
+        aria-label="Alle offenen Punkte als Entscheidungs-Prompt in die Zwischenablage kopieren"
       >
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>
-          {filename}
-        </span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <CopyButton text={content} />
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => downloadText(content, filename)}
-            style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-          >
-            <DownloadSimple size={12} weight="bold" aria-hidden="true" />
-            Download
-          </button>
-        </div>
-      </div>
-      <pre
-        aria-label={`${language} code: ${filename}`}
-        style={{
-          margin: 0,
-          padding: '16px',
-          fontSize: 12,
-          lineHeight: 1.7,
-          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-          color: 'var(--text-secondary)',
-          background: 'var(--active-bg)',
-          overflowX: 'auto',
-          whiteSpace: 'pre',
-          maxHeight: 480,
-          overflowY: 'auto',
-        }}
-      >
-        <code>{content}</code>
-      </pre>
-    </div>
-  )
-}
-
-// ─── Startpaket Section ───────────────────────────────────────────────────────
-
-function StartpaketSection({ startpaket }: { startpaket: PreflightResult['startpaket'] }) {
-  const [activeTab, setActiveTab] = useState<StartpaketTab>('decision-log')
-
-  // Conventions tab uses filename + content from the result (tool-correct: CLAUDE.md / .cursorrules / …)
-  const conventionsFilename = startpaket.conventions.filename
-  const conventionsContent = startpaket.conventions.content
-
-  type TabConfig = {
-    id: StartpaketTab
-    label: string
-    icon: React.ReactNode
-    filename: string
-    language: string
-  }
-
-  const TAB_CONFIG: TabConfig[] = [
-    { id: 'decision-log', label: 'Decision Log',       icon: <Notepad size={12} weight="bold" aria-hidden="true" />,   filename: 'decision-log.md',   language: 'markdown' },
-    { id: 'conventions',  label: conventionsFilename,  icon: <FileText size={12} weight="bold" aria-hidden="true" />,  filename: conventionsFilename, language: 'markdown' },
-    { id: 'migration',    label: 'Migration',          icon: <Database size={12} weight="bold" aria-hidden="true" />,  filename: 'migration.sql',     language: 'sql'      },
-    { id: 'env-example',  label: '.env.example',       icon: <Key size={12} weight="bold" aria-hidden="true" />,       filename: '.env.example',      language: 'text'     },
-  ]
-
-  const getContent = (tab: StartpaketTab): string | null => {
-    switch (tab) {
-      case 'decision-log': return startpaket.decisionLog
-      case 'conventions':  return conventionsContent
-      case 'migration':    return startpaket.migrationDraft?.sql ?? null
-      case 'env-example':  return startpaket.envExample
-    }
-  }
-
-  const activeConfig = TAB_CONFIG.find(t => t.id === activeTab)!
-  const content = getContent(activeTab)
-  const migration = startpaket.migrationDraft
-
-  return (
-    <div>
-      <div className="app-tabs" role="tablist">
-        {TAB_CONFIG.map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`app-tab${activeTab === tab.id ? ' app-tab--active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div
-        style={{
-          background: 'var(--bg-surface-solid)',
-          border: '1px solid var(--border)',
-          borderTop: 'none',
-        }}
-      >
-        {activeTab === 'migration' && migration && migration.warnings.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
           <div
-            role="alert"
             style={{
-              padding: '12px 16px',
-              borderBottom: '1px solid var(--border)',
-              background: 'rgba(229,160,0,0.08)',
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: 'var(--teal)',
               display: 'flex',
-              gap: 10,
-              alignItems: 'flex-start',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <Warning size={16} weight="fill" color="var(--status-risky)" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
-            <div>
-              <p style={{ margin: '0 0 6px', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-                Entwurf — prüfen, nicht blind anwenden
-              </p>
-              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                {migration.warnings.map((w, i) => (
-                  <li key={`warn-${i}`}>{w}</li>
-                ))}
-              </ul>
-            </div>
+            <Export size={18} weight="bold" color="#ffffff" aria-hidden="true" />
           </div>
-        )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: copied ? 'var(--teal)' : 'var(--text-primary)' }}>
+              {copied ? 'Kopiert ✓' : 'Alle Punkte als Prompt kopieren'}
+            </p>
+          </div>
+        </div>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          Für deinen LLM (Claude, Cursor …) — entscheide alles in einem Rutsch.
+        </p>
+      </button>
 
-        {activeTab === 'migration' && !migration && (
-          <div style={{ padding: '24px 16px', fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            Kein Schema erkannt — keine Migration generiert.
+      {/* Path B — disabled: Hier durchgehen & Dateien erstellen */}
+      <div
+        aria-disabled="true"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '20px 22px',
+          background: 'var(--bg-surface)',
+          borderWidth: '1px',
+          borderStyle: 'dashed',
+          borderColor: 'var(--border)',
+          borderRadius: 8,
+          opacity: 0.6,
+          cursor: 'not-allowed',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: 'var(--accent-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <HardDrives size={18} weight="bold" color="var(--text-tertiary)" aria-hidden="true" />
           </div>
-        )}
-
-        {content !== null && (
-          <CodePanel
-            content={content}
-            filename={activeConfig.filename}
-            language={activeConfig.language}
-          />
-        )}
-        {content === null && ['decision-log', 'conventions', 'env-example'].includes(activeTab) && (
-          <div style={{ padding: '24px 16px', fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            Kein Inhalt verfügbar.
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+              Hier durchgehen &amp; Dateien erstellen
+            </p>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 600,
+                padding: '2px 7px',
+                borderRadius: 4,
+                background: 'var(--accent-light)',
+                color: 'var(--text-tertiary)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              kommt bald
+            </span>
           </div>
-        )}
+        </div>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          CLAUDE.md, README, ADRs … direkt aus deinen Entscheidungen generieren.
+        </p>
       </div>
     </div>
   )
@@ -341,31 +273,26 @@ function StartpaketSection({ startpaket }: { startpaket: PreflightResult['startp
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export function PreflightResult({ result }: Props) {
-  const { summary, gaps, startpaket } = result
+  const { summary, gaps } = result
 
   return (
     <div style={{ marginTop: 32 }}>
-      {/* Result Summary — prominent box at the very top */}
+      {/* Clear "decide before you build" headline block */}
       <ResultSummaryBox summary={summary} />
 
       {/* Reifegrad-Signal (counts bar) */}
       <ReifegradSignal gaps={gaps} />
 
-      {/* Lücken-Liste */}
+      {/* Two action paths — prominent, above the list */}
+      <ActionPaths result={result} />
+
+      {/* Compact gaps list */}
       <GapsSection gaps={gaps} />
 
-      {/* Startpaket */}
-      <div>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 12,
-          fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
-          color: 'var(--accent)', marginBottom: 16, letterSpacing: '0.02em',
-        }}>
-          <span style={{ width: 28, height: 1, background: 'var(--border)', flexShrink: 0 }} />
-          Startpaket
-        </div>
-        <StartpaketSection startpaket={startpaket} />
-      </div>
+      {/* Tiny muted note about Startpaket / Weg B */}
+      <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>
+        Das Startpaket (CLAUDE.md, .env.example, Migration …) entsteht aus deinen Entscheidungen — Weg B, kommt bald.
+      </p>
     </div>
   )
 }
