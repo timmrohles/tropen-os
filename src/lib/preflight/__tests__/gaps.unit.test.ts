@@ -33,4 +33,24 @@ describe('buildGapList', () => {
     expect(g.red).toHaveLength(0)
     expect(g.yellow).toHaveLength(0)
   })
+  it('kopiert plain + action vom Knoten auf den Gap', () => {
+    const analysisWithPlain: NodeAnalysis[] = [
+      {
+        id: 'U1',
+        status: 'open',
+        plain: 'Du hast noch kein Projektziel festgelegt.',
+        action: 'Schreibe in einem Satz was die App tun soll.',
+      },
+    ]
+    const g = buildGapList(analysisWithPlain)
+    const u1 = g.red.find(x => x.id === 'U1')!
+    expect(u1.plain).toBe('Du hast noch kein Projektziel festgelegt.')
+    expect(u1.action).toBe('Schreibe in einem Satz was die App tun soll.')
+  })
+  it('lässt plain/action weg wenn nicht vorhanden', () => {
+    const g = buildGapList(analysis)
+    const u1 = g.red.find(x => x.id === 'U1')!
+    expect(u1.plain).toBeUndefined()
+    expect(u1.action).toBeUndefined()
+  })
 })

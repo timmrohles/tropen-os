@@ -4,10 +4,19 @@ import type { NodeAnalysis, Gap, GapList } from './types'
 
 const BY_ID = new Map(KORSETT.map(n => [n.id, n]))
 
-function toGap(id: string): Gap | null {
+function toGap(id: string, node: NodeAnalysis): Gap | null {
   const n = BY_ID.get(id)
   if (!n) return null
-  return { id: n.id, domain: n.domain, frage: n.frage, warum: n.warum, default: n.default, kosten: n.kosten }
+  return {
+    id: n.id,
+    domain: n.domain,
+    frage: n.frage,
+    warum: n.warum,
+    default: n.default,
+    kosten: n.kosten,
+    ...(node.plain === undefined ? {} : { plain: node.plain }),
+    ...(node.action === undefined ? {} : { action: node.action }),
+  }
 }
 
 export function buildGapList(analysis: NodeAnalysis[]): GapList {
@@ -19,7 +28,7 @@ export function buildGapList(analysis: NodeAnalysis[]): GapList {
   for (const a of analysis) {
     if (a.status === 'decided') { decidedCount++; continue }
     if (a.status === 'na') { naCount++; continue }
-    const gap = toGap(a.id)
+    const gap = toGap(a.id, a)
     if (!gap) continue
     if (gap.kosten === 'red') red.push(gap)
     else yellow.push(gap)
