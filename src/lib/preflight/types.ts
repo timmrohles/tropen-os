@@ -3,8 +3,9 @@ export type Kosten = 'red' | 'yellow'
 export type NodeStatus = 'decided' | 'open' | 'na'
 
 // ─── Intake-Pivots (kurze Abfrage vor der Analyse) ──────────────────────────────
-export type BuildTool = 'claude-code' | 'cursor' | 'lovable' | 'bolt' | 'other'
-export type BusinessModel = 'b2c' | 'b2b' | 'internal'
+// Jeder Pivot erlaubt 'unsure' — "weiß nicht / noch offen" wird zu einer Lücke, kein Pflichtfeld.
+export type BuildTool = 'claude-code' | 'cursor' | 'lovable' | 'bolt' | 'other' | 'unsure'
+export type BusinessModel = 'b2c' | 'b2b' | 'internal' | 'unsure'
 export type GeoScope = 'eu' | 'non_eu' | 'global' | 'unsure'
 
 export interface PreflightPivots {
@@ -26,7 +27,8 @@ export const CONVENTIONS_FILENAME: Record<BuildTool, string> = {
   cursor: '.cursorrules',
   lovable: 'AGENTS.md',
   bolt: 'AGENTS.md',
-  other: 'CONVENTIONS.md',
+  other: 'AGENTS.md',
+  unsure: 'AGENTS.md',
 }
 
 /** Ein Korsett-Knoten (aus Korsett v2). */
