@@ -8,7 +8,7 @@ import {
   Warning,
   X,
 } from '@phosphor-icons/react'
-import type { PreflightResult as PreflightResultType } from '@/lib/preflight/types'
+import type { PreflightResult as PreflightResultType, PreflightPivots } from '@/lib/preflight/types'
 import { PreflightResult } from './_components/PreflightResult'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,6 +30,14 @@ Beispiele:
 • Next.js SaaS mit Supabase Auth, Stripe-Zahlungen und einer KI-Chat-Funktion
 • Internes Tool zur Dokumentenverarbeitung mit Datei-Upload, OCR und PDF-Export
 • README oder PRD deines Projekts`
+
+const DEFAULT_PIVOTS: PreflightPivots = {
+  buildTool: 'cursor',
+  businessModel: 'b2c',
+  audienceRegion: 'eu',
+  hosting: 'eu',
+  stack: 'Next.js + Supabase',
+}
 
 // ─── File helpers ──────────────────────────────────────────────────────────────
 
@@ -139,10 +147,147 @@ function DropZone({ onFile, disabled }: DropZoneProps) {
   )
 }
 
+// ─── Intake Pivots ────────────────────────────────────────────────────────────
+
+interface IntakePivotsProps {
+  pivots: PreflightPivots
+  onChange: (pivots: PreflightPivots) => void
+  disabled: boolean
+}
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'var(--font-mono)',
+  fontSize: 11,
+  color: 'var(--text-tertiary)',
+  marginBottom: 5,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase' as const,
+}
+
+function IntakePivots({ pivots, onChange, disabled }: IntakePivotsProps) {
+  const set = <K extends keyof PreflightPivots>(key: K, value: PreflightPivots[K]) =>
+    onChange({ ...pivots, [key]: value })
+
+  return (
+    <div>
+      {/* Hint */}
+      <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+        Kurz bestätigen oder anpassen — das schärft die Analyse.
+      </p>
+
+      {/* Grid of 4 selects + 1 text input */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+        gap: '10px 14px',
+      }}>
+        {/* Build Tool */}
+        <div>
+          <label htmlFor="pivot-build-tool" style={LABEL_STYLE}>
+            Womit baust du?
+          </label>
+          <select
+            id="pivot-build-tool"
+            className="input"
+            disabled={disabled}
+            value={pivots.buildTool}
+            onChange={e => set('buildTool', e.target.value as PreflightPivots['buildTool'])}
+            style={{ width: '100%', fontSize: 13 }}
+          >
+            <option value="cursor">Cursor</option>
+            <option value="claude-code">Claude Code</option>
+            <option value="lovable">Lovable</option>
+            <option value="bolt">Bolt</option>
+            <option value="other">Anderes</option>
+          </select>
+        </div>
+
+        {/* Business Model */}
+        <div>
+          <label htmlFor="pivot-business-model" style={LABEL_STYLE}>
+            Wer nutzt es?
+          </label>
+          <select
+            id="pivot-business-model"
+            className="input"
+            disabled={disabled}
+            value={pivots.businessModel}
+            onChange={e => set('businessModel', e.target.value as PreflightPivots['businessModel'])}
+            style={{ width: '100%', fontSize: 13 }}
+          >
+            <option value="b2c">Endkunden (B2C)</option>
+            <option value="b2b">Unternehmen (B2B)</option>
+            <option value="internal">Intern</option>
+          </select>
+        </div>
+
+        {/* Audience Region */}
+        <div>
+          <label htmlFor="pivot-audience-region" style={LABEL_STYLE}>
+            Wo sitzen die Nutzer?
+          </label>
+          <select
+            id="pivot-audience-region"
+            className="input"
+            disabled={disabled}
+            value={pivots.audienceRegion}
+            onChange={e => set('audienceRegion', e.target.value as PreflightPivots['audienceRegion'])}
+            style={{ width: '100%', fontSize: 13 }}
+          >
+            <option value="eu">EU</option>
+            <option value="non_eu">Außerhalb EU</option>
+            <option value="global">Weltweit</option>
+            <option value="unsure">Weiß nicht</option>
+          </select>
+        </div>
+
+        {/* Hosting */}
+        <div>
+          <label htmlFor="pivot-hosting" style={LABEL_STYLE}>
+            Wo gehostet?
+          </label>
+          <select
+            id="pivot-hosting"
+            className="input"
+            disabled={disabled}
+            value={pivots.hosting}
+            onChange={e => set('hosting', e.target.value as PreflightPivots['hosting'])}
+            style={{ width: '100%', fontSize: 13 }}
+          >
+            <option value="eu">EU</option>
+            <option value="non_eu">Außerhalb EU</option>
+            <option value="global">Weltweit</option>
+            <option value="unsure">Weiß nicht</option>
+          </select>
+        </div>
+
+        {/* Stack — spans full width on wider screens via auto-fill */}
+        <div style={{ gridColumn: 'span 2' }}>
+          <label htmlFor="pivot-stack" style={LABEL_STYLE}>
+            Stack
+          </label>
+          <input
+            id="pivot-stack"
+            type="text"
+            className="input"
+            disabled={disabled}
+            value={pivots.stack}
+            onChange={e => set('stack', e.target.value)}
+            placeholder="z.B. Next.js + Supabase + Stripe"
+            style={{ width: '100%', fontSize: 13 }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page Component ────────────────────────────────────────────────────────────
 
 export default function PreflightPage() {
   const [input, setInput] = useState('')
+  const [pivots, setPivots] = useState<PreflightPivots>(DEFAULT_PIVOTS)
   const [state, setState] = useState<PageState>({ phase: 'idle' })
 
   const isLoading = state.phase === 'loading'
@@ -174,7 +319,7 @@ export default function PreflightPage() {
       const res = await fetch('/api/preflight/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: trimmed }),
+        body: JSON.stringify({ input: trimmed, pivots }),
       })
 
       const json = await res.json() as { error?: string; gaps?: unknown; startpaket?: unknown }
@@ -191,7 +336,7 @@ export default function PreflightPage() {
     } catch {
       setState({ phase: 'error', message: 'Netzwerkfehler — bitte erneut versuchen.' })
     }
-  }, [input, isLoading])
+  }, [input, pivots, isLoading])
 
   return (
     <div className="content-max">
@@ -225,7 +370,17 @@ export default function PreflightPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="card">
             <div className="card-body" style={{ padding: '20px 20px 16px' }}>
-              {/* Textarea */}
+
+              {/* ── Intake Pivots ─────────────────────────────────────── */}
+              <div style={{
+                marginBottom: 20,
+                paddingBottom: 18,
+                borderBottom: '1px solid var(--border)',
+              }}>
+                <IntakePivots pivots={pivots} onChange={setPivots} disabled={isLoading} />
+              </div>
+
+              {/* ── Project description ───────────────────────────────── */}
               <label
                 htmlFor="preflight-input"
                 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}
