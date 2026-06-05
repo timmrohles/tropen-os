@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const { data, error: validationError } = await validateBody(req, preflightBody)
   if (validationError) return validationError
 
-  const { input } = data
+  const { input, pivots } = data
 
   // 3. Budget check
   const budget = await checkBudget(me.organization_id, 'preflight', null)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // 4. Run preflight (may throw if input is too short after normalisation)
     let result
     try {
-      result = await runPreflight(input)
+      result = await runPreflight(input, pivots)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Input ungültig'
       logger.warn('runPreflight rejected input', { message })
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     // 6. Return result
     return NextResponse.json({
+      summary: result.summary,
       gaps: result.gaps,
       startpaket: result.startpaket,
       runId: row.id,

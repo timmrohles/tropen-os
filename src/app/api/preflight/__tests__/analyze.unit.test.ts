@@ -45,12 +45,15 @@ const mockSupabaseAdmin = vi.mocked(supabaseAdmin)
 // Fake user returned by getAuthUser
 const FAKE_USER = { id: 'user-123', organization_id: 'org-456', role: 'member' }
 
-// Default happy-path gap/startpaket payload
+const FAKE_PIVOTS = { buildTool: 'cursor', businessModel: 'b2c', audienceRegion: 'eu', hosting: 'eu', stack: 'Next.js + Supabase' } as const
+
+// Default happy-path payload (v2 shape)
 const FAKE_RESULT = {
+  summary: { projectLabel: 'Test-Projekt', headline: 'Keine Blocker — du kannst loslegen.' },
   gaps: { red: [], yellow: [], decidedCount: 0, naCount: 0 },
   startpaket: {
     decisionLog: '# log',
-    claudeMd: '# CLAUDE',
+    conventions: { filename: '.cursorrules', content: '# rules' },
     envExample: 'KEY=',
   },
 }
@@ -83,7 +86,7 @@ describe('POST /api/preflight/analyze', () => {
   it('returns 401 when getAuthUser returns null', async () => {
     mockGetAuthUser.mockResolvedValue(null)
 
-    const res = await POST(makeRequest({ input: 'some design doc text here' }))
+    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body).toHaveProperty('error', 'Unauthorized')
@@ -96,7 +99,7 @@ describe('POST /api/preflight/analyze', () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: false, reason: 'Budget aufgebraucht' })
 
-    const res = await POST(makeRequest({ input: 'some design doc text here' }))
+    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(402)
     const body = await res.json()
     expect(body).toHaveProperty('code', 'BUDGET_EXHAUSTED')
@@ -133,7 +136,7 @@ describe('POST /api/preflight/analyze', () => {
       new Error('Input zu kurz — gib mehr Detail (mind. ein paar Sätze oder ein Schema).')
     )
 
-    const res = await POST(makeRequest({ input: 'too short' }))
+    const res = await POST(makeRequest({ input: 'too short', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(400)
     const body = await res.json()
     expect(body.error).toMatch(/zu kurz/i)
@@ -148,7 +151,7 @@ describe('POST /api/preflight/analyze', () => {
     mockRunPreflight.mockResolvedValue(FAKE_RESULT)
     const { insertMock } = buildInsertMock({ data: { id: 'run-789' }, error: null })
 
-    const res = await POST(makeRequest({ input: 'This is a sufficiently long design document' }))
+    const res = await POST(makeRequest({ input: 'This is a sufficiently long design document', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(200)
 
     const body = await res.json()
@@ -176,7 +179,7 @@ describe('POST /api/preflight/analyze', () => {
     mockRunPreflight.mockResolvedValue(FAKE_RESULT)
     buildInsertMock({ data: { id: 'run-001' }, error: null })
 
-    const res = await POST(makeRequest({ input: 'A design doc with meaningful content here' }))
+    const res = await POST(makeRequest({ input: 'A design doc with meaningful content here', pivots: FAKE_PIVOTS }))
     const body = await res.json()
 
     expect(body.gaps).toEqual(FAKE_RESULT.gaps)
