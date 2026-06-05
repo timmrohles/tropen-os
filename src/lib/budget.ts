@@ -16,6 +16,7 @@ export const ESTIMATED_COSTS = {
   'dall-e-3':      0.04,    // 1024×1024 standard
   'tts':           0.008,   // ~500 chars (OpenAI tts-1)
   'perspectives':  0.01,    // per avatar (Haiku × N avatars handled at call site)
+  'preflight':     0.02,    // 2 LLM calls (analyze + generate) via Sonnet
 } as const
 
 export type CostType = keyof typeof ESTIMATED_COSTS
