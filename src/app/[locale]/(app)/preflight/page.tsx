@@ -200,6 +200,7 @@ function IntakePivots({ pivots, onChange, disabled }: IntakePivotsProps) {
             <option value="lovable">Lovable</option>
             <option value="bolt">Bolt</option>
             <option value="other">Anderes</option>
+            <option value="unsure">Weiß nicht</option>
           </select>
         </div>
 
@@ -219,6 +220,7 @@ function IntakePivots({ pivots, onChange, disabled }: IntakePivotsProps) {
             <option value="b2c">Endkunden (B2C)</option>
             <option value="b2b">Unternehmen (B2B)</option>
             <option value="internal">Intern</option>
+            <option value="unsure">Weiß nicht</option>
           </select>
         </div>
 
