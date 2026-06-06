@@ -23,6 +23,8 @@ const PIVOTS: PreflightPivots = {
   audienceRegion: 'eu',
   hosting: 'eu',
   stack: 'Next.js + Supabase',
+  platform: 'web',
+  commercialModel: 'none',
 }
 
 describe('analyzeInput', () => {
