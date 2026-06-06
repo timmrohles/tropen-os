@@ -21,6 +21,20 @@ describe('preflightBody', () => {
     const r = preflightBody.safeParse({ ...base, name: 'x'.repeat(121) })
     expect(r.success).toBe(false)
   })
+
+  it('akzeptiert platform + commercialModel', () => {
+    const r = preflightBody.safeParse({ ...base, pivots: { ...base.pivots, platform: 'native', commercialModel: 'shop' } })
+    expect(r.success).toBe(true)
+  })
+
+  it('setzt Defaults wenn platform/commercialModel fehlen', () => {
+    const r = preflightBody.safeParse(base)
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.pivots.platform).toBe('unsure')
+      expect(r.data.pivots.commercialModel).toBe('none')
+    }
+  })
 })
 
 describe('renameProjectBody', () => {

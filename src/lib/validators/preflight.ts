@@ -6,6 +6,8 @@ export const pivotsSchema = z.object({
   audienceRegion: z.enum(['eu', 'non_eu', 'global', 'unsure']),
   hosting: z.enum(['eu', 'non_eu', 'global', 'unsure']),
   stack: z.string(),
+  platform: z.enum(['web', 'native', 'both', 'unsure']).default('unsure'),
+  commercialModel: z.enum(['none', 'shop', 'subscription', 'marketplace', 'unsure']).default('none'),
 })
 
 export const preflightBody = z.object({
