@@ -105,3 +105,21 @@ export interface PreflightResult {
   gaps: GapList
   startpaket: Startpaket
 }
+
+/** Listen-Eintrag auf /preflight. */
+export interface PreflightProjectListItem {
+  id: string
+  name: string
+  stack: string
+  redCount: number
+  updatedAt: string
+}
+
+/** Detail-Ansicht /preflight/[id]: Projekt + neuestes Ergebnis + Input des letzten Runs. */
+export interface PreflightProjectDetail {
+  id: string
+  name: string
+  pivots: PreflightPivots
+  input: string
+  result: PreflightResult
+}
