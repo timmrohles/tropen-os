@@ -1696,7 +1696,7 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-027) — nach Aufräum-Sprint 2026-05-07 |
+| `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-030) — nach Aufräum-Sprint 2026-05-07. ADR-030 = Pre-Flight Prämissen-Modell v2 (bereitschafts-gewahrter Einstieg, geführte Entwicklung, Generierungs-Gate) |
 | `docs/active/brand-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
 | `docs/active/feature-inventory.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
@@ -1731,7 +1731,8 @@ eslint src/           # keine Fehler
 | `src/lib/audit/compliance-domains.ts` | 6 Compliance-Domaenen mit Relevanz-Funktionen |
 | `src/lib/benchmark/` | Automatisierte Benchmark-Testbench (Tarball + Discovery + Runner + Stats) |
 | `docs/features/status.md` | **Feature-Inventar** — konsolidierter Status aller Features (A/B/C/D), Schichten-Check, Offene Punkte — vor jeder V1-Roadmap-Entscheidung lesen |
-| `docs/superpowers/specs/2026-06-05-preflight-projects-crud-design.md` | **Pre-Flight Projekt-Fläche** (Slice, Branch `claude/preflight-impl`) — Design-Spec: benannte Projekte, CRUD, Repo-Artefakt-Browser, Datenmodell `preflight_projects` + `preflight_runs.project_id`, Recycling-Audit. Freigegeben 2026-06-05, Implementierung offen |
+| `docs/superpowers/specs/2026-06-05-preflight-projects-crud-design.md` | **Pre-Flight CRUD-Hülle** — benannte Projekte, Repo-Artefakt-Browser, `preflight_projects` + `preflight_runs.project_id`. Gebaut, Branch `claude/preflight-impl` = **PR #46 (offen, nicht gemergt)**. Migration `20260605000002` ist auf der DB. |
+| `docs/superpowers/specs/2026-06-06-preflight-premises-v2-slice1-design.md` + `docs/superpowers/plans/2026-06-06-preflight-premises-v2-slice1.md` | **Pre-Flight Prämissen-v2 Scheibe 1** (gebaut, Branch `claude/preflight-premises-v2`, gestapelt auf #46): Stack-Auswahl, Plattform, Fernabsatz/Abo, 8 Korsett-Knoten, Dünn-Input-Ehrlichkeit. Keine Migration. Scheibe 2 (geführte Entwicklung) = nächster Schritt, 24h-Gate. Voller Stand: Memory `preflight-projektflaeche-slice`. |
 
 ---
 
