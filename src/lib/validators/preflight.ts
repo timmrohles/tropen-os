@@ -11,4 +11,9 @@ export const pivotsSchema = z.object({
 export const preflightBody = z.object({
   input: z.string().min(1),
   pivots: pivotsSchema,
+  name: z.string().trim().max(120).optional(),
+})
+
+export const renameProjectBody = z.object({
+  name: z.string().trim().min(1).max(120),
 })
