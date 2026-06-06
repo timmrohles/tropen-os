@@ -56,8 +56,8 @@ describe('Category 1 (Architektur)', () => {
 })
 
 describe('Category 3 (Sicherheit)', () => {
-  it('has exactly 37 rules', () => {
-    expect(getRulesForCategory(3)).toHaveLength(37)
+  it('has exactly 43 rules', () => {
+    expect(getRulesForCategory(3)).toHaveLength(43)
   })
 })
 

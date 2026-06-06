@@ -46,7 +46,7 @@ describe('generateRepoMap — integration', () => {
 
     // formatDate is imported by simple-class AND consumer → should rank high
     const formatDate = map.rankedSymbols.find((s) => s.name === 'formatDate')
-    const internalHelper = map.rankedSymbols.find((s) => s.name === 'internalHelper')
+    const internalHelper = map.rankedSymbols.find((s) => s.name === '_internalHelper')
 
     expect(formatDate).toBeDefined()
     expect(internalHelper).toBeDefined()

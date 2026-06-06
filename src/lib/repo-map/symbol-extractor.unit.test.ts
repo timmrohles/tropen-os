@@ -62,7 +62,7 @@ describe('extractSymbols — simple-class.ts', () => {
   it('marks non-exported function correctly', () => {
     const { filePath, content, parsed } = loadFixture('simple-class.ts')
     const symbols = extractSymbols(parsed, filePath, content)
-    const helper = symbols.find((s) => s.name === 'internalHelper')
+    const helper = symbols.find((s) => s.name === '_internalHelper')
     expect(helper).toBeDefined()
     expect(helper?.exported).toBe(false)
   })
