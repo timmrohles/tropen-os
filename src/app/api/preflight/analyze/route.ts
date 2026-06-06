@@ -67,10 +67,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. latest_run_id setzen
-    await supabaseAdmin
+    const { error: linkErr } = await supabaseAdmin
       .from('preflight_projects')
       .update({ latest_run_id: run.id, updated_at: new Date().toISOString() })
       .eq('id', project.id)
+    if (linkErr) logger.warn('latest_run_id update failed', { error: linkErr.message, projectId: project.id })
 
     return NextResponse.json({ projectId: project.id, result })
   } catch (err) {

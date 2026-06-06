@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Fehler beim Speichern', code: 'DB_ERROR' }, { status: 500 })
   }
 
-  await supabaseAdmin
+  const { error: linkErr } = await supabaseAdmin
     .from('preflight_projects')
     .update({
       latest_run_id: run.id,
@@ -60,6 +60,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       updated_at: new Date().toISOString(),
     })
     .eq('id', project.id)
+  if (linkErr) logger.warn('project update after run failed', { error: linkErr.message, projectId: project.id })
 
   return NextResponse.json({ result })
 }
