@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { UploadSimple, ArrowRight, Warning, X } from '@phosphor-icons/react'
+import { UploadSimple, ArrowRight, Warning, X, Info } from '@phosphor-icons/react'
 import type { PreflightPivots } from '@/lib/preflight/types'
 
 const ACCEPTED_EXTENSIONS = ['.md', '.txt']
@@ -15,8 +15,11 @@ Beispiele:
 • README oder PRD deines Projekts`
 
 export const DEFAULT_PIVOTS: PreflightPivots = {
-  buildTool: 'cursor', businessModel: 'b2c', audienceRegion: 'eu', hosting: 'eu', stack: 'Next.js + Supabase',
+  buildTool: 'cursor', businessModel: 'b2c', audienceRegion: 'eu', hosting: 'eu',
+  stack: 'Next.js + Supabase', platform: 'web', commercialModel: 'none',
 }
+
+const STACK_OPTIONS = ['Next.js + Supabase', 'Next.js + Postgres/Prisma', 'React + Firebase', 'Astro', 'Remix', 'SvelteKit', 'Plain HTML/CSS/JS']
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)',
@@ -113,15 +116,66 @@ export function IntakePanel(props: IntakePanelProps) {
             <option value="global">Weltweit</option><option value="unsure">Weiß nicht</option>
           </select>
         </div>
+        <div>
+          <label htmlFor="pf-platform" style={LABEL_STYLE}>Web oder App?</label>
+          <select id="pf-platform" className="input" disabled={isLoading} value={pivots.platform}
+            onChange={e => set('platform', e.target.value as PreflightPivots['platform'])} style={{ width: '100%', fontSize: 13 }}>
+            <option value="web">Web-App</option>
+            <option value="native">Native App (Store)</option>
+            <option value="both">Beides</option>
+            <option value="unsure">Weiß nicht</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="pf-commercial" style={LABEL_STYLE}>Verkauf?</label>
+          <select id="pf-commercial" className="input" disabled={isLoading} value={pivots.commercialModel}
+            onChange={e => set('commercialModel', e.target.value as PreflightPivots['commercialModel'])} style={{ width: '100%', fontSize: 13 }}>
+            <option value="none">Kein Verkauf</option>
+            <option value="shop">Shop (Einmalkauf)</option>
+            <option value="subscription">Abo</option>
+            <option value="marketplace">Marktplatz</option>
+            <option value="unsure">Weiß nicht</option>
+          </select>
+        </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <label htmlFor="pf-stack" style={LABEL_STYLE}>Stack</label>
-          <input id="pf-stack" className="input" disabled={isLoading} value={pivots.stack}
-            onChange={e => set('stack', e.target.value)} placeholder="z.B. Next.js + Supabase + Stripe"
-            style={{ width: '100%', fontSize: 13 }} />
+          <select id="pf-stack" className="input" disabled={isLoading}
+            value={STACK_OPTIONS.includes(pivots.stack) ? pivots.stack : (pivots.stack === '' ? '__unsure__' : '__other__')}
+            onChange={e => {
+              const v = e.target.value
+              if (v === '__unsure__') set('stack', '')
+              else if (v === '__other__') set('stack', ' ')
+              else set('stack', v)
+            }}
+            style={{ width: '100%', fontSize: 13 }}>
+            {STACK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            <option value="__other__">Anderes …</option>
+            <option value="__unsure__">Weiß nicht</option>
+          </select>
+          {!STACK_OPTIONS.includes(pivots.stack) && pivots.stack !== '' && (
+            <input type="text" className="input" disabled={isLoading} value={pivots.stack.trim()}
+              onChange={e => set('stack', e.target.value)} placeholder="z.B. Vue + Laravel"
+              style={{ width: '100%', fontSize: 13, marginTop: 6 }} aria-label="Eigener Stack" />
+          )}
         </div>
       </div>
 
       {/* Konzept */}
+      <div style={{ background: 'var(--surface-cool)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', marginBottom: 10 }}>
+        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Info size={14} weight="bold" color="var(--text-tertiary)" aria-hidden="true" />
+          Damit die Analyse etwas taugt, sollte deine Beschreibung enthalten:
+        </p>
+        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.7 }}>
+          <li><b>Was &amp; für wen</b> — was die App tut, für welche Nutzer (1 Satz)</li>
+          <li><b>Kern-Funktionen</b> — was Nutzer konkret tun können (3–5 Stichpunkte)</li>
+          <li><b>Nutzer &amp; Daten</b> — Logins/Konten? welche Daten?</li>
+          <li><b>Verkauf?</b> — kostenlos, Shop oder Abo?</li>
+        </ul>
+        <p style={{ margin: '6px 0 0', fontSize: 11, fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
+          Fehlt das meiste, ist die Analyse generisch — eine geführte Entwicklung dazu kommt bald.
+        </p>
+      </div>
       <label htmlFor="pf-input" style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
         Projekt-Beschreibung, README oder PRD
       </label>
