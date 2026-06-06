@@ -123,7 +123,7 @@ Daten: GET `/api/preflight/projects/[id]`.
 Es gibt bereits eine Artefakt-Infrastruktur (`artifacts`-Tabelle, `/api/artifacts`, `ArtifactRenderer`, Artifacts-Seite). Entscheidung pro Baustein:
 
 **Wiederverwenden (direkt importieren/extrahieren):**
-- `src/components/workspace/CodeBlock.tsx` — Lazy-Syntax-Highlighter. Direkt für die Datei-Vorschau (`<CodeBlock language="markdown">…</CodeBlock>`). Kein `dynamic()` nötig (kein Chat-Kontext).
+- `src/components/workspace/CodeBlock.tsx` — Lazy-Syntax-Highlighter für die Datei-Vorschau. **Immer via `dynamic(() => import(...), { ssr: false })`** laden (CLAUDE.md-Regel: `react-syntax-highlighter` ~170 kB nie eager bundeln — gilt auch außerhalb des Chat-Kontexts).
 - `downloadArtifact()` aus `artifacts/_components/ArtifactCard.tsx` — Blob-Download. Generisch extrahieren nach `src/lib/download.ts` als `downloadTextFile(filename, content)` und im ArtifactBrowser nutzen.
 - CSS-Klassen: `btn-icon`, `dropdown`, `dropdown-item`, `dropdown-item--danger`, `animate-dropdown`, `card`, `chip`.
 

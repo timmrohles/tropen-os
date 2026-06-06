@@ -1147,9 +1147,12 @@ Leitet die Dateiliste aus `Startpaket` ab, zeigt Vorschau (`CodeBlock`), Kopiere
 'use client'
 
 import { useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { File, Copy, DownloadSimple, Check } from '@phosphor-icons/react'
-import CodeBlock from '@/components/workspace/CodeBlock'
 import { downloadTextFile } from '@/lib/download'
+
+// CodeBlock MUSS lazy geladen werden (CLAUDE.md-Regel: react-syntax-highlighter ~170kB nie eager bundeln)
+const CodeBlock = dynamic(() => import('@/components/workspace/CodeBlock'), { ssr: false })
 import { buildDecisionPrompt } from '@/lib/preflight/export-prompt'
 import type { PreflightResult } from '@/lib/preflight/types'
 
