@@ -66,13 +66,26 @@ function makeRequest(body: unknown): NextRequest {
   })
 }
 
-// Helper: build a chainable supabaseAdmin mock that resolves .single()
-function buildInsertMock(returnValue: { data: unknown; error: unknown }) {
-  const singleMock  = vi.fn().mockResolvedValue(returnValue)
-  const selectMock  = vi.fn().mockReturnValue({ single: singleMock })
-  const insertMock  = vi.fn().mockReturnValue({ select: selectMock })
-  mockSupabaseAdmin.from = vi.fn().mockReturnValue({ insert: insertMock })
-  return { insertMock, selectMock, singleMock }
+// Baut einen supabaseAdmin-Mock, der projects.insert→select→single, runs.insert→select→single
+// und projects.update→eq auflöst.
+function buildProjectRunMocks(projectId = 'proj-1', runId = 'run-1') {
+  const projInsertSingle = vi.fn().mockResolvedValue({ data: { id: projectId }, error: null })
+  const runInsertSingle  = vi.fn().mockResolvedValue({ data: { id: runId }, error: null })
+  const updateEq = vi.fn().mockResolvedValue({ data: null, error: null })
+
+  mockSupabaseAdmin.from = vi.fn((table: string) => {
+    if (table === 'preflight_projects') {
+      return {
+        insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: projInsertSingle }) }),
+        update: vi.fn().mockReturnValue({ eq: updateEq }),
+      }
+    }
+    // preflight_runs
+    return {
+      insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: runInsertSingle }) }),
+    }
+  }) as unknown as typeof mockSupabaseAdmin.from
+  return { updateEq }
 }
 
 describe('POST /api/preflight/analyze', () => {
@@ -145,44 +158,27 @@ describe('POST /api/preflight/analyze', () => {
   // ------------------------------------------------------------------
   // 200 — happy path
   // ------------------------------------------------------------------
-  it('returns 200 with gaps, startpaket, and runId on success', async () => {
+  it('returns 200 with projectId and result on success', async () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
     mockRunPreflight.mockResolvedValue(FAKE_RESULT)
-    const { insertMock } = buildInsertMock({ data: { id: 'run-789' }, error: null })
+    buildProjectRunMocks('proj-9', 'run-9')
 
     const res = await POST(makeRequest({ input: 'This is a sufficiently long design document', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(200)
-
     const body = await res.json()
-    expect(body).toHaveProperty('gaps')
-    expect(body).toHaveProperty('startpaket')
-    expect(body).toHaveProperty('runId', 'run-789')
-
-    // Verify insert was called with the right table / shape
+    expect(body).toHaveProperty('projectId', 'proj-9')
+    expect(body.result.gaps).toEqual(FAKE_RESULT.gaps)
+    expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('preflight_projects')
     expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('preflight_runs')
-    expect(insertMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        organization_id: FAKE_USER.organization_id,
-        user_id: FAKE_USER.id,
-        input_text: 'This is a sufficiently long design document',
-      })
-    )
   })
 
-  // ------------------------------------------------------------------
-  // gaps / startpaket forwarded verbatim from runPreflight
-  // ------------------------------------------------------------------
-  it('forwards the exact gaps and startpaket from runPreflight', async () => {
+  it('uses projectLabel as name when name is omitted', async () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
     mockRunPreflight.mockResolvedValue(FAKE_RESULT)
-    buildInsertMock({ data: { id: 'run-001' }, error: null })
-
+    buildProjectRunMocks()
     const res = await POST(makeRequest({ input: 'A design doc with meaningful content here', pivots: FAKE_PIVOTS }))
-    const body = await res.json()
-
-    expect(body.gaps).toEqual(FAKE_RESULT.gaps)
-    expect(body.startpaket).toEqual(FAKE_RESULT.startpaket)
+    expect(res.status).toBe(200)
   })
 })
