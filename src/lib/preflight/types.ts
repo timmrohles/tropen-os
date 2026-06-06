@@ -7,18 +7,31 @@ export type NodeStatus = 'decided' | 'open' | 'na'
 export type BuildTool = 'claude-code' | 'cursor' | 'lovable' | 'bolt' | 'other' | 'unsure'
 export type BusinessModel = 'b2c' | 'b2b' | 'internal' | 'unsure'
 export type GeoScope = 'eu' | 'non_eu' | 'global' | 'unsure'
+export type Platform = 'web' | 'native' | 'both' | 'unsure'
+export type CommercialModel = 'none' | 'shop' | 'subscription' | 'marketplace' | 'unsure'
 
 export interface PreflightPivots {
-  /** Womit gebaut wird → bestimmt das Konventions-Dateiformat (CLAUDE.md / .cursorrules / …). */
   buildTool: BuildTool
-  /** B2C / B2B / intern → Verbraucherrecht, BFSG. */
   businessModel: BusinessModel
-  /** Wo die Nutzer sitzen → DSGVO-Ableitung. */
   audienceRegion: GeoScope
-  /** Wo gehostet wird → Datenresidenz. */
   hosting: GeoScope
-  /** Stack (vorausgefüllt aus dem Doc, vom User bestätigt/korrigiert). Freitext. */
   stack: string
+  platform: Platform
+  commercialModel: CommercialModel
+}
+
+/** Füllt fehlende/neue Pivot-Felder mit Defaults (Rückwärtskompatibilität für alte Läufe). */
+export function normalizePivots(raw: Partial<PreflightPivots> | null | undefined): PreflightPivots {
+  const r = (raw ?? {}) as Partial<PreflightPivots>
+  return {
+    buildTool: r.buildTool ?? 'unsure',
+    businessModel: r.businessModel ?? 'unsure',
+    audienceRegion: r.audienceRegion ?? 'unsure',
+    hosting: r.hosting ?? 'unsure',
+    stack: typeof r.stack === 'string' ? r.stack : '',
+    platform: r.platform ?? 'unsure',
+    commercialModel: r.commercialModel ?? 'none',
+  }
 }
 
 /** Tool → Konventions-Dateiname. */
@@ -98,6 +111,8 @@ export interface ResultSummary {
   projectLabel: string
   /** 1–2 Sätze: was gefunden wurde + wo anfangen. */
   headline: string
+  /** true, wenn der Input zu knapp für eine fundierte Analyse ist. */
+  thin?: boolean
 }
 
 export interface PreflightResult {
