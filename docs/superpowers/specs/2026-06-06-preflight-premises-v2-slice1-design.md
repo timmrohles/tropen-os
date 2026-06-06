@@ -11,11 +11,14 @@ Bessere, folgenreichere Prämissen im Intake + Analyse — ohne den geführten L
 - `stack` von Freitext → **kuratierte Auswahl + „Anderes" + „weiß nicht"**.
 - Neue Pivots **Plattform** (Web/Native/Beides) und **Vertriebsmodell** (kein Verkauf/Shop/Abo/Marktplatz).
 - Diese Prämissen verdrahten mit dem **Korsett** (neue Knoten) + dem **Analyse-Prompt** (Ableitungsregeln).
-- **Ehrlichkeits-Hinweis** im Ergebnis (#2).
+- **Readiness-Maßstab am Eingabefeld** (was eine analysierbare Beschreibung enthält — §6a).
+- **Dünn-Input-Erkennung** + ehrliches Banner statt Pseudo-Startpaket (§7a).
+- **Reifegrad-Begriffe erklärt** (offen/entschieden/geparkt/n.r. — §7b).
+- **Ehrlichkeits-Hinweis** im Ergebnis (#2, §7).
 
-**Flow bleibt (A):** Konzept + Pivots zusammen → Analyse → Ergebnis. Echte KI-Ableitung der Pivots aus dem Konzept = Scheibe 2 (KI-Defaults im Loop).
+**Flow bleibt (A-Light):** Konzept + Pivots zusammen → Analyse → Ergebnis. Die Dünn-Input-Erkennung ist die *ehrliche Vorform* des bereitschafts-gewahrten Einstiegs (ADR-030): Scheibe 1 macht das Tool *ehrlich* über dünnen Input; die echte **geführte Entwicklung** (Bereitschafts-Check → Mindeststandard interaktiv → Generierungs-Gate) ist Scheibe 2.
 
-**Bewusst NICHT in Scheibe 1:** geführter Loop, KI-Default-Vorschläge, „diskutieren"-Chat, Next-Steps-Roadmap, Pivot-Vorbefüllung aus dem Konzept.
+**Bewusst NICHT in Scheibe 1:** geführte Entwicklung / Mindeststandard-Loop, Generierungs-Gate, KI-Default-Vorschläge, „diskutieren"-Chat, Next-Steps-Roadmap, SEO/Last-UI, Pivot-Vorbefüllung aus dem Konzept. (Alles Scheibe 2+.)
 
 ### Nicht-Ziel: keine Migration
 `preflight_projects.pivots` und `preflight_runs.result` sind JSONB. Neue Pivot-Felder sind rückwärtskompatibel: alte Läufe ohne `platform`/`commercialModel` werden als `'unsure'`/`'none'` behandelt. **Keine DB-Migration.**
@@ -111,6 +114,21 @@ Checkliste-Bau (`KORSETT.map`) unverändert — die neuen Knoten kommen automati
 - `DEFAULT_PIVOTS` erweitern: `platform: 'unsure'`, `commercialModel: 'none'` (Stack-Default bleibt `'Next.js + Supabase'`).
 - `IntakePanelProps`: keine neuen Callbacks nötig — `pivots`/`onPivotsChange` tragen die neuen Felder bereits.
 
+## 6a. Readiness-Maßstab am Eingabefeld (`_components/IntakePanel.tsx`)
+
+Statischer, schlichter Hinweis-Block **direkt über der Konzept-Textarea** (App-Welt, kein Marketing). Setzt die Erwartung *vor* dem Klick und ist derselbe Maßstab, den §7a referenziert.
+
+Copy:
+> **Damit die Analyse etwas taugt, sollte deine Beschreibung enthalten:**
+> 1. **Was & für wen** — was die App tut, für welche Nutzer (1 Satz)
+> 2. **Kern-Funktionen** — was Nutzer konkret tun können (3–5 Stichpunkte)
+> 3. **Nutzer & Daten** — Logins/Konten? Welche Daten?
+> 4. **Verkauf?** — kostenlos, Shop oder Abo?
+>
+> *Fehlt das meiste, ist die Analyse generisch — eine geführte Entwicklung dazu kommt bald.*
+
+Umsetzung: kleiner aufklappbarer Hinweis (Default offen beim Leerzustand, einklappbar) oder statischer Block; `var(--surface-cool)`, `var(--text-secondary)`, Phosphor `Info`-Icon. Keine neue Logik — reine Erklärung.
+
 ## 7. Ehrlichkeits-Hinweis (`_components/PreflightResult.tsx`)
 
 Fester Block (über oder unter dem ReifegradSignal), schlicht (App-Welt, kein Marketing):
@@ -119,6 +137,27 @@ Fester Block (über oder unter dem ReifegradSignal), schlicht (App-Welt, kein Ma
 > **Wo es an Grenzen stößt:** Es ersetzt keine Rechtsberatung, bewertet nicht deinen Markt oder dein Geschäftsmodell, und sieht nur, was du ins Konzept schreibst — je konkreter dein Input, desto besser.
 
 Styling: `var(--surface-cool)`-Box, `var(--text-secondary)`, kleiner Info-Icon (Phosphor `Info`, `weight="bold"`). Nur `var(--…)`-Farben.
+
+## 7a. Dünn-Input-Erkennung + ehrliches Banner (`run.ts` / `PreflightResult.tsx`)
+
+Macht das Tool *ehrlich*, bevor die volle geführte Entwicklung (Scheibe 2) existiert. Kein separater Readiness-LLM-Call in Scheibe 1 — die Signale liegen schon vor:
+
+**Heuristik** (in `runPreflight`, in `ResultSummary` als Flag `thin: boolean` durchreichen — additives Feld, JSONB-kompatibel):
+- `normalizeInput(text).length < 280` (sehr knapp), **oder**
+- `gaps.decidedCount <= 2` **und** Anteil offener Knoten ohne `evidence` hoch (fast nichts aus dem Konzept belegt).
+
+**Banner** (oben im Ergebnis, wenn `thin`): `var(--status-risky)`-getönte Box, Warning-Icon:
+> **Dein Konzept ist sehr knapp.** Die Analyse ist deshalb generisch und das Startpaket nur ein grobes Gerüst — noch nicht *dein* Fundament. Damit es konkret wird, sollte deine Beschreibung enthalten: Was & für wen · Kern-Funktionen · Nutzer & Daten · Verkauf? *(Die geführte Entwicklung dazu kommt als Nächstes.)*
+
+Zusätzlich bei `thin`: das ArtifactBrowser-Startpaket mit einem kleinen „grobes Gerüst"-Label markieren (kein Verstecken — Ehrlichkeit, nicht Bevormundung).
+
+## 7b. Reifegrad-Begriffe erklärt (`_components/PreflightResult.tsx` → `ReifegradSignal`)
+
+Die vier Begriffe der Leiste sind unklar (Dogfooding). Eine schlichte einzeilige Legende unter der Leiste (`var(--text-tertiary)`, klein):
+
+> **offen** = zuerst entscheiden · **entschieden** = schon klar (aus Konzept/Pivots) · **geparkt** = kann später (anbaubar) · **n.r.** = trifft auf dein Projekt nicht zu
+
+Optional zusätzlich `title`-Tooltips an den jeweiligen Zähl-Spans. Keine Logikänderung.
 
 ## 8. Generierung (`generate.ts`)
 
@@ -130,12 +169,13 @@ Kein neuer Code nötig: `generateStartpaket(text, nodes, pivots)` bekommt die ne
 - **Korsett** (`__tests__/korsett.unit.test.ts`): neue Knoten-IDs vorhanden (ST1–3, FA1–3, AB1–2), korrekte `appliesWhen`-Tags, eindeutige IDs.
 - **analyze-Prompt** (`__tests__/analyze.unit.test.ts`): `buildSystemPrompt` enthält `Plattform`, `Vertriebsmodell` + die neuen Ableitungsregeln (String-Assertions; LLM-Call gemockt).
 - **normalizePivots**: Alt-Objekt ohne neue Felder → Defaults.
+- **Dünn-Input-Heuristik** (`run.ts`): kurzer Input bzw. `decidedCount<=2` → `summary.thin = true`; ausreichender Input → `false` (LLM-Teil gemockt, Heuristik deterministisch testbar).
 - Bestehende Preflight-Tests bleiben grün; `analyze`-Mock-Fixtures um die neuen Pivot-Felder ergänzen.
 - Vor Commit: `tsc`, `eslint src`, `pnpm lint:design`.
 
 ## 10. Dateien
 
-**Geändert:** `types.ts` (+Typen, normalizePivots) · `validators/preflight.ts` · `korsett.ts` (+8 Knoten) · `analyze.ts` (Prompt) · `_components/IntakePanel.tsx` · `_components/PreflightResult.tsx` · Tests.
+**Geändert:** `types.ts` (+Typen, `normalizePivots`, `ResultSummary.thin`) · `validators/preflight.ts` · `korsett.ts` (+8 Knoten) · `analyze.ts` (Prompt) · `run.ts` (Dünn-Input-Flag) · `_components/IntakePanel.tsx` (Pivots + Readiness-Maßstab §6a) · `_components/PreflightResult.tsx` (Banner §7a + Reifegrad-Legende §7b + Capability-Hinweis §7) · Tests.
 **Keine** neue Migration, keine neue Route.
 
 ## 11. Offene Mini-Entscheidungen (Defaults gesetzt)
