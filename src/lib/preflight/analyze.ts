@@ -18,7 +18,7 @@ const SCHEMA = z.object({
   ),
 })
 
-function buildSystemPrompt(pivots: PreflightPivots): string {
+export function buildSystemPrompt(pivots: PreflightPivots): string {
   return `Du bist ein Senior-Software-Architekt. Du prüfst ein Design-/Schema-Dokument gegen eine Foundation-Checkliste (das "Korsett").
 
 BEKANNTE FAKTEN (Pivots — nicht erneut abfragen, sondern als entschieden behandeln):
@@ -27,6 +27,8 @@ BEKANNTE FAKTEN (Pivots — nicht erneut abfragen, sondern als entschieden behan
 - Zielgruppe/Region: ${pivots.audienceRegion}
 - Hosting: ${pivots.hosting}
 - Stack: ${pivots.stack}
+- Plattform: ${pivots.platform}
+- Vertriebsmodell: ${pivots.commercialModel}
 
 Leite aus den Pivots direkt ab:
 - audienceRegion = 'eu' oder 'global' → L2 (DSGVO) = decided (EU-User → DSGVO gilt)
@@ -34,6 +36,13 @@ Leite aus den Pivots direkt ab:
 - businessModel = 'b2c' → L4 (BFSG/a11y) = decided (B2C-Web-Pflicht seit 2025 bekannt)
 - stack enthält Frontend → F1/F2-Knoten entsprechend auswerten
 - stack enthält DB → D1–D7-Knoten entsprechend auswerten
+- platform = 'native' oder 'both' → ST1–ST3 (Store) gelten; Web-Performance-Audit (Lighthouse) ist für native n/a
+- platform = 'web' oder 'both' → L3 (Impressum), L5 (Cookie-Consent), L4 (BFSG bei b2c) gelten
+- commercialModel = 'shop' → FA1–FA3 (Fernabsatz) gelten — ABER nur wenn businessModel = 'b2c'; bei 'b2b' → na
+- commercialModel = 'subscription' → FA1–FA3 UND AB1–AB2 gelten (Abo ist auch Fernabsatz); b2c-Vorbehalt wie oben
+- commercialModel = 'marketplace' → FA1–FA3 gelten (Verbraucher-Seite); Marktplatz-Betreiberpflichten kurz im plain/action erwähnen
+- commercialModel = 'none' → ST*/FA*/AB*-Verkaufsknoten = na
+- stack = '' (leer = "weiß nicht") → behandle den Stack als offen UND empfiehl im 'action'-Feld der betroffenen Knoten einen begründeten Default-Stack für den erkannten Projekttyp
 
 Für JEDEN Knoten entscheide:
 - "decided": Das Dokument oder die Pivots zeigen eine getroffene Entscheidung (gib kurze evidence).
