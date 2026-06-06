@@ -46,12 +46,14 @@ export default function PreflightPage() {
   }, [input, pivots, name, loading, router])
 
   const renameProject = useCallback(async (id: string, newName: string) => {
-    await fetch(`/api/preflight/projects/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) })
+    const res = await fetch(`/api/preflight/projects/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) })
+    if (!res.ok) return
     setProjects(prev => prev?.map(p => p.id === id ? { ...p, name: newName } : p) ?? null)
   }, [])
 
   const deleteProject = useCallback(async (id: string) => {
-    await fetch(`/api/preflight/projects/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/preflight/projects/${id}`, { method: 'DELETE' })
+    if (!res.ok) return
     setProjects(prev => prev?.filter(p => p.id !== id) ?? null)
   }, [])
 
