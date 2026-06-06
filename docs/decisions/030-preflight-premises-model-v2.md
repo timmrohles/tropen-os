@@ -15,9 +15,12 @@ Kernerkenntnis: **Wenn vieles ungeklärt ist, gibt es nichts zu analysieren.** E
 
 ### Bereitschafts-gewahrter Einstieg (Variante A)
 
-Jeder Input bekommt einen **schnellen Bereitschafts-Check** (billig, nicht die 36-Knoten-Vollanalyse):
+Jeder Input bekommt einen **schnellen Bereitschafts-Check** (billig, nicht die 36-Knoten-Vollanalyse). Drei Tiere, alle münden ggf. in die geführte Entwicklung:
+- **Zu kurz zum Analysieren** (heute harte Ablehnung „Input zu kurz …") → **keine** Analyse, stattdessen direkter **On-Ramp**: Button **„Geführte Entwicklung starten"** statt Sackgassen-Fehler. *(Scheibe 2 — der „zu kurz"-Fehler wird zum Einstiegspunkt, kein Dead-End.)*
+- **Dünn, aber analysierbar** → Analyse läuft + Dünn-Banner (Scheibe 1) **plus** derselbe „Geführte Entwicklung"-Button als Angebot.
 - **Reich genug** → Analyse/Ergebnis wie bisher.
-- **Zu dünn** → **geführte Projektentwicklung** (anbieten, nicht erzwingen): mit dem Nutzer gemeinsam den **Mindeststandard** erreichen, statt Pseudo-Lücken auszuwerfen.
+
+Damit ist die geführte Entwicklung der **primäre Pfad bei dünnem Input**, nicht bloß Nachbearbeitung.
 
 ### Readiness-Maßstab (transparent, ein Maßstab — drei Funktionen)
 
@@ -51,7 +54,7 @@ Kern bleibt am Repo-Fundament. **Auffindbarkeit (SEO) und Last** werden als **gr
 | Scheibe | Inhalt | Architektur-prägend? |
 |---------|--------|----------------------|
 | **1 — Prämissen-Erfassung + Ehrlichkeit** | Stack-Auswahl + Plattform + Fernabsatz/Abo (verdrahtet mit Korsett+Compliance) · **Readiness-Maßstab am Eingabefeld** · **Dünn-Input-Erkennung** (ehrliches Banner statt Pseudo-Startpaket) · Reifegrad-Begriffe erklärt · Capability-Hinweis | Nein (additiv) — **ohne 24h-Gate** |
-| **2 — Geführte Entwicklung** | Bereitschafts-Check → geführter Loop zum **Mindeststandard** (Karten + KI-Default) · **Generierungs-Gate** (Repo erst nach Mindeststandard) · SEO/Last als grobe Trigger im Mindeststandard | **Ja** — ADR + 24h-Gate, eigene Spec |
+| **2 — Geführte Entwicklung** | Bereitschafts-Check → geführter Loop zum **Mindeststandard** (Karten + KI-Default) · **Generierungs-Gate** (Repo erst nach Mindeststandard) · SEO/Last als grobe Trigger · **On-Ramp: „zu kurz"-Ablehnung + Dünn-Banner bekommen „Geführte Entwicklung starten"-Button** | **Ja** — ADR + 24h-Gate, eigene Spec |
 | **3 — „Diskutieren"-Chat pro Lücke** | Chat-Eskalation je Lücke | Ja (baut auf 2) |
 | **4 — Next-Steps-Roadmap** | geordnete „und jetzt?"-Empfehlungen (now/soon/later), inkl. SEO/Last-Tiefe, Brücke zur Audit-Tür | Nein |
 
