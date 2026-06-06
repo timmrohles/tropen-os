@@ -46,7 +46,7 @@ function ProjectCard({ p, onRename, onDelete }: {
   }
 
   return (
-    <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'visible', zIndex: menuOpen ? 20 : undefined }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         {/* Farb-Icon-Chip */}
         <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--teal-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
