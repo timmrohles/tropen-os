@@ -51,4 +51,15 @@ export const KORSETT: KorsettNode[] = [
   { id: 'SEED', domain: 'Betrieb', frage: 'Seed-/Demo-Daten?', warum: 'Reproduzierbarer Start', default: 'Seed-Skript', kosten: 'yellow', appliesWhen: 'greenfield' },
   { id: 'O1', domain: 'Betrieb', frage: 'Observability (woran merkst du, dass Prod kaputt ist)?', warum: 'Ship-and-pray', default: 'Error-Tracking ab Launch', kosten: 'yellow' },
   { id: 'B1', domain: 'Betrieb', frage: 'Umgebungen & Backups (Prod≠Dev, Backup/PITR)?', warum: 'dev-gegen-prod + kein Backup = Katastrophe', default: 'getrennte DBs; Backups an', kosten: 'red' },
+  // J · Store (nur native App)
+  { id: 'ST1', domain: 'Store', frage: 'Store-Pflichtangaben (Apple Privacy Labels / Google Data Safety) geplant?', warum: 'Store-Freigabe; falsche/fehlende Angaben → Ablehnung', default: 'vor Submission ausfüllen', kosten: 'red', appliesWhen: 'native' },
+  { id: 'ST2', domain: 'Store', frage: 'In-App-Account-Löschung vorhanden (wenn Accounts)?', warum: 'Apple-Pflicht seit 2022 bei Account-Erstellung', default: 'Lösch-Flow in der App', kosten: 'red', appliesWhen: 'native' },
+  { id: 'ST3', domain: 'Store', frage: 'Digitale Käufe über IAP statt externem Checkout?', warum: 'Store-Zahlungsregeln; Verstoß → Ablehnung', default: 'digitale Güter → IAP', kosten: 'yellow', appliesWhen: 'native' },
+  // K · Fernabsatz (B2C-Verkauf)
+  { id: 'FA1', domain: 'Recht', frage: 'Widerrufsrecht + Widerrufsbelehrung + Muster-Formular?', warum: '§312g BGB; fehlend → Abmahnung + 12-Monats-Widerrufsfrist', default: 'Belehrung + Muster bereitstellen', kosten: 'red', appliesWhen: 'fernabsatz' },
+  { id: 'FA2', domain: 'Recht', frage: 'Button-Lösung ("zahlungspflichtig bestellen", §312j)?', warum: 'Ohne korrekten Button kommt kein Vertrag zustande', default: 'eindeutige Button-Beschriftung', kosten: 'red', appliesWhen: 'fernabsatz' },
+  { id: 'FA3', domain: 'Recht', frage: 'AGB + korrekte Preisangaben (PAngV)?', warum: 'Informations-/Transparenzpflichten', default: 'AGB + korrekte Preisauszeichnung', kosten: 'yellow', appliesWhen: 'fernabsatz' },
+  // L · Abo (zusätzlich zu Fernabsatz)
+  { id: 'AB1', domain: 'Recht', frage: 'Kündigungsbutton ("Verträge online kündigen", §312k)?', warum: 'Pflicht bei Online-Abos; fehlend → jederzeitige Kündbarkeit + Abmahnung', default: 'Kündigungs-Button ohne Login-Zwang', kosten: 'red', appliesWhen: 'abo' },
+  { id: 'AB2', domain: 'Recht', frage: 'Laufzeit/Verlängerung/Kündigungsfristen transparent vor Abschluss?', warum: 'Verbraucherschutz; intransparente Verlängerung unwirksam', default: 'klare Laufzeit-Hinweise', kosten: 'yellow', appliesWhen: 'abo' },
 ]

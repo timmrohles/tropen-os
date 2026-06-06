@@ -17,3 +17,30 @@ describe('KORSETT', () => {
     }
   })
 })
+
+describe('KORSETT v2-Knoten', () => {
+  const byId = (id: string) => KORSETT.find(n => n.id === id)
+
+  it('enthält Store-Knoten (appliesWhen native)', () => {
+    for (const id of ['ST1', 'ST2', 'ST3']) {
+      expect(byId(id), id).toBeDefined()
+      expect(byId(id)!.appliesWhen).toBe('native')
+    }
+  })
+  it('enthält Fernabsatz-Knoten (appliesWhen fernabsatz)', () => {
+    for (const id of ['FA1', 'FA2', 'FA3']) {
+      expect(byId(id), id).toBeDefined()
+      expect(byId(id)!.appliesWhen).toBe('fernabsatz')
+    }
+  })
+  it('enthält Abo-Knoten (appliesWhen abo)', () => {
+    for (const id of ['AB1', 'AB2']) {
+      expect(byId(id), id).toBeDefined()
+      expect(byId(id)!.appliesWhen).toBe('abo')
+    }
+  })
+  it('hat eindeutige IDs', () => {
+    const ids = KORSETT.map(n => n.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+})
