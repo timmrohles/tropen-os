@@ -1,6 +1,10 @@
 // src/lib/preflight/corpus/render.ts
-import type { PreflightPivots, NodeAnalysis } from '../types'
+import { generateObject } from 'ai'
+import { z } from 'zod'
+import { anthropic } from '@/lib/llm/anthropic'
+import type { PreflightPivots, NodeAnalysis, DecisionMap } from '../types'
 import type { ConventionRule, ConventionSection } from './types'
+import { RULE_CORPUS } from './rule-corpus'
 
 /** Leitet deterministisch Filter-Tags aus Pivots (primär Stack) + Analyse ab. Kein LLM. */
 export function deriveCorpusTags(pivots: PreflightPivots, nodes: NodeAnalysis[]): string[] {
@@ -59,4 +63,42 @@ export function renderBaseline(rules: ConventionRule[]): string {
     out.push('')
   }
   return out.join('\n').trimEnd()
+}
+
+const PROJECT_LAYER_SCHEMA = z.object({
+  title: z.string(),
+  overview: z.string(),
+  architecture: z.string(),
+})
+
+/** Baseline (deterministisch) + ein LLM-Pass nur für Projekt-Überblick + Architektur. */
+export async function renderConventions(
+  text: string, nodes: NodeAnalysis[], pivots: PreflightPivots, decisions: DecisionMap,
+): Promise<string> {
+  const tags = deriveCorpusTags(pivots, nodes)
+  const rules = filterCorpus(RULE_CORPUS, tags)
+  const baseline = renderBaseline(rules)
+
+  const decisionsText = Object.entries(decisions)
+    .map(([id, d]) => (d.choice === 'parked' ? `${id}: offen` : `${id}: ${d.value ?? 'übernommen'}`))
+    .join('\n')
+
+  const { object } = await generateObject({
+    model: anthropic('claude-sonnet-4-20250514'),
+    schema: PROJECT_LAYER_SCHEMA,
+    system: 'Du schreibst NUR zwei Abschnitte einer Konventions-Datei: einen kurzen Projekt-Überblick und die Architektur-Entscheidungen (inkl. Datenmodell). Schreibe KEINE allgemeinen Code-/Naming-/Security-Regeln — die kommen aus einer separaten Baseline. Kurz, konkret, projektbezogen.',
+    prompt: `PROJEKT-BESCHREIBUNG:\n${text}\n\n---\nGETROFFENE ENTSCHEIDUNGEN:\n${decisionsText || '(keine)'}\n\n---\nLiefere title, overview (2–3 Sätze) und architecture (Stack + Schlüssel-Entscheidungen + ggf. Datenmodell).`,
+  })
+
+  return [
+    `# ${object.title}`,
+    '',
+    '## Projekt-Überblick',
+    object.overview,
+    '',
+    '## Architektur-Entscheidungen',
+    object.architecture,
+    '',
+    baseline,
+  ].join('\n')
 }
