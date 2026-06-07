@@ -220,6 +220,24 @@ Damit lassen sich Klassifikator-Regeln iterativ schärfen.
 
 ---
 
+## Nachtrag 2026-06-07: Retrieval-Strategie (Vektoren ja/nein)
+
+> Forward-Notiz für den späteren Veredler-Bau (Frage Timm, 2026-06-07). Ändert die superseded-Entscheidung nicht.
+
+**Frage:** Spielen Vektordatenbanken beim Veredler-Wissensabruf (Pipeline-Stufe „Wissensabruf", Tiefe 2/3) eine Rolle?
+
+**Einordnung — zweigeteilt nach Wissensart:**
+
+1. **Regel-/Konventions-Wissen (der Konventions-Regelkorpus, Scheibe C1/C2): NICHT vektorbasiert.** Der Korpus ist klein (~55 → 255 Regeln), strukturiert und mit `appliesWhen`-Tags + Kategorien versehen. **Strukturiertes Filtern** (Tag-/Domain-Match) ist hier präziser, billiger, deterministisch und auditierbar — konsistent mit „Smart Router ist deterministisch". Vektorsuche über kuratierte Regeln wäre *schlechter* („ungefähr passend" statt „exakt zutreffend"). Der C1-Korpus ist damit die **strukturierte Veredler-Wissensquelle Nr. 1** — bewusst ohne Embeddings.
+
+2. **Großes/unstrukturiertes Wissen: DA werden Embeddings relevant (klassisches RAG).** Anwendungsfälle: der **eigene Code des Vibers** (Repo-Kontext: „nutz die vorhandene Funktion X"), akkumulierte Docs / frühere Entscheidungen / vergangene Prompts / Projekt-Gedächtnis — Fälle, in denen Keyword/Tag-Filter an unstrukturierter Masse scheitert.
+
+**Infrastruktur (falls nötig):** **pgvector auf dem bestehenden Supabase** (RAG-Infra existiert bereits — `docs/product/rag-architecture.md`, pgvector + Wissensbasis-Schema), **kein** separater Vektor-DB-Dienst. Konsistent mit dem Prinzip „keine eigene Infrastruktur".
+
+**Faustregel:** strukturiert zuerst (Korpus-Tags, Repo-Map), Vektoren erst, wenn strukturiertes Retrieval an unstrukturierter Masse scheitert. Vektoren nicht vorzeitig einbauen (häufigster Over-Engineering-Fehler bei „KI + Wissen").
+
+---
+
 ## Related ADRs
 
 - **ADR-006** — Sechs-Schichten-Wissens-Architektur (definiert den Kontext, in dem der Veredler operiert)
