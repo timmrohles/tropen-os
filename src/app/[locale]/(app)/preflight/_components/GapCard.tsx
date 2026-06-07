@@ -1,250 +1,82 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, Check, CaretDown, CaretUp } from '@phosphor-icons/react'
-import type { Gap, PreflightResult } from '@/lib/preflight/types'
-import { AppSection } from '@/components/app-ui/AppSection'
+import type { Gap, Decision, DecisionChoice, GapList } from '@/lib/preflight/types'
 
-// ─── Gap Card (compact by default, depth on demand) ───────────────────────────
-
-export function GapCard({ gap }: { gap: Gap }) {
-  const [done, setDone] = useState(false)
-  const [expanded, setExpanded] = useState(false)
-
+export function GapCard({ gap, decision, onDecision }: {
+  gap: Gap
+  decision?: Decision
+  onDecision: (nodeId: string, choice: DecisionChoice, value?: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [editVal, setEditVal] = useState(gap.action ?? gap.default)
   const isRed = gap.kosten === 'red'
-  const recommendation = gap.action ?? gap.default
+  const suggestion = gap.action ?? gap.default
+  const resolved = decision !== undefined
 
-  // Expand shows plain + warum + default when there's depth beyond the one-liner
-  const hasExpandableContent = !!(gap.plain || gap.warum)
-
-  return (
-    <div
-      style={{
-        // Use ONLY longhand border props — no shorthand border/borderLeft which causes React warning
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: 'var(--border)',
-        borderLeftWidth: 3,
-        borderLeftStyle: 'solid',
-        borderLeftColor: done ? 'var(--border)' : isRed ? 'var(--error)' : 'var(--status-risky)',
-        borderRadius: '0 6px 6px 0',
-        background: done ? 'var(--surface-cool)' : 'var(--bg-surface)',
-        marginBottom: 8,
-        opacity: done ? 0.65 : 1,
-        transition: 'opacity 200ms, background 200ms',
-      }}
-    >
-      {/* ── Collapsed row: domain · frage · recommendation · badge ── */}
-      <div style={{ padding: '10px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Domain label */}
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              color: 'var(--text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-            }}>
-              {gap.domain}
-            </span>
-
-            {/* Question — the title */}
-            <p style={{
-              margin: '3px 0 6px',
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              lineHeight: 1.4,
-              textDecoration: done ? 'line-through' : 'none',
-            }}>
-              {gap.frage}
-            </p>
-
-            {/* One-line recommendation */}
-            {recommendation && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                <ArrowRight size={12} weight="bold" color="var(--teal)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                  {recommendation}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Badge */}
-          <span
-            style={{
-              flexShrink: 0,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: 4,
-              background: isRed ? 'rgba(168,48,30,0.10)' : 'rgba(229,160,0,0.10)',
-              color: isRed ? 'var(--error)' : 'var(--status-risky)',
-            }}
-          >
-            {isRed ? 'Blocker' : 'Optional'}
-          </span>
-        </div>
-
-        {/* ── Action row: Erledigt + Mehr ─────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => setDone(d => !d)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 12,
-              color: done ? 'var(--teal)' : 'var(--text-secondary)',
-              padding: '3px 10px',
-            }}
-            aria-pressed={done}
-          >
-            <Check size={12} weight="bold" aria-hidden="true" />
-            {done ? 'Erledigt ✓' : 'Erledigt'}
-          </button>
-
-          {hasExpandableContent && (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => setExpanded(x => !x)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 12,
-                padding: '3px 10px',
-                color: 'var(--text-tertiary)',
-              }}
-              aria-expanded={expanded}
-            >
-              {expanded
-                ? <CaretUp size={11} weight="bold" aria-hidden="true" />
-                : <CaretDown size={11} weight="bold" aria-hidden="true" />}
-              Mehr
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Expandable depth: plain + warum + default ──────────────── */}
-      {expanded && hasExpandableContent && (
-        <div
-          style={{
-            padding: '12px 14px',
-            background: 'var(--surface-cool)',
-            borderTopWidth: '1px',
-            borderTopStyle: 'solid',
-            borderTopColor: 'var(--border)',
-            borderRadius: '0 0 6px 0',
-          }}
-        >
-          {/* Was das heißt */}
-          {gap.plain && (
-            <div style={{ marginBottom: gap.warum ? 10 : 0 }}>
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                color: 'var(--text-tertiary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                display: 'block',
-                marginBottom: 4,
-              }}>
-                Was das heißt
-              </span>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                {gap.plain}
-              </p>
-            </div>
-          )}
-
-          {/* Warum wichtig */}
-          {gap.warum && (
-            <div style={{ marginBottom: gap.default ? 10 : 0 }}>
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                color: 'var(--text-tertiary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                display: 'block',
-                marginBottom: 4,
-              }}>
-                Warum wichtig
-              </span>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                {gap.warum}
-              </p>
-            </div>
-          )}
-
-          {/* Standard (default) */}
-          {gap.default && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: gap.plain || gap.warum ? 0 : 0 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0, paddingTop: 1 }}>
-                Standard:
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', lineHeight: 1.5 }}>
-                {gap.default}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Gaps Section ─────────────────────────────────────────────────────────────
-
-export function GapsSection({ gaps }: { gaps: PreflightResult['gaps'] }) {
-  const { red, yellow } = gaps
-
-  if (red.length === 0 && yellow.length === 0) {
+  if (resolved && !editing) {
+    const label = decision!.choice === 'parked' ? 'geparkt' : (decision!.value || suggestion)
     return (
-      <AppSection header="LÜCKEN">
-        <div style={{ padding: '20px 16px', fontSize: 13, color: 'var(--text-tertiary)' }}>
-          Keine offenen Lücken — alle Entscheidungen getroffen.
-        </div>
-      </AppSection>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 8,
+        borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-cool)', opacity: 0.85 }}>
+        <span style={{ color: decision!.choice === 'parked' ? 'var(--text-tertiary)' : 'var(--teal)', flexShrink: 0 }}>
+          {decision!.choice === 'parked' ? '⏸' : '✓'}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+          <b style={{ color: 'var(--text-primary)' }}>{gap.frage}</b> — {label}
+        </span>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditVal(decision!.value ?? suggestion); setEditing(true) }}>Ändern</button>
+      </div>
     )
   }
 
   return (
-    <div style={{ marginBottom: 24 }}>
-      {red.length > 0 && (
-        <AppSection
-          header={`ZUERST ENTSCHEIDEN · ${red.length}`}
-          headerRight="Blocker"
-          style={{ marginBottom: 12 }}
-        >
-          <div style={{ padding: '10px 14px' }}>
-            {red.map(gap => (
-              <GapCard key={gap.id} gap={gap} />
-            ))}
-          </div>
-        </AppSection>
-      )}
+    <div style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border)',
+      borderLeftWidth: 3, borderLeftStyle: 'solid', borderLeftColor: isRed ? 'var(--error)' : 'var(--status-risky)',
+      borderRadius: '0 8px 8px 0', background: 'var(--bg-surface)', marginBottom: 8, padding: '12px 14px' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {gap.domain} · {isRed ? '🔴 Blocker' : '🟡 Optional'}
+      </div>
+      <p style={{ margin: '3px 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{gap.frage}</p>
 
-      {yellow.length > 0 && (
-        <AppSection
-          header={`KANN SPÄTER · ${yellow.length}`}
-          headerRight="Geparkt"
-        >
-          <div style={{ padding: '10px 14px' }}>
-            {yellow.map(gap => (
-              <GapCard key={gap.id} gap={gap} />
-            ))}
-          </div>
-        </AppSection>
-      )}
+      <div style={{ background: 'var(--surface-cool)', borderRadius: 6, padding: '8px 10px', marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--teal)' }}>KI-VORSCHLAG</span>
+        {editing ? (
+          <textarea autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} rows={2}
+            style={{ width: '100%', marginTop: 4, fontSize: 13, fontFamily: 'inherit', border: '1px solid var(--accent)', borderRadius: 4, padding: '4px 6px', resize: 'vertical' }} />
+        ) : (
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{suggestion}</p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 6 }}>
+        {editing ? (
+          <>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => { onDecision(gap.id, 'custom', editVal.trim()); setEditing(false) }}>Speichern</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>Abbrechen</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => onDecision(gap.id, 'default', suggestion)}>Übernehmen</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditVal(suggestion); setEditing(true) }}>Anpassen</button>
+            <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--text-tertiary)' }} onClick={() => onDecision(gap.id, 'parked')}>Parken</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function GapsSection({ gaps, decisions, onDecision }: {
+  gaps: GapList
+  decisions: Record<string, Decision>
+  onDecision: (nodeId: string, choice: DecisionChoice, value?: string) => void
+}) {
+  const items = [...gaps.red, ...gaps.yellow]
+  if (items.length === 0) return <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Keine offenen Lücken.</p>
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {items.map(g => <GapCard key={g.id} gap={g} decision={decisions[g.id]} onDecision={onDecision} />)}
     </div>
   )
 }
