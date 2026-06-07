@@ -24,6 +24,7 @@ export function PreflightResult({ summary, gaps, decisions, startpaket, onDecisi
   const done = useMemo(() => gaps.red.filter(g => decisions[g.id] !== undefined).length, [gaps.red, decisions])
   const met = isMinStandardMet(gaps, decisions)
   const remaining = total - done
+  const hasStartpaket = !!startpaket?.conventions
 
   return (
     <div style={{ marginTop: 8 }}>
@@ -50,13 +51,13 @@ export function PreflightResult({ summary, gaps, decisions, startpaket, onDecisi
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 8, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <button type="button" className="btn btn-primary" disabled={!met || generating} onClick={onGenerate}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {generating ? 'Generiere …' : startpaket ? 'Neu generieren' : 'Startpaket erstellen'}
+          {generating ? 'Generiere …' : hasStartpaket ? 'Neu generieren' : 'Startpaket erstellen'}
         </button>
         {!met && <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>noch {remaining} rote {remaining === 1 ? 'Lücke' : 'Lücken'} offen</span>}
-        {met && !startpaket && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--teal)' }}><CheckCircle size={14} weight="fill" />Mindeststandard erreicht</span>}
+        {met && !hasStartpaket && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--teal)' }}><CheckCircle size={14} weight="fill" />Mindeststandard erreicht</span>}
       </div>
 
-      {startpaket && (
+      {startpaket?.conventions && (
         <div style={{ marginTop: 20 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)', marginBottom: 12 }}>
             <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)' }} />Dein Startpaket

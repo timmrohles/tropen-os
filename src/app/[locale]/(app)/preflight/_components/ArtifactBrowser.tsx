@@ -11,7 +11,8 @@ const CodeBlock = dynamic(() => import('@/components/workspace/CodeBlock'), { ss
 
 interface FileEntry { filename: string; content: string; language: string }
 
-function deriveFiles(sp: Startpaket): FileEntry[] {
+function deriveFiles(sp: Startpaket | null | undefined): FileEntry[] {
+  if (!sp?.conventions) return []
   const files: FileEntry[] = [
     { filename: sp.conventions.filename, content: sp.conventions.content, language: 'markdown' },
     { filename: 'DECISIONS.md', content: sp.decisionLog, language: 'markdown' },
@@ -28,6 +29,7 @@ export function ArtifactBrowser({ startpaket }: { startpaket: Startpaket }) {
   const [selected, setSelected] = useState(0)
   const [copied, setCopied] = useState<string | null>(null)
   const active = files[selected]
+  if (!active) return null
 
   const copy = (key: string, text: string) => {
     void navigator.clipboard.writeText(text).then(() => {
