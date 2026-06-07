@@ -138,3 +138,12 @@ export interface PreflightProjectDetail {
   input: string
   result: PreflightResult
 }
+
+export type DecisionChoice = 'default' | 'custom' | 'parked'
+export interface Decision { choice: DecisionChoice; value?: string }
+export type DecisionMap = Record<string, Decision>
+
+/** Mindeststandard erreicht: jede offene rote Lücke hat eine Entscheidung. */
+export function isMinStandardMet(gaps: GapList, decisions: DecisionMap): boolean {
+  return gaps.red.every(g => decisions[g.id] !== undefined)
+}
