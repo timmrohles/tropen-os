@@ -15,6 +15,7 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
   const [renameVal, setRenameVal] = useState('')
   const [confirmDel, setConfirmDel] = useState(false)
   const [reanalyzing, setReanalyzing] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/preflight/projects/${id}`)
@@ -50,6 +51,19 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
       }
     } finally { setReanalyzing(false) }
   }, [id, detail, reanalyzing])
+
+  const onDecision = useCallback(async (nodeId: string, choice: 'default'|'custom'|'parked', value?: string) => {
+    setDetail(d => d ? { ...d, decisions: { ...d.decisions, [nodeId]: choice === 'parked' ? { choice } : { choice, value } } } : d)
+    await fetch(`/api/preflight/projects/${id}/decisions`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nodeId, choice, value }) })
+  }, [id])
+
+  const onGenerate = useCallback(async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch(`/api/preflight/projects/${id}/generate`, { method: 'POST' })
+      if (res.ok) { const j = await res.json() as { startpaket: unknown }; setDetail(d => d ? { ...d, startpaket: j.startpaket as never } : d) }
+    } finally { setGenerating(false) }
+  }, [id])
 
   if (notFound) {
     return (
@@ -103,8 +117,9 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      {detail?.result
-        ? <PreflightResult result={detail.result} />
+      {detail
+        ? <PreflightResult summary={detail.result.summary} gaps={detail.result.gaps} decisions={detail.decisions}
+            startpaket={detail.startpaket} onDecision={onDecision} onGenerate={onGenerate} generating={generating} />
         : <p style={{ color: 'var(--text-tertiary)', marginTop: 24 }}>Lädt …</p>}
     </div>
   )

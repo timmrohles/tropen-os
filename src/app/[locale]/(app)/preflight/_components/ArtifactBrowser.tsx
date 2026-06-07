@@ -4,16 +4,14 @@ import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { File, Copy, DownloadSimple, Check } from '@phosphor-icons/react'
 import { downloadTextFile } from '@/lib/download'
-import { buildDecisionPrompt } from '@/lib/preflight/export-prompt'
-import type { PreflightResult } from '@/lib/preflight/types'
+import type { Startpaket } from '@/lib/preflight/types'
 
 // CodeBlock MUSS lazy geladen werden (CLAUDE.md-Regel: react-syntax-highlighter ~170kB nie eager bundeln)
 const CodeBlock = dynamic(() => import('@/components/workspace/CodeBlock'), { ssr: false })
 
 interface FileEntry { filename: string; content: string; language: string }
 
-function deriveFiles(result: PreflightResult): FileEntry[] {
-  const sp = result.startpaket
+function deriveFiles(sp: Startpaket): FileEntry[] {
   const files: FileEntry[] = [
     { filename: sp.conventions.filename, content: sp.conventions.content, language: 'markdown' },
     { filename: 'DECISIONS.md', content: sp.decisionLog, language: 'markdown' },
@@ -25,8 +23,8 @@ function deriveFiles(result: PreflightResult): FileEntry[] {
   return files
 }
 
-export function ArtifactBrowser({ result }: { result: PreflightResult }) {
-  const files = useMemo(() => deriveFiles(result), [result])
+export function ArtifactBrowser({ startpaket }: { startpaket: Startpaket }) {
+  const files = useMemo(() => deriveFiles(startpaket), [startpaket])
   const [selected, setSelected] = useState(0)
   const [copied, setCopied] = useState<string | null>(null)
   const active = files[selected]
@@ -74,15 +72,6 @@ export function ArtifactBrowser({ result }: { result: PreflightResult }) {
             {active.content || '(leer)'}
           </CodeBlock>
         </div>
-      </div>
-
-      {/* Fußzeile */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', justifyContent: 'flex-end' }}>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => copy('__all__', buildDecisionPrompt(result))}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-          {copied === '__all__' ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
-          {copied === '__all__' ? 'Kopiert' : 'Alle offenen Punkte als Prompt kopieren'}
-        </button>
       </div>
     </div>
   )

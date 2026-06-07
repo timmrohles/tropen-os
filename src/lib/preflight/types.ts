@@ -136,7 +136,9 @@ export interface PreflightProjectDetail {
   name: string
   pivots: PreflightPivots
   input: string
-  result: PreflightResult
+  decisions: DecisionMap
+  startpaket: Startpaket | null
+  result: { summary: ResultSummary; gaps: GapList }
 }
 
 export type DecisionChoice = 'default' | 'custom' | 'parked'
