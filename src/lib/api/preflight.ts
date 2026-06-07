@@ -8,10 +8,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 export async function getPreflightProjectForUser(
   id: string,
   me: { organization_id: string; role: string },
-): Promise<{ id: string; organization_id: string; name: string; pivots: unknown; latest_run_id: string | null } | null> {
+): Promise<{ id: string; organization_id: string; name: string; pivots: unknown; latest_run_id: string | null; decisions?: unknown } | null> {
   const { data } = await supabaseAdmin
     .from('preflight_projects')
-    .select('id, organization_id, name, pivots, latest_run_id')
+    .select('id, organization_id, name, pivots, latest_run_id, decisions')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
