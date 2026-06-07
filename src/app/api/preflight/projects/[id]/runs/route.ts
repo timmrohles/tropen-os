@@ -57,6 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       latest_run_id: run.id,
       pivots,
       red_count: result.gaps.red.length,
+      startpaket: null, // Re-Analyse → altes Startpaket verwerfen (passt nicht mehr zur frischen Analyse)
       updated_at: new Date().toISOString(),
     })
     .eq('id', project.id)
