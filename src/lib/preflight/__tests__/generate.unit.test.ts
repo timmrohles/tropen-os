@@ -7,7 +7,6 @@ vi.mock('ai', () => ({
   generateObject: vi.fn(async () => ({
     object: {
       decisionLog: '# Log',
-      conventionsContent: '# .cursorrules content',
       envExample: 'OPENAI_API_KEY=',
       migrationSql: 'CREATE TABLE x ();',
     },
@@ -15,6 +14,7 @@ vi.mock('ai', () => ({
 }))
 vi.mock('@/lib/llm/anthropic', () => ({ anthropic: () => 'mock' }))
 vi.mock('../migration-audit', () => ({ auditMigrationSql: vi.fn(async () => []) }))
+vi.mock('../corpus/render', () => ({ renderConventions: vi.fn(async () => '# Projekt\n\n## Code-Regeln (nicht verhandelbar)\n- **Pflicht:** Baseline-Regel.') }))
 
 import { generateStartpaket } from '../generate'
 
@@ -31,7 +31,7 @@ const PIVOTS: PreflightPivots = {
 describe('generateStartpaket', () => {
   it('baut Startpaket inkl. Migration-Entwurf', async () => {
     const sp = await generateStartpaket('text', [], PIVOTS)
-    expect(sp.conventions.content).toBe('# .cursorrules content')
+    expect(sp.conventions.content).toContain('Baseline-Regel.')
     expect(sp.migrationDraft?.sql).toBe('CREATE TABLE x ();')
     expect(sp.migrationDraft?.warnings).toEqual([])
   })
