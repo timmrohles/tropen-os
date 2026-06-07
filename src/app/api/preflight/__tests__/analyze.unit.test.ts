@@ -24,7 +24,7 @@ vi.mock('@/lib/supabase-admin', () => ({
 }))
 
 vi.mock('@/lib/preflight/run', () => ({
-  runPreflight: vi.fn(),
+  analyzePreflight: vi.fn(),
 }))
 
 // --- Import after mocks are registered ---
@@ -33,13 +33,13 @@ import { POST } from '../analyze/route'
 import { getAuthUser } from '@/lib/api/projects'
 import { checkBudget } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { runPreflight } from '@/lib/preflight/run'
+import { analyzePreflight } from '@/lib/preflight/run'
 
 // --- Typed mock helpers ---
 
 const mockGetAuthUser  = vi.mocked(getAuthUser)
 const mockCheckBudget  = vi.mocked(checkBudget)
-const mockRunPreflight = vi.mocked(runPreflight)
+const mockAnalyzePreflight = vi.mocked(analyzePreflight)
 const mockSupabaseAdmin = vi.mocked(supabaseAdmin)
 
 // Fake user returned by getAuthUser
@@ -51,11 +51,7 @@ const FAKE_PIVOTS = { buildTool: 'cursor', businessModel: 'b2c', audienceRegion:
 const FAKE_RESULT = {
   summary: { projectLabel: 'Test-Projekt', headline: 'Keine Blocker — du kannst loslegen.' },
   gaps: { red: [], yellow: [], decidedCount: 0, naCount: 0 },
-  startpaket: {
-    decisionLog: '# log',
-    conventions: { filename: '.cursorrules', content: '# rules' },
-    envExample: 'KEY=',
-  },
+  nodes: [],
 }
 
 function makeRequest(body: unknown): NextRequest {
@@ -145,7 +141,7 @@ describe('POST /api/preflight/analyze', () => {
   it('returns 400 when runPreflight throws due to short input', async () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
-    mockRunPreflight.mockRejectedValue(
+    mockAnalyzePreflight.mockRejectedValue(
       new Error('Input zu kurz — gib mehr Detail (mind. ein paar Sätze oder ein Schema).')
     )
 
@@ -161,7 +157,7 @@ describe('POST /api/preflight/analyze', () => {
   it('returns 200 with projectId and result on success', async () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
-    mockRunPreflight.mockResolvedValue(FAKE_RESULT)
+    mockAnalyzePreflight.mockResolvedValue(FAKE_RESULT)
     buildProjectRunMocks('proj-9', 'run-9')
 
     const res = await POST(makeRequest({ input: 'This is a sufficiently long design document', pivots: FAKE_PIVOTS }))
@@ -176,7 +172,7 @@ describe('POST /api/preflight/analyze', () => {
   it('uses projectLabel as name when name is omitted', async () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
-    mockRunPreflight.mockResolvedValue(FAKE_RESULT)
+    mockAnalyzePreflight.mockResolvedValue(FAKE_RESULT)
     buildProjectRunMocks()
     const res = await POST(makeRequest({ input: 'A design doc with meaningful content here', pivots: FAKE_PIVOTS }))
     expect(res.status).toBe(200)

@@ -5,25 +5,25 @@ vi.mock('@/lib/budget', () => ({
   checkBudget: vi.fn(),
   budgetExhaustedResponse: vi.fn(() => new Response(JSON.stringify({ code: 'BUDGET_EXHAUSTED' }), { status: 402 })),
 }))
-vi.mock('@/lib/preflight/run', () => ({ runPreflight: vi.fn() }))
+vi.mock('@/lib/preflight/run', () => ({ analyzePreflight: vi.fn() }))
 vi.mock('@/lib/supabase-admin', () => ({ supabaseAdmin: { from: vi.fn() } }))
 
 import { POST } from '../projects/[id]/runs/route'
 import { getAuthUser } from '@/lib/api/projects'
 import { getPreflightProjectForUser } from '@/lib/api/preflight'
 import { checkBudget } from '@/lib/budget'
-import { runPreflight } from '@/lib/preflight/run'
+import { analyzePreflight } from '@/lib/preflight/run'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const mockAuth = vi.mocked(getAuthUser)
 const mockAccess = vi.mocked(getPreflightProjectForUser)
 const mockBudget = vi.mocked(checkBudget)
-const mockRun = vi.mocked(runPreflight)
+const mockRun = vi.mocked(analyzePreflight)
 const mockAdmin = vi.mocked(supabaseAdmin)
 const USER = { id: 'u1', organization_id: 'org1', role: 'member' }
 const PROJECT = { id: 'p1', organization_id: 'org1', name: 'LMS', pivots: {}, latest_run_id: 'r0' }
 const PIVOTS = { buildTool: 'cursor', businessModel: 'b2c', audienceRegion: 'eu', hosting: 'eu', stack: 'Next.js' } as const
-const RESULT = { summary: { projectLabel: 'LMS', headline: 'x' }, gaps: { red: [], yellow: [], decidedCount: 0, naCount: 0 }, startpaket: { decisionLog: '', conventions: { filename: '.cursorrules', content: '' }, envExample: '' } }
+const RESULT = { summary: { projectLabel: 'LMS', headline: 'x' }, gaps: { red: [], yellow: [], decidedCount: 0, naCount: 0 }, nodes: [] }
 const ctx = { params: Promise.resolve({ id: 'p1' }) }
 const req = (b: unknown) => new Request('http://localhost/api/preflight/projects/p1/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
 

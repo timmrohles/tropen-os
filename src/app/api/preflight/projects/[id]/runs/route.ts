@@ -6,7 +6,7 @@ import { validateBody } from '@/lib/validators'
 import { preflightBody } from '@/lib/validators/preflight'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { runPreflight } from '@/lib/preflight/run'
+import { analyzePreflight } from '@/lib/preflight/run'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api:preflight:runs')
@@ -28,10 +28,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   let result
   try {
-    result = await runPreflight(input, pivots)
+    result = await analyzePreflight(input, pivots)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Input ungültig'
-    logger.warn('runPreflight rejected input', { message })
+    logger.warn('analyzePreflight rejected input', { message })
     return NextResponse.json({ error: message }, { status: 400 })
   }
 
