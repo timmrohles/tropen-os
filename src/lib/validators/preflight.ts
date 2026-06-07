@@ -19,3 +19,9 @@ export const preflightBody = z.object({
 export const renameProjectBody = z.object({
   name: z.string().trim().min(1).max(120),
 })
+
+export const decisionBody = z.object({
+  nodeId: z.string().min(1),
+  choice: z.enum(['default', 'custom', 'parked']),
+  value: z.string().optional(),
+})

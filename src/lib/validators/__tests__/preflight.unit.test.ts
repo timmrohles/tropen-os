@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { preflightBody, renameProjectBody } from '../preflight'
+import { preflightBody, renameProjectBody, decisionBody } from '../preflight'
 
 describe('preflightBody', () => {
   const base = {
@@ -43,5 +43,19 @@ describe('renameProjectBody', () => {
   })
   it('lehnt leeren name ab', () => {
     expect(renameProjectBody.safeParse({ name: '   ' }).success).toBe(false)
+  })
+})
+
+describe('decisionBody', () => {
+  it('akzeptiert default/custom/parked', () => {
+    expect(decisionBody.safeParse({ nodeId: 'A1', choice: 'default' }).success).toBe(true)
+    expect(decisionBody.safeParse({ nodeId: 'A1', choice: 'custom', value: 'x' }).success).toBe(true)
+    expect(decisionBody.safeParse({ nodeId: 'A1', choice: 'parked' }).success).toBe(true)
+  })
+  it('lehnt unbekannte choice ab', () => {
+    expect(decisionBody.safeParse({ nodeId: 'A1', choice: 'foo' }).success).toBe(false)
+  })
+  it('lehnt leere nodeId ab', () => {
+    expect(decisionBody.safeParse({ nodeId: '', choice: 'default' }).success).toBe(false)
   })
 })
