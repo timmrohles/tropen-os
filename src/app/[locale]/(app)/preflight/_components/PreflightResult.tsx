@@ -37,11 +37,15 @@ export function PreflightResult({ summary, gaps, decisions, startpaket, onDecisi
 
       {total > 0 && (
         <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
-            <span>MINDESTSTANDARD</span><span>{done} / {total} rote Lücken</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>
+            <span>MINDESTSTANDARD</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: met ? 'var(--teal)' : 'var(--text-secondary)', fontWeight: met ? 600 : 400 }}>
+              {met && <CheckCircle size={13} weight="fill" aria-hidden="true" />}
+              {met ? 'alle geklärt' : `${done} / ${total} geklärt`}
+            </span>
           </div>
-          <div style={{ height: 8, borderRadius: 999, background: 'var(--surface-tint)', overflow: 'hidden' }}>
-            <div style={{ width: `${total ? (done / total) * 100 : 100}%`, height: '100%', background: 'var(--teal)', transition: 'width 200ms' }} />
+          <div style={{ height: 6, borderRadius: 999, background: 'var(--accent-light)', overflow: 'hidden' }}>
+            <div style={{ width: `${total ? (done / total) * 100 : 0}%`, height: '100%', background: 'var(--teal)', borderRadius: 999, transition: 'width 250ms ease-out' }} />
           </div>
         </div>
       )}
