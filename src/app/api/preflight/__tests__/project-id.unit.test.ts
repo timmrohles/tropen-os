@@ -36,13 +36,17 @@ describe('preflight project [id] route', () => {
   it('GET liefert Projekt + result des latest run', async () => {
     mockAuth.mockResolvedValue(USER)
     mockAccess.mockResolvedValue(PROJECT)
-    const single = vi.fn().mockResolvedValue({ data: { result: { summary: { projectLabel: 'LMS', headline: 'x' }, gaps: {}, startpaket: {} }, input_text: 'mein konzept' }, error: null })
-    mockAdmin.from = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single }) }) }) as unknown as typeof mockAdmin.from
+    mockAdmin.from = vi.fn((t: string) => t === 'preflight_runs'
+      ? { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { result: { summary: { projectLabel: 'LMS', headline: 'x' }, gaps: {}, startpaket: {} }, input_text: 'mein konzept' }, error: null }) }) }) }
+      : { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { decisions: {}, startpaket: null }, error: null }) }) }) }
+    ) as unknown as typeof mockAdmin.from
     const res = await GET(req(), ctx('p1'))
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body).toMatchObject({ id: 'p1', name: 'LMS', input: 'mein konzept' })
     expect(body.result.summary.projectLabel).toBe('LMS')
+    expect(body).toHaveProperty('decisions')
+    expect(body).toHaveProperty('startpaket')
   })
 
   it('PATCH benennt um', async () => {

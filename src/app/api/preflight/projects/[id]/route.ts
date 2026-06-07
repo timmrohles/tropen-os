@@ -19,16 +19,20 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   let input = ''
   if (project.latest_run_id) {
     const { data: run, error } = await supabaseAdmin
-      .from('preflight_runs')
-      .select('result, input_text')
-      .eq('id', project.latest_run_id)
-      .single()
+      .from('preflight_runs').select('result, input_text').eq('id', project.latest_run_id).single()
     if (error) return apiError(error)
     result = run?.result ?? null
     input = run?.input_text ?? ''
   }
 
-  return NextResponse.json({ id: project.id, name: project.name, pivots: project.pivots, input, result })
+  const { data: extra } = await supabaseAdmin
+    .from('preflight_projects').select('decisions, startpaket').eq('id', id).single()
+  const decisions = extra?.decisions ?? {}
+  // Fallback: altes Startpaket lag im Run (CRUD-Scheibe)
+  const runStartpaket = (result as { startpaket?: unknown } | null)?.startpaket ?? null
+  const startpaket = extra?.startpaket ?? runStartpaket
+
+  return NextResponse.json({ id: project.id, name: project.name, pivots: project.pivots, input, decisions, startpaket, result })
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
