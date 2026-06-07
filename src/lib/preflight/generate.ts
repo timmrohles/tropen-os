@@ -3,7 +3,8 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { anthropic } from '@/lib/llm/anthropic'
 import { CONVENTIONS_FILENAME } from './types'
-import type { NodeAnalysis, Startpaket, PreflightPivots } from './types'
+import { auditMigrationSql } from './migration-audit'
+import type { NodeAnalysis, Startpaket, PreflightPivots, DecisionMap } from './types'
 
 const SCHEMA = z.object({
   decisionLog: z.string(),
@@ -50,33 +51,34 @@ export async function generateStartpaket(
   text: string,
   analysis: NodeAnalysis[],
   pivots: PreflightPivots,
+  decisions: DecisionMap = {},
 ): Promise<Startpaket> {
   const analysisText = analysis
     .map((n) => `${n.id}: ${n.status}${n.evidence ? ` (${n.evidence})` : ''}`)
+    .join('\n')
+
+  const decisionsText = Object.entries(decisions)
+    .map(([nodeId, d]) =>
+      d.choice === 'parked'
+        ? `${nodeId}: BEWUSST GEPARKT (offen lassen, nicht erfinden)`
+        : `${nodeId}: ENTSCHIEDEN — ${d.value ?? ''}`,
+    )
     .join('\n')
 
   const { object } = await generateObject({
     model: anthropic('claude-sonnet-4-20250514'),
     schema: SCHEMA,
     system: buildSystemPrompt(pivots),
-    prompt: `KNOTENANALYSE:\n${analysisText || '(keine Analyse vorhanden)'}\n\n---\nDESIGN-DOKUMENT:\n${text}\n\n---\nErzeuge decisionLog, conventionsContent, envExample und (falls Datenmodell vorhanden) migrationSql.`,
+    prompt: `KNOTENANALYSE:\n${analysisText || '(keine Analyse vorhanden)'}\n\n---\nNUTZER-ENTSCHEIDUNGEN (verbindlich berücksichtigen):\n${decisionsText || '(keine)'}\n\n---\nDESIGN-DOKUMENT:\n${text}\n\n---\nErzeuge decisionLog, conventionsContent, envExample und (falls Datenmodell vorhanden) migrationSql. Übernimm die Nutzer-Entscheidungen wörtlich; geparkte Punkte bleiben offen.`,
   })
 
   const startpaket: Startpaket = {
     decisionLog: object.decisionLog,
-    conventions: {
-      filename: CONVENTIONS_FILENAME[pivots.buildTool],
-      content: object.conventionsContent,
-    },
+    conventions: { filename: CONVENTIONS_FILENAME[pivots.buildTool], content: object.conventionsContent },
     envExample: object.envExample,
   }
-
   if (object.migrationSql) {
-    startpaket.migrationDraft = {
-      sql: object.migrationSql,
-      warnings: [], // Audit wird in migration-audit.ts ergänzt
-    }
+    startpaket.migrationDraft = { sql: object.migrationSql, warnings: await auditMigrationSql(object.migrationSql) }
   }
-
   return startpaket
 }

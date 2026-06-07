@@ -14,6 +14,7 @@ vi.mock('ai', () => ({
   })),
 }))
 vi.mock('@/lib/llm/anthropic', () => ({ anthropic: () => 'mock' }))
+vi.mock('../migration-audit', () => ({ auditMigrationSql: vi.fn(async () => []) }))
 
 import { generateStartpaket } from '../generate'
 
