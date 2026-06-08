@@ -7,6 +7,8 @@ export type ConventionSection =
   | 'structure'
   | 'db'
   | 'error-handling'
+  | 'testing'
+  | 'git'
   | 'security'
   | 'maintenance'
 

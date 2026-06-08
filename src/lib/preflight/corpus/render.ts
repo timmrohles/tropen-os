@@ -35,7 +35,7 @@ export function filterCorpus(corpus: ConventionRule[], tags: string[]): Conventi
 }
 
 const SECTION_ORDER: ConventionSection[] = [
-  'code-rules', 'naming', 'structure', 'db', 'error-handling', 'security', 'maintenance',
+  'code-rules', 'naming', 'structure', 'db', 'error-handling', 'testing', 'git', 'security', 'maintenance',
 ]
 const SECTION_TITLE: Record<ConventionSection, string> = {
   overview: 'Projekt-Überblick',
@@ -45,6 +45,8 @@ const SECTION_TITLE: Record<ConventionSection, string> = {
   structure: 'Ordnerstruktur & was gehört wohin',
   db: 'Datenbank-Zugriff & Migrationen',
   'error-handling': 'Fehlerbehandlung',
+  testing: 'Tests',
+  git: 'Git & Versionskontrolle',
   security: 'Sicherheit & Secrets',
   maintenance: 'Pflege dieser Datei',
 }
