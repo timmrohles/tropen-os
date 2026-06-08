@@ -57,6 +57,10 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
     await fetch(`/api/preflight/projects/${id}/decisions`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nodeId, choice, value }) })
   }, [id])
 
+  const onConceptResult = useCallback((result: unknown) => {
+    setDetail(d => d ? { ...d, result: result as PreflightProjectDetail['result'] } : d)
+  }, [])
+
   const onGenerate = useCallback(async () => {
     setGenerating(true)
     try {
@@ -119,7 +123,8 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
 
       {detail
         ? <PreflightResult summary={detail.result.summary} gaps={detail.result.gaps} decisions={detail.decisions}
-            startpaket={detail.startpaket} onDecision={onDecision} onGenerate={onGenerate} generating={generating} />
+            startpaket={detail.startpaket} onDecision={onDecision} onGenerate={onGenerate} generating={generating}
+            projectId={detail.id} seed={detail.input} onConceptResult={onConceptResult} />
         : <p style={{ color: 'var(--text-tertiary)', marginTop: 24 }}>Lädt …</p>}
     </div>
   )
