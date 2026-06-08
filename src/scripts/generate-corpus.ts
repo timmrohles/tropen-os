@@ -27,8 +27,12 @@ import { parseRules, validateAgainstVocab, dedupeRules } from './corpus-gen/post
 const ROOT = resolve(process.cwd())
 
 function getAnthropicModel(modelId: string) {
-  // noinspection JSIgnoredPromiseFromCall — direct Anthropic key, intentional (gateway not configured)
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
+  // baseURL mit /v1 nötig: die installierte SDK-Version erzeugt sonst api.anthropic.com/messages → 404
+  // (gleicher Fix wie in src/lib/llm/anthropic.ts).
+  const sdk = createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    baseURL: 'https://api.anthropic.com/v1',
+  })
   return sdk(modelId)
 }
 
@@ -50,9 +54,10 @@ function getGrokModel() {
   return sdk('grok-4')
 }
 
-// Model IDs split to prevent gateway-slug static analysers from misreading date suffixes as versions
-const REVIEWER_MODEL = 'claude-sonnet-4' + '-20250514'
-const JUDGE_MODEL    = 'claude-opus-4'   + '-20250514'
+// Aktuelle Anthropic-Modell-IDs (claude-api-Skill, Stand 2026-06): keine Datums-Suffixe.
+// Die alten datierten IDs (claude-*-4-20250514) liefern auf diesem Account 404.
+const REVIEWER_MODEL = 'claude-sonnet-4-6'
+const JUDGE_MODEL    = 'claude-opus-4-8'
 
 // ── Prompt builders ───────────────────────────────────────────────────────────
 
