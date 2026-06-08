@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { preflightBody, renameProjectBody, decisionBody } from '../preflight'
+import { preflightBody, renameProjectBody, decisionBody, conceptBody, conceptSuggestBody } from '../preflight'
 
 describe('preflightBody', () => {
   const base = {
@@ -57,5 +57,20 @@ describe('decisionBody', () => {
   })
   it('lehnt leere nodeId ab', () => {
     expect(decisionBody.safeParse({ nodeId: '', choice: 'default' }).success).toBe(false)
+  })
+})
+
+describe('conceptBody', () => {
+  it('akzeptiert 4 Felder + mode', () => {
+    expect(conceptBody.safeParse({ mode: 'form', wasFuerWen: 'x', kernFunktionen: 'y', nutzerDaten: 'z', verkauf: '' }).success).toBe(true)
+  })
+  it('lehnt fehlende Felder ab', () => {
+    expect(conceptBody.safeParse({ mode: 'form', wasFuerWen: 'x' }).success).toBe(false)
+  })
+})
+describe('conceptSuggestBody', () => {
+  it('verlangt seed-String', () => {
+    expect(conceptSuggestBody.safeParse({ seed: 'eine kochapp' }).success).toBe(true)
+    expect(conceptSuggestBody.safeParse({}).success).toBe(false)
   })
 })
