@@ -45,6 +45,9 @@ const IGNORE = [
   // file-size: Audit-Engine — server-only, Aufteilung separates Ticket
   'audit/finding-recommendations.ts', 'audit\\finding-recommendations.ts',
   'audit/rule-registry.ts', 'audit\\rule-registry.ts',
+  // file-size: maschinen-generierte Korpus-Daten (Pre-Flight C2b) — keine handgepflegte Code, Aufteilung sinnlos
+  'rule-corpus.generated.ts',
+  'corpus-gen/raw-rules.ts', 'corpus-gen\\raw-rules.ts',
 ]
 
 // Verbotene Hex-Farben (hardcodiert statt CSS-Variable)
