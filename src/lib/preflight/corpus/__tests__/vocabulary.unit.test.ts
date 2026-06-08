@@ -13,6 +13,7 @@ describe('vocabulary', () => {
   })
   it('OTHER_TAGS enthält db/auth/platform/commerce', () => {
     expect(OTHER_TAGS).toEqual(expect.arrayContaining(['db:true', 'auth:true', 'platform:web', 'platform:native', 'commerce:true']))
+    expect(OTHER_TAGS).toContain('ai:true')
   })
   it('CONTENT_SECTIONS enthält testing + git', () => {
     expect(CONTENT_SECTIONS).toContain('testing')

@@ -10,7 +10,7 @@ export const STACK_TAGS = [
   'stack:swift', 'stack:kotlin',
 ] as const
 
-export const OTHER_TAGS = ['db:true', 'auth:true', 'platform:web', 'platform:native', 'commerce:true'] as const
+export const OTHER_TAGS = ['db:true', 'auth:true', 'platform:web', 'platform:native', 'commerce:true', 'ai:true'] as const
 
 export const ALL_TAGS: string[] = [...STACK_TAGS, ...OTHER_TAGS]
 
