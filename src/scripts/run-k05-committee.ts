@@ -20,10 +20,10 @@ const OPUS_MODEL   = 'claude-opus-4-7'
 const SONNET_MODEL = 'claude-sonnet-4-6'
 
 function getOpus() {
-  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(OPUS_MODEL)
+  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })(OPUS_MODEL)
 }
 function getSonnet() {
-  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(SONNET_MODEL)
+  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })(SONNET_MODEL)
 }
 function getGPT5() {
   return createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })('gpt-5')
