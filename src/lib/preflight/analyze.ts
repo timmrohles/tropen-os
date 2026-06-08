@@ -68,7 +68,7 @@ export async function analyzeInput(
   ).join('\n')
 
   const { object } = await generateObject({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: anthropic('claude-haiku-4-5-20251001'),
     schema: SCHEMA,
     system: buildSystemPrompt(pivots),
     prompt: `KORSETT-KNOTEN:\n${checklist}\n\n---\nDESIGN-DOKUMENT:\n${text}\n\n---\nGib projectLabel und pro Knoten {id, status, evidence?, plain?, action?} zurück.`,
