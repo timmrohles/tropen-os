@@ -54,6 +54,9 @@ export function deriveCorpusTags(pivots: PreflightPivots, nodes: NodeAnalysis[])
   if (dbKeywords.test(stack) || /\b(db|database|schema|migration)\b/.test(nodeIds)) tags.add('db:true')
   if (authKeywords.test(stack) || /\b(auth|login|session)\b/.test(nodeIds)) tags.add('auth:true')
 
+  const aiKeywords = /\b(openai|anthropic|claude|gpt|gemini|llm|ai-sdk|ai sdk|langchain|vercel ai|mistral|huggingface)\b/
+  if (aiKeywords.test(stack) || nodes.some((n) => /\bai\b|llm|gpt/i.test(n.id))) tags.add('ai:true')
+
   if (pivots.commercialModel !== 'none' && pivots.commercialModel !== 'unsure') tags.add('commerce:true')
 
   return [...tags]

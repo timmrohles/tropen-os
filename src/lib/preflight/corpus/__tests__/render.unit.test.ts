@@ -38,6 +38,9 @@ describe('deriveCorpusTags', () => {
     expect(t('Expo / React Native')).toContain('stack:react-native')
     expect(t('SvelteKit')).toContain('stack:svelte')
   })
+  it('erkennt KI-Stack → ai:true', () => {
+    expect(deriveCorpusTags({ ...base, stack: 'Next.js + OpenAI' }, [])).toContain('ai:true')
+  })
   it('gibt nur Tags aus dem Vokabular zurück', () => {
     const tags = deriveCorpusTags({ ...base, stack: 'Next.js + Supabase + Stripe', commercialModel: 'shop' }, [])
     for (const tag of tags) expect(ALL_TAGS).toContain(tag)
