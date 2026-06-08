@@ -22,11 +22,11 @@ const ROOT = resolve(process.cwd())
 const AGENTS_DIR = join(ROOT, 'docs', 'agents')
 
 // Model IDs split to prevent gateway-slug static analysers from misreading date suffixes
-const REVIEWER_MODEL = 'claude-sonnet-4' + '-20250514'
-const JUDGE_MODEL    = 'claude-opus-4'   + '-20250514'
+const REVIEWER_MODEL = 'claude-sonnet-4-6'
+const JUDGE_MODEL    = 'claude-opus-4-8'
 
 function getAnthropic(modelId: string) {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
+  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
   return sdk(modelId)
 }
 function getOpenAI() {

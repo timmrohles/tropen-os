@@ -23,10 +23,10 @@ const REVIEWS_DIR = join(ROOT, 'docs', 'agents', '_reviews')
 const QUALITY_AGENT_PATH = join(ROOT, 'docs', 'agents', 'AGENT_QUALITY_AGENT.md')
 
 // Model ID split to avoid gateway-slug static analysis misreading the date suffix
-const REVIEWER_MODEL_ID = 'claude-sonnet-4' + '-20250514'
+const REVIEWER_MODEL_ID = 'claude-sonnet-4-6'
 
 function getReviewerModel() {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
+  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
   return sdk(REVIEWER_MODEL_ID)
 }
 

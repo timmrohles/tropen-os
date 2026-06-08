@@ -19,10 +19,10 @@ const AGENTS_DIR = join(ROOT, 'docs', 'agents')
 const REVIEWS_DIR = join(ROOT, 'docs', 'agents', '_reviews')
 
 // Model ID split to avoid gateway-slug static analysis misreading date suffixes
-const JUDGE_MODEL = 'claude-opus-4' + '-20250514'
+const JUDGE_MODEL = 'claude-opus-4-8'
 
 function getOpus() {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
+  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
   return sdk(JUDGE_MODEL)
 }
 
