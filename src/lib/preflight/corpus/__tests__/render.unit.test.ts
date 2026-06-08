@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCorpusTags, filterCorpus, renderBaseline } from '../render'
+import { ALL_TAGS } from '../vocabulary'
 import type { PreflightPivots } from '../../types'
 import type { ConventionRule } from '../types'
 
@@ -26,6 +27,20 @@ describe('deriveCorpusTags', () => {
     const tags = deriveCorpusTags(base, [])
     expect(tags.some(t => t.startsWith('stack:'))).toBe(false)
     expect(tags).not.toContain('db:true')
+  })
+  it('erkennt erweiterte Stacks', () => {
+    const t = (stack: string) => deriveCorpusTags({ ...base, stack }, [])
+    expect(t('Astro + Tailwind')).toContain('stack:astro')
+    expect(t('Django REST')).toContain('stack:python')
+    expect(t('Ruby on Rails')).toContain('stack:rails')
+    expect(t('Laravel')).toContain('stack:php')
+    expect(t('Spring Boot')).toContain('stack:java')
+    expect(t('Expo / React Native')).toContain('stack:react-native')
+    expect(t('SvelteKit')).toContain('stack:svelte')
+  })
+  it('gibt nur Tags aus dem Vokabular zurück', () => {
+    const tags = deriveCorpusTags({ ...base, stack: 'Next.js + Supabase + Stripe', commercialModel: 'shop' }, [])
+    for (const tag of tags) expect(ALL_TAGS).toContain(tag)
   })
 })
 
