@@ -4,9 +4,10 @@
 // ConventionRule objects via a multi-model committee (4 reviewers + Opus judge).
 // Output is JSON-as-TS: src/lib/preflight/corpus/rule-corpus.generated.ts
 //
-// Run:  npx dotenv -e .env.local -- npx tsx src/scripts/generate-corpus.ts
+// Run:  npx tsx src/scripts/generate-corpus.ts   (lädt .env.local selbst via load-env)
 // Cost: ~€ (committee over 25 packs — 4 reviewers + judge per pack)
 
+import './corpus-gen/load-env' // muss zuerst laufen: lädt .env.local, umgeht Empty-Key-Shadow
 import { writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { generateText } from 'ai'
