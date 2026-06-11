@@ -364,7 +364,7 @@ export default function PerspectivesPage() {
                 onChange={e => setField('model_id', e.target.value)}
               >
                 <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (schnell)</option>
-                <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (stark)</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (stark)</option>
               </select>
             </div>
             <div style={s.formRow}>

@@ -21,7 +21,7 @@ interface AvatarFormDrawerProps {
 }
 
 const MODEL_OPTIONS = [
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (Standard)' },
+  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Standard)' },
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Schnell)' },
 ]
 
@@ -38,7 +38,7 @@ export default function AvatarFormDrawer({ open, avatar, onClose, onSaved }: Ava
   const [emoji, setEmoji]             = useState('🤖')
   const [description, setDescription] = useState('')
   const [systemPrompt, setPrompt]     = useState('')
-  const [modelId, setModelId]         = useState('claude-sonnet-4-20250514')
+  const [modelId, setModelId]         = useState('claude-sonnet-4-6')
   const [context, setContext]         = useState('last_10')
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState<string | null>(null)
@@ -56,7 +56,7 @@ export default function AvatarFormDrawer({ open, avatar, onClose, onSaved }: Ava
       setEmoji('🤖')
       setDescription('')
       setPrompt('')
-      setModelId('claude-sonnet-4-20250514')
+      setModelId('claude-sonnet-4-6')
       setContext('last_10')
     }
     setError(null)
