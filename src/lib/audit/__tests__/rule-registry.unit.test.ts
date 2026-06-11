@@ -56,8 +56,9 @@ describe('Category 1 (Architektur)', () => {
 })
 
 describe('Category 3 (Sicherheit)', () => {
-  it('has exactly 43 rules', () => {
-    expect(getRulesForCategory(3)).toHaveLength(43)
+  it('has exactly 44 rules', () => {
+    // 43 Bestand (origin/main) + cat-3-rule-27 (ADR-032, erzwungene Route-Autorisierung).
+    expect(getRulesForCategory(3)).toHaveLength(44)
   })
 })
 
