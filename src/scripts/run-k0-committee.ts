@@ -17,8 +17,8 @@ const START = Date.now()
 
 // ── Provider setup (direkte Keys — AI Gateway nicht für CLI konfiguriert) ────────
 
-const REVIEWER_MODEL = 'claude-sonnet-4-20250514'
-const JUDGE_MODEL    = 'claude-opus-4-20250514'
+const REVIEWER_MODEL = 'claude-sonnet-4-6'
+const JUDGE_MODEL    = 'claude-opus-4-8'
 
 function getAnthropicModel(modelId: string) {
   return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(modelId)

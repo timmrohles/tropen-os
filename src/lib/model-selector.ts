@@ -29,7 +29,7 @@ export interface ModelSelection {
 // ─── Model Constants ────────────────────────────────────────────────────────
 
 const HAIKU  = 'claude-haiku-4-5-20251001'
-const SONNET = 'claude-sonnet-4-20250514'
+const SONNET = 'claude-sonnet-4-6'
 
 // ─── Routing Table ──────────────────────────────────────────────────────────
 
