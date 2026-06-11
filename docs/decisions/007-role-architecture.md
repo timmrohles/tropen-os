@@ -72,3 +72,11 @@ Der Superadmin kann die Ansicht wechseln um Org-Rollen zu simulieren:
   nötig wird (ein User in mehreren Orgs), brauchen wir eine `org_memberships`-Tabelle
 - `viewer`-Rolle ist aktuell UI-seitig noch nicht vollständig enforced (Edit-Buttons aktiv) — Tech Debt
 - `'org_admin'` Legacy-Wert muss bei jedem Session-Start migriert werden (Sidebar + TopBar useEffect) — solange bis alle Sessions neu gestartet sind
+
+---
+
+## Amendment (2026-06-11, via ADR-032)
+
+Die ursprüngliche Setzung „`admin` = Owner + Admin zusammengeführt — kein separates Owner-Konzept" (Abschnitt 2) entspricht **nicht** der Implementierung: Das DB-Constraint `users_role_check` erlaubt `owner` (Migration 011), die RLS-Policies (002/014/032/033) und alle `/api/admin/*`-Routen behandeln `('owner','admin','superadmin')` als Org-Admin-Tier. `requireOrgAdmin()` war mit `['superadmin','admin']` der einzige Ausreißer.
+
+**Korrektur (ADR-032):** `owner` ist eine gültige `users.role` und gehört zum Org-Admin-Tier. Kanonisches Org-Admin-Set = `['owner','admin','superadmin']` (`ORG_ADMIN_ROLES` in `src/lib/auth/route-guards.ts`). `requireOrgAdmin()` wurde angeglichen.

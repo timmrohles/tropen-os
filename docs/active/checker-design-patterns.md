@@ -1,7 +1,7 @@
 ---
 status: active
-updated: 2026-05-07
-review_by: 2026-08-07
+updated: 2026-06-11
+review_by: 2026-09-11
 supersedes: []
 ---
 
@@ -11,8 +11,8 @@ supersedes: []
 > Jedes Pattern beschreibt einen Fehler-Typ, seinen Ursprung, die Lösung und einen
 > verifizierten Praxis-Beleg aus dem Dogfooding-Prozess.
 >
-> **Version:** 1.0 — 2026-04-21
-> **Quellen:** Dogfooding-Sessions 2026-04-14 bis 2026-04-21, checker-feedback.md, architect-log.md
+> **Version:** 1.1 — 2026-06-11
+> **Quellen:** Dogfooding-Sessions 2026-04-14 bis 2026-04-21, Fable-5-Review 2026-06-11, checker-feedback.md, architect-log.md
 
 ---
 
@@ -409,6 +409,38 @@ pnpm exec tsx src/scripts/run-audit.ts --frozen-paths agenten,feeds,workspaces,c
 
 ---
 
+### P18 — Suppression-blinde Auditierung (Reviewer ignoriert dokumentierte FPs)
+
+**Gilt für:** LLM-Reviewer (Multi-Model-Komitee, externe Modell-Reviews) UND deterministische Checker, die bereits triagierte Findings erneut melden.
+
+**Symptom:** Ein Review meldet Findings, die das Projekt bereits als False Positive, stale oder bewusste Ausnahme identifiziert, dokumentiert oder im Code abgesichert hat. Das Finding ist „neu" nur aus Sicht des Reviewers — die Codebasis kennt es längst.
+
+**Typischer Ursprung:** Der Reviewer prüft den Code, aber nicht den **Suppression-State** des Projekts: `checker-feedback.md`, `not_relevant_reason`/dismissed in der DB, CLAUDE.md-Notizen über stale Findings, `excludePattern`-Historie. Bei LLM-Reviews verstärkt durch drei Mechanismen, die im selben Lauf zusammenwirken:
+1. **Signatur-Heuristik statt Datenfluss:** Aus `GET()` ohne `request`-Parameter wird „kein Auth möglich" geschlossen — ohne `headers()` aus `next/headers` zu prüfen. (Manifestation von P1 im Reviewer-Kontext.)
+2. **Invertierte Beweislast:** Der eigenen Heuristik wird vertraut, der projekteigenen Dokumentation misstraut. Default muss umgekehrt sein: dokumentierte Suppression schlägt Heuristik-Verdacht.
+3. **Severity-Anziehung:** Eindrucksvolle Findings („Debug-Route in Prod", „Secret-Leak") werden ins Top-Ranking gehoben — nicht die konfidentesten. Narrative Plausibilität ersetzt Falsifikation.
+
+**Konsequenz:** Ein Review mit hoher rhetorischer Schärfe und niedriger Präzision. Schlimmer als das Rauschen: Es untergräbt das Vertrauen in den gesamten Review, weil der Leser jedes Finding selbst gegenprüfen muss — genau der Zustand, den ein Audit beseitigen soll.
+
+**Lösung:**
+1. **Suppression-State vor dem Ranking konsultieren:** Vor dem Flaggen prüfen, ob das Finding in `checker-feedback.md`, als dismissed/`not_relevant_reason` in der DB oder als stale in CLAUDE.md vermerkt ist. Treffer → nicht melden oder explizit als „bereits triagiert" markieren.
+2. **Auth-/Security-Detektion als Datenfluss-Check, nie als Signatur:** „Hat diese Route Auth?" = Inhalt auf `CRON_SECRET`/`getAuthUser()`/`headers()` prüfen, nicht die Funktionssignatur oder den Pfadnamen interpretieren.
+3. **Asymmetrische Beweislast formalisieren:** Wer eine dokumentierte Ausnahme überstimmen will, muss den Code-Beleg liefern — nicht umgekehrt.
+4. **Adversarialer Zweitpass vor dem Ranking:** Jedes Top-Finding muss einen Falsifikationsversuch überstehen („Versuche zu widerlegen, dass dies ein echtes Problem ist"), bevor es ins Ranking kommt — Severity zieht sonst FPs nach oben.
+
+**Komitee-spezifische Beobachtung:** Wie P13 ist dies ein **Common-Mode-Failure**: Alle Modelle teilen die Heuristik „GET ohne request-Parameter → unauthentifiziert" und „Pfadname `debug` → Debug-Code in Prod". Multi-Model-Konsens bestätigt den FP, statt ihn zu korrigieren. Der Suppression-State-Check ist deterministisch und damit zuverlässiger als jede Modell-Mehrheit.
+
+**Praxis-Beleg (2026-06-11):** Ein externes Fable-5-Review von Tropen OS meldete fünf priorisierte Findings; die Gegenprüfung am Code ergab drei FPs, die das Projekt bereits abgesichert/dokumentiert hatte:
+- **#2 Cron-Routes „evtl. unauthentifiziert":** Alle 6 Routen prüfen `Bearer ${CRON_SECRET}` (verifiziert in `feed-fetch`, `agents` etc.) — exakt der Stale-FP, der in CLAUDE.md schon als „cat-3-rule-15 (cron Bearer-Token) — alle waren stale" dokumentiert war.
+- **#3 `/api/debug/feeds` „in Produktion":** Route gibt unter `NODE_ENV === 'production'` 404 zurück + `assertSuperadmin()`-Guard. Vom Pfadnamen auf die Implementierung geschlossen ohne Verifikation.
+- **#5 `redact()` „leerer Stub":** Gibt konstant `'[REDACTED]'` zurück — leakt per Konstruktion nichts. Risikorichtung invertiert (die sicherste mögliche Implementierung als Risiko gelesen).
+
+Das Modell benannte in seiner Eigendiagnose denselben Mechanismus: „TropenOS hat den FP-Typ, dem ich erlegen bin, bereits selbst identifiziert, dokumentiert und gefixt."
+
+**Präventionsregel:** Kein Finding ins Top-Ranking ohne (a) Datenfluss-Verifikation der Kernbehauptung und (b) Abgleich gegen den dokumentierten Suppression-State. Severity bestimmt nie die Reihenfolge vor der Konfidenz.
+
+---
+
 ## Pattern-Übergreifende Prinzipien
 
 Diese Regeln gelten immer, unabhängig vom konkreten Pattern:
@@ -433,6 +465,9 @@ Audit-Infrastruktur in `src/lib/audit/` enthält Pattern-Strings als String-Lite
 
 **7. Existenz-Prüfung ist nicht dasselbe wie Content-Analyse.**
 Der Repo-Map-Index ist für TS/TSX-Content, nicht für Datei-Existenz im Allgemeinen. `ctx.filePaths` ist der falsche Ort für Non-TS-Dateien. `fileExists()` aus `src/lib/audit/utils/file-utils.ts` ist die richtige Abstraktionsschicht für direkten Dateisystem-Zugriff (siehe P1.1).
+
+**8. Suppression-State schlägt Heuristik-Verdacht.**
+Bevor ein Finding gemeldet wird, gegen den dokumentierten Suppression-State prüfen (`checker-feedback.md`, dismissed-Findings, CLAUDE.md-Stale-Notizen). Eine dokumentierte Ausnahme zu überstimmen erfordert einen Code-Beleg, nicht eine Heuristik. Kernbehauptungen (besonders „hat keine Auth") immer per Datenfluss verifizieren, nie per Signatur oder Pfadname. Gilt für LLM-Reviewer wie für re-flaggende Checker (siehe P18).
 
 ---
 
@@ -482,6 +517,11 @@ Metrik-Kalibrierung
 
 Produkt-Kontext
 [ ] Werden Findings aus eingefrornenen Pfaden via frozenPaths ausgefiltert oder explizit markiert?     (P17)
+
+Suppression-Awareness (Reviewer + Re-Flagging)
+[ ] Wurde das Finding gegen checker-feedback.md / dismissed-Findings / CLAUDE.md-Stale-Notizen abgeglichen? (P18)
+[ ] Ist die Kernbehauptung per Datenfluss verifiziert (nicht aus Signatur/Pfadname geschlossen)?          (P18)
+[ ] Hat jedes Top-Finding einen adversarialen Falsifikations-Zweitpass überstanden?                       (P18)
 ```
 
 ---

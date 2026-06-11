@@ -302,10 +302,11 @@ Drizzle ORM funktioniert in dieser Umgebung **nicht** für Queries.
 
 | Verwendung | Modell |
 |------------|--------|
-| Projekt-Chat, Workspace-Chat, Transformations-Engine | `claude-sonnet-4-20250514` |
+| Projekt-Chat, Workspace-Chat, Transformations-Engine | `claude-sonnet-4-6` |
 | Context-Zusammenfassung, Feed Stage 2 | `claude-haiku-4-5-20251001` |
 | Projekt-Einstieg, Chips, Prompt-Builder (Plan L) | `claude-haiku-4-5-20251001` |
-| Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-20250514` |
+| Feed Stage 3 (Deep Analysis) | `claude-sonnet-4-6` |
+| Fable-5-Review (einmalig via Script) | `claude-fable-5` — nur `src/scripts/fable-review.ts` |
 | Multi-Model Review (Reviewer 1) | `anthropic/claude-sonnet-4.6` via AI Gateway |
 | Multi-Model Review (Reviewer 2) | `openai/gpt-5.4` via AI Gateway |
 | Multi-Model Review (Reviewer 3) | `google/gemini-2.5-pro` via AI Gateway |
@@ -878,7 +879,7 @@ Jedes Compliance-Finding zeigt Disclaimer: "Tropen OS ersetzt keine Rechtsberatu
 - API-Routes: try/catch + strukturierte JSON-Response `{ error: string, code?: string }`
 - Nie generische Error-Messages an den Client — immer spezifische, hilfreiche Meldungen
 - Zod-Validation via `validateBody()` in jeder API-Route — vor jeder Business-Logik
-- Auth-Check via `getAuthUser()` als erste Zeile in jeder API-Route
+- **Autorisierung via Wrapper aus `src/lib/auth/route-guards.ts` (ADR-032)** — jede API-Route, die per `supabaseAdmin` (RLS-umgehend) auf Daten zugreift, nutzt einen erzwungenen Wrapper als Export: `withAuth` (eingeloggt), `withOrgAdmin` (Org-Admin, kanonisch `['owner','admin','superadmin']`), `withProjectAccess` (Projekt-Ownership), `withWorkspaceAccess` (`{ write }`-Schalter), `withSuperadmin` (Plattform), `withCronAuth` (`CRON_SECRET`). Beispiel: `export const GET = withProjectAccess<{ id: string }>(async (req, { auth, projectId }) => {…})`. `getAuthUser()`/`verifyProjectAccess()` bleiben die Primitive, die die Wrapper komponieren — nicht mehr direkt in neuen Routen aufrufen. Checker `cat-3-rule-27` misst die Abdeckung. Bewusste Ausnahmen (öffentlich/Service/Bootstrap): in der Checker-Allowlist führen.
 
 ### Namenskonventionen (Next.js Standard)
 
