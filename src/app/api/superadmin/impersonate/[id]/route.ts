@@ -1,38 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-async function requireSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (me?.role !== 'superadmin') return null
-  return user
-}
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
 // End impersonation session
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireSuperadmin()
-  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const { id } = await params
+export const DELETE = withSuperadmin<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
   await supabaseAdmin
     .from('impersonation_sessions')
     .update({ ended_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('superadmin_id', admin.id)
+    .eq('superadmin_id', auth.id)
 
   return NextResponse.json({ ok: true })
-}
+})
 
 // Fetch session info (used by ImpersonationBanner on first load)
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export const GET = withSuperadmin<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
   const { data, error } = await supabaseAdmin
     .from('impersonation_sessions')
     .select('id, target_email, ticket_ref, duration_minutes, started_at, ended_at')
     .eq('id', id)
+    .eq('superadmin_id', auth.id)
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Session nicht gefunden' }, { status: 404 })
@@ -46,4 +35,4 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     expiresAt,
     durationMinutes: data.duration_minutes,
   })
-}
+})
