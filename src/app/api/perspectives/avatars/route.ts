@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:perspectives:avatars')
 
@@ -17,20 +17,11 @@ const createSchema = z.object({
   scope:           z.enum(['user','org']).optional().default('user'),
 })
 
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
-
 // GET /api/perspectives/avatars
 // Returns all visible avatars for the current user (system + org + own)
-export async function GET() {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   const { data: userRow } = await supabaseAdmin
-    .from('users').select('organization_id, role').eq('id', user.id).single()
+    .from('users').select('organization_id, role').eq('id', auth.id).single()
   if (!userRow) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 })
 
   const { data: avatars, error } = await supabaseAdmin
@@ -41,7 +32,7 @@ export async function GET() {
     .or(
       `scope.eq.system,` +
       `and(scope.eq.org,organization_id.eq.${userRow.organization_id}),` +
-      `and(scope.eq.user,user_id.eq.${user.id})`
+      `and(scope.eq.user,user_id.eq.${auth.id})`
     )
     .order('sort_order', { ascending: true })
 
@@ -54,7 +45,7 @@ export async function GET() {
   const { data: settings } = await supabaseAdmin
     .from('perspective_user_settings')
     .select('avatar_id, is_pinned, sort_order')
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   const settingsMap = new Map((settings ?? []).map(s => [s.avatar_id as string, s]))
 
@@ -65,16 +56,13 @@ export async function GET() {
   }))
 
   return NextResponse.json({ avatars: result })
-}
+})
 
 // POST /api/perspectives/avatars
 // Create a new avatar (scope='user' or 'org' for org admin)
-export async function POST(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   const { data: userRow } = await supabaseAdmin
-    .from('users').select('organization_id, role').eq('id', user.id).single()
+    .from('users').select('organization_id, role').eq('id', auth.id).single()
   if (!userRow) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 })
 
   let rawBody: unknown
@@ -95,11 +83,11 @@ export async function POST(req: NextRequest) {
     .insert({
       scope,
       organization_id: scope === 'org' ? userRow.organization_id : null,
-      user_id: scope === 'user' ? user.id : null,
+      user_id: scope === 'user' ? auth.id : null,
       name, emoji,
       description: description ?? null,
       system_prompt,
-      model_id: model_id ?? 'claude-sonnet-4-20250514',
+      model_id: model_id ?? 'claude-sonnet-4-6',
       context_default: context_default ?? 'last_10',
     })
     .select()
@@ -112,4 +100,4 @@ export async function POST(req: NextRequest) {
 
   logger.info('avatar created', { avatarId: avatar.id, scope })
   return NextResponse.json({ avatar }, { status: 201 })
-}
+})

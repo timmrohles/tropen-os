@@ -1,9 +1,9 @@
 export const maxDuration = 60
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:perspectives:query')
 
@@ -123,13 +123,9 @@ async function streamAvatar(
 
 // POST /api/perspectives/query
 // Parallel SSE streaming — one chunk stream per avatar, tagged with avatarId
-export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   const { data: userRow } = await supabaseAdmin
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('organization_id').eq('id', auth.id).single()
   if (!userRow) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 })
 
   let rawBody: unknown
@@ -150,7 +146,7 @@ export async function POST(req: NextRequest) {
     .or(
       `scope.eq.system,` +
       `and(scope.eq.org,organization_id.eq.${userRow.organization_id}),` +
-      `and(scope.eq.user,user_id.eq.${user.id})`
+      `and(scope.eq.user,user_id.eq.${auth.id})`
     )
 
   if (avatarError || !avatars?.length) {
@@ -187,7 +183,7 @@ export async function POST(req: NextRequest) {
   }
 
   logger.info('perspectives query start', {
-    userId: user.id,
+    userId: auth.id,
     avatarCount: avatars.length,
     scope,
     conversationId: conversationId ?? null,
@@ -230,4 +226,4 @@ export async function POST(req: NextRequest) {
       'Connection': 'keep-alive',
     },
   })
-}
+})

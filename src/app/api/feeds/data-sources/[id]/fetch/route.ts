@@ -1,21 +1,11 @@
 // src/app/api/feeds/data-sources/[id]/fetch/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api:feeds:data-sources:fetch')
 const FETCH_TIMEOUT_MS = 15_000
-
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabaseAdmin
-    .from('users').select('organization_id').eq('id', user.id).single()
-  if (!profile?.organization_id) return null
-  return { id: user.id, organization_id: profile.organization_id as string }
-}
 
 /** Simple dot-notation JSONPath resolver: "$.data.items" → obj.data.items */
 function applyJsonPath(data: unknown, path: string): unknown {
@@ -105,20 +95,14 @@ async function fetchDataSource(src: Record<string, unknown>, headers: Record<str
   }
 }
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   const { data: source, error: sourceError } = await supabaseAdmin
     .from('feed_data_sources')
     .select('*')
     .eq('id', id)
-    .eq('user_id', me.id)
+    .eq('user_id', auth.id)
     .single()
 
   if (sourceError || !source) {
@@ -148,8 +132,8 @@ export async function POST(
   // Insert record (APPEND ONLY — always insert, even on error)
   await supabaseAdmin.from('feed_data_records').insert({
     source_id: id,
-    user_id: me.id,
-    organization_id: me.organization_id,
+    user_id: auth.id,
+    organization_id: auth.organization_id,
     data: rawData ?? {},
     record_count: recordCount,
     fetch_duration_ms: durationMs,
@@ -171,4 +155,4 @@ export async function POST(
 
   const preview = Array.isArray(rawData) ? rawData.slice(0, 3) : (rawData ? [rawData] : [])
   return NextResponse.json({ recordCount, fetchedAt: new Date().toISOString(), preview, durationMs })
-}
+})

@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select('organization_id, role')
-    .eq('id', user.id)
+    .eq('id', auth.id)
     .maybeSingle()
 
   if (!profile?.organization_id) return NextResponse.json({ docs: [], settings: null, isAdmin: false })
@@ -34,4 +30,4 @@ export async function GET() {
   ])
 
   return NextResponse.json({ docs: docs ?? [], settings, isAdmin })
-}
+})

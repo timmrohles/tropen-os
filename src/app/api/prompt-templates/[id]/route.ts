@@ -1,44 +1,38 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {  
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const PATCH = withAuth<{ id: string }>(async (req, { params, auth }) => {
+  try {
+    const { id } = params
+
     const { is_shared } = await req.json()
-  
+
     const { data, error } = await supabaseAdmin
       .from('prompt_templates')
       .update({ is_shared })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', auth.id)
       .select()
       .single()
-  
+
     if (error) return apiError(error)
     return NextResponse.json(data)
   } catch (err) {
     return apiError(err)
   }
-}
+})
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const DELETE = withAuth<{ id: string }>(async (_req, { params, auth }) => {
+  const { id } = params
 
   const { error } = await supabaseAdmin
     .from('prompt_templates')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   if (error) return apiError(error)
   return NextResponse.json({ ok: true })
-}
+})

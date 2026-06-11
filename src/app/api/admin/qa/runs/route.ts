@@ -1,36 +1,17 @@
 import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import type { QaRunType, RunResponse } from '@/types/qa'
 const log = createLogger('admin/qa/runs')
-
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-  return data?.role === 'superadmin'
-}
 
 const VALID_RUN_TYPES: QaRunType[] = [
   'functional', 'integration', 'regression',
   'bias', 'hallucination', 'routing', 'security', 'lighthouse',
 ]
 
-export async function POST(request: NextRequest) {
+export const POST = withSuperadmin(async (request: NextRequest, { auth }) => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
-    const supabase_auth = await createClient()
-    const {
-      data: { user },
-    } = await supabase_auth.auth.getUser()
-
     const body = await request.json() as { runType?: QaRunType }
     const runType = body.runType
 
@@ -49,7 +30,7 @@ export async function POST(request: NextRequest) {
         run_type: runType,
         status: 'running',
         triggered_by: 'manual',
-        triggered_by_user_id: user?.id ?? null,
+        triggered_by_user_id: auth.id,
         started_at: new Date().toISOString(),
       })
       .select('id')
@@ -71,4 +52,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { runStage2, runStage3 } from '@/lib/feeds/pipeline'
 import { apiError } from '@/lib/api-error'
+import { withCronAuth } from '@/lib/auth/route-guards'
 
 interface FeedSchemaRow {
   id: string
@@ -51,13 +51,7 @@ function getImportance(score: number): string {
   return 'none'
 }
 
-export async function GET() {
-  const h = await headers()
-  const auth = h.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withCronAuth(async () => {
   try {
     const { data: items, error } = await supabaseAdmin
       .from('feed_items')
@@ -140,4 +134,4 @@ export async function GET() {
   } catch (err: unknown) {
     return apiError(err)
   }
-}
+})

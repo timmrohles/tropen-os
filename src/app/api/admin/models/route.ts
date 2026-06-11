@@ -1,34 +1,14 @@
 import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/models')
 
 const VALID_PROVIDERS = ['openai', 'anthropic', 'mistral', 'google'] as const
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
 // GET /api/admin/models — alle Modelle
-export async function GET() {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const GET = withOrgAdmin(async () => {
   const { data, error } = await supabaseAdmin
     .from('model_catalog')
     .select('*')
@@ -40,14 +20,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return NextResponse.json(data)
-}
+})
 
 // POST /api/admin/models — neues Modell anlegen
-export async function POST(req: NextRequest) {
-  try {  
-    const me = await getAdminUser()
-    if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-  
+export const POST = withOrgAdmin(async (req: NextRequest) => {
+  try {
     // Body-Größe limitieren
     const contentLength = req.headers.get('content-length')
     if (contentLength && parseInt(contentLength) > 4096) {
@@ -105,4 +82,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

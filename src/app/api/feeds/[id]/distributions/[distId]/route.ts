@@ -1,22 +1,13 @@
 // DELETE /api/feeds/[id]/distributions/[distId] — remove a distribution
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string; distId: string }> },
-) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['owner', 'admin'].includes(user.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  const { id, distId } = await params
+export const DELETE = withOrgAdmin<{ id: string; distId: string }>(async (_req, { auth, params }) => {
+  const { id, distId } = params
 
   // Fetch distribution and verify it belongs to a source in user's org
   // Org filter pushed into query — 404 on wrong org (no unsafe cast needed)
@@ -25,7 +16,7 @@ export async function DELETE(
     .select('id, feed_sources!inner(organization_id)')
     .eq('id', distId)
     .eq('source_id', id)
-    .eq('feed_sources.organization_id', user.organization_id)
+    .eq('feed_sources.organization_id', auth.organization_id)
     .maybeSingle()
 
   if (!dist) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -38,4 +29,4 @@ export async function DELETE(
   if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
-}
+})

@@ -1,22 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
-async function guardSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { user: null, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
-  const { data: profile } = await supabaseAdmin
-    .from('users').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'superadmin') return { user: null, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
-  return { user, error: null }
-}
-
-export async function GET(_req: Request, { params }: { params: Promise<{ orgId: string }> }) {
-  const { orgId } = await params
-  const { user, error } = await guardSuperadmin()
-  if (!user) return error!
+export const GET = withSuperadmin<{ orgId: string }>(async (_req, { params }) => {
+  const { orgId } = params
 
   const { data, error: dbErr } = await supabaseAdmin
     .from('org_packages')
@@ -25,31 +13,29 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orgId: 
 
   if (dbErr) return apiError(dbErr)
   return NextResponse.json(data ?? [])
-}
+})
 
-export async function POST(req: Request, { params }: { params: Promise<{ orgId: string }> }) {
-  try {  
-    const { orgId } = await params
-    const { user, error } = await guardSuperadmin()
-    if (!user) return error!
-  
+export const POST = withSuperadmin<{ orgId: string }>(async (req, { auth, params }) => {
+  try {
+    const { orgId } = params
+
     const { package_id, is_active } = await req.json()
-  
+
     const { data, error: dbErr } = await supabaseAdmin
       .from('org_packages')
       .upsert({
         organization_id: orgId,
         package_id,
         is_active,
-        activated_by: user.id,
+        activated_by: auth.id,
         activated_at: new Date().toISOString(),
       }, { onConflict: 'organization_id,package_id' })
       .select()
       .single()
-  
+
     if (dbErr) return apiError(dbErr)
     return NextResponse.json(data)
   } catch (err) {
     return apiError(err)
   }
-}
+})

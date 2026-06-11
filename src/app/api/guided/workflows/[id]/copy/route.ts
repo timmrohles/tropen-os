@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 
@@ -8,14 +8,8 @@ const log = createLogger('api/guided/workflows/[id]/copy')
 // POST /api/guided/workflows/[id]/copy
 // Copies a workflow (any scope) into a new user-scoped workflow.
 // Also copies all options, remapping workflow_id to the new copy.
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   const { data: source } = await supabaseAdmin
     .from('guided_workflows')
@@ -38,7 +32,7 @@ export async function POST(
 
   const { data: copy, error } = await supabaseAdmin
     .from('guided_workflows')
-    .insert({ ...rest, scope: 'user', user_id: me.id, title: `Kopie von ${source.title}` })
+    .insert({ ...rest, scope: 'user', user_id: auth.id, title: `Kopie von ${source.title}` })
     .select()
     .single()
 
@@ -56,4 +50,4 @@ export async function POST(
   }
 
   return NextResponse.json(copy, { status: 201 })
-}
+})

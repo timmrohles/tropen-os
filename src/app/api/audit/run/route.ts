@@ -4,11 +4,11 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import path from 'node:path'
-import { requireSuperadmin } from '@/lib/auth/guards'
 import { createLogger } from '@/lib/logger'
 import { apiValidationError } from '@/lib/api-error'
 import { buildAuditContext, runAudit, formatReportMarkdown } from '@/lib/audit'
 import type { CheckMode } from '@/lib/audit/types'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api/audit/run')
 
@@ -20,13 +20,7 @@ const requestSchema = z.object({
   format: z.enum(['json', 'markdown']).optional().default('json'),
 })
 
-export async function POST(request: Request) {
-  try {
-    await requireSuperadmin()
-  } catch {
-    return NextResponse.json({ error: 'Superadmin access required', code: 'FORBIDDEN' }, { status: 403 })
-  }
-
+export const POST = withSuperadmin(async (request) => {
   let body: z.infer<typeof requestSchema>
   try {
     const rawBody = await request.json().catch(() => ({}))
@@ -64,4 +58,4 @@ export async function POST(request: Request) {
     logger.error('Audit run failed', { error: String(err) })
     return NextResponse.json({ error: 'Audit run failed', code: 'AUDIT_ERROR' }, { status: 500 })
   }
-}
+})

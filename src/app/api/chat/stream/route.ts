@@ -1,8 +1,8 @@
 export const maxDuration = 60
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { streamText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot, buildPresentationContext } from '@/lib/context-builder'
 import { resolveWorkflow } from '@/lib/capability-resolver'
@@ -129,10 +129,7 @@ async function saveErrorMessage(
   }
 }
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   let body: StreamBody
   try {
     body = await req.json()
@@ -141,13 +138,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { workspaceId, cardId, content, capabilityId, outcomeId, mode } = body
-  const userId = me.id
+  const userId = auth.id
 
   if (!workspaceId || !content) {
     return NextResponse.json({ error: 'workspaceId and content are required' }, { status: 400 })
   }
 
-  const budget = await checkBudget(me.organization_id, 'claude-sonnet', workspaceId)
+  const budget = await checkBudget(auth.organization_id, 'claude-sonnet', workspaceId)
   if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
   try {
@@ -165,7 +162,7 @@ export async function POST(req: NextRequest) {
     })
 
     const { modelId, systemPrompt: capabilitySystemPrompt } = await resolveCapabilityModel(
-      capabilityId, outcomeId, me.id, me.organization_id
+      capabilityId, outcomeId, auth.id, auth.organization_id
     )
     const systemPrompt = await buildSystemPrompt(workspaceId, cardId, mode, capabilitySystemPrompt)
     const historyMessages = await loadHistory(workspaceId, cardId, scope as 'card' | 'workspace')
@@ -239,4 +236,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

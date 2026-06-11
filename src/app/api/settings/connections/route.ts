@@ -1,17 +1,13 @@
 import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req: NextRequest, { auth }) => {
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select('organization_id')
-    .eq('id', user.id)
+    .eq('id', auth.id)
     .maybeSingle()
 
   if (!profile?.organization_id) return NextResponse.json({ policies: [], connections: [] })
@@ -25,33 +21,29 @@ export async function GET() {
     supabaseAdmin
       .from('user_mcp_connections')
       .select('mcp_id, status, connected_at, requested_at')
-      .eq('user_id', user.id),
+      .eq('user_id', auth.id),
   ])
 
   return NextResponse.json({ policies: policies ?? [], connections: connections ?? [] })
-}
+})
 
-export async function POST(req: NextRequest) {
-  try {  
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const POST = withAuth(async (req: NextRequest, { auth }) => {
+  try {
     const { mcp_id, action } = await req.json() as { mcp_id: string; action: 'connect' | 'disconnect' | 'request' }
-  
+
     const { data: profile } = await supabaseAdmin
       .from('users')
       .select('organization_id')
-      .eq('id', user.id)
+      .eq('id', auth.id)
       .maybeSingle()
-  
+
     if (!profile?.organization_id) return NextResponse.json({ error: 'Keine Organisation' }, { status: 400 })
-  
+
     if (action === 'connect') {
       await supabaseAdmin
         .from('user_mcp_connections')
         .upsert({
-          user_id: user.id,
+          user_id: auth.id,
           organization_id: profile.organization_id,
           mcp_id,
           status: 'connected',
@@ -61,7 +53,7 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin
         .from('user_mcp_connections')
         .upsert({
-          user_id: user.id,
+          user_id: auth.id,
           organization_id: profile.organization_id,
           mcp_id,
           status: 'disconnected',
@@ -71,16 +63,16 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin
         .from('user_mcp_connections')
         .upsert({
-          user_id: user.id,
+          user_id: auth.id,
           organization_id: profile.organization_id,
           mcp_id,
           status: 'pending_approval',
           requested_at: new Date().toISOString(),
         }, { onConflict: 'user_id,mcp_id' })
     }
-  
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     return apiError(err)
   }
-}
+})

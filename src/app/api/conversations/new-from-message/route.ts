@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
 
@@ -15,10 +15,7 @@ const schema = z.object({
 
 // POST /api/conversations/new-from-message
 // Creates a new conversation pre-seeded with a prior answer as context
-export async function POST(req: Request) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   let body: unknown
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -36,7 +33,7 @@ export async function POST(req: Request) {
     const { data: workspace } = await supabaseAdmin
       .from('workspaces')
       .select('id')
-      .eq('organization_id', user.organization_id)
+      .eq('organization_id', auth.organization_id)
       .order('created_at')
       .limit(1)
       .maybeSingle()
@@ -49,8 +46,8 @@ export async function POST(req: Request) {
     const { data: conv, error: convErr } = await supabaseAdmin
       .from('conversations')
       .insert({
-        user_id: user.id,
-        organization_id: user.organization_id,
+        user_id: auth.id,
+        organization_id: auth.organization_id,
         workspace_id: workspace.id,
         title: 'Fortsetzung',
       })
@@ -76,4 +73,4 @@ export async function POST(req: Request) {
     log.error('new-from-message', { err })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
-}
+})

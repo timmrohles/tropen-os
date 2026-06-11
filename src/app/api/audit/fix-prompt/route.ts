@@ -1,15 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { buildFixPrompt } from '@/lib/audit/prompt-export'
 import type { PromptFinding } from '@/lib/audit/prompt-export/types'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
@@ -30,4 +26,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

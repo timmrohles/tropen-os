@@ -8,18 +8,14 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { runFeedSource } from '@/lib/feeds/feed-runner'
 import { runTtlCleanup } from '@/lib/feeds/ttl-cleanup'
 import { createLogger } from '@/lib/logger'
+import { withCronAuth } from '@/lib/auth/route-guards'
 import type { FeedRunResult } from '@/types/feeds'
 
 const log = createLogger('cron:sync-feeds')
 
 export const runtime = 'nodejs'
 
-export async function GET(request: Request) {
-  const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withCronAuth(async () => {
   const now = new Date()
   const results: Array<{ sourceId: string; name: string } & FeedRunResult> = []
 
@@ -50,4 +46,4 @@ export async function GET(request: Request) {
   log.info('[sync-feeds] complete', { processed: results.length, archived })
 
   return NextResponse.json({ ok: true, processed: results.length, results, archived })
-}
+})

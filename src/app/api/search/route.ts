@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (req, { auth }) => {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
   const workspaceId = searchParams.get('workspaceId')
@@ -23,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (workspaceId) {
     convQuery = convQuery.eq('workspace_id', workspaceId)
   } else {
-    convQuery = convQuery.eq('user_id', user.id).eq('conversation_type', 'chat')
+    convQuery = convQuery.eq('user_id', auth.id).eq('conversation_type', 'chat')
   }
 
   const { data: convs } = await convQuery
@@ -60,4 +56,4 @@ export async function GET(req: NextRequest) {
   }))
 
   return NextResponse.json(results)
-}
+})

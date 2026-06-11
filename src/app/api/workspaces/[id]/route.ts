@@ -2,32 +2,27 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { updateWorkspacePlanCSchema } from '@/lib/validators/workspace-plan-c'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:[id]')
-type Params = { params: Promise<{ id: string }> }
 
-export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
+export const GET = withWorkspaceAccess<{ id: string }>(async (_req, { auth: me, workspaceId }) => {
+  // requireWorkspaceAccess lieferte zusätzlich die Workspace-Zeile — nach
+  // bestandenem Guard hier eigenständig nachladen (gleiche Query wie zuvor).
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('*')
+    .eq('id', workspaceId)
+    .is('deleted_at', null)
+    .maybeSingle()
   if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   return NextResponse.json({ ...workspace, current_user_id: me.id })
-}
+})
 
-export async function PATCH(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const PATCH = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
   const { data: body, error: valErr } = await validateBody(request, updateWorkspacePlanCSchema)
   if (valErr) return valErr
 
@@ -70,16 +65,9 @@ export async function PATCH(request: Request, { params }: Params) {
     .eq('status', 'ready')
 
   return NextResponse.json(data)
-}
+}, { write: true })
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const DELETE = withWorkspaceAccess<{ id: string }>(async (_req, { workspaceId: id }) => {
   const { data: deleted, error } = await supabaseAdmin
     .from('workspaces')
     .update({ deleted_at: new Date().toISOString() })
@@ -95,4 +83,4 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!deleted) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   return new NextResponse(null, { status: 204 })
-}
+}, { write: true })

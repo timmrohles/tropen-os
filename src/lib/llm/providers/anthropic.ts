@@ -5,7 +5,7 @@ import { generateText } from 'ai'
 import { anthropic as anthropicInstance } from '@/lib/llm/anthropic'
 import type { ReviewProvider, ReviewResponse } from './types'
 
-const MODEL = 'claude-sonnet-4-20250514'
+const MODEL = 'claude-sonnet-4-6'
 
 const COST_IN_EUR  = 2.85
 const COST_OUT_EUR = 14.25

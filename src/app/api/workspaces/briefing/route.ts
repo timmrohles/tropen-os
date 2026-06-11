@@ -1,15 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { generateCardSuggestions } from '@/lib/workspace/briefing'
 import type { BriefingInput } from '@/lib/workspace/briefing'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api:workspaces:briefing')
 
-export async function POST(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req) => {
   let body: BriefingInput
   try {
     body = await req.json()
@@ -28,4 +25,4 @@ export async function POST(req: NextRequest) {
     log.error('[briefing] generateCardSuggestions error:', err)
     return NextResponse.json({ error: 'Fehler beim Generieren' }, { status: 500 })
   }
-}
+})

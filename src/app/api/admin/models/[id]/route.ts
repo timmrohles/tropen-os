@@ -1,34 +1,14 @@
 import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/models/id')
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
 // PATCH /api/admin/models/[id] — Modell aktualisieren (Preise, is_active)
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {  
-    const me = await getAdminUser()
-    if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-  
-    const { id } = await params
+export const PATCH = withOrgAdmin<{ id: string }>(async (req: NextRequest, { params }) => {
+  try {
+    const { id } = params
     const body = await req.json()
   
     const allowed = ['is_active', 'cost_per_1k_input', 'cost_per_1k_output', 'description']
@@ -56,14 +36,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } catch (err) {
     return apiError(err)
   }
-}
+})
 
 // DELETE /api/admin/models/[id]
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
-  const { id } = await params
+export const DELETE = withOrgAdmin<{ id: string }>(async (_req: NextRequest, { params }) => {
+  const { id } = params
 
   const { error } = await supabaseAdmin.from('model_catalog').delete().eq('id', id)
 
@@ -72,4 +49,4 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
   return new NextResponse(null, { status: 204 })
-}
+})

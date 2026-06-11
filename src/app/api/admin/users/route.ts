@@ -1,39 +1,19 @@
 import { createLogger } from '@/lib/logger'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { isAssignableRole } from '@/lib/roles'
 import { NextResponse, NextRequest } from 'next/server'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/users')
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
-export async function GET(request: NextRequest) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const GET = withOrgAdmin(async (request: NextRequest, { auth }) => {
   const { searchParams } = new URL(request.url)
   const { limit, offset } = parsePaginationParams(searchParams)
 
   const { data: users, error, count } = await supabaseAdmin
     .from('users')
     .select('id, email, full_name, role, is_active, created_at', { count: 'exact' })
-    .eq('organization_id', me.organization_id)
+    .eq('organization_id', auth.organization_id)
     .order('created_at')
     .range(offset, offset + limit - 1)
 
@@ -43,12 +23,9 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: users ?? [], total: count ?? 0, limit, offset })
-}
+})
 
-export async function POST(request: Request) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const POST = withOrgAdmin(async (request: NextRequest, { auth }) => {
   let body: { email?: string; role?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }) }
   const { email, role } = body
@@ -61,7 +38,7 @@ export async function POST(request: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   const { data: inviteData, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    data: { organization_id: me.organization_id, role },
+    data: { organization_id: auth.organization_id, role },
     redirectTo: `${siteUrl}/auth/callback`
   })
 
@@ -74,7 +51,7 @@ export async function POST(request: Request) {
   // onboarding/complete will upsert and fill in full_name + preferences later.
   const invitedUserId = inviteData.user.id
   await supabaseAdmin.from('users').upsert(
-    { id: invitedUserId, organization_id: me.organization_id, email, role },
+    { id: invitedUserId, organization_id: auth.organization_id, email, role },
     { onConflict: 'id' }
   )
 
@@ -82,7 +59,7 @@ export async function POST(request: Request) {
   const { data: orgWorkspaces } = await supabaseAdmin
     .from('departments')
     .select('id')
-    .eq('organization_id', me.organization_id)
+    .eq('organization_id', auth.organization_id)
 
   if (orgWorkspaces?.length) {
     const wsRole = role === 'viewer' ? 'viewer' : role === 'member' ? 'member' : 'admin'
@@ -98,4 +75,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true })
-}
+})

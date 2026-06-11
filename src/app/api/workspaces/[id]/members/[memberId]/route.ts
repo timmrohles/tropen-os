@@ -1,27 +1,21 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { z } from 'zod'
 
 const log = createLogger('api:workspaces:members:[memberId]')
-type Params = { params: Promise<{ id: string; memberId: string }> }
 
 const updateSchema = z.object({
   role: z.enum(['admin', 'member', 'viewer']),
 })
 
-export async function PATCH(request: Request, { params }: Params) {
-  const { id, memberId } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+export const PATCH = withWorkspaceAccess<{ id: string; memberId: string }>(async (request, { auth: me, params, workspaceId: id }) => {
+  const { memberId } = params
 
   if (!['owner', 'admin', 'superadmin'].includes(me.role)) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   let body: z.infer<typeof updateSchema>
   try {
@@ -44,19 +38,14 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   return NextResponse.json(data)
-}
+})
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const { id, memberId } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+export const DELETE = withWorkspaceAccess<{ id: string; memberId: string }>(async (_req, { auth: me, params, workspaceId: id }) => {
+  const { memberId } = params
 
   if (!['owner', 'admin', 'superadmin'].includes(me.role)) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   const { error } = await supabaseAdmin
     .from('workspace_members')
@@ -70,4 +59,4 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   return new NextResponse(null, { status: 204 })
-}
+})

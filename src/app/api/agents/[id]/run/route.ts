@@ -1,6 +1,6 @@
 // POST /api/agents/[id]/run — manuellen Run starten (gibt run_id zurück)
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { runAgent } from '@/lib/agent-engine'
 import { createLogger } from '@/lib/logger'
 
@@ -8,14 +8,8 @@ export const runtime = 'nodejs'
 
 const log = createLogger('api/agents/[id]/run')
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (request, { auth: me, params }) => {
+  const { id } = params
   const body = await request.json().catch(() => ({}))
 
   try {
@@ -30,4 +24,4 @@ export async function POST(
     if (msg.includes('Budget'))         return NextResponse.json({ error: 'Budget erschöpft', code: 'BUDGET_EXHAUSTED' }, { status: 402 })
     return NextResponse.json({ error: 'Ein Fehler ist aufgetreten', code: 'INTERNAL_ERROR' }, { status: 500 })
   }
-}
+})

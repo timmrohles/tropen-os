@@ -1,28 +1,14 @@
 import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import type { RoutingResponse } from '@/types/qa'
 const log = createLogger('admin/qa/routing')
 
 export const dynamic = 'force-dynamic'
 
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-  return data?.role === 'superadmin'
-}
-
-export async function GET(request: NextRequest) {
+export const GET = withSuperadmin(async (request: NextRequest) => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
     const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100)
@@ -97,4 +83,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

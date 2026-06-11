@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:items')
-type Params = { params: Promise<{ id: string }> }
 
 const addItemSchema = z.object({
   item_type: z.enum(['conversation', 'artifact', 'project', 'feed_source', 'agent']),
@@ -16,14 +15,7 @@ const addItemSchema = z.object({
   meta: z.record(z.string(), z.unknown()).optional(),
 })
 
-export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withWorkspaceAccess<{ id: string }>(async (_req, { workspaceId: id }) => {
   const { data, error } = await supabaseAdmin
     .from('workspace_items')
     .select('id, item_type, item_id, title, description, meta, added_by, created_at')
@@ -36,16 +28,9 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   return NextResponse.json(data ?? [])
-}
+})
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Schreibzugriff' }, { status: 403 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { auth: me, workspaceId: id }) => {
   let body: z.infer<typeof addItemSchema>
   try {
     body = addItemSchema.parse(await request.json())
@@ -74,4 +59,4 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json(data, { status: 201 })
-}
+}, { write: true })

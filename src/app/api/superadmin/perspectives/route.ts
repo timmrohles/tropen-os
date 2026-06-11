@@ -1,28 +1,12 @@
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('superadmin/perspectives')
 
-async function requireSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  if (me?.role !== 'superadmin') return null
-  return user
-}
-
-export async function GET() {
-  const user = await requireSuperadmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withSuperadmin(async () => {
   const { data, error } = await supabaseAdmin
     .from('perspective_avatars')
     .select('*')
@@ -35,13 +19,10 @@ export async function GET() {
     return apiError(error)
   }
   return NextResponse.json({ avatars: data })
-}
+})
 
-export async function POST(req: NextRequest) {
-  try {  
-    const user = await requireSuperadmin()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const POST = withSuperadmin(async (req: NextRequest) => {
+  try {
     const body = await req.json()
     const { name, emoji, description, system_prompt, model_id, context_default, is_tabula_rasa, is_active, sort_order } = body
   
@@ -74,4 +55,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

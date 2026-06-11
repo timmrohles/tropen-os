@@ -6,37 +6,22 @@ export const maxDuration = 120
 
 import { NextResponse } from 'next/server'
 import path from 'node:path'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { buildFixContext, generateConsensusFix, assessRisk } from '@/lib/fix-engine'
 import { apiError } from '@/lib/api-error'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:fix:consensus')
 const REPO_ROOT = path.resolve(process.cwd())
 
-export async function POST(request: Request) {
+export const POST = withOrgAdmin(async (request, { auth }) => {
   if (process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED !== 'true') {
     return NextResponse.json(
       { error: 'fix_engine_disabled', message: 'Fix-Engine ist temporär deaktiviert. Nutze stattdessen den Fix-Prompt-Export.', documentation: 'docs/synthese/anhang-c-kill-und-einfrier-liste.md#k1' },
       { status: 410 }
     )
   }
-
-  // Auth check (nur admin)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
 
   const body = await request.json().catch(() => ({})) as { findingId?: string; runId?: string }
   if (!body.findingId || !body.runId)
@@ -88,7 +73,7 @@ export async function POST(request: Request) {
       .insert({
         run_id: body.runId,
         finding_id: body.findingId,
-        organization_id: profile.organization_id,
+        organization_id: auth.organization_id,
         explanation,
         confidence,
         diffs: diffs as unknown as Record<string, unknown>[],
@@ -128,34 +113,19 @@ export async function POST(request: Request) {
     log.error('Consensus fix generation failed', { error: String(err) })
     return NextResponse.json({ error: 'Consensus fix generation failed', code: 'GENERATE_ERROR' }, { status: 500 })
   }
-}
+})
 
-export async function GET(request: Request) {
+export const GET = withOrgAdmin(async (request, { auth }) => {
   const { searchParams } = new URL(request.url)
   const findingId = searchParams.get('findingId')
   if (!findingId) return NextResponse.json({ error: 'findingId required' }, { status: 400 })
-
-  // Auth check (nur admin)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
 
   const { data: fix, error } = await supabaseAdmin
     .from('audit_fixes')
     .select('id, explanation, confidence, model, cost_eur, judge_explanation, drafts, risk_level, risk_details, status')
     .eq('finding_id', findingId)
     .eq('fix_mode', 'consensus')
-    .eq('organization_id', profile.organization_id)
+    .eq('organization_id', auth.organization_id)
     .in('status', ['pending', 'applied'])
     .maybeSingle()
 
@@ -174,4 +144,4 @@ export async function GET(request: Request) {
     riskReasons: ((fix.risk_details as Record<string, unknown> | null)?.reasons as string[] | undefined) ?? [],
     status: fix.status,
   })
-}
+})

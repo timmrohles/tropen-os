@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { createAssetSchema } from '@/lib/validators/workspace-plan-c'
 import { apiError } from '@/lib/api-error'
 import { WORKSPACE_ASSET_FIELDS } from '@/lib/db/fields'
 
-type Params = { params: Promise<{ id: string }> }
-
-export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withWorkspaceAccess<{ id: string }>(async (_req, { workspaceId: id }) => {
   const { data, error } = await supabaseAdmin
     .from('workspace_assets')
     .select(WORKSPACE_ASSET_FIELDS)
@@ -24,16 +15,9 @@ export async function GET(_req: Request, { params }: Params) {
 
   if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
-}
+})
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
   const { data: body, error: valErr } = await validateBody(request, createAssetSchema)
   if (valErr) return valErr
 
@@ -53,4 +37,4 @@ export async function POST(request: Request, { params }: Params) {
 
   if (error) return apiError(error)
   return NextResponse.json(data, { status: 201 })
-}
+}, { write: true })

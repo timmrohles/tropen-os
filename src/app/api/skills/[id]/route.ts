@@ -1,8 +1,8 @@
 // GET   /api/skills/[id] — einzelner Skill
 // PATCH /api/skills/[id] — Skill bearbeiten
 // DELETE /api/skills/[id] — Soft Delete (deleted_at)
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapSkill } from '@/types/agents'
 import { resolveSkill, canModifySkill } from '@/lib/skill-resolver'
@@ -14,30 +14,18 @@ export const runtime = 'nodejs'
 const log = createLogger('api/skills/[id]')
 
 // ─── GET /api/skills/[id] ─────────────────────────────────────────────────────
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (_request, { params, auth: me }) => {
+  const { id } = params
 
   const skill = await resolveSkill(id, me.id, me.organization_id)
   if (!skill) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   return NextResponse.json({ skill })
-}
+})
 
 // ─── PATCH /api/skills/[id] ───────────────────────────────────────────────────
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (request, { params, auth: me }) => {
+  const { id } = params
 
   const skill = await resolveSkill(id, me.id, me.organization_id)
   if (!skill) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -83,17 +71,11 @@ export async function PATCH(
   }
 
   return NextResponse.json({ skill: mapSkill(data as Record<string, unknown>) })
-}
+})
 
 // ─── DELETE /api/skills/[id] — Soft Delete ───────────────────────────────────
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const DELETE = withAuth<{ id: string }>(async (_request, { params, auth: me }) => {
+  const { id } = params
 
   const skill = await resolveSkill(id, me.id, me.organization_id)
   if (!skill) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -113,4 +95,4 @@ export async function DELETE(
   }
 
   return NextResponse.json({ ok: true })
-}
+})

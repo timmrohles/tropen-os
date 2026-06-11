@@ -11,8 +11,9 @@ const log = createLogger('budget')
 // Estimated cost per request in EUR — conservative upper bounds.
 // Source: CLAUDE.md pricing section.
 export const ESTIMATED_COSTS = {
-  'claude-sonnet': 0.004,   // ~1 K tokens in+out
-  'claude-haiku':  0.0004,  // ~1 K tokens in+out
+  'claude-sonnet': 0.004,   // ~1 K tokens in+out @ $3/$15 per MTok
+  'claude-haiku':  0.0004,  // ~1 K tokens in+out @ $1/$5 per MTok
+  'claude-fable':  0.028,   // ~1 K tokens in+out @ $10/$50 per MTok (Fable 5)
   'dall-e-3':      0.04,    // 1024×1024 standard
   'tts':           0.008,   // ~500 chars (OpenAI tts-1)
   'perspectives':  0.01,    // per avatar (Haiku × N avatars handled at call site)

@@ -5,9 +5,9 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 import {
   getActiveScanProjectProfile,
   createScanProjectProfile,
@@ -24,12 +24,6 @@ const profileInputSchema = z.object({
   hasEcommerce: z.boolean().nullable(),
 })
 
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
-
 async function getOrgForScanProject(scanProjectId: string, orgId: string) {
   const { data } = await supabaseAdmin
     .from('scan_projects')
@@ -42,25 +36,10 @@ async function getOrgForScanProject(scanProjectId: string, orgId: string) {
 
 // ── GET ────────────────────────────────────────────────────────────────────────
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id: scanProjectId } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const GET = withAuth<{ id: string }>(async (_req, { params, auth }) => {
+  const { id: scanProjectId } = params
 
-  const { data: userRow } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!userRow?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const project = await getOrgForScanProject(scanProjectId, userRow.organization_id)
+  const project = await getOrgForScanProject(scanProjectId, auth.organization_id)
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const [active, history] = await Promise.all([
@@ -69,29 +48,14 @@ export async function GET(
   ])
 
   return NextResponse.json({ active, history })
-}
+})
 
 // ── POST ───────────────────────────────────────────────────────────────────────
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id: scanProjectId } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth<{ id: string }>(async (req, { params, auth }) => {
+  const { id: scanProjectId } = params
 
-  const { data: userRow } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!userRow?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const project = await getOrgForScanProject(scanProjectId, userRow.organization_id)
+  const project = await getOrgForScanProject(scanProjectId, auth.organization_id)
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   let body: z.infer<typeof profileInputSchema>
@@ -114,7 +78,7 @@ export async function POST(
       hasUserData: body.hasUserData,
       hasAi: body.hasAi,
       hasEcommerce: body.hasEcommerce,
-      changedBy: user.id,
+      changedBy: auth.id,
     })
 
     log.info('Profil gesetzt', { scanProjectId, profileType: body.profileType })
@@ -123,4 +87,4 @@ export async function POST(
     log.error('Profil konnte nicht gesetzt werden', { error: String(err) })
     return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 })
   }
-}
+})

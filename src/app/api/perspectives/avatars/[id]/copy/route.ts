@@ -1,19 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:perspectives:avatar-copy')
 
 // POST /api/perspectives/avatars/[id]/copy
 // Copies any visible avatar as scope='user' for the current user
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   const { data: source, error: fetchError } = await supabaseAdmin
     .from('perspective_avatars')
@@ -28,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     .from('perspective_avatars')
     .insert({
       scope:           'user',
-      user_id:         user.id,
+      user_id:         auth.id,
       organization_id: null,
       name:            `${(source as { name: string }).name} (Kopie)`,
       emoji:           (source as { emoji: string }).emoji,
@@ -46,6 +42,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return apiError(error)
   }
 
-  logger.info('avatar copied', { sourceId: id, copyId: copy.id, userId: user.id })
+  logger.info('avatar copied', { sourceId: id, copyId: copy.id, userId: auth.id })
   return NextResponse.json({ avatar: copy }, { status: 201 })
-}
+})

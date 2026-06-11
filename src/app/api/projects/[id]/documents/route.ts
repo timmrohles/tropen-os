@@ -1,43 +1,23 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // GET /api/projects/[id]/documents
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withProjectAccess<{ id: string }>(async (_req, { projectId }) => {
   const { data, error } = await supabaseAdmin
     .from('project_documents')
     .select('id, filename, file_size, mime_type, created_at')
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return apiError(error)
   return NextResponse.json(data ?? [])
-}
+})
 
 // POST /api/projects/[id]/documents — multipart/form-data upload
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const POST = withProjectAccess<{ id: string }>(async (req, { projectId, auth }) => {
   let formData: FormData
   try {
     formData = await req.formData()
@@ -61,7 +41,7 @@ export async function POST(
     return NextResponse.json({ error: 'Dateityp nicht erlaubt (PDF, DOCX, TXT, MD)' }, { status: 400 })
 
   const buffer = Buffer.from(await file.arrayBuffer())
-  const storagePath = `${me.organization_id}/${id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+  const storagePath = `${auth.organization_id}/${projectId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('project-docs')
@@ -72,17 +52,17 @@ export async function POST(
   const { data, error } = await supabaseAdmin
     .from('project_documents')
     .insert({
-      project_id: id,
-      organization_id: me.organization_id,
+      project_id: projectId,
+      organization_id: auth.organization_id,
       filename: file.name,
       storage_path: storagePath,
       file_size: file.size,
       mime_type: file.type,
-      created_by: me.id,
+      created_by: auth.id,
     })
     .select('id, filename, file_size, mime_type, created_at')
     .single()
 
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})

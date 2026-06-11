@@ -274,7 +274,7 @@ describe('resolveOption', () => {
   it('returns capability_plan when capability_id + outcome_id are set', async () => {
     const mockPlan = {
       available: true,
-      model_id: 'claude-sonnet-4-20250514',
+      model_id: 'claude-sonnet-4-6',
       provider: 'anthropic',
       system_prompt: 'Du bist Experte.',
       tools: [],
@@ -300,7 +300,7 @@ describe('resolveOption', () => {
     expect(result.type).toBe('capability_plan')
     if (result.type === 'capability_plan') {
       expect(result.plan.available).toBe(true)
-      expect(result.plan.model_id).toBe('claude-sonnet-4-20250514')
+      expect(result.plan.model_id).toBe('claude-sonnet-4-6')
     }
   })
 

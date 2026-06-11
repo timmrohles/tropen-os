@@ -1,23 +1,10 @@
 import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parsePaginationParams } from '@/lib/api/pagination'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 const log = createLogger('superadmin/clients')
-
-async function requireSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  if (me?.role !== 'superadmin') return null
-  return user
-}
 
 function generateSlug(name: string): string {
   const base = name
@@ -29,12 +16,7 @@ function generateSlug(name: string): string {
   return `${base}-${suffix}`
 }
 
-export async function GET(request: NextRequest) {
-  const user = await requireSuperadmin()
-  if (!user) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
+export const GET = withSuperadmin(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
   const { limit, offset } = parsePaginationParams(searchParams)
 
@@ -53,15 +35,10 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
-}
+})
 
-export async function POST(req: NextRequest) {
-  try {  
-    const user = await requireSuperadmin()
-    if (!user) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-  
+export const POST = withSuperadmin(async (req: NextRequest) => {
+  try {
     const body = await req.json()
     const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
   
@@ -160,4 +137,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

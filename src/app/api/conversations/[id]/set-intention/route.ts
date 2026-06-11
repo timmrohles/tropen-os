@@ -1,19 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
 // POST /api/conversations/[id]/set-intention
 // Body: { intention: 'focused' | 'guided', projectId?: string }
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth<{ id: string }>(async (req, { auth, params }) => {
+  const { id } = params
 
   let body: { intention?: string; projectId?: string }
   try {
@@ -32,7 +27,7 @@ export async function POST(
     .from('conversations')
     .select('id, user_id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .is('deleted_at', null)
     .single()
 
@@ -49,9 +44,9 @@ export async function POST(
     .from('conversations')
     .update(update)
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
-}
+})

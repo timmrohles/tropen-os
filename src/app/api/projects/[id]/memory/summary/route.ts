@@ -3,26 +3,16 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // POST /api/projects/[id]/memory/summary
 // Body: { conversation_id }
 // Loads messages, calls Haiku, saves as frozen summary
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+export const POST = withProjectAccess<{ id: string }>(async (request, { projectId, auth }) => {
+  const budget = await checkBudget(auth.organization_id, 'claude-haiku')
   if (!budget.allowed) return budgetExhaustedResponse()
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   let body: { conversation_id?: string }
   try { body = await request.json() }
@@ -37,7 +27,7 @@ export async function POST(
     .select('project_id')
     .eq('id', body.conversation_id)
     .single()
-  if (!conv || conv.project_id !== id)
+  if (!conv || conv.project_id !== projectId)
     return NextResponse.json({ error: 'Conversation gehört nicht zu diesem Projekt' }, { status: 403 })
 
   // Load messages
@@ -77,7 +67,7 @@ ${convText}`,
   const { data, error } = await supabaseAdmin
     .from('project_memory')
     .insert({
-      project_id: id,
+      project_id: projectId,
       type: 'summary',
       content: summary,
       source_conversation_id: body.conversation_id,
@@ -90,4 +80,4 @@ ${convText}`,
 
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})

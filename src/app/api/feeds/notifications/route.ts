@@ -1,17 +1,13 @@
 // GET  /api/feeds/notifications — eigene ungelesene Notifications
 // PATCH /api/feeds/notifications — alle als gelesen markieren
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
-export async function GET(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (request, { auth }) => {
   const url = new URL(request.url)
   const unreadOnly = url.searchParams.get('unread') !== 'false'
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200)
@@ -19,7 +15,7 @@ export async function GET(request: Request) {
   let query = supabaseAdmin
     .from('feed_notifications')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -29,21 +25,17 @@ export async function GET(request: Request) {
   if (error) return apiError(error)
 
   return NextResponse.json({ notifications: data ?? [] })
-}
+})
 
-export async function PATCH(_request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const PATCH = withAuth(async (_request, { auth }) => {
   // Mark all unread notifications for this user as read
   const { error } = await supabaseAdmin
     .from('feed_notifications')
     .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .eq('is_read', false)
 
   if (error) return apiError(error)
 
   return NextResponse.json({ ok: true })
-}
+})

@@ -1,28 +1,14 @@
 // PATCH /api/scan-projects/[id] — rename a scan_project
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:scan-projects')
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (request, { params, auth }) => {
+  const { id } = params
 
   let body: { name?: unknown }
   try { body = await request.json() }
@@ -36,7 +22,7 @@ export async function PATCH(
     .from('scan_projects')
     .update({ name, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('organization_id', profile.organization_id) // tenant isolation
+    .eq('organization_id', auth.organization_id) // tenant isolation
 
   if (error) {
     log.error('Failed to rename scan project', { id, error: error.message })
@@ -45,4 +31,4 @@ export async function PATCH(
 
   log.info('Scan project renamed', { id, name })
   return NextResponse.json({ id, name })
-}
+})

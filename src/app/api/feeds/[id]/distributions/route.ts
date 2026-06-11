@@ -2,7 +2,7 @@
 // POST /api/feeds/[id]/distributions — create a new distribution
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth, withOrgAdmin } from '@/lib/auth/route-guards'
 import { createDistributionSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
@@ -11,21 +11,15 @@ export const runtime = 'nodejs'
 
 const log = createLogger('feeds:distributions')
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   // Ownership check: source must belong to user's org
   const { data: source } = await supabaseAdmin
     .from('feed_sources')
     .select('id, organization_id')
     .eq('id', id)
-    .eq('organization_id', user.organization_id)
+    .eq('organization_id', auth.organization_id)
     .maybeSingle()
 
   if (!source) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -43,19 +37,10 @@ export async function GET(
 
   // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side
   return NextResponse.json({ distributions: data ?? [] })
-}
+})
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['owner', 'admin'].includes(user.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  const { id } = await params
+export const POST = withOrgAdmin<{ id: string }>(async (req, { auth, params }) => {
+  const { id } = params
 
   // Parse + validate body
   // Uses inline safeParse (not validateBody helper) because safeParse returns typed data directly
@@ -72,7 +57,7 @@ export async function POST(
     .from('feed_sources')
     .select('id, organization_id')
     .eq('id', id)
-    .eq('organization_id', user.organization_id)
+    .eq('organization_id', auth.organization_id)
     .maybeSingle()
 
   if (!source) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -114,4 +99,4 @@ export async function POST(
 
   // Returns snake_case (raw DB row) — DistributionsPanel maps to camelCase client-side
   return NextResponse.json({ distribution: data }, { status: 201 })
-}
+})

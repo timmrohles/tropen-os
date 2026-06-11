@@ -1,20 +1,14 @@
 // GET /api/agents/[id]/runs — Run-History mit Pagination
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgentRun } from '@/types/agents'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (request, { auth: me, params }) => {
+  const { id } = params
   const { searchParams } = new URL(request.url)
   const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '20', 10), 100)
   const offset = parseInt(searchParams.get('offset') ?? '0', 10)
@@ -49,4 +43,4 @@ export async function GET(
     runs:  (data ?? []).map((r) => mapAgentRun(r as Record<string, unknown>)),
     total: count ?? 0,
   })
-}
+})

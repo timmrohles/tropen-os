@@ -2,8 +2,8 @@
 // Full library resolution: role + capability + outcome + skill → WorkflowPlan
 // Replaces /api/capabilities/resolve when role or skill is involved
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { resolveWorkflowSchema } from '@/lib/validators/library'
 import { resolveWorkflow } from '@/lib/library-resolver'
@@ -11,10 +11,7 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/resolve')
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth: me }) => {
   const validated = await validateBody(req, resolveWorkflowSchema)
   if (validated.error) return validated.error
 
@@ -29,4 +26,4 @@ export async function POST(req: NextRequest) {
     log.error('resolveWorkflow failed', { err })
     return NextResponse.json({ error: 'Failed to resolve workflow' }, { status: 500 })
   }
-}
+})

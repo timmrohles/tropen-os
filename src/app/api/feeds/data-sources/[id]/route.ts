@@ -1,7 +1,7 @@
 // src/app/api/feeds/data-sources/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { updateDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
@@ -10,24 +10,8 @@ import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:feeds:data-sources:[id]')
 
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabaseAdmin
-    .from('users').select('organization_id').eq('id', user.id).single()
-  if (!profile?.organization_id) return null
-  return { id: user.id, organization_id: profile.organization_id as string }
-}
-
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (req, { auth, params }) => {
+  const { id } = params
   const { data: body, error: validationError } = await validateBody(req, updateDataSourceSchema)
   if (validationError) return validationError
 
@@ -57,7 +41,7 @@ export async function PATCH(
     .from('feed_data_sources')
     .update(update)
     .eq('id', id)
-    .eq('user_id', me.id)
+    .eq('user_id', auth.id)
     .select()
     .single()
 
@@ -68,22 +52,16 @@ export async function PATCH(
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   return NextResponse.json(data)
-}
+})
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const DELETE = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   const { error } = await supabaseAdmin
     .from('feed_data_sources')
     .delete()
     .eq('id', id)
-    .eq('user_id', me.id)
+    .eq('user_id', auth.id)
 
   if (error) {
     log.error('delete data source failed', { id, error: error.message })
@@ -91,4 +69,4 @@ export async function DELETE(
   }
 
   return NextResponse.json({ ok: true })
-}
+})

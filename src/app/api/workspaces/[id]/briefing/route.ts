@@ -4,7 +4,7 @@ import { generateText } from 'ai'
 import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { z } from 'zod'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { startBriefingSchema } from '@/lib/validators/workspace-plan-c'
 import { createLogger } from '@/lib/logger'
@@ -20,7 +20,6 @@ const briefingProposalSchema = z.object({
 })
 
 const log = createLogger('api:workspaces:briefing')
-type Params = { params: Promise<{ id: string }> }
 
 const BRIEFING_SYSTEM = `Du bist Toro, ein KI-Assistent von Tropen OS. Der User möchte einen neuen Workspace für eine komplexe Aufgabe anlegen.
 
@@ -37,16 +36,9 @@ Wenn du genug weißt, schlage eine Karten-Struktur vor im folgenden JSON-Format:
 Gib NUR das JSON aus wenn du bereit bist Karten vorzuschlagen — kein Text davor oder danach.
 Antworte immer auf Deutsch.`
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { auth: me }) => {
   const budget = await checkBudget(me.organization_id, 'claude-sonnet')
   if (!budget.allowed) return budgetExhaustedResponse()
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const { data: body, error: valErr } = await validateBody(request, startBriefingSchema)
   if (valErr) return valErr
@@ -82,4 +74,4 @@ export async function POST(request: Request, { params }: Params) {
     log.error('[briefing] Anthropic call failed', { error: String(err) })
     return NextResponse.json({ error: 'Briefing-Anfrage fehlgeschlagen' }, { status: 500 })
   }
-}
+}, { write: true })

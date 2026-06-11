@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { patchOrgSettingsInputSchema } from '@/lib/validators/capabilities'
@@ -9,13 +9,7 @@ const log = createLogger('api/capabilities/org-settings')
 
 // GET /api/capabilities/org-settings
 // Returns org-level capability settings. Requires owner or admin role.
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['owner', 'admin'].includes(me.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
+export const GET = withOrgAdmin(async (_req, { auth: me }) => {
   const { data, error } = await supabaseAdmin
     .from('capability_org_settings')
     .select(`
@@ -32,17 +26,11 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? [])
-}
+})
 
 // PATCH /api/capabilities/org-settings
 // Upserts org-level capability settings. Requires owner or admin role.
-export async function PATCH(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['owner', 'admin'].includes(me.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
+export const PATCH = withOrgAdmin(async (req, { auth: me }) => {
   const validated = await validateBody(req, patchOrgSettingsInputSchema)
   if (validated.error) return validated.error
 
@@ -63,4 +51,4 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json(data)
-}
+})

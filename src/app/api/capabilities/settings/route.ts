@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { patchSettingsInputSchema } from '@/lib/validators/capabilities'
@@ -9,10 +9,7 @@ const log = createLogger('api/capabilities/settings')
 
 // PATCH /api/capabilities/settings
 // Upserts per-user capability settings (model preference, outcome preference, pin state).
-export async function PATCH(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const PATCH = withAuth(async (req, { auth: me }) => {
   const validated = await validateBody(req, patchSettingsInputSchema)
   if (validated.error) return validated.error
 
@@ -33,4 +30,4 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json(data)
-}
+})

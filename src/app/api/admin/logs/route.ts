@@ -1,31 +1,11 @@
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/logs')
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
 // GET /api/admin/logs?limit=50&offset=0&org_id=...
-export async function GET(req: NextRequest) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const GET = withOrgAdmin(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url)
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 200)
   const offset = Math.max(parseInt(searchParams.get('offset') ?? '0'), 0)
@@ -56,4 +36,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ data, count, limit, offset })
-}
+})

@@ -1,25 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
 // POST /api/conversations/[id]/share → Token generieren (idempotent)
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   // Ownership prüfen
   const { data: conv } = await supabaseAdmin
     .from('conversations')
     .select('id, user_id, share_token')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .is('deleted_at', null)
     .single()
 
@@ -40,27 +35,22 @@ export async function POST(
       share_scope: 'org',
     })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   if (error) return apiError(error)
 
   return NextResponse.json({ share_token: token })
-}
+})
 
 // DELETE /api/conversations/[id]/share → Share widerrufen
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const DELETE = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   const { data: conv } = await supabaseAdmin
     .from('conversations')
     .select('id, user_id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .is('deleted_at', null)
     .single()
 
@@ -70,9 +60,9 @@ export async function DELETE(
     .from('conversations')
     .update({ share_token: null, shared_at: null, share_scope: null })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   if (revokeError) return apiError(revokeError)
 
   return NextResponse.json({ ok: true })
-}
+})

@@ -1,7 +1,7 @@
 // GET /api/superadmin/agents
 // Returns all 21 agents with metadata, findings counts, and markdown content.
 import { NextResponse } from 'next/server'
-import { requireSuperadmin } from '@/lib/auth/guards'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { AGENT_CATALOG } from '@/lib/agents/agent-catalog'
 import { CATEGORIES } from '@/lib/audit/types'
@@ -22,9 +22,7 @@ function extractLastUpdated(markdown: string): string | null {
   return match?.[1] ?? null
 }
 
-export async function GET() {
-  await requireSuperadmin()
-
+export const GET = withSuperadmin(async () => {
   // Fetch findings counts grouped by agentSource from last audit run
   const { data: findings } = await supabaseAdmin
     .from('audit_findings')
@@ -78,4 +76,4 @@ export async function GET() {
   })
 
   return NextResponse.json({ agents })
-}
+})

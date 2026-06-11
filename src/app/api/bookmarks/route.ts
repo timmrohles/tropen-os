@@ -1,19 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
 import { BOOKMARK_FIELDS } from '@/lib/db/fields'
+import { withAuth } from '@/lib/auth/route-guards'
 
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
-
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (req, { auth }) => {
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
 
@@ -25,7 +16,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from('bookmarks')
     .select(BOOKMARK_FIELDS)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .order('created_at', { ascending: false })
 
   if (conversationId) {
@@ -37,13 +28,10 @@ export async function GET(req: NextRequest) {
   if (error) return apiError(error)
 
   return NextResponse.json(data ?? [])
-}
+})
 
-export async function POST(req: NextRequest) {
-  try {  
-    const user = await getAuthUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const POST = withAuth(async (req, { auth }) => {
+  try {
     const body = await req.json()
     const { messageId, conversationId, contentPreview } = body
   
@@ -57,7 +45,7 @@ export async function POST(req: NextRequest) {
         {
           message_id: messageId,
           conversation_id: conversationId,
-          user_id: user.id,
+          user_id: auth.id,
           content_preview: contentPreview ? contentPreview.slice(0, 200) : null,
         },
         { onConflict: 'message_id,user_id' }
@@ -71,13 +59,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})
 
-export async function DELETE(req: NextRequest) {
-  try {  
-    const user = await getAuthUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const DELETE = withAuth(async (req, { auth }) => {
+  try {
     const body = await req.json()
     const { messageId } = body
   
@@ -89,12 +74,12 @@ export async function DELETE(req: NextRequest) {
       .from('bookmarks')
       .delete()
       .eq('message_id', messageId)
-      .eq('user_id', user.id)
-  
+      .eq('user_id', auth.id)
+
     if (error) return apiError(error)
-  
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return apiError(err)
   }
-}
+})

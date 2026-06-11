@@ -1,7 +1,7 @@
 // src/app/api/feeds/data-sources/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { createDataSourceSchema } from '@/lib/validators/feeds'
 import { createLogger } from '@/lib/logger'
@@ -11,16 +11,6 @@ import type { FeedDataSource } from '@/types/feeds'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:feeds:data-sources')
-
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabaseAdmin
-    .from('users').select('organization_id').eq('id', user.id).single()
-  if (!profile?.organization_id) return null
-  return { id: user.id, organization_id: profile.organization_id as string }
-}
 
 function mapSource(r: Record<string, unknown>): FeedDataSource {
   return {
@@ -47,17 +37,14 @@ function mapSource(r: Record<string, unknown>): FeedDataSource {
   }
 }
 
-export async function GET(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (req, { auth }) => {
   const { searchParams } = new URL(req.url)
   const { limit, offset } = parsePaginationParams(searchParams)
 
   const { data, error, count } = await supabaseAdmin
     .from('feed_data_sources')
     .select('*', { count: 'exact' })
-    .eq('user_id', me.id)
+    .eq('user_id', auth.id)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -72,12 +59,9 @@ export async function GET(req: NextRequest) {
     limit,
     offset,
   })
-}
+})
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   const { data: body, error: validationError } = await validateBody(req, createDataSourceSchema)
   if (validationError) return validationError
 
@@ -90,8 +74,8 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('feed_data_sources')
     .insert({
-      user_id: me.id,
-      organization_id: me.organization_id,
+      user_id: auth.id,
+      organization_id: auth.organization_id,
       name: body.name,
       description: body.description ?? null,
       url: body.url,
@@ -112,4 +96,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(mapSource(data as Record<string, unknown>), { status: 201 })
-}
+})

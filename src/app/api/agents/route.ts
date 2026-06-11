@@ -1,7 +1,7 @@
 // GET  /api/agents — alle sichtbaren Agenten (scope-basiert)
 // POST /api/agents — neuen Agenten anlegen
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
@@ -13,10 +13,7 @@ export const runtime = 'nodejs'
 const log = createLogger('api/agents')
 
 // ─── GET /api/agents ──────────────────────────────────────────────────────────
-export async function GET(request: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (request, { auth: me }) => {
   const { searchParams } = new URL(request.url)
   const { limit, offset } = parsePaginationParams(searchParams)
   const scopeFilter   = searchParams.get('scope')
@@ -56,13 +53,10 @@ export async function GET(request: NextRequest) {
       })
 
   return NextResponse.json({ data: filtered.map(mapAgent), total: count ?? 0, limit, offset })
-}
+})
 
 // ─── POST /api/agents ─────────────────────────────────────────────────────────
-export async function POST(request: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (request, { auth: me }) => {
   const body = await request.json().catch(() => null)
   if (!body || !body.name) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
@@ -111,4 +105,4 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) }, { status: 201 })
-}
+})

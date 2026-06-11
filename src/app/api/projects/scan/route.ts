@@ -5,8 +5,8 @@ export const maxDuration = 120
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withAuth } from '@/lib/auth/route-guards'
 import { createLogger } from '@/lib/logger'
 import { apiValidationError } from '@/lib/api-error'
 import { apiError } from '@/lib/api-error'
@@ -201,21 +201,7 @@ async function deduplicateOrFallback(
   }
 }
 
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: orgProfile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!orgProfile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const POST = withAuth(async (request, { auth }) => {
   const raw = await request.json().catch(() => null)
   const parsed = requestSchema.safeParse(raw)
   if (!parsed.success) {
@@ -236,11 +222,11 @@ export async function POST(request: Request) {
     }, { status: 400 })
   }
 
-  log.info('Scan started', { projectName, fileCount: files.length, totalSize, orgId: orgProfile.organization_id })
+  log.info('Scan started', { projectName, fileCount: files.length, totalSize, orgId: auth.organization_id })
 
   try {
     const ctx = await buildAuditContextFromFiles(files, 4096)
-    const domainActivation = await loadDomainActivation(orgProfile.organization_id, projectName)
+    const domainActivation = await loadDomainActivation(auth.organization_id, projectName)
 
     const report = await runAudit(ctx, {
       rootPath: '',
@@ -257,7 +243,7 @@ export async function POST(request: Request) {
     const detectedStack = detectStack(files)
 
     const projectId = await upsertOrInsertProject(
-      orgProfile.organization_id, projectName, files, totalSize, report, detectedStack, profile
+      auth.organization_id, projectName, files, totalSize, report, detectedStack, profile
     )
     if (!projectId) {
       return NextResponse.json({ error: 'Failed to save project' }, { status: 500 })
@@ -266,9 +252,9 @@ export async function POST(request: Request) {
     const { data: runRow, error: runErr } = await supabaseAdmin
       .from('audit_runs')
       .insert({
-        organization_id: orgProfile.organization_id,
+        organization_id: auth.organization_id,
         project_name: projectName,
-        triggered_by: user.id,
+        triggered_by: auth.id,
         trigger_type: 'manual',
         scan_project_id: projectId,
         total_score: report.categories.reduce((s, c) => s + c.weightedScore * c.weight, 0),
@@ -310,7 +296,7 @@ export async function POST(request: Request) {
     await supabaseAdmin.from('audit_category_scores').insert(categoryRows)
 
     const enrichedFindings = allFindings as EnrichedFinding[]
-    const newFindings = await deduplicateOrFallback(enrichedFindings, runId, orgProfile.organization_id)
+    const newFindings = await deduplicateOrFallback(enrichedFindings, runId, auth.organization_id)
 
     if (newFindings.length > 0) {
       const findingRows = newFindings.map((f) => {
@@ -349,4 +335,4 @@ export async function POST(request: Request) {
     log.error('Scan failed', { error: err })
     return apiError(err)
   }
-}
+})

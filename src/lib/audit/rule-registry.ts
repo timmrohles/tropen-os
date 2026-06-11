@@ -42,6 +42,7 @@ import {
   checkCorsConfig, checkErrorLeakage, checkLlmInputSeparation,
   checkFileUploadValidation,
 } from './checkers/agent-security-checker'
+import { checkRouteAuthorizationWrappers } from './checkers/route-authorization-checker'
 import {
   checkInjectionPatterns, checkAuthPatterns, checkDataExposurePatterns,
   checkClientSidePatterns, checkCryptoPatterns, checkBusinessLogicPatterns,
@@ -217,6 +218,9 @@ export const AUDIT_RULES: AuditRule[] = [
   { id: 'cat-3-rule-23', categoryId: 3, name: 'Kein Client-Side Risk (eval/Prototype-Pollution)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkClientSidePatterns, agentSource: 'security-scan', agentRuleId: 'R4', enforcement: 'blocked', fixType: 'code-fix' , tier: 'code', domain: 'security' },
   { id: 'cat-3-rule-24', categoryId: 3, name: 'Keine schwachen Krypto-Pattern (MD5/Math.random)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkCryptoPatterns, agentSource: 'security-scan', agentRuleId: 'R7', enforcement: 'reviewed', fixType: 'code-fix' , tier: 'code', domain: 'security' },
   { id: 'cat-3-rule-25', categoryId: 3, name: 'Keine Business-Logic-Luecken (Mass-Assignment/IDOR)', weight: 3, checkMode: 'repo-map', automatable: true, check: checkBusinessLogicPatterns, agentSource: 'security-scan', agentRuleId: 'R5', enforcement: 'reviewed', fixType: 'code-fix' , tier: 'code', domain: 'security' },
+  // ADR-032 — Erzwungene Route-Autorisierung via Wrapper. Nicht-blockierend (enforcement: reviewed):
+  // misst Wrapper-Abdeckung der supabaseAdmin-Routen, Score steigt mit dem Rollout auf 5.
+  { id: 'cat-3-rule-27', categoryId: 3, name: 'Erzwungene Route-Autorisierung (Wrapper, ADR-032)', weight: 2, checkMode: 'repo-map', automatable: true, check: checkRouteAuthorizationWrappers, agentSource: 'security', enforcement: 'reviewed', fixType: 'code-fix' , tier: 'code', domain: 'security' },
 
   // ── Category 4: Datenschutz & Compliance (weights: 3,2,2,2,2,2) ──────────
   manual('cat-4-rule-1', 4, 'Kein PII in Logs', 3, 'code-fix', 'code', undefined, 'dsgvo'),

@@ -4,24 +4,16 @@ import { generateText } from 'ai'
 import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { MODEL_HAIKU } from '@/lib/llm/models'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:post-chat')
-type Params = { params: Promise<{ id: string }> }
 
-export async function POST(request: Request, { params }: Params) {
-  const { id: workspaceId } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { auth: me, workspaceId }) => {
   const budget = await checkBudget(me.organization_id, 'claude-haiku')
   if (!budget.allowed) return budgetExhaustedResponse()
-
-  const workspace = await requireWorkspaceAccess(workspaceId, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   let body: { conversation_id: string }
   try {
@@ -104,4 +96,4 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json(item, { status: 201 })
-}
+})

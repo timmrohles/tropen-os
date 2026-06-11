@@ -1,26 +1,10 @@
 import { createLogger } from '@/lib/logger'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/branding')
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
-export async function GET() {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const GET = withOrgAdmin(async (_req, { auth: me }) => {
   const { data } = await supabaseAdmin
     .from('organization_settings')
     .select('logo_url, primary_color, organization_display_name, ai_guide_name, ai_guide_description, members_see_models, ai_assistant_image_url')
@@ -35,12 +19,9 @@ export async function GET() {
     ai_guide_description: 'Dein KI-Guide durch den Informationsdschungel',
     ai_assistant_image_url: null,
   })
-}
+})
 
-export async function PATCH(request: Request) {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-
+export const PATCH = withOrgAdmin(async (request, { auth: me }) => {
   let body: Record<string, unknown>
   try {
     body = await request.json()
@@ -67,4 +48,4 @@ export async function PATCH(request: Request) {
   }
 
   return NextResponse.json({ success: true })
-}
+})

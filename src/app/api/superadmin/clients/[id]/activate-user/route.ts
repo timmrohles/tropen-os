@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
 import { isAssignableRole } from '@/lib/roles'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
-async function requireSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (me?.role !== 'superadmin') return null
-  return user
-}
-
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {  
-    const caller = await requireSuperadmin()
-    if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  
-    const { id: orgId } = await params
+export const POST = withSuperadmin<{ id: string }>(async (req: NextRequest, { params }) => {
+  try {
+    const { id: orgId } = params
     const { email, role } = await req.json()
   
     if (!email || !role) {
@@ -79,4 +67,4 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (err) {
     return apiError(err)
   }
-}
+})

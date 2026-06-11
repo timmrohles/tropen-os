@@ -1,28 +1,27 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:share')
-type Params = { params: Promise<{ id: string }> }
 
 const shareSchema = z.object({
   active: z.boolean(),
   role: z.enum(['viewer', 'commenter']).default('viewer'),
 })
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
+  // requireWorkspaceAccess lieferte zusätzlich die Workspace-Zeile (für share_token) —
+  // nach bestandenem Guard hier eigenständig nachladen.
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
   if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   let body: z.infer<typeof shareSchema>
@@ -56,4 +55,4 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json(data)
-}
+}, { write: true })

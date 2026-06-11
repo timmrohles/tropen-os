@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { resolveWorkflow } from '@/lib/capability-resolver'
 import { validateBody } from '@/lib/validators'
 import { resolveWorkflowInputSchema } from '@/lib/validators/capabilities'
@@ -10,10 +10,7 @@ const log = createLogger('api/capabilities/resolve')
 // POST /api/capabilities/resolve
 // Resolves a WorkflowPlan for a given capability + outcome combination.
 // Returns model_id, system_prompt, tools, card_type, estimated cost.
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth: me }) => {
   const validated = await validateBody(req, resolveWorkflowInputSchema)
   if (validated.error) return validated.error
 
@@ -38,4 +35,4 @@ export async function POST(req: NextRequest) {
     log.error('resolveWorkflow failed', { err })
     return NextResponse.json({ error: 'Failed to resolve workflow' }, { status: 500 })
   }
-}
+})

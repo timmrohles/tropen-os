@@ -2,23 +2,13 @@ export const dynamic = 'force-dynamic'
 
 import { createLogger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import { getLangSmithClient } from '@/lib/langsmith/tracer'
 import type { PerformanceResponse } from '@/types/qa'
 const log = createLogger('admin/qa/performance')
 
 export const revalidate = 300
-
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-  return data?.role === 'superadmin'
-}
 
 async function getLangSmithStats() {
   const client = getLangSmithClient()
@@ -58,12 +48,8 @@ async function getLangSmithStats() {
   }
 }
 
-export async function GET() {
+export const GET = withSuperadmin(async () => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
     const supabase = createServiceClient()
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -129,4 +115,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+})

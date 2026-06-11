@@ -1,20 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // GET /api/projects/[id]
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withProjectAccess<{ id: string }>(async (_req, { projectId }) => {
   const { data, error } = await supabaseAdmin
     .from('projects')
     .select(`
@@ -23,26 +13,16 @@ export async function GET(
       project_participants(user_id, role),
       project_memory(count)
     `)
-    .eq('id', id)
+    .eq('id', projectId)
     .is('deleted_at', null)
     .single()
 
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})
 
 // PATCH /api/projects/[id]
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const PATCH = withProjectAccess<{ id: string }>(async (request, { projectId }) => {
   let body: Record<string, unknown>
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }) }
@@ -62,32 +42,22 @@ export async function PATCH(
   // meta: merge (never replace)
   if ('meta' in body && body.meta !== null && typeof body.meta === 'object') {
     const { data: current } = await supabaseAdmin
-      .from('projects').select('meta').eq('id', id).single()
+      .from('projects').select('meta').eq('id', projectId).single()
     update.meta = { ...(current?.meta ?? {}), ...(body.meta as Record<string, unknown>) }
   }
 
   const { data, error } = await supabaseAdmin
-    .from('projects').update(update).eq('id', id).select().single()
+    .from('projects').update(update).eq('id', projectId).select().single()
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})
 
 // DELETE /api/projects/[id] — soft delete
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const DELETE = withProjectAccess<{ id: string }>(async (_req, { projectId }) => {
   const { error } = await supabaseAdmin
     .from('projects')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
+    .eq('id', projectId)
   if (error) return apiError(error)
   return NextResponse.json({ success: true })
-}
+})

@@ -1,41 +1,27 @@
 import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 const log = createLogger('admin/budget')
 
-async function getAdminUser() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  if (!user) return null
+// GET /api/admin/budget — Orgs + Workspaces mit Budget-Limits.
+// Superadmin: alle Orgs. Org-Admin: nur die eigene Org (kein Cross-Org-Leak).
+export const GET = withOrgAdmin(async (_req, { auth }) => {
+  const isSuperadmin = auth.role === 'superadmin'
 
-  const { data: me } = await supabase
-    .from('users')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!me || !['owner', 'admin', 'superadmin'].includes(me.role)) return null
-  return me as { organization_id: string; role: string }
-}
-
-// GET /api/admin/budget — alle Orgs + Workspaces mit Budget-Limits
-export async function GET() {
-  const me = await getAdminUser()
-  if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+  const orgsQuery = supabaseAdmin
+    .from('organizations')
+    .select('id, name, slug, plan, budget_limit')
+    .order('name')
+  const wsQuery = supabaseAdmin
+    .from('departments')
+    .select('id, name, budget_limit, organizations(name)')
+    .order('name')
 
   const [orgs, workspaces] = await Promise.all([
-    supabaseAdmin
-      .from('organizations')
-      .select('id, name, slug, plan, budget_limit')
-      .order('name'),
-    supabaseAdmin
-      .from('departments')
-      .select('id, name, budget_limit, organizations(name)')
-      .order('name')
+    isSuperadmin ? orgsQuery : orgsQuery.eq('id', auth.organization_id),
+    isSuperadmin ? wsQuery : wsQuery.eq('organization_id', auth.organization_id),
   ])
 
   if (orgs.error) {
@@ -48,33 +34,50 @@ export async function GET() {
   }
 
   return NextResponse.json({ organizations: orgs.data, workspaces: workspaces.data })
-}
+})
 
 // PATCH /api/admin/budget — Budget-Limit setzen
 // Body: { type: 'organization' | 'workspace', id: string, budget_limit: number | null }
-export async function PATCH(req: NextRequest) {
-  try {  
-    const me = await getAdminUser()
-    if (!me) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-  
+// Org-Admin darf nur die eigene Org / Workspaces der eigenen Org ändern; Superadmin alles.
+export const PATCH = withOrgAdmin(async (req: NextRequest, { auth }) => {
+  try {
     const { type, id, budget_limit } = await req.json()
-  
+
     if (!type || !id || !['organization', 'workspace'].includes(type)) {
       return NextResponse.json(
         { error: 'type muss "organization" oder "workspace" sein' },
         { status: 400 }
       )
     }
-  
+
     const table = type === 'organization' ? 'organizations' : 'workspaces'
-  
+
+    // Org-Scope für Nicht-Superadmins: Ziel muss zur eigenen Org gehören.
+    if (auth.role !== 'superadmin') {
+      if (type === 'organization') {
+        if (id !== auth.organization_id) {
+          return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+        }
+      } else {
+        const { data: ws } = await supabaseAdmin
+          .from('workspaces')
+          .select('id')
+          .eq('id', id)
+          .eq('organization_id', auth.organization_id)
+          .maybeSingle()
+        if (!ws) {
+          return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+        }
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from(table)
       .update({ budget_limit: budget_limit ?? null })
       .eq('id', id)
       .select('id, name, budget_limit')
       .single()
-  
+
     if (error) {
       log.error('DB Error:', error)
       return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
@@ -83,4 +86,4 @@ export async function PATCH(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

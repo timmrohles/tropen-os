@@ -2,14 +2,10 @@
 // GET — liefert Rate-Limit-Status für Deep Review des aktuellen Users.
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { checkDeepReviewRateLimit } from '@/lib/audit/deep-review-rate-limit'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const status = await checkDeepReviewRateLimit(user.id)
+export const GET = withAuth(async (_req, { auth }) => {
+  const status = await checkDeepReviewRateLimit(auth.id)
   return NextResponse.json(status)
-}
+})

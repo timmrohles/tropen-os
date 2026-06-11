@@ -1,24 +1,21 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/workspaces'
+import { NextResponse } from 'next/server'
 import { validateBody } from '@/lib/validators'
 import { getOpenAI } from '@/lib/llm/openai'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const schema = z.object({
   prompt: z.string().min(1).max(1000),
 })
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req, { auth }) => {
   try {
-    const user = await getAuthUser()
-    if (!user) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
     const { data: body, error: valErr } = await validateBody(req, schema)
     if (valErr) return valErr
 
-    const budget = await checkBudget(user.organization_id, 'dall-e-3')
+    const budget = await checkBudget(auth.organization_id, 'dall-e-3')
     if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
     const openai = getOpenAI()
@@ -39,4 +36,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

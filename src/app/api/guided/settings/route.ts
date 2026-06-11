@@ -1,6 +1,6 @@
 import { apiError } from '@/lib/api-error'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { patchGuidedSettingsSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
@@ -11,11 +11,8 @@ const log = createLogger('api/guided/settings')
 // PATCH /api/guided/settings
 // Upserts guided workflow preferences for the current user.
 // Allows toggling guided_enabled, auto_trigger, new_project_trigger.
-export async function PATCH(req: NextRequest) {
-  try {  
-    const me = await getAuthUser()
-    if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const PATCH = withAuth(async (req, { auth }) => {
+  try {
     const body = await req.json().catch(() => null)
     const parsed = patchGuidedSettingsSchema.safeParse(body)
     if (!parsed.success) {
@@ -24,7 +21,7 @@ export async function PATCH(req: NextRequest) {
   
     const { data, error } = await supabaseAdmin
       .from('guided_workflow_settings')
-      .upsert({ user_id: me.id, ...parsed.data }, { onConflict: 'user_id' })
+      .upsert({ user_id: auth.id, ...parsed.data }, { onConflict: 'user_id' })
       .select()
       .single()
   
@@ -37,4 +34,4 @@ export async function PATCH(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

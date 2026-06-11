@@ -1,16 +1,12 @@
 // GET /api/workspaces/[id]/picker?type=conversation|artifact|project|feed_source|agent&q=...
 // Returns searchable items for the workspace "add item" picker.
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/workspaces'
+import { withAuth } from '@/lib/auth/route-guards'
 
-type Params = { params: Promise<{ id: string }> }
-
-export async function GET(req: NextRequest, { params }: Params) {
-  await params // id/workspaceId unused but params must be awaited
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+// Workspace-ID wird hier nicht geprüft — die Route lädt User-/Org-eigene Daten;
+// daher withAuth statt withWorkspaceAccess.
+export const GET = withAuth<{ id: string }>(async (req, { auth: me }) => {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type')
   const q = searchParams.get('q')?.trim() ?? ''
@@ -96,4 +92,4 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   return NextResponse.json({ error: 'Unbekannter Typ' }, { status: 400 })
-}
+})

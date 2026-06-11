@@ -1,12 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Auth läuft jetzt über withSuperadmin → getAuthUser (ADR-032).
+vi.mock('@/lib/api/projects', () => ({
+  getAuthUser: vi.fn(),
+  verifyProjectAccess: vi.fn(),
+}))
+
 import { GET } from './route'
+import { getAuthUser } from '@/lib/api/projects'
 import { createServiceClient } from '@/lib/supabase/server'
 import { createMockSupabaseClient } from '@test/mocks/supabase'
 
-// createServiceClient und createClient (isSuperadmin) sind in setup.ts gemockt
+// createServiceClient bleibt der Daten-Layer (in setup.ts gemockt).
+const req = new Request('http://localhost/api/admin/qa/compliance') as unknown as Parameters<typeof GET>[0]
+const ctx = { params: Promise.resolve({}) } as unknown as Parameters<typeof GET>[1]
 
 describe('GET /api/admin/qa/compliance', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAuthUser).mockResolvedValue({ id: 'sa', organization_id: 'org', role: 'superadmin' })
+  })
 
   it('gibt korrekte Response-Shape zurück', async () => {
     const mockClient = createMockSupabaseClient({
@@ -21,7 +34,7 @@ describe('GET /api/admin/qa/compliance', () => {
     })
     vi.mocked(createServiceClient).mockReturnValue(mockClient)
 
-    const response = await GET()
+    const response = await GET(req, ctx)
     expect(response.status).toBe(200)
 
     const body = await response.json()
@@ -44,7 +57,7 @@ describe('GET /api/admin/qa/compliance', () => {
     })
     vi.mocked(createServiceClient).mockReturnValue(mockClient)
 
-    const body = await (await GET()).json()
+    const body = await (await GET(req, ctx)).json()
     expect(body.summary.total).toBe(10)
     expect(body.items).toHaveLength(10)
   })
@@ -62,7 +75,7 @@ describe('GET /api/admin/qa/compliance', () => {
     })
     vi.mocked(createServiceClient).mockReturnValue(mockClient)
 
-    const body = await (await GET()).json()
+    const body = await (await GET(req, ctx)).json()
     expect(body.openActions).toHaveLength(2)
     expect(body.openActions[0].article).toBe('Art. 13')
     expect(body.openActions[1].article).toBe('Art. 9')
@@ -81,7 +94,7 @@ describe('GET /api/admin/qa/compliance', () => {
     })
     vi.mocked(createServiceClient).mockReturnValue(mockClient)
 
-    const body = await (await GET()).json()
+    const body = await (await GET(req, ctx)).json()
     expect(body.openActions[0]).toEqual({
       article: 'Art. 9',
       action: 'Risikoregister anlegen',
@@ -101,7 +114,7 @@ describe('GET /api/admin/qa/compliance', () => {
     })
     vi.mocked(createServiceClient).mockReturnValue(mockClient)
 
-    const body = await (await GET()).json()
+    const body = await (await GET(req, ctx)).json()
     expect(body.openActions).toHaveLength(0)
   })
 
@@ -110,7 +123,7 @@ describe('GET /api/admin/qa/compliance', () => {
       throw new Error('Connection failed')
     })
 
-    const response = await GET()
+    const response = await GET(req, ctx)
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body).toHaveProperty('error')

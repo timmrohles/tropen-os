@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createArtifactSchema } from '@/lib/validators/artifacts'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:artifacts:save')
 
 // POST /api/artifacts/save
 // Saves an artifact and, when the conversation has a current_project_id that
 // maps to a workspace, auto-creates a workspace card (source='chat_artifact').
-export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, { auth }) => {
   const { data: body, error: validationError } = await validateBody(req, createArtifactSchema)
   if (validationError) return validationError
 
@@ -23,7 +19,7 @@ export async function POST(req: NextRequest) {
   const { data: membership } = await supabaseAdmin
     .from('users')
     .select('organization_id')
-    .eq('id', user.id)
+    .eq('id', auth.id)
     .eq('organization_id', body.organizationId)
     .single()
 
@@ -38,7 +34,7 @@ export async function POST(req: NextRequest) {
       message_id: body.messageId ?? null,
       conversation_id: body.conversationId,
       organization_id: body.organizationId,
-      user_id: user.id,
+      user_id: auth.id,
       name: body.name,
       type: body.type,
       language: body.language ?? null,
@@ -99,7 +95,7 @@ export async function POST(req: NextRequest) {
           source: 'chat_artifact',
           source_conversation_id: body.conversationId,
           sort_order: nextOrder,
-          created_by: user.id,
+          created_by: auth.id,
         })
         .select('id')
         .single()
@@ -109,4 +105,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ artifact, workspaceCardId }, { status: 201 })
-}
+})

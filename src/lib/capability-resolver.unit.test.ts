@@ -39,7 +39,7 @@ const mockOutcome = {
 const mockModel = {
   id: MODEL_ID,
   name: 'claude-sonnet-4-5',
-  api_model_id: 'claude-sonnet-4-20250514',
+  api_model_id: 'claude-sonnet-4-6',
   provider: 'anthropic',
   cost_per_1k_input: 0.003,
   cost_per_1k_output: 0.015,
@@ -92,7 +92,7 @@ describe('resolveWorkflow', () => {
     const plan = await resolveWorkflow(CAP_ID, OUT_ID, USER_ID, ORG_ID)
 
     expect(plan.available).toBe(true)
-    expect(plan.model_id).toBe('claude-sonnet-4-20250514')
+    expect(plan.model_id).toBe('claude-sonnet-4-6')
     expect(plan.provider).toBe('anthropic')
     expect(plan.tools).toContain('web_search')
     expect(plan.system_prompt).toContain('Du bist Recherche-Experte.')

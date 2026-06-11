@@ -13,7 +13,15 @@
       "mcp__512d6f36-3963-4dde-a0af-9631130bace2__deploy_to_vercel",
       "PowerShell(Get-ChildItem -Path \"src\\\\app\\\\api\" -Recurse -Filter \"route.ts\" | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"$PWD\\\\\", \"\"\\) })",
       "PowerShell(Get-NetTCPConnection *)",
-      "PowerShell(pnpm dev *)"
+      "PowerShell(pnpm dev *)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "WebSearch",
+      "WebFetch(domain:help.zoho.com)",
+      "WebFetch(domain:www.zoho.com)",
+      "mcp__3c6944d1-8838-4420-a199-e562d4ba2de9__getOrganization",
+      "mcp__3c6944d1-8838-4420-a199-e562d4ba2de9__getRecords",
+      "mcp__645521a0-6061-49c1-9383-1626a9259e42__execute_sql",
+      "PowerShell(npx tsc --noEmit 2>&1)"
     ]
   }
 }

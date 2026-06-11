@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { resolveOption } from '@/lib/guided-workflow-engine'
 import { resolveInputSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
@@ -13,10 +13,7 @@ const log = createLogger('api/guided/resolve')
 // - capability_plan → returns WorkflowPlan (model, prompt, tools, card_type)
 // - custom_input   → caller shows free text input
 // - save_artifact  → caller triggers knowledge-base save
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   const body = await req.json().catch(() => null)
   const parsed = resolveInputSchema.safeParse(body)
   if (!parsed.success) {
@@ -27,8 +24,8 @@ export async function POST(req: NextRequest) {
     const result = await resolveOption(
       parsed.data.workflowId,
       parsed.data.optionId,
-      me.id,
-      me.organization_id,
+      auth.id,
+      auth.organization_id,
     )
 
     // For capability_plan: expose the merged system_prompt at the top level for convenience
@@ -45,4 +42,4 @@ export async function POST(req: NextRequest) {
     log.error('resolve failed', { err })
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
-}
+})

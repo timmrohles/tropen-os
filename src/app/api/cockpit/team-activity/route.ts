@@ -1,27 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:team-activity')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withOrgAdmin(async (_req, { auth }) => {
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('organization_id, role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const orgId = profile?.organization_id
-    const role = profile?.role ?? ''
-    if (!['admin', 'owner', 'superadmin'].includes(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const orgId = auth.organization_id
     if (!orgId) return NextResponse.json({ items: [] })
 
     const twoDaysAgo = new Date()
@@ -72,4 +58,4 @@ export async function GET() {
     log.error('team-activity error', { error: String(err) })
     return NextResponse.json({ items: [] })
   }
-}
+})

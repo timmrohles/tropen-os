@@ -1,25 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!profile?.organization_id) return NextResponse.json([])
-
+export const GET = withAuth(async (_req, { auth }) => {
   const { data: orgPkgs } = await supabaseAdmin
     .from('org_packages')
     .select('package_id')
-    .eq('organization_id', profile.organization_id)
+    .eq('organization_id', auth.organization_id)
     .eq('is_active', true)
 
   if (!orgPkgs?.length) return NextResponse.json([])
@@ -34,4 +22,4 @@ export async function GET() {
 
   if (error) return apiError(error)
   return NextResponse.json(data ?? [])
-}
+})

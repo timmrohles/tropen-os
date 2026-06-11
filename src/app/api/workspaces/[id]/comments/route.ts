@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:comments')
-type Params = { params: Promise<{ id: string }> }
 
 const addCommentSchema = z.object({
   content: z.string().min(1).max(2000),
@@ -15,14 +14,7 @@ const addCommentSchema = z.object({
   guest_name: z.string().max(100).optional(),
 })
 
-export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withWorkspaceAccess<{ id: string }>(async (_req, { workspaceId: id }) => {
   const { data, error } = await supabaseAdmin
     .from('workspace_comments')
     .select('id, content, item_id, parent_id, user_id, guest_name, created_at, updated_at')
@@ -36,16 +28,9 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   return NextResponse.json(data ?? [])
-}
+})
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { auth: me, workspaceId: id }) => {
   let body: z.infer<typeof addCommentSchema>
   try {
     body = addCommentSchema.parse(await request.json())
@@ -73,4 +58,4 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json(data, { status: 201 })
-}
+})
