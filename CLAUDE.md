@@ -1458,6 +1458,7 @@ Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGEN
 | `security-scan-checker.ts` | ~10 | cat-3,22,24 |
 | `agent-committee-checker.ts` | ~15 | cat-2,4,5,6,8,11,12,14,15,16,19,20 |
 | `agent-regulatory-checker.ts` | ~15 | cat-4,16,22 |
+| `route-authorization-checker.ts` | 1 | cat-3-rule-27 (ADR-032 — erzwungene Route-Auth-Wrapper; datenfluss-basiert, Gate-Semantik, Allowlist für Service/öffentliche Routen) |
 
 **Tier-System:**
 | Tier | Regeln | Fuer wen |
@@ -1697,7 +1698,7 @@ eslint src/           # keine Fehler
 | `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
 | `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
-| `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-030) — nach Aufräum-Sprint 2026-05-07. ADR-030 = Pre-Flight Prämissen-Modell v2 (bereitschafts-gewahrter Einstieg, geführte Entwicklung, Generierungs-Gate) |
+| `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-032) — nach Aufräum-Sprint 2026-05-07. ADR-030 = Pre-Flight Prämissen-Modell v2; ADR-031 = Checker-Verbesserungs-Loop/Regel-Lebenszyklus; **ADR-032 = Erzwungene Route-Autorisierung** (withAuth/withOrgAdmin/withProjectAccess/withWorkspaceAccess/withSuperadmin/withCronAuth in `src/lib/auth/route-guards.ts`, Checker cat-3-rule-27, Inventar in `docs/audit/route-authorization-inventory.md`) |
 | `docs/active/brand-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
 | `docs/active/feature-inventory.md` | Feature-Dokumentation mit Status-Markern (LIVE/EINGEFROREN/ABGELÖST) |
 | `docs/synthese/tag4-master-synthese.md` | Strategie-Synthese aus 3-Tage-Inventur (2026-04-27) |
@@ -1717,7 +1718,7 @@ eslint src/           # keine Fehler
 | `src/scripts/reviews/*.ts` | Review-Configs: `claude-md.ts`, `audit-scoring.ts`, `fix-engine.ts`, `agent-checker-alignment.ts`, `repo-map.ts`, `dogfooding-feedback.ts` — jede Config definiert contextFiles, systemPrompt, userPrompt, judgePrompt |
 | `docs/committee-reviews/` | Komitee-Review-Ergebnisse: `*-review.md` mit Konsens-Levels (EINIG/MEHRHEIT/GESPALTEN), Empfehlungen, Kosten-Tabelle |
 | `docs/active/checker-feedback.md` | Checker Feedback Log: FP-Tracking, bekannte FP-Regeln, Prozess-Beschreibung |
-| `docs/active/checker-design-patterns.md` | 10 strukturelle Checker-Fehlertypen (P1–P10) mit Praxis-Belegen + Entwicklungs-Checkliste — Pflichtlektuere vor jedem neuen Checker |
+| `docs/active/checker-design-patterns.md` | Strukturelle Checker-Fehlertypen (P1–P18) mit Praxis-Belegen + Entwicklungs-Checkliste — Pflichtlektuere vor jedem neuen Checker. P18 = Suppression-blinde Auditierung (LLM-Reviewer ignoriert dokumentierte FPs; aus Fable-5-Review destilliert) |
 | `docs/active/checker-test-repos.md` | Benchmark-Repos fuer Checker-Qualitaet (5 Open-Source-Projekte) |
 | `.github/ISSUE_TEMPLATE/false-positive.yml` | GitHub Issue Template fuer False Positive Reports |
 | `.github/ISSUE_TEMPLATE/checker-improvement.yml` | GitHub Issue Template fuer Checker-Verbesserungen |
