@@ -1,6 +1,6 @@
 // POST /api/agents/[id]/copy — Agent als eigene Basis kopieren
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
@@ -10,14 +10,8 @@ export const runtime = 'nodejs'
 
 const log = createLogger('api/agents/[id]/copy')
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (_request, { auth: me, params }) => {
+  const { id } = params
 
   const { data: source } = await supabaseAdmin
     .from('agents')
@@ -65,4 +59,4 @@ export async function POST(
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) }, { status: 201 })
-}
+})

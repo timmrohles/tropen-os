@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:self-assessment')
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await request.json() as {
       scanProjectId: string
       answers: Record<string, boolean>
@@ -64,4 +60,4 @@ export async function POST(request: Request) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

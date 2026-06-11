@@ -4,32 +4,18 @@
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:runs')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withAuth(async (_req, { auth }) => {
   try {
     const { data: runs, error } = await supabaseAdmin
       .from('audit_runs')
       .select('id, project_name, percentage, status, total_findings, critical_findings, created_at')
-      .eq('organization_id', profile.organization_id)
+      .eq('organization_id', auth.organization_id)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -43,4 +29,4 @@ export async function GET() {
     log.error('GET /api/audit/runs error', { error: String(err) })
     return NextResponse.json({ runs: [] })
   }
-}
+})

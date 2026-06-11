@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:usage:stats')
 
@@ -121,17 +122,11 @@ function buildUserTable(rows: UsageRow[]) {
   }))
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withOrgAdmin(async (req, { auth }) => {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('users').select('role').eq('id', user.id).maybeSingle()
-
-  const isSuperadmin = profile?.role === 'superadmin'
-  const isPrivileged = isSuperadmin || profile?.role === 'owner' || profile?.role === 'admin'
-  if (!isPrivileged) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isSuperadmin = auth.role === 'superadmin'
+  const isPrivileged = true
 
   const period = req.nextUrl.searchParams.get('period') ?? 'month'
   const db = isSuperadmin ? supabaseAdmin : supabase
@@ -167,4 +162,4 @@ export async function GET(req: NextRequest) {
     log.error('usage/stats error', { error: String(err) })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
-}
+})

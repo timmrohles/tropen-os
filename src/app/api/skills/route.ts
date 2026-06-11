@@ -1,7 +1,7 @@
 // GET  /api/skills — alle für User sichtbaren Skills
 // POST /api/skills — neuen Skill anlegen
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapSkill } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
@@ -13,10 +13,7 @@ export const runtime = 'nodejs'
 const log = createLogger('api/skills')
 
 // ─── GET /api/skills ──────────────────────────────────────────────────────────
-export async function GET(request: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (request, { auth: me }) => {
   const url = new URL(request.url)
   const { limit, offset } = parsePaginationParams(url.searchParams)
   const scopeFilter = url.searchParams.get('scope')       // optional: 'system' | 'org' | 'user'
@@ -56,13 +53,10 @@ export async function GET(request: NextRequest) {
     limit,
     offset,
   })
-}
+})
 
 // ─── POST /api/skills ─────────────────────────────────────────────────────────
-export async function POST(request: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (request, { auth: me }) => {
   const body = await request.json().catch(() => null)
   if (!body?.name || !body?.title || !body?.instructions) {
     return NextResponse.json(
@@ -131,4 +125,4 @@ export async function POST(request: NextRequest) {
     { skill: mapSkill(data as Record<string, unknown>) },
     { status: 201 }
   )
-}
+})

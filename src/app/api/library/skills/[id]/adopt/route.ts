@@ -1,7 +1,7 @@
 // POST /api/library/skills/[id]/adopt — copy as org or user scope
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { adoptSkillSchema } from '@/lib/validators/library'
@@ -9,10 +9,8 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/skills/[id]/adopt')
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (req, { params, auth: me }) => {
+  const { id } = params
 
   const validated = await validateBody(req, adoptSkillSchema)
   if (validated.error) return validated.error
@@ -48,4 +46,4 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (error) { log.error('adopt skill', { error }); return NextResponse.json({ error: 'Adopt failed' }, { status: 500 }) }
   return NextResponse.json({ id: copy.id }, { status: 201 })
-}
+})

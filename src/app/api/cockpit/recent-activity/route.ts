@@ -1,28 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:recent-activity')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   try {
     const [convsRes, artifactsRes] = await Promise.all([
       supabaseAdmin
         .from('conversations')
         .select('id, title, updated_at')
-        .eq('created_by', user.id)
+        .eq('created_by', auth.id)
         .order('updated_at', { ascending: false })
         .limit(4),
 
       supabaseAdmin
         .from('artifacts')
         .select('id, title, updated_at')
-        .eq('created_by', user.id)
+        .eq('created_by', auth.id)
         .order('updated_at', { ascending: false })
         .limit(2),
     ])
@@ -50,4 +46,4 @@ export async function GET() {
     log.error('recent-activity error', { error: String(err) })
     return NextResponse.json({ items: [] })
   }
-}
+})

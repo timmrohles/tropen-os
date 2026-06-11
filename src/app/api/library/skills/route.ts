@@ -1,7 +1,7 @@
 // GET /api/library/skills + POST create
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createSkillSchema } from '@/lib/validators/library'
@@ -9,10 +9,7 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/skills')
 
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth: me }) => {
   try {
     const { data, error } = await supabaseAdmin.from('skills')
       .select('id, name, title, icon, description, scope, requires_package, instructions, trigger_keywords, recommended_role_name, recommended_capability_type, output_type, is_active, is_public, is_template, sort_order')
@@ -28,12 +25,9 @@ export async function GET() {
     log.error('GET /api/library/skills', { err })
     return NextResponse.json({ error: 'Failed to load skills' }, { status: 500 })
   }
-}
+})
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth: me }) => {
   const validated = await validateBody(req, createSkillSchema)
   if (validated.error) return validated.error
 
@@ -62,4 +56,4 @@ export async function POST(req: NextRequest) {
     log.error('POST /api/library/skills', { err })
     return NextResponse.json({ error: 'Failed to create skill' }, { status: 500 })
   }
-}
+})

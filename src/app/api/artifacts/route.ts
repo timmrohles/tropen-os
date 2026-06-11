@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createArtifactSchema } from '@/lib/validators/artifacts'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
-async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
-
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (req: NextRequest, { auth }) => {
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
   const organizationId = searchParams.get('organizationId')
@@ -37,19 +28,16 @@ export async function GET(req: NextRequest) {
   } else if (organizationId) {
     query = query.eq('organization_id', organizationId)
   } else {
-    query = query.eq('user_id', user.id)
+    query = query.eq('user_id', auth.id)
   }
 
   const { data, error, count } = await query
   if (error) return apiError(error)
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
-}
+})
 
-export async function POST(req: NextRequest) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, { auth }) => {
   const { data: body, error: validationError } = await validateBody(req, createArtifactSchema)
   if (validationError) return validationError
 
@@ -57,7 +45,7 @@ export async function POST(req: NextRequest) {
   const { data: membership } = await supabaseAdmin
     .from('users')
     .select('organization_id')
-    .eq('id', user.id)
+    .eq('id', auth.id)
     .eq('organization_id', body.organizationId)
     .single()
 
@@ -71,7 +59,7 @@ export async function POST(req: NextRequest) {
       message_id: body.messageId ?? null,
       conversation_id: body.conversationId,
       organization_id: body.organizationId,
-      user_id: user.id,
+      user_id: auth.id,
       name: body.name,
       type: body.type,
       language: body.language ?? null,
@@ -83,4 +71,4 @@ export async function POST(req: NextRequest) {
   if (error) return apiError(error)
 
   return NextResponse.json(data, { status: 201 })
-}
+})

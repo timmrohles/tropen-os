@@ -1,19 +1,10 @@
 // GET /api/workspaces/[id]/members/suggestions?q=...
 // Returns active org users for the member invite picker.
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 
-type Params = { params: Promise<{ id: string }> }
-
-export async function GET(req: NextRequest, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const GET = withWorkspaceAccess<{ id: string }>(async (req, { auth: me }) => {
   const q = new URL(req.url).searchParams.get('q')?.trim() ?? ''
   const like = q ? `%${q}%` : '%'
 
@@ -28,4 +19,4 @@ export async function GET(req: NextRequest, { params }: Params) {
     .limit(20)
 
   return NextResponse.json(data ?? [])
-}
+}, { write: true })

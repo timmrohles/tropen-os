@@ -1,8 +1,8 @@
 export const maxDuration = 60
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { loadProjectContext } from '@/lib/project-context'
@@ -12,11 +12,8 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('project-intro')
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+export const POST = withAuth(async (req, { auth }) => {
+  const budget = await checkBudget(auth.organization_id, 'claude-haiku')
   if (!budget.allowed) return budgetExhaustedResponse()
 
   let conversationId: string
@@ -39,7 +36,7 @@ export async function POST(req: NextRequest) {
       .from('conversations')
       .select('id, project_id, workspace_id')
       .eq('id', conversationId)
-      .eq('organization_id', me.organization_id)
+      .eq('organization_id', auth.organization_id)
       .single()
 
     conv = convData
@@ -94,4 +91,4 @@ export async function POST(req: NextRequest) {
     log.error('project-intro generation failed', { error: String(err) })
     return NextResponse.json({ error: 'Generation failed' }, { status: 500 })
   }
-}
+})

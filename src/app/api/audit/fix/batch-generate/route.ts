@@ -6,35 +6,21 @@ export const maxDuration = 120
 
 import { NextResponse } from 'next/server'
 import path from 'node:path'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { buildFixContext, generateFix } from '@/lib/fix-engine'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:fix:batch-generate')
 const REPO_ROOT = path.resolve(process.cwd())
 
-export async function POST(request: Request) {
+export const POST = withOrgAdmin(async (request, { auth }) => {
   if (process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED !== 'true') {
     return NextResponse.json(
       { error: 'fix_engine_disabled', message: 'Fix-Engine ist temporär deaktiviert. Nutze stattdessen den Fix-Prompt-Export.', documentation: 'docs/synthese/anhang-c-kill-und-einfrier-liste.md#k1' },
       { status: 410 }
     )
   }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
 
   const rawBody = await request.json().catch(() => ({})) as {
     runId?: string
@@ -118,7 +104,7 @@ export async function POST(request: Request) {
         .insert({
           run_id: body.runId,
           finding_id: finding.id,
-          organization_id: profile.organization_id,
+          organization_id: auth.organization_id,
           explanation: fix.explanation,
           confidence: fix.confidence,
           diffs: fix.diffs as unknown as Record<string, unknown>[],
@@ -146,4 +132,4 @@ export async function POST(request: Request) {
     totalCostEur,
     results,
   })
-}
+})

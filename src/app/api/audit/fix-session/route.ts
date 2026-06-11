@@ -1,11 +1,11 @@
 // src/app/api/audit/fix-session/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { buildFixPrompt } from '@/lib/audit/prompt-export'
 import type { PromptFinding } from '@/lib/audit/prompt-export/types'
 import { getFixType } from '@/lib/audit/rule-registry'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('fix-session')
 
@@ -98,12 +98,8 @@ Die Findings sind nach Datei sortiert — bearbeite jede Datei komplett bevor du
 ---`
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await req.json().catch(() => null) as { findingIds?: string[] } | null
     if (!body?.findingIds?.length) {
       return NextResponse.json({ error: 'findingIds required' }, { status: 400 })
@@ -140,4 +136,4 @@ export async function POST(req: NextRequest) {
     log.error('fix-session failed', { err })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+})

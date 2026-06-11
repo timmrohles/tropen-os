@@ -1,65 +1,35 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // DELETE /api/projects/[id]/memory — soft-delete ALL entries
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const DELETE = withProjectAccess<{ id: string }>(async (_req, { projectId }) => {
   const { error } = await supabaseAdmin
     .from('project_memory')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
 
   if (error) return apiError(error)
   return NextResponse.json({ success: true })
-}
+})
 
 // GET /api/projects/[id]/memory
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withProjectAccess<{ id: string }>(async (_req, { projectId }) => {
   const { data, error } = await supabaseAdmin
     .from('project_memory')
     .select('id, type, content, source_conversation_id, importance, tags, frozen, created_at')
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return apiError(error)
   return NextResponse.json(data ?? [])
-}
+})
 
 // POST /api/projects/[id]/memory — APPEND ONLY (no PATCH, no DELETE handler)
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const POST = withProjectAccess<{ id: string }>(async (request, { projectId, auth }) => {
   let body: Record<string, unknown>
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }) }
@@ -85,8 +55,8 @@ export async function POST(
   const { data, error } = await supabaseAdmin
     .from('project_memory')
     .insert({
-      project_id: id,
-      organization_id: me.organization_id,
+      project_id: projectId,
+      organization_id: auth.organization_id,
       type,
       content: (content as string).trim(),
       importance: importance ?? 'medium',
@@ -98,4 +68,4 @@ export async function POST(
 
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})

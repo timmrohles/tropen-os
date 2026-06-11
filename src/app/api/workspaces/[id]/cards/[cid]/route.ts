@@ -2,22 +2,16 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { updateCardSchema } from '@/lib/validators/workspace-plan-c'
 import { writeCardSnapshot } from '@/lib/card-history'
 import { markDirectDepsStale } from '@/lib/stale-propagation'
 import { apiError } from '@/lib/api-error'
 import { CARD_FIELDS } from '@/lib/db/fields'
 const log = createLogger('api:workspaces:cards:[cid]')
-type Params = { params: Promise<{ id: string; cid: string }> }
 
-export async function PATCH(request: Request, { params }: Params) {
-  const { id, cid } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+export const PATCH = withWorkspaceAccess<{ id: string; cid: string }>(async (request, { auth: me, params, workspaceId: id }) => {
+  const { cid } = params
 
   const { data: body, error: valErr } = await validateBody(request, updateCardSchema)
   if (valErr) return valErr
@@ -79,15 +73,10 @@ export async function PATCH(request: Request, { params }: Params) {
   })
 
   return NextResponse.json(updated)
-}
+}, { write: true })
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const { id, cid } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+export const DELETE = withWorkspaceAccess<{ id: string; cid: string }>(async (_req, { params, workspaceId: id }) => {
+  const { cid } = params
 
   const { error } = await supabaseAdmin
     .from('cards')
@@ -97,4 +86,4 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   if (error) return apiError(error)
   return new NextResponse(null, { status: 204 })
-}
+}, { write: true })

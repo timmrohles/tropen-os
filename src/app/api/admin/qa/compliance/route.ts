@@ -2,29 +2,15 @@ export const dynamic = 'force-dynamic'
 
 import { createLogger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import type { ComplianceResponse } from '@/types/qa'
 const log = createLogger('admin/qa/compliance')
 
 export const revalidate = 60
 
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-  return data?.role === 'superadmin'
-}
-
-export async function GET() {
+export const GET = withSuperadmin(async () => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
     const supabase = createServiceClient()
 
     const { data, error } = await supabase
@@ -68,4 +54,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+})

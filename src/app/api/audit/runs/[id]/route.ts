@@ -3,31 +3,14 @@
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:runs:id')
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export const GET = withAuth<{ id: string }>(async (_req, { params, auth }) => {
+  const { id } = params
 
   try {
     const [runRes, categoriesRes, findingsRes] = await Promise.all([
@@ -35,7 +18,7 @@ export async function GET(
         .from('audit_runs')
         .select('*')
         .eq('id', id)
-        .eq('organization_id', profile.organization_id)
+        .eq('organization_id', auth.organization_id)
         .single(),
 
       supabaseAdmin
@@ -59,7 +42,7 @@ export async function GET(
     const { data: prevRuns } = await supabaseAdmin
       .from('audit_runs')
       .select('id, percentage, created_at')
-      .eq('organization_id', profile.organization_id)
+      .eq('organization_id', auth.organization_id)
       .lt('created_at', runRes.data.created_at)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -76,4 +59,4 @@ export async function GET(
     log.error('GET /api/audit/runs/[id] error', { error: String(err), runId: id })
     return NextResponse.json({ error: 'Failed to fetch run' }, { status: 500 })
   }
-}
+})

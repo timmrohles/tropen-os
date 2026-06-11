@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:perspectives:post-to-chat')
 
@@ -14,11 +14,7 @@ const bodySchema = z.object({
 
 // POST /api/perspectives/post-to-chat
 // Inserts an assistant message (Perspectives response) into a conversation
-export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   let rawBody: unknown
   try { rawBody = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
@@ -32,7 +28,7 @@ export async function POST(req: NextRequest) {
     .from('conversations')
     .select('id, user_id')
     .eq('id', conversationId)
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
     .single()
 
   if (!conv) return NextResponse.json({ error: 'Konversation nicht gefunden' }, { status: 404 })
@@ -50,6 +46,6 @@ export async function POST(req: NextRequest) {
     return apiError(error)
   }
 
-  logger.info('perspectives message posted', { conversationId, userId: user.id, contentLength: content.length })
+  logger.info('perspectives message posted', { conversationId, userId: auth.id, contentLength: content.length })
   return NextResponse.json({ ok: true })
-}
+})

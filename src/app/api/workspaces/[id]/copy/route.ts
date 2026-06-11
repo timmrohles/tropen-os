@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:copy')
-type Params = { params: Promise<{ id: string }> }
 
-export async function POST(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const ws = await requireWorkspaceAccess(id, me)
+export const POST = withWorkspaceAccess<{ id: string }>(async (_req, { auth: me, workspaceId: id }) => {
+  // requireWorkspaceAccess lieferte zusätzlich die Workspace-Zeile (Quelle der Kopie) —
+  // nach bestandenem Guard hier eigenständig nachladen.
+  const { data: ws } = await supabaseAdmin
+    .from('workspaces')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
   if (!ws) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   const { data: copy, error: wsErr } = await supabaseAdmin
@@ -57,4 +59,4 @@ export async function POST(_req: Request, { params }: Params) {
   }
 
   return NextResponse.json({ ...copy, item_count: items?.length ?? 0 }, { status: 201 })
-}
+})

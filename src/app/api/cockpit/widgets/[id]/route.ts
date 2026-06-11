@@ -1,26 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:widgets:id')
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const DELETE = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id } = params
 
   try {
     const { error } = await supabaseAdmin
       .from('cockpit_widgets')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id) // ownership enforced
+      .eq('user_id', auth.id) // ownership enforced
 
     if (error) throw error
 
@@ -29,4 +22,4 @@ export async function DELETE(
     log.error('DELETE widget error', { error: String(err) })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
-}
+})

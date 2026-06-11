@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 
@@ -7,10 +7,7 @@ const log = createLogger('api/capabilities')
 
 // GET /api/capabilities
 // Returns all active system + org capabilities with valid outcomes, user settings, and org settings.
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth: me }) => {
   // Load all system + org capabilities
   const { data: capabilities, error: capErr } = await supabaseAdmin
     .from('capabilities')
@@ -86,4 +83,4 @@ export async function GET() {
     })
 
   return NextResponse.json(result)
-}
+})

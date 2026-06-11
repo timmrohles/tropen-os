@@ -1,12 +1,12 @@
 // POST /api/repo-map/generate — generates a repo map for the Tropen OS codebase
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import path from 'path'
-import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { generateRepoMap } from '@/lib/repo-map'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 export const runtime = 'nodejs'
 
@@ -21,10 +21,7 @@ const requestSchema = z.object({
   languages: z.array(z.enum(['typescript', 'javascript'])).optional(),
 })
 
-export async function POST(request: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (request) => {
   const { data, error } = await validateBody(request, requestSchema)
   if (error) return error
 
@@ -52,4 +49,4 @@ export async function POST(request: NextRequest) {
     log.error('generateRepoMap failed', { error: err })
     return apiError(err)
   }
-}
+})

@@ -4,7 +4,7 @@ import { generateText } from 'ai'
 import { anthropic as anthropicProvider } from '@/lib/llm/anthropic'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, requireWorkspaceAccess, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { sendChatMessageSchema } from '@/lib/validators/workspace-plan-c'
 import { buildWorkspaceContext, buildCardContext, buildContextSnapshot } from '@/lib/workspace-context'
@@ -12,17 +12,9 @@ import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:chat')
-type Params = { params: Promise<{ id: string }> }
 
 // GET /api/workspaces/[id]/chat?card_id=...&limit=50
-export async function GET(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const GET = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
   const { searchParams } = new URL(request.url)
   const cardId = searchParams.get('card_id')
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
@@ -39,19 +31,12 @@ export async function GET(request: Request, { params }: Params) {
   const { data, error } = await query
   if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [] })
-}
+})
 
 // POST /api/workspaces/[id]/chat
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { auth: me, workspaceId: id }) => {
   const budget = await checkBudget(me.organization_id, 'claude-sonnet')
   if (!budget.allowed) return budgetExhaustedResponse()
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const { data: body, error: valErr } = await validateBody(request, sendChatMessageSchema)
   if (valErr) return valErr
@@ -148,4 +133,4 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json({ content: assistantContent, token_usage: tokenUsage })
-}
+}, { write: true })

@@ -2,17 +2,14 @@ export const maxDuration = 60
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { anthropic } from '@/lib/llm/anthropic'
-import { getAuthUser } from '@/lib/api/projects'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { analyzeSchema } from '@/lib/validators/transformations'
+import { withAuth } from '@/lib/auth/route-guards'
 
-export async function POST(request: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const budget = await checkBudget(me.organization_id, 'claude-haiku')
+export const POST = withAuth(async (request, { auth }) => {
+  const budget = await checkBudget(auth.organization_id, 'claude-haiku')
   if (!budget.allowed) return budgetExhaustedResponse()
 
   const { data: body, error: valErr } = await validateBody(request, analyzeSchema)
@@ -90,4 +87,4 @@ Antworte NUR mit einem JSON-Array (max. 2 Einträge), keine weiteren Texte:
   }
 
   return NextResponse.json({ suggestions, source_type, source_id })
-}
+})

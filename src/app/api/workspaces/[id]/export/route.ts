@@ -1,22 +1,14 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, canWriteWorkspace, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { exportWorkspaceSchema } from '@/lib/validators/workspace-plan-c'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:export')
-type Params = { params: Promise<{ id: string }> }
 
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
   const { data: body, error: valErr } = await validateBody(request, exportWorkspaceSchema)
   if (valErr) return valErr
 
@@ -28,7 +20,14 @@ export async function POST(request: Request, { params }: Params) {
     }, { status: 501 })
   }
 
-  const workspace = await requireWorkspaceAccess(id, me)
+  // requireWorkspaceAccess lieferte zusätzlich die Workspace-Zeile (für den Export) —
+  // nach bestandenem Guard hier eigenständig nachladen.
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
   if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   const { data: cardRows, error: cardsErr } = await supabaseAdmin
@@ -75,7 +74,7 @@ export async function POST(request: Request, { params }: Params) {
     warnings,
     content,
   })
-}
+}, { write: true })
 
 function generateMarkdownExport(
   workspace: Record<string, unknown>,

@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:feed-highlights')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('organization_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const orgId = profile?.organization_id
+    const orgId = auth.organization_id
     if (!orgId) return NextResponse.json({ items: [] })
 
     const yesterday = new Date()
@@ -46,4 +36,4 @@ export async function GET() {
     log.error('feed-highlights error', { error: String(err) })
     return NextResponse.json({ items: [] })
   }
-}
+})

@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 export const runtime = 'nodejs'
 
 // POST /api/conversations/reply — neue Konversation als Antwort auf geteilten Chat
-export async function POST(req: NextRequest) {
-  try {  
-    const user = await getAuthUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
+export const POST = withAuth(async (req, { auth }) => {
+  try {
     const body = await req.json() as { shared_from_id: string; title?: string }
     if (!body.shared_from_id) {
       return NextResponse.json({ error: 'shared_from_id fehlt' }, { status: 400 })
@@ -33,7 +30,7 @@ export async function POST(req: NextRequest) {
       .eq('id', source.user_id)
       .single()
   
-    if (!ownerProfile || user.organization_id !== ownerProfile.organization_id) {
+    if (!ownerProfile || auth.organization_id !== ownerProfile.organization_id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   
@@ -41,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { data: membership } = await supabaseAdmin
       .from('department_members')
       .select('workspace_id')
-      .eq('user_id', user.id)
+      .eq('user_id', auth.id)
       .limit(1)
       .single()
   
@@ -50,7 +47,7 @@ export async function POST(req: NextRequest) {
       .from('conversations')
       .insert({
         workspace_id: membership?.workspace_id ?? null,
-        user_id: user.id,
+        user_id: auth.id,
         title: body.title ?? 'Antwort auf geteilten Chat',
         conversation_type: 'chat',
         shared_from_id: source.id,
@@ -64,4 +61,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

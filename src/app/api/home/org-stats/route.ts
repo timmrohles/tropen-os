@@ -1,27 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:home:org-stats')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withOrgAdmin(async (_req, { auth }) => {
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role, organization_id, ki_context')
-    .eq('id', user.id)
+    .select('ki_context')
+    .eq('id', auth.id)
     .maybeSingle()
 
-  if (!profile || !['admin', 'owner', 'superadmin'].includes(profile.role ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  const orgId = profile.organization_id
-  if (!orgId) return NextResponse.json({ error: 'No organization' }, { status: 400 })
+  const orgId = auth.organization_id
 
   try {
     const weekAgo = new Date()
@@ -136,10 +127,10 @@ export async function GET() {
       totalProjects: totalProjectsRes.count ?? 0,
       totalFeeds: totalFeedsRes.count ?? 0,
       totalArtifacts: totalArtifactsRes.count ?? 0,
-      hasContext: !!(profile.ki_context?.trim()),
+      hasContext: !!(profile?.ki_context?.trim()),
     })
   } catch (err) {
     log.error('org-stats error', { error: String(err) })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
-}
+})

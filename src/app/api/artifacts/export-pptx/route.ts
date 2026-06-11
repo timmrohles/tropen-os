@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createLogger } from '@/lib/logger'
 import PptxGenJS from 'pptxgenjs'
 import { z } from 'zod'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('api:artifacts:export-pptx')
 
@@ -147,11 +147,7 @@ function addContentSlide(pptx: PptxGenJS, slide: SlideData, slideNumber: number)
 
 // POST /api/artifacts/export-pptx
 // Accepts { html, name } and returns a .pptx binary download.
-export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, { auth }) => {
   let rawBody: unknown
   try {
     rawBody = await req.json()
@@ -171,7 +167,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Keine Slides gefunden' }, { status: 422 })
   }
 
-  logger.info('export-pptx start', { userId: user.id, slideCount: slides.length, name })
+  logger.info('export-pptx start', { userId: auth.id, slideCount: slides.length, name })
 
   const pptx = new PptxGenJS()
   pptx.layout = 'LAYOUT_16x9'
@@ -189,7 +185,7 @@ export async function POST(req: NextRequest) {
   const buffer = await pptx.write({ outputType: 'arraybuffer' }) as ArrayBuffer
   const safeName = name.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().replace(/\s+/g, '_') || 'praesentation'
 
-  logger.info('export-pptx done', { userId: user.id, slideCount: slides.length })
+  logger.info('export-pptx done', { userId: auth.id, slideCount: slides.length })
 
   return new NextResponse(buffer, {
     status: 200,
@@ -198,4 +194,4 @@ export async function POST(req: NextRequest) {
       'Content-Disposition': `attachment; filename="${safeName}.pptx"`,
     },
   })
-}
+})

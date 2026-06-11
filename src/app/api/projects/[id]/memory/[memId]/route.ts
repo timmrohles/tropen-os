@@ -1,19 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // PATCH /api/projects/[id]/memory/[memId] — edit content
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string; memId: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id, memId } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+export const PATCH = withProjectAccess<{ id: string; memId: string }>(async (request, { projectId, params }) => {
+  const { memId } = params
 
   let body: Record<string, unknown>
   try { body = await request.json() }
@@ -26,34 +18,26 @@ export async function PATCH(
     .from('project_memory')
     .update({ content })
     .eq('id', memId)
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
     .select()
     .single()
 
   if (error) return apiError(error)
   return NextResponse.json(data)
-}
+})
 
 // DELETE /api/projects/[id]/memory/[memId] — soft-delete single entry
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string; memId: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id, memId } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+export const DELETE = withProjectAccess<{ id: string; memId: string }>(async (_req, { projectId, params }) => {
+  const { memId } = params
 
   const { error } = await supabaseAdmin
     .from('project_memory')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', memId)
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
 
   if (error) return apiError(error)
   return NextResponse.json({ success: true })
-}
+})

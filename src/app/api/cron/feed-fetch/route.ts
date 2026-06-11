@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { triggerFetch } from '@/actions/feeds'
 import { apiError } from '@/lib/api-error'
+import { withCronAuth } from '@/lib/auth/route-guards'
 
-export async function GET() {
-  const h = await headers()
-  const auth = h.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withCronAuth(async () => {
   try {
     const { data: sources, error } = await supabaseAdmin
       .from('feed_sources')
@@ -50,4 +44,4 @@ export async function GET() {
   } catch (err: unknown) {
     return apiError(err)
   }
-}
+})

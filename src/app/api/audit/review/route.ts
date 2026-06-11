@@ -6,11 +6,11 @@ export const maxDuration = 120
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { runMultiModelReview } from '@/lib/review/orchestrator'
 import { checkDeepReviewRateLimit, recordDeepReviewInvocation } from '@/lib/audit/deep-review-rate-limit'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:review')
 
@@ -18,26 +18,9 @@ const requestSchema = z.object({
   runId: z.string().uuid(),
 })
 
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? '')) {
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
-  }
-
+export const POST = withOrgAdmin(async (request, { auth }) => {
   // Rate-Limit: 24h Cooldown + 10/Monat pro User
-  const rateLimit = await checkDeepReviewRateLimit(user.id)
+  const rateLimit = await checkDeepReviewRateLimit(auth.id)
   if (!rateLimit.allowed) {
     return NextResponse.json({
       error: 'rate-limit',
@@ -60,7 +43,7 @@ export async function POST(request: Request) {
     .from('audit_runs')
     .select('id, full_report')
     .eq('id', runId)
-    .eq('organization_id', profile.organization_id)
+    .eq('organization_id', auth.organization_id)
     .single()
 
   if (!run) {
@@ -83,7 +66,7 @@ export async function POST(request: Request) {
 
   const recentFindings = existingFindings?.map((f) => f.message) ?? []
 
-  log.info('Multi-model review started', { runId, orgId: profile.organization_id })
+  log.info('Multi-model review started', { runId, orgId: auth.organization_id })
 
   try {
     const result = await runMultiModelReview({
@@ -120,7 +103,7 @@ export async function POST(request: Request) {
       .from('audit_review_runs')
       .insert({
         run_id: runId,
-        organization_id: profile.organization_id,
+        organization_id: auth.organization_id,
         findings_count: result.consensusFindings.length,
         cost_eur: result.totalCostEur,
         models_used: result.modelsUsed,
@@ -148,7 +131,7 @@ export async function POST(request: Request) {
     }
 
     // Record invocation for rate-limiting (fire-and-forget, non-blocking)
-    void recordDeepReviewInvocation(user.id, runId, result.totalCostEur)
+    void recordDeepReviewInvocation(auth.id, runId, result.totalCostEur)
 
     log.info('Multi-model review complete', {
       runId,
@@ -168,4 +151,4 @@ export async function POST(request: Request) {
     log.error('Multi-model review failed', { error: String(err) })
     return NextResponse.json({ error: 'Review failed', code: 'REVIEW_ERROR' }, { status: 500 })
   }
-}
+})

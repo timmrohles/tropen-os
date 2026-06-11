@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
-import { getAuthUser, requireWorkspaceAccess } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { apiError } from '@/lib/api-error'
 
 const log = createLogger('api:workspaces:comments:[commentId]')
-type Params = { params: Promise<{ id: string; commentId: string }> }
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const { id, commentId } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const workspace = await requireWorkspaceAccess(id, me)
-  if (!workspace) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+export const DELETE = withWorkspaceAccess<{ id: string; commentId: string }>(async (_req, { auth: me, params, workspaceId: id }) => {
+  const { commentId } = params
 
   // Soft delete — only own comments; admins/owners can delete any
   const isAdmin = ['owner', 'admin', 'superadmin'].includes(me.role)
@@ -32,4 +26,4 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   return new NextResponse(null, { status: 204 })
-}
+})

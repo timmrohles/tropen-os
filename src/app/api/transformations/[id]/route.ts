@@ -1,34 +1,28 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { executeTransformationSchema } from '@/lib/validators/transformations'
 import { apiError } from '@/lib/api-error'
-
-type Params = { params: Promise<{ id: string }> }
+import { withAuth } from '@/lib/auth/route-guards'
 
 // GET /api/transformations/[id]
-export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+export const GET = withAuth<{ id: string }>(async (_req, { params, auth }) => {
+  const { id } = params
 
   const { data, error } = await supabaseAdmin
     .from('transformations')
     .select('*')
     .eq('id', id)
-    .eq('created_by', me.id)
+    .eq('created_by', auth.id)
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
   return NextResponse.json(data)
-}
+})
 
 // PATCH /api/transformations/[id] — { action: 'execute' }
-export async function PATCH(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+export const PATCH = withAuth<{ id: string }>(async (request, { params, auth }) => {
+  const { id } = params
 
   const { data: body, error: valErr } = await validateBody(request, executeTransformationSchema)
   if (valErr) return valErr
@@ -39,7 +33,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .from('transformations')
     .select('*')
     .eq('id', id)
-    .eq('created_by', me.id)
+    .eq('created_by', auth.id)
     .single()
 
   if (txErr || !tx) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
@@ -68,8 +62,8 @@ export async function PATCH(request: Request, { params }: Params) {
           goal:            (meta.goal as string | undefined) ?? (config.goal as string | undefined) ?? src?.goal ?? null,
           domain:          (config.domain as string | undefined) ?? null,
           department_id:   src?.department_id ?? null,
-          organization_id: me.organization_id,
-          created_by:      me.id,
+          organization_id: auth.organization_id,
+          created_by:      auth.id,
           status:          'draft',
           meta:            {},
         })
@@ -81,7 +75,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
       await supabaseAdmin.from('workspace_participants').insert({
         workspace_id: targetId,
-        user_id: me.id,
+        user_id: auth.id,
         role: 'admin',
       })
 
@@ -89,8 +83,8 @@ export async function PATCH(request: Request, { params }: Params) {
       const { data: feed, error: feedErr } = await supabaseAdmin
         .from('feed_sources')
         .insert({
-          organization_id: me.organization_id,
-          created_by:      me.id,
+          organization_id: auth.organization_id,
+          created_by:      auth.id,
           title:           (meta.title as string | undefined) ?? 'Feed',
           search_query:    (config.search_query as string | undefined) ?? '',
           language:        (config.language as string | undefined) ?? 'de',
@@ -130,4 +124,4 @@ export async function PATCH(request: Request, { params }: Params) {
     await supabaseAdmin.from('transformations').update({ status: 'failed' }).eq('id', id)
     return apiError(err)
   }
-}
+})

@@ -1,27 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 
-async function requireSuperadmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: me } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  if (me?.role !== 'superadmin') return null
-  return user
-}
-
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {  
-    const user = await requireSuperadmin()
-    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  
-    const { id } = await params
+export const PATCH = withSuperadmin<{ id: string }>(async (req: NextRequest, { params }) => {
+  try {
+    const { id } = params
     const body = await req.json()
     const { org_name, plan, org_budget_limit, workspace_name, workspace_budget_limit, owner_email } = body
   
@@ -79,13 +63,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } catch (err) {
     return apiError(err)
   }
-}
+})
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await requireSuperadmin()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const { id } = await params
+export const DELETE = withSuperadmin<{ id: string }>(async (_req: NextRequest, { params }) => {
+  const { id } = params
 
   // Superadmin-Org ist unlöschbar
   const { data: superadminUser } = await supabaseAdmin
@@ -108,4 +89,4 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (error) return apiError(error)
 
   return NextResponse.json({ success: true })
-}
+})

@@ -1,6 +1,6 @@
 import { apiError } from '@/lib/api-error'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { patchWorkflowSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
@@ -11,15 +11,9 @@ const log = createLogger('api/guided/workflows/[id]')
 // PATCH /api/guided/workflows/[id]
 // Updates a user-scoped or org-scoped workflow.
 // User can edit their own workflows; org admins/owners can edit org-scoped ones.
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {  
-    const me = await getAuthUser()
-    if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
-    const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (req, { auth, params }) => {
+  try {
+    const { id } = params
     const body = await req.json().catch(() => null)
     const parsed = patchWorkflowSchema.safeParse(body)
     if (!parsed.success) {
@@ -35,10 +29,10 @@ export async function PATCH(
     if (!wf) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   
     const canEdit =
-      (wf.scope === 'user' && wf.user_id === me.id) ||
+      (wf.scope === 'user' && wf.user_id === auth.id) ||
       (wf.scope === 'org' &&
-        wf.organization_id === me.organization_id &&
-        ['owner', 'admin'].includes(me.role))
+        wf.organization_id === auth.organization_id &&
+        ['owner', 'admin'].includes(auth.role))
   
     if (!canEdit) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   
@@ -58,4 +52,4 @@ export async function PATCH(
   } catch (err) {
     return apiError(err)
   }
-}
+})

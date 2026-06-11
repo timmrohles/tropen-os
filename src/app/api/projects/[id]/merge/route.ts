@@ -1,36 +1,28 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
+import { verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // POST /api/projects/[id]/merge — move chats + memory to target, archive source
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+// Sonderfall: zwei Projekte. Quelle via Wrapper (projectId), Ziel inline geprüft.
+export const POST = withProjectAccess<{ id: string }>(async (request, { projectId, auth }) => {
   let body: Record<string, unknown>
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 }) }
 
   const targetId = body.target_id as string | undefined
-  if (!targetId || targetId === id)
+  if (!targetId || targetId === projectId)
     return NextResponse.json({ error: 'Ungültige target_id' }, { status: 400 })
 
-  const targetAllowed = await verifyProjectAccess(targetId, me)
+  const targetAllowed = await verifyProjectAccess(targetId, auth)
   if (!targetAllowed) return NextResponse.json({ error: 'Zielprojekt nicht gefunden' }, { status: 404 })
 
   // 1. Move all conversations from source → target
   const { error: convErr } = await supabaseAdmin
     .from('conversations')
     .update({ project_id: targetId })
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
 
   if (convErr) return apiError(convErr)
@@ -39,14 +31,14 @@ export async function POST(
   const { data: memories } = await supabaseAdmin
     .from('project_memory')
     .select('type, content, importance, tags, source_conversation_id')
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
 
   if (memories && memories.length > 0) {
     const copies = memories.map(m => ({
       ...m,
       project_id: targetId,
-      organization_id: me.organization_id,
+      organization_id: auth.organization_id,
     }))
     const { error: memErr } = await supabaseAdmin
       .from('project_memory')
@@ -58,9 +50,9 @@ export async function POST(
   const { error: archErr } = await supabaseAdmin
     .from('projects')
     .update({ archived_at: new Date().toISOString() })
-    .eq('id', id)
+    .eq('id', projectId)
 
   if (archErr) return apiError(archErr)
 
   return NextResponse.json({ success: true, merged_into: targetId })
-}
+})

@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:recommendation')
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ recommendation: null }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('organization_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const orgId = profile?.organization_id
+    const orgId = auth.organization_id
     if (!orgId) return NextResponse.json({ recommendation: null })
 
     // Rule 1: Unread feed items today?
@@ -46,7 +36,7 @@ export async function GET() {
     const { data: lastConv } = await supabaseAdmin
       .from('conversations')
       .select('updated_at')
-      .eq('created_by', user.id)
+      .eq('created_by', auth.id)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -95,4 +85,4 @@ export async function GET() {
     log.error('recommendation error', { error: String(err) })
     return NextResponse.json({ recommendation: null })
   }
-}
+})

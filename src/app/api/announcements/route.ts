@@ -1,19 +1,16 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 // GET — load active announcements for current user (max 5)
 // Returns: tropen-wide (source='tropen', org IS NULL) + org-specific
 // Filter: is_active=true AND (expires_at IS NULL OR expires_at > NOW())
 // Sort: tropen first, then org, each by published_at DESC
 // Max: 5 total
-export async function GET(_request: Request) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const orgId = user.organization_id ?? null
+export const GET = withAuth(async (_request, { auth }) => {
+  const orgId = auth.organization_id ?? null
   const now = new Date().toISOString()
 
   // Tropen-wide announcements (organization_id IS NULL, source='tropen')
@@ -45,17 +42,14 @@ export async function GET(_request: Request) {
   // Combine: tropen first, then org, max 5 total
   const combined = [...(tropenAnn ?? []), ...orgAnn].slice(0, 5)
   return NextResponse.json(combined)
-}
+})
 
 // POST — create announcement (org_admin/owner for org-scoped, superadmin for tropen-wide)
 // Body: { title, body?, url?, url_label?, type?, expires_at?, organization_id? }
 // organization_id=null means tropen-wide (superadmin only)
-export async function POST(request: Request) {
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const role = user.role ?? null
-  const userOrgId = user.organization_id ?? null
+export const POST = withAuth(async (request, { auth }) => {
+  const role = auth.role ?? null
+  const userOrgId = auth.organization_id ?? null
 
   let body: Record<string, unknown>
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 }) }
@@ -101,7 +95,7 @@ export async function POST(request: Request) {
       url_label: url_label?.trim() || null,
       type: type ?? 'info',
       source,
-      created_by: user.id,
+      created_by: auth.id,
       expires_at: expires_at || null,
     })
     .select()
@@ -109,4 +103,4 @@ export async function POST(request: Request) {
 
   if (insertError) return apiError(insertError)
   return NextResponse.json(ann, { status: 201 })
-}
+})

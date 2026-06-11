@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser, canWriteWorkspace } from '@/lib/api/workspaces'
+import { withWorkspaceAccess } from '@/lib/auth/route-guards'
 import { createConnectionSchema } from '@/lib/validators/workspace-plan-c'
 import { apiError } from '@/lib/api-error'
 
-type Params = { params: Promise<{ id: string }> }
-
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
-  const canWrite = await canWriteWorkspace(id, me)
-  if (!canWrite) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
+export const POST = withWorkspaceAccess<{ id: string }>(async (request, { workspaceId: id }) => {
   const { data: body, error: valErr } = await validateBody(request, createConnectionSchema)
   if (valErr) return valErr
 
@@ -46,4 +37,4 @@ export async function POST(request: Request, { params }: Params) {
     return apiError(error)
   }
   return NextResponse.json(data, { status: 201 })
-}
+}, { write: true })

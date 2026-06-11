@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createWorkflowSchema } from '@/lib/validators/guided'
 import { createLogger } from '@/lib/logger'
@@ -11,10 +11,7 @@ const log = createLogger('api/guided/workflows')
 // GET /api/guided/workflows
 // Returns all active workflows visible to the user:
 // system-scope + org-scope (for user's org) + user-scope (own workflows).
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   const { data: workflows, error } = await supabaseAdmin
     .from('guided_workflows')
     .select(`
@@ -26,7 +23,7 @@ export async function GET() {
       )
     `)
     .or(
-      `scope.eq.system,and(scope.eq.org,organization_id.eq.${me.organization_id}),and(scope.eq.user,user_id.eq.${me.id})`
+      `scope.eq.system,and(scope.eq.org,organization_id.eq.${auth.organization_id}),and(scope.eq.user,user_id.eq.${auth.id})`
     )
     .eq('is_active', true)
     .order('sort_order')
@@ -38,15 +35,12 @@ export async function GET() {
   }
 
   return NextResponse.json(workflows ?? [])
-}
+})
 
 // POST /api/guided/workflows
 // Creates a new user-scoped workflow.
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req, { auth }) => {
   try {
-    const me = await getAuthUser()
-    if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await req.json().catch(() => null)
     const parsed = createWorkflowSchema.safeParse(body)
     if (!parsed.success) {
@@ -58,7 +52,7 @@ export async function POST(req: NextRequest) {
       .insert({
         ...parsed.data,
         scope:   'user',
-        user_id: me.id,
+        user_id: auth.id,
       })
       .select()
       .single()
@@ -72,4 +66,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

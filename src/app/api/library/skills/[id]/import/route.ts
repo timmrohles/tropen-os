@@ -1,16 +1,14 @@
 // Creates a user-scope copy of a public or system skill
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/skills/[id]/import')
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const POST = withAuth<{ id: string }>(async (_req, { params, auth: me }) => {
+  const { id } = params
 
   const { data: source } = await supabaseAdmin.from('skills')
     .select('*').eq('id', id).is('deleted_at', null).single()
@@ -33,4 +31,4 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (error) { log.error('import skill', { error }); return NextResponse.json({ error: 'Import failed' }, { status: 500 }) }
   return NextResponse.json({ id: copy.id }, { status: 201 })
-}
+})

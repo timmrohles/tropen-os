@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { validateBody } from '@/lib/validators'
-import { getAuthUser } from '@/lib/api/workspaces'
+import { withAuth } from '@/lib/auth/route-guards'
 import { createWorkspacePlanCSchema } from '@/lib/validators/workspace-plan-c'
 import { parsePaginationParams } from '@/lib/api/pagination'
 import { apiError } from '@/lib/api-error'
@@ -10,10 +10,7 @@ import { apiError } from '@/lib/api-error'
 const log = createLogger('api:workspaces')
 
 // GET /api/workspaces — org-level list (department_id optional filter)
-export async function GET(request: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const GET = withAuth(async (request, { auth: me }) => {
   const { searchParams } = new URL(request.url)
   const { limit, offset } = parsePaginationParams(searchParams)
   const department_id = searchParams.get('department_id')
@@ -50,13 +47,10 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
-}
+})
 
 // POST /api/workspaces
-export async function POST(request: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const POST = withAuth(async (request, { auth: me }) => {
   const { data: body, error: valErr } = await validateBody(request, createWorkspacePlanCSchema)
   if (valErr) return valErr
 
@@ -91,4 +85,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(workspace, { status: 201 })
-}
+})

@@ -1,30 +1,13 @@
 import { createLogger } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import type { QaComplianceStatus } from '@/types/qa'
 const log = createLogger('admin/qa/compliance/id')
 
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-  return data?.role === 'superadmin'
-}
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withSuperadmin<{ id: string }>(async (request: NextRequest, { params }) => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
-    const { id } = await params
+    const { id } = params
     const body = await request.json() as {
       status?: QaComplianceStatus
       notes?: string
@@ -63,4 +46,4 @@ export async function PATCH(
       { status: 500 }
     )
   }
-}
+})

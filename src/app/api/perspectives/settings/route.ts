@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const patchSchema = z.object({
   avatar_id:  z.string().uuid(),
@@ -11,26 +11,18 @@ const patchSchema = z.object({
 })
 
 // GET /api/perspectives/settings
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth }) => {
   const { data: settings } = await supabaseAdmin
     .from('perspective_user_settings')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', auth.id)
 
   return NextResponse.json({ settings: settings ?? [] })
-}
+})
 
 // PATCH /api/perspectives/settings
 // Upsert a single avatar's pin/sort setting for the current user
-export async function PATCH(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const PATCH = withAuth(async (req, { auth }) => {
   let rawBody: unknown
   try { rawBody = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
@@ -41,8 +33,8 @@ export async function PATCH(req: NextRequest) {
 
   const { error } = await supabaseAdmin
     .from('perspective_user_settings')
-    .upsert({ user_id: user.id, avatar_id, is_pinned, sort_order }, { onConflict: 'user_id,avatar_id' })
+    .upsert({ user_id: auth.id, avatar_id, is_pinned, sort_order }, { onConflict: 'user_id,avatar_id' })
 
   if (error) return apiError(error)
   return NextResponse.json({ ok: true })
-}
+})

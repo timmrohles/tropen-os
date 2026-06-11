@@ -3,27 +3,13 @@
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:fix:reject')
 
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
-
+export const POST = withOrgAdmin(async (request, { auth }) => {
   const body = await request.json().catch(() => ({})) as { fixId?: string }
   if (!body.fixId) return NextResponse.json({ error: 'fixId required' }, { status: 400 })
 
@@ -31,7 +17,7 @@ export async function POST(request: Request) {
     .from('audit_fixes')
     .update({ status: 'rejected', rejected_at: new Date().toISOString() })
     .eq('id', body.fixId)
-    .eq('organization_id', profile.organization_id)
+    .eq('organization_id', auth.organization_id)
     .eq('status', 'pending')
 
   if (error) {
@@ -40,4 +26,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true })
-}
+})

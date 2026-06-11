@@ -3,9 +3,9 @@
 // saves them to project_memory. Called internally after stream ends.
 // Always returns 200 (caller does not await the result).
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { extractMemoryFromConversation, hashContent } from '@/lib/memory/memory-extractor'
 import { createLogger } from '@/lib/logger'
 import { apiError } from '@/lib/api-error'
@@ -14,14 +14,8 @@ const log = createLogger('extract-memory')
 
 export const runtime = 'nodejs'
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: conversationId } = await params
-
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth<{ id: string }>(async (_req, { auth, params }) => {
+  const { id: conversationId } = params
 
   try {
     // Load conversation + verify ownership
@@ -29,7 +23,7 @@ export async function POST(
       .from('conversations')
       .select('id, user_id, project_id')
       .eq('id', conversationId)
-      .eq('user_id', me.id)
+      .eq('user_id', auth.id)
       .maybeSingle()
 
     if (!conv) {
@@ -146,4 +140,4 @@ export async function POST(
 
     return apiError(err)
   }
-}
+})

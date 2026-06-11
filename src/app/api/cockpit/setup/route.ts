@@ -1,16 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { ROLE_PRESET_WIDGETS, WIDGET_CATALOG } from '@/lib/cockpit/widgetCatalog'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:cockpit:setup')
 
-export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth }) => {
   let body: { role?: string }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Ungültiger Body' }, { status: 400 })
@@ -20,19 +16,13 @@ export async function POST(req: NextRequest) {
   const widgetTypes = ROLE_PRESET_WIDGETS[role] ?? []
 
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('organization_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const orgId = profile?.organization_id
+    const orgId = auth.organization_id
 
     // Clear existing widgets for this user
     await supabaseAdmin
       .from('cockpit_widgets')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', auth.id)
 
     // Insert preset widgets
     let widgets: unknown[] = []
@@ -40,7 +30,7 @@ export async function POST(req: NextRequest) {
       const rows = widgetTypes.map((type, idx) => {
         const meta = WIDGET_CATALOG.find(w => w.type === type)
         return {
-          user_id: user.id,
+          user_id: auth.id,
           organization_id: orgId,
           widget_type: type,
           position: idx,
@@ -61,7 +51,7 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin
       .from('user_preferences')
       .upsert(
-        { user_id: user.id, cockpit_setup_done: true },
+        { user_id: auth.id, cockpit_setup_done: true },
         { onConflict: 'user_id' }
       )
 
@@ -70,4 +60,4 @@ export async function POST(req: NextRequest) {
     log.error('setup error', { error: String(err) })
     return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 })
   }
-}
+})

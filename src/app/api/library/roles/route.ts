@@ -1,7 +1,7 @@
 // GET /api/library/roles + POST create
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { createRoleSchema } from '@/lib/validators/library'
@@ -9,10 +9,7 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/roles')
 
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req, { auth: me }) => {
   try {
     const { data, error } = await supabaseAdmin.from('roles')
       .select('id, name, label, icon, description, scope, requires_package, system_prompt, domain_keywords, preferred_capability_types, preferred_outcome_types, recommended_model_class, is_active, is_default, is_public, sort_order')
@@ -28,12 +25,9 @@ export async function GET() {
     log.error('GET /api/library/roles', { err })
     return NextResponse.json({ error: 'Failed to load roles' }, { status: 500 })
   }
-}
+})
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req, { auth: me }) => {
   const validated = await validateBody(req, createRoleSchema)
   if (validated.error) return validated.error
 
@@ -66,4 +60,4 @@ export async function POST(req: NextRequest) {
     log.error('POST /api/library/roles', { err })
     return NextResponse.json({ error: 'Failed to create role' }, { status: 500 })
   }
-}
+})

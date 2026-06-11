@@ -1,13 +1,12 @@
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { validateBody } from '@/lib/validators'
 import { updateSkillSchema } from '@/lib/validators/library'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/skills/[id]')
-type Params = { params: Promise<{ id: string }> }
 
 async function checkOwnership(skillId: string, userId: string, orgId: string, userRole: string) {
   const { data, error } = await supabaseAdmin.from('skills')
@@ -21,19 +20,15 @@ async function checkOwnership(skillId: string, userId: string, orgId: string, us
   return null
 }
 
-export async function GET(_req: Request, { params }: Params) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (_req, { params }) => {
+  const { id } = params
   const { data } = await supabaseAdmin.from('skills').select('*').eq('id', id).is('deleted_at', null).single()
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ skill: data })
-}
+})
 
-export async function PATCH(req: NextRequest, { params }: Params) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (req, { params, auth: me }) => {
+  const { id } = params
 
   const skill = await checkOwnership(id, me.id, me.organization_id, me.role)
   if (!skill) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 })
@@ -54,12 +49,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (vErr) log.warn('library_versions insert failed on update', { vErr })
 
   return NextResponse.json({ ok: true })
-}
+})
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const DELETE = withAuth<{ id: string }>(async (_req, { params, auth: me }) => {
+  const { id } = params
 
   const skill = await checkOwnership(id, me.id, me.organization_id, me.role)
   if (!skill) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 })
@@ -76,4 +69,4 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (vErr) log.warn('library_versions insert failed on delete', { vErr })
 
   return NextResponse.json({ ok: true })
-}
+})

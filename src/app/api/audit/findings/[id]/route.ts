@@ -4,10 +4,10 @@ export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { apiValidationError } from '@/lib/api-error'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:findings:id')
 
@@ -15,25 +15,8 @@ const patchSchema = z.object({
   status: z.enum(['open', 'acknowledged', 'fixed', 'dismissed']),
 })
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export const PATCH = withOrgAdmin<{ id: string }>(async (request, { params, auth }) => {
+  const { id } = params
 
   let body: z.infer<typeof patchSchema>
   try {
@@ -64,7 +47,7 @@ export async function PATCH(
     .eq('id', finding.run_id)
     .single()
 
-  if (run?.organization_id !== profile.organization_id) {
+  if (run?.organization_id !== auth.organization_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -75,7 +58,7 @@ export async function PATCH(
       .update({
         status: body.status,
         resolved_at: isResolved ? null : new Date().toISOString(),
-        resolved_by: isResolved ? null : user.id,
+        resolved_by: isResolved ? null : auth.id,
       })
       .eq('id', id)
       .select('id, status, resolved_at')
@@ -91,4 +74,4 @@ export async function PATCH(
     log.error('PATCH /api/audit/findings/[id] error', { error: String(err), findingId: id })
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })
   }
-}
+})

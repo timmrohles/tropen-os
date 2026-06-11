@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { z } from 'zod'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const UpsertSchema = z.object({
   projectId: z.string().uuid(),
@@ -11,12 +11,8 @@ const UpsertSchema = z.object({
   scope: z.enum(['master', 'detail']),
 })
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const projectId = req.nextUrl.searchParams.get('projectId')
     if (!projectId) return NextResponse.json({ error: 'projectId required' }, { status: 400 })
 
@@ -30,14 +26,10 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req, { auth }) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
@@ -53,7 +45,7 @@ export async function POST(req: NextRequest) {
         question_key: questionKey,
         question_value: questionValue,
         scope,
-        answered_by: user.id,
+        answered_by: auth.id,
         answered_at: new Date().toISOString(),
       }, { onConflict: 'project_id,question_key' })
 
@@ -62,4 +54,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return apiError(err)
   }
-}
+})

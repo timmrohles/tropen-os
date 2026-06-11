@@ -1,8 +1,8 @@
 // GET    /api/agents/[id] — einzelner Agent mit letzten 5 Runs
 // PATCH  /api/agents/[id] — bearbeiten
 // DELETE /api/agents/[id] — Soft Delete
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapAgent, mapAgentRun } from '@/types/agents'
 import { createLogger } from '@/lib/logger'
@@ -13,14 +13,8 @@ export const runtime = 'nodejs'
 const log = createLogger('api/agents/[id]')
 
 // ─── GET /api/agents/[id] ────────────────────────────────────────────────────
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (_request, { auth: me, params }) => {
+  const { id } = params
 
   const { data: agentData } = await supabaseAdmin
     .from('agents')
@@ -57,17 +51,11 @@ export async function GET(
     agent: mapAgent(row),
     runs: (runsData ?? []).map((r) => mapAgentRun(r as Record<string, unknown>)),
   })
-}
+})
 
 // ─── PATCH /api/agents/[id] ──────────────────────────────────────────────────
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const PATCH = withAuth<{ id: string }>(async (request, { auth: me, params }) => {
+  const { id } = params
 
   const { data: existing } = await supabaseAdmin
     .from('agents')
@@ -123,17 +111,11 @@ export async function PATCH(
   }
 
   return NextResponse.json({ agent: mapAgent(data as Record<string, unknown>) })
-}
+})
 
 // ─── DELETE /api/agents/[id] — Soft Delete ───────────────────────────────────
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
+export const DELETE = withAuth<{ id: string }>(async (_request, { auth: me, params }) => {
+  const { id } = params
 
   const { data: existing } = await supabaseAdmin
     .from('agents')
@@ -161,4 +143,4 @@ export async function DELETE(
   }
 
   return NextResponse.json({ ok: true })
-}
+})

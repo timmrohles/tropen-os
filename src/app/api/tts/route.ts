@@ -1,10 +1,9 @@
-import { type NextRequest } from 'next/server'
-import { getAuthUser } from '@/lib/api/workspaces'
 import { validateBody } from '@/lib/validators'
 import { z } from 'zod'
 import { getOpenAI } from '@/lib/llm/openai'
 import { createLogger } from '@/lib/logger'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
+import { withAuth } from '@/lib/auth/route-guards'
 
 const logger = createLogger('tts')
 
@@ -13,17 +12,12 @@ const schema = z.object({
   voice: z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default('nova'),
 })
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req, { auth }) => {
   try {
-    const user = await getAuthUser()
-    if (!user) {
-      return new Response('Unauthorized', { status: 401 })
-    }
-
     const { data: body, error: valErr } = await validateBody(req, schema)
     if (valErr) return valErr
 
-    const budget = await checkBudget(user.organization_id, 'tts')
+    const budget = await checkBudget(auth.organization_id, 'tts')
     if (!budget.allowed) return budgetExhaustedResponse(budget.reason)
 
     // Markdown bereinigen vor TTS
@@ -41,7 +35,7 @@ export async function POST(req: NextRequest) {
       return new Response('Kein sprechbarer Text', { status: 422 })
     }
 
-    logger.info('TTS request', { textLength: cleanText.length, voice: body.voice, userId: user.id })
+    logger.info('TTS request', { textLength: cleanText.length, voice: body.voice, userId: auth.id })
 
     const openai = getOpenAI()
     const response = await openai.audio.speech.create({
@@ -65,4 +59,4 @@ export async function POST(req: NextRequest) {
     logger.error('TTS failed', { error })
     return new Response('TTS fehlgeschlagen', { status: 500 })
   }
-}
+})

@@ -1,16 +1,14 @@
 // GET /api/library/capabilities/[id]/outcomes
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { getValidOutcomes } from '@/lib/library-resolver'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('api/library/capabilities/outcomes')
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const GET = withAuth<{ id: string }>(async (_req, { params }) => {
+  const { id } = params
   try {
     const outcomes = await getValidOutcomes(id)
     return NextResponse.json({ outcomes })
@@ -18,4 +16,4 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     log.error('GET capabilities/[id]/outcomes', { id, err })
     return NextResponse.json({ error: 'Failed to load outcomes' }, { status: 500 })
   }
-}
+})

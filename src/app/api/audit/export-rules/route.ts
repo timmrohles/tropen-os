@@ -2,10 +2,10 @@
 // GET /api/audit/export-rules?format=cursorrules|claude-md&projectId=xxx
 // Gibt eine .cursorrules oder CLAUDE.md Datei zum Download zurück.
 
-import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
+import { withAuth } from '@/lib/auth/route-guards'
 import {
   generateRulesExport,
   getExportFileName,
@@ -18,15 +18,8 @@ import {
 
 const log = createLogger('api:audit:export-rules')
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req) => {
   try {
-    // ── Auth ─────────────────────────────────────────────────────────────────
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
-    }
-
     // ── Parameter ─────────────────────────────────────────────────────────────
     const { searchParams } = req.nextUrl
     const rawFormat = searchParams.get('format') ?? 'cursorrules'
@@ -82,4 +75,4 @@ export async function GET(req: NextRequest) {
     log.error('Export fehlgeschlagen', { err })
     return NextResponse.json({ error: 'Ein Fehler ist aufgetreten' }, { status: 500 })
   }
-}
+})

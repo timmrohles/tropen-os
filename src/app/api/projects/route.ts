@@ -1,10 +1,10 @@
 import { createLogger } from '@/lib/logger'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
 import { validateBody } from '@/lib/validators'
 import { createProjectSchema } from '@/lib/validators/projects'
 import { apiError } from '@/lib/api-error'
+import { withAuth } from '@/lib/auth/route-guards'
 const log = createLogger('projects')
 
 async function verifyDeptOrg(departmentId: string, organizationId: string): Promise<boolean> {
@@ -18,10 +18,7 @@ async function verifyDeptOrg(departmentId: string, organizationId: string): Prom
 }
 
 // GET /api/projects?department_id=...&limit=50&offset=0
-export async function GET(request: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const GET = withAuth(async (request, { auth: me }) => {
   const { searchParams } = new URL(request.url)
   const department_id = searchParams.get('department_id')
   if (!department_id) return NextResponse.json({ error: 'department_id fehlt' }, { status: 400 })
@@ -44,13 +41,10 @@ export async function GET(request: Request) {
 
   if (error) return apiError(error)
   return NextResponse.json({ data: data ?? [], total: count ?? 0, limit, offset })
-}
+})
 
 // POST /api/projects
-export async function POST(request: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-
+export const POST = withAuth(async (request, { auth: me }) => {
   const { data: body, error: validationError } = await validateBody(request, createProjectSchema)
   if (validationError) return validationError
 
@@ -84,4 +78,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(project)
-}
+})

@@ -6,16 +6,16 @@ export const maxDuration = 30
 
 import { NextResponse } from 'next/server'
 import path from 'node:path'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { applyDiffs } from '@/lib/fix-engine'
 import type { FileDiff } from '@/lib/fix-engine'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 
 const log = createLogger('api:audit:fix:apply')
 const REPO_ROOT = path.resolve(process.cwd())
 
-export async function POST(request: Request) {
+export const POST = withOrgAdmin(async (request, { auth }) => {
   if (process.env.NEXT_PUBLIC_FIX_ENGINE_ENABLED !== 'true') {
     return NextResponse.json(
       {
@@ -27,20 +27,6 @@ export async function POST(request: Request) {
     )
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? ''))
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
-
   const body = await request.json().catch(() => ({})) as { fixId?: string }
   if (!body.fixId) return NextResponse.json({ error: 'fixId required' }, { status: 400 })
 
@@ -49,7 +35,7 @@ export async function POST(request: Request) {
     .from('audit_fixes')
     .select('id, status, diffs, finding_id, organization_id')
     .eq('id', body.fixId)
-    .eq('organization_id', profile.organization_id)
+    .eq('organization_id', auth.organization_id)
     .single()
 
   if (fixErr || !fix) return NextResponse.json({ error: 'Fix not found' }, { status: 404 })
@@ -71,7 +57,7 @@ export async function POST(request: Request) {
         .update({
           status: 'applied',
           applied_at: new Date().toISOString(),
-          applied_by: user.id,
+          applied_by: auth.id,
         })
         .eq('id', body.fixId)
 
@@ -106,4 +92,4 @@ export async function POST(request: Request) {
     log.error('Apply failed', { error: String(err) })
     return NextResponse.json({ error: 'Apply failed', code: 'APPLY_ERROR' }, { status: 500 })
   }
-}
+})

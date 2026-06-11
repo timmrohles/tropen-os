@@ -1,25 +1,17 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextResponse } from 'next/server'
-import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { apiError } from '@/lib/api-error'
+import { withProjectAccess } from '@/lib/auth/route-guards'
 
 // DELETE /api/projects/[id]/documents/[docId] — soft-delete + remove from storage
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string; docId: string }> }
-) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
-  const { id, docId } = await params
-
-  const allowed = await verifyProjectAccess(id, me)
-  if (!allowed) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+export const DELETE = withProjectAccess<{ id: string; docId: string }>(async (_req, { projectId, params }) => {
+  const { docId } = params
 
   const { data: doc } = await supabaseAdmin
     .from('project_documents')
     .select('storage_path')
     .eq('id', docId)
-    .eq('project_id', id)
+    .eq('project_id', projectId)
     .is('deleted_at', null)
     .single()
 
@@ -35,4 +27,4 @@ export async function DELETE(
 
   if (error) return apiError(error)
   return NextResponse.json({ success: true })
-}
+})

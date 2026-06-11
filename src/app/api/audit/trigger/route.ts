@@ -7,10 +7,10 @@ export const maxDuration = 120
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import path from 'node:path'
-import { createClient } from '@/utils/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createLogger } from '@/lib/logger'
 import { buildAuditContext, runAudit } from '@/lib/audit'
+import { withOrgAdmin } from '@/lib/auth/route-guards'
 import { AUDIT_RULES } from '@/lib/audit/rule-registry'
 import { deduplicateFindings } from '@/lib/audit/deduplicator'
 import { effortMinutesFromFixType, shouldBeKiller } from '@/lib/audit/killer-rule-ids'
@@ -103,24 +103,7 @@ async function updateRunTotals(runId: string, newFindings: EnrichedFinding[]): P
     .eq('id', runId)
 }
 
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('role, organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  if (!['admin', 'owner', 'superadmin'].includes(profile.role ?? '')) {
-    return NextResponse.json({ error: 'Admin access required', code: 'FORBIDDEN' }, { status: 403 })
-  }
-
+export const POST = withOrgAdmin(async (request, { auth }) => {
   if (IS_VERCEL) {
     return NextResponse.json({
       error: 'Audit muss lokal ausgeführt werden',
@@ -138,7 +121,7 @@ export async function POST(request: Request) {
     body = { skipCli: false, withTools: false, deepSecrets: false }
   }
 
-  log.info('Audit trigger started', { orgId: profile.organization_id })
+  log.info('Audit trigger started', { orgId: auth.organization_id })
 
   try {
     const skipModes: import('@/lib/audit/types').CheckMode[] = []
@@ -167,9 +150,9 @@ export async function POST(request: Request) {
     const { data: runRow, error: runErr } = await supabaseAdmin
       .from('audit_runs')
       .insert({
-        organization_id: profile.organization_id,
+        organization_id: auth.organization_id,
         project_name: body.projectName ?? report.project ?? 'Tropen OS',
-        triggered_by: user.id,
+        triggered_by: auth.id,
         trigger_type: 'manual',
         total_score: totalScore,
         total_max: totalMax,
@@ -216,7 +199,7 @@ export async function POST(request: Request) {
     let newFindings = enrichedFindings
     let skippedCount = 0
     try {
-      const result = await deduplicateFindings(enrichedFindings, runId, profile.organization_id)
+      const result = await deduplicateFindings(enrichedFindings, runId, auth.organization_id)
       newFindings = result.newFindings
       skippedCount = result.skipped.length
     } catch (dedupErr) {
@@ -238,4 +221,4 @@ export async function POST(request: Request) {
     log.error('Audit trigger failed', { error: String(err) })
     return NextResponse.json({ error: 'Audit failed', code: 'AUDIT_ERROR' }, { status: 500 })
   }
-}
+})

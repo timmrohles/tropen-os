@@ -1,25 +1,11 @@
 import { createLogger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { withSuperadmin } from '@/lib/auth/route-guards'
 import type { OverviewResponse } from '@/types/qa'
 const log = createLogger('admin/qa/overview')
 
 export const dynamic = 'force-dynamic'
-
-async function isSuperadmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  return data?.role === 'superadmin'
-}
 
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -34,12 +20,8 @@ function avg(values: number[]): number {
   return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
 }
 
-export async function GET() {
+export const GET = withSuperadmin(async () => {
   try {
-    if (!(await isSuperadmin())) {
-      return NextResponse.json({ error: 'Keine Berechtigung', code: 'UNAUTHORIZED' }, { status: 403 })
-    }
-
     const supabase = createServiceClient()
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
@@ -155,4 +137,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+})
