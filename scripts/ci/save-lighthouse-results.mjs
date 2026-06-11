@@ -9,8 +9,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
 const commitSha   = process.env.CI_COMMIT_SHA ?? 'unknown'
 
-if (!supabaseUrl || !serviceKey) {
-  console.log('Supabase env vars not set — skipping lighthouse save')
+if (!supabaseUrl || !serviceKey || !/^https?:\/\//i.test(supabaseUrl)) {
+  console.log('Supabase env vars not set or invalid — skipping lighthouse save')
   process.exit(0)
 }
 
