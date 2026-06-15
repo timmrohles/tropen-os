@@ -5,15 +5,45 @@ import { anthropic } from '@/lib/llm/anthropic'
 import type { PreflightPivots, NodeAnalysis, DecisionMap } from '../types'
 import type { ConventionRule, ConventionSection } from './types'
 import { RULE_CORPUS } from './rule-corpus'
+import { GENERATED_CORPUS } from './rule-corpus.generated'
+
+/** Hand-Seed + Komitee-generierter Korpus, gemerged. Einzige Quelle für renderConventions. */
+export const FULL_CORPUS: ConventionRule[] = [...RULE_CORPUS, ...GENERATED_CORPUS]
+
+const STACK_KEYWORDS: Array<[RegExp, string]> = [
+  [/\bnext\.?js\b/, 'stack:next'],
+  [/\bremix\b/, 'stack:remix'],
+  [/\bgatsby\b/, 'stack:react'],
+  [/\bastro\b/, 'stack:astro'],
+  [/\bnuxt\b/, 'stack:nuxt'],
+  [/\bsveltekit|svelte\b/, 'stack:svelte'],
+  [/\bsolid(js)?\b/, 'stack:solid'],
+  [/\bangular\b/, 'stack:angular'],
+  [/\bvue\b/, 'stack:vue'],
+  [/\b(react native|expo)\b/, 'stack:react-native'],
+  [/\breact\b/, 'stack:react'],
+  [/\b(django|fastapi|flask|python)\b/, 'stack:python'],
+  [/\b(rails|ruby on rails)\b/, 'stack:rails'],
+  [/\blaravel\b/, 'stack:php'],
+  [/\b(spring|kotlin\s+spring)\b/, 'stack:java'],
+  [/\.net\b|\b(dotnet|asp\.net|c#)/, 'stack:dotnet'],
+  [/\bflutter\b/, 'stack:flutter'],
+  [/\bswiftui|\bswift\b/, 'stack:swift'],
+  [/\bkotlin\b/, 'stack:kotlin'],
+  [/\bgolang|\bgo\b/, 'stack:go'],
+  [/\b(express|nest(js)?|node(\.?js)?)\b/, 'stack:node'],
+  [/\bphp\b/, 'stack:php'],
+]
 
 /** Leitet deterministisch Filter-Tags aus Pivots (primär Stack) + Analyse ab. Kein LLM. */
 export function deriveCorpusTags(pivots: PreflightPivots, nodes: NodeAnalysis[]): string[] {
   const tags = new Set<string>()
   const stack = pivots.stack.toLowerCase()
 
-  if (/\b(react|next\.?js|remix|gatsby)\b/.test(stack)) tags.add('stack:react')
-  if (/\bnext\.?js\b/.test(stack)) tags.add('stack:next')
-  if (/\b(vue|nuxt)\b/.test(stack)) tags.add('stack:vue')
+  for (const [re, tag] of STACK_KEYWORDS) {
+    if (re.test(stack)) tags.add(tag)
+  }
+  if (tags.has('stack:next')) tags.add('stack:react')
 
   if (pivots.platform === 'web' || pivots.platform === 'both') tags.add('platform:web')
   if (pivots.platform === 'native' || pivots.platform === 'both') tags.add('platform:native')
@@ -23,6 +53,9 @@ export function deriveCorpusTags(pivots: PreflightPivots, nodes: NodeAnalysis[])
   const nodeIds = nodes.map((n) => n.id.toLowerCase()).join(' ')
   if (dbKeywords.test(stack) || /\b(db|database|schema|migration)\b/.test(nodeIds)) tags.add('db:true')
   if (authKeywords.test(stack) || /\b(auth|login|session)\b/.test(nodeIds)) tags.add('auth:true')
+
+  const aiKeywords = /\b(openai|anthropic|claude|gpt|gemini|llm|ai-sdk|ai sdk|langchain|vercel ai|mistral|huggingface)\b/
+  if (aiKeywords.test(stack) || nodes.some((n) => /\bai\b|llm|gpt/i.test(n.id))) tags.add('ai:true')
 
   if (pivots.commercialModel !== 'none' && pivots.commercialModel !== 'unsure') tags.add('commerce:true')
 
@@ -35,7 +68,7 @@ export function filterCorpus(corpus: ConventionRule[], tags: string[]): Conventi
 }
 
 const SECTION_ORDER: ConventionSection[] = [
-  'code-rules', 'naming', 'structure', 'db', 'error-handling', 'security', 'maintenance',
+  'code-rules', 'naming', 'structure', 'db', 'error-handling', 'testing', 'git', 'security', 'maintenance',
 ]
 const SECTION_TITLE: Record<ConventionSection, string> = {
   overview: 'Projekt-Überblick',
@@ -45,6 +78,8 @@ const SECTION_TITLE: Record<ConventionSection, string> = {
   structure: 'Ordnerstruktur & was gehört wohin',
   db: 'Datenbank-Zugriff & Migrationen',
   'error-handling': 'Fehlerbehandlung',
+  testing: 'Tests',
+  git: 'Git & Versionskontrolle',
   security: 'Sicherheit & Secrets',
   maintenance: 'Pflege dieser Datei',
 }
@@ -76,7 +111,7 @@ export async function renderConventions(
   text: string, nodes: NodeAnalysis[], pivots: PreflightPivots, decisions: DecisionMap,
 ): Promise<string> {
   const tags = deriveCorpusTags(pivots, nodes)
-  const rules = filterCorpus(RULE_CORPUS, tags)
+  const rules = filterCorpus(FULL_CORPUS, tags)
   const baseline = renderBaseline(rules)
 
   const decisionsText = Object.entries(decisions)

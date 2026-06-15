@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Warning, CheckCircle, Info } from '@phosphor-icons/react'
+import { Warning, CheckCircle, Info, Compass } from '@phosphor-icons/react'
 import type { GapList, DecisionMap, DecisionChoice, ResultSummary, Startpaket } from '@/lib/preflight/types'
 import { isMinStandardMet } from '@/lib/preflight/types'
 import { GapsSection } from './GapCard'
+import { ConceptTour } from './ConceptTour'
 
 const ArtifactBrowser = dynamic(() => import('./ArtifactBrowser').then(m => m.ArtifactBrowser), { ssr: false })
 
@@ -17,9 +18,13 @@ interface Props {
   onDecision: (nodeId: string, choice: DecisionChoice, value?: string) => void
   onGenerate: () => void
   generating: boolean
+  projectId: string
+  seed: string
+  onConceptResult: (result: unknown) => void
 }
 
-export function PreflightResult({ summary, gaps, decisions, startpaket, onDecision, onGenerate, generating }: Props) {
+export function PreflightResult({ summary, gaps, decisions, startpaket, onDecision, onGenerate, generating, projectId, seed, onConceptResult }: Props) {
+  const [showTour, setShowTour] = useState(false)
   const total = gaps.red.length
   const done = useMemo(() => gaps.red.filter(g => decisions[g.id] !== undefined).length, [gaps.red, decisions])
   const met = isMinStandardMet(gaps, decisions)
@@ -28,10 +33,31 @@ export function PreflightResult({ summary, gaps, decisions, startpaket, onDecisi
 
   return (
     <div style={{ marginTop: 8 }}>
-      {summary.thin && (
-        <div style={{ display: 'flex', gap: 10, padding: '14px 18px', marginBottom: 20, borderRadius: 8, background: 'rgba(229,160,0,0.10)', border: '1px solid var(--status-risky)' }}>
-          <Warning size={18} weight="fill" color="var(--status-risky)" aria-hidden="true" />
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>Dein Konzept ist knapp — kläre die roten Punkte, dann wird das Startpaket konkret.</p>
+      {summary.thin && !showTour && (
+        <div className="card" style={{ padding: 18, marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+            <Warning size={18} weight="fill" color="var(--status-risky)" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
+            <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+              Dein Konzept ist noch dünn — lass es uns gemeinsam schärfen.
+            </p>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={() => setShowTour(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Compass size={16} weight="fill" aria-hidden="true" /> Geführte Entwicklung starten
+          </button>
+        </div>
+      )}
+
+      {showTour && (
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)', marginBottom: 16 }}>
+            <span style={{ width: 28, height: 1, background: 'rgba(45,122,80,0.3)' }} />Geführte Entwicklung
+          </span>
+          <ConceptTour
+            projectId={projectId}
+            seed={seed}
+            onDone={(result) => { onConceptResult(result); setShowTour(false) }}
+          />
         </div>
       )}
 

@@ -25,3 +25,15 @@ export const decisionBody = z.object({
   choice: z.enum(['default', 'custom', 'parked']),
   value: z.string().optional(),
 })
+
+export const conceptBody = z.object({
+  mode: z.enum(['form', 'dialog']),
+  wasFuerWen: z.string().max(4000),
+  kernFunktionen: z.string().max(4000),
+  nutzerDaten: z.string().max(4000),
+  verkauf: z.string().max(4000),
+})
+
+export const conceptSuggestBody = z.object({
+  seed: z.string().min(1).max(8000),
+})

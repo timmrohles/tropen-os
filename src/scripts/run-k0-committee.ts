@@ -21,7 +21,7 @@ const REVIEWER_MODEL = 'claude-sonnet-4-6'
 const JUDGE_MODEL    = 'claude-opus-4-8'
 
 function getAnthropicModel(modelId: string) {
-  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(modelId)
+  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })(modelId)
 }
 function getOpenAIModel() {
   return createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })('gpt-4o')

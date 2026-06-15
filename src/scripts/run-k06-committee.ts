@@ -19,8 +19,8 @@ const START = Date.now()
 const OPUS_MODEL   = 'claude-opus-4-7'
 const SONNET_MODEL = 'claude-sonnet-4-6'
 
-function getOpus()     { return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(OPUS_MODEL) }
-function getSonnet()   { return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })(SONNET_MODEL) }
+function getOpus()     { return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })(OPUS_MODEL) }
+function getSonnet()   { return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })(SONNET_MODEL) }
 function getGPT5()     { return createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })('gpt-5') }
 function getGPT4o()    { return createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })('gpt-4o') }
 function getGemini()   { return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '' })('gemini-2.5-pro') }
