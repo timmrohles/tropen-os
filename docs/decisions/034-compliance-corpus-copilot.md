@@ -1,4 +1,4 @@
-# ADR-032: Compliance-Korpus / Compliance-Copilot (strategische Richtung)
+# ADR-034: Compliance-Korpus / Compliance-Copilot (strategische Richtung)
 
 **Status:** Proposed (Richtung) — Phase-2-Größenordnung, teils durch Anwalts-Monopol gedeckelt. **Ändert C2 nicht.**
 **Datum:** 2026-06-08

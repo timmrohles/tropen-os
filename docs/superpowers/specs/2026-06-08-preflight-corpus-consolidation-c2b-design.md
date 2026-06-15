@@ -2,7 +2,7 @@
 
 **Datum:** 2026-06-08
 **Status:** Freigegeben (Brainstorming abgeschlossen), bereit für Implementierungsplan
-**Bezug:** C2-Spec (`2026-06-08-preflight-corpus-committee-c2-design.md`), ADR-032 (Compliance-Korpus).
+**Bezug:** C2-Spec (`2026-06-08-preflight-corpus-committee-c2-design.md`), ADR-034 (Compliance-Korpus).
 **Branch-Basis:** `claude/preflight-corpus-c2`.
 
 ## 1. Problem
@@ -26,7 +26,7 @@ Der gesicherte Roh-Output wird ein importierbares Modul: `export const RAW_RULES
 
 ### 3.3 Quellen-Filter (`src/scripts/corpus-gen/consolidate.ts`)
 ```typescript
-export const EXCLUDED_SOURCES = ['DSGVO', 'AI_ACT', 'BFSG', 'LEGAL', 'AGENT_QUALITY'] // → ADR-032 / meta
+export const EXCLUDED_SOURCES = ['DSGVO', 'AI_ACT', 'BFSG', 'LEGAL', 'AGENT_QUALITY'] // → ADR-034 / meta
 export function filterBySource(rules: ConventionRule[]): ConventionRule[]  // drop rules whose source contains an excluded pack
 export function groupBySection(rules: ConventionRule[]): Record<ConventionSection, ConventionRule[]>
 ```
@@ -55,4 +55,4 @@ export function groupBySection(rules: ConventionRule[]): Record<ConventionSectio
 **Geändert:** `vocabulary.ts` (+ai:true) · `render.ts` (deriveCorpusTags ai-Erkennung) · `corpus-integrity`-Test (ai:true im Vokabular-Sample) · `rule-corpus.generated.ts` (nach Lauf).
 
 ## 7. Draußen
-Compliance-Korpus (ADR-032, die ausgefilterten Regeln) · Tool-Profile/Cube · 2b-Tour.
+Compliance-Korpus (ADR-034, die ausgefilterten Regeln) · Tool-Profile/Cube · 2b-Tour.

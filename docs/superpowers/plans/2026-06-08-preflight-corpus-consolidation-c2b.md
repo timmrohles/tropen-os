@@ -72,7 +72,7 @@ describe('groupBySection', () => {
 ```typescript
 import type { ConventionRule, ConventionSection } from '@/lib/preflight/corpus/types'
 
-/** Pack-Quellen, deren Regeln NICHT in den Konventions-Korpus gehören (→ ADR-032 Compliance / meta). */
+/** Pack-Quellen, deren Regeln NICHT in den Konventions-Korpus gehören (→ ADR-034 Compliance / meta). */
 export const EXCLUDED_SOURCES = ['DSGVO', 'AI_ACT', 'BFSG', 'LEGAL', 'AGENT_QUALITY']
 
 /** Behält Regeln, deren source KEINEN ausgeschlossenen Pack-Namen enthält (case-insensitive). */
