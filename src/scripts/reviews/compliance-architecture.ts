@@ -5,11 +5,11 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-compliance-architecture.md',
-    'docs/product/roadmap-2026-q2.md',
+    'docs/active/roadmap.md',
   ],
 
   contextTransforms: {
-    'docs/product/roadmap-2026-q2.md': (c) =>
+    'docs/active/roadmap.md': (c) =>
       c.split('\n').slice(0, 80).join('\n') + '\n... (gekuerzt)',
   },
 

@@ -3,13 +3,13 @@ import type { CommitteeReviewConfig } from '../committee-review'
 export const config: CommitteeReviewConfig = {
   name: 'audit-scoring',
   contextFiles: [
-    'docs/webapp-manifest/audit-system.md',
-    'docs/webapp-manifest/engineering-standard.md',
+    'docs/active/audit-system.md',
+    'docs/active/engineering-standard.md',
     'src/lib/audit/scoring/score-calculator.ts',
     'src/lib/audit/rule-registry.ts',
   ],
   contextTransforms: {
-    'docs/webapp-manifest/engineering-standard.md': (content) =>
+    'docs/active/engineering-standard.md': (content) =>
       content.split('\n').slice(0, 200).join('\n') + '\n... (gekürzt)',
     'src/lib/audit/rule-registry.ts': (content) =>
       content.split('\n').slice(0, 300).join('\n') + '\n... (gekürzt)',

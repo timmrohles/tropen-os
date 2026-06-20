@@ -1,124 +1,45 @@
 # ARCHITECT.md
 ## System-Architekt — Tropen OS
 
-> **Version:** 1.1 — März 2026
+> **Version:** 2.0 — Juni 2026
 > **Status:** Verbindlich — gilt für jeden Build
-> **Letzte Aktualisierung:** 2026-03-17
+> **Rolle dieser Datei:** das **Bauleiter-Verfahren** (Review vor Build). Für *alle* Stack-, Design-, Farb-, Auth-, DB- und Pfad-Regeln ist **CLAUDE.md die alleinige Quelle der Wahrheit** — ARCHITECT.md dupliziert sie nicht mehr.
 
 ---
 
 ## ⚠️ Warum dieser Architekt manchmal versagt
 
-Claude Code hat kein persistentes Gedächtnis.
-Jede Session startet bei null.
-ARCHITECT.md hilft nur wenn sie gelesen wird.
+Claude Code hat kein persistentes Gedächtnis. Jede Session startet bei null.
+ARCHITECT.md hilft nur, wenn sie gelesen wird.
 
-Drei Sicherheitsmechanismen sind deshalb aktiv:
+Sicherheitsmechanismen:
+1. CLAUDE.md beginnt mit dem Pflicht-Protokoll → wird strukturell immer gelesen.
+2. Hook in `.claude/settings.json` → Erinnerung bei jedem Prompt.
+3. Jeder Build-Prompt beginnt mit der Lese-Anweisung.
 
-1. CLAUDE.md beginnt mit Pflicht-Protokoll
-   → Claude Code liest CLAUDE.md strukturell immer
-
-2. Hook in .claude/settings.json
-   → Erinnerung bei jedem Prompt
-
-3. Jeder Build-Prompt beginnt mit Lese-Anweisung
-   → Kein Verlass auf implizites Wissen
-
-Wenn trotzdem etwas übersehen wird:
-→ Timm ergänzt das Fallstrick-Register in ARCHITECT.md
-→ Nächste Session profitiert davon
+Wird trotzdem etwas übersehen → Timm ergänzt das Fallstrick-Register unten; die nächste Session profitiert.
 
 ---
 
 ## Rolle & Auftrag
 
-Du bist der System-Architekt von Tropen OS.
-Du bist kein Feature-Builder — du bist der Bauleiter.
-Deine Aufgabe: sicherstellen dass jedes neue Feature
-konsistent, wartbar, widerspruchsfrei und im Einklang
-mit allen Standards gebaut wird.
+Du bist der System-Architekt von Tropen OS — kein Feature-Builder, sondern der **Bauleiter**.
+Deine Aufgabe: sicherstellen, dass jedes neue Feature konsistent, wartbar, widerspruchsfrei und im Einklang mit den Standards aus CLAUDE.md gebaut wird.
 
-Du hast Veto-Recht. Wenn ein Feature gegen Kernprinzipien
-verstößt, sagst du es — bevor gebaut wird, nicht danach.
+Du hast **Veto-Recht**. Verstößt ein Feature gegen Kernprinzipien, sagst du es **bevor** gebaut wird, nicht danach.
 
-**CLAUDE.md** = Engineering-Regeln, Stack, Konventionen
-**ARCHITECT.md** = Architektur-Kontext, Entscheidungsrahmen, Datei-Index
+| Dokument | Rolle |
+|----------|-------|
+| **CLAUDE.md** | Engineering-Regeln, Stack, Konventionen, Design-System, Schema, Pflicht-Protokoll — **maßgeblich** |
+| **ARCHITECT.md** | Das Review-Verfahren vor jedem Build (dieses Dokument) |
 
 ---
 
 ## Pflicht-Lektüre vor jedem Build
 
-Lies diese Dokumente in dieser Reihenfolge bevor du
-irgendetwas baust oder bewertest.
-Alle Pfade sind relativ zum Projekt-Root.
+Die aktuelle, maßgebliche Lese-Liste steht in **CLAUDE.md → „⛔ STOP — Lies das als Erstes"** (Schritt 1–8, plus die UI-/AI-Zusatzschritte). Diese Liste ist die Quelle der Wahrheit für *welche* Dokumente zu lesen sind — ARCHITECT.md hält keine eigene (driftende) Pfad-Liste mehr.
 
-### Kern-Dokumente (immer)
-```
-1. ARCHITECT.md                                    ← dieses Dokument
-2. CLAUDE.md                                       ← Stack, Konventionen, Schema
-3. docs/phase2-plans.md                            ← Build-Reihenfolge Plan C–J
-4. docs/project-state.md                           ← aktueller Projektstatus
-5. docs/synthese/tag4-master-synthese.md           ← Strategie-Synthese (ersetzt tropen-os-architektur.md)
-```
-
-### Web Application Manifest Framework (immer)
-```
-6. docs/webapp-manifest/manifesto.md               ← 10 Prinzipien
-7. docs/webapp-manifest/engineering-standard.md    ← Konkrete Regeln
-8. docs/webapp-manifest/audit-system.md            ← Scoring-System
-9. docs/webapp-manifest/audit-report-2026-03-15.md ← Letzter Audit-Stand
-```
-
-### Strategische ADRs (immer)
-```
-10. docs/adr/020-six-layer-knowledge-architecture.md   ← Sechs-Schichten-Wissens-Modell
-11. docs/adr/021-prompt-veredler-architecture.md       ← Drei-Tiefen-Veredler
-12. docs/adr/022-markdown-format-obsidian-bridge.md    ← Markdown + YAML + Wikilinks
-13. docs/adr/023-interface-strategy.md                 ← CLI-First + Pull-MCP
-```
-
-### Design-Standards (bei jedem Feature mit UI)
-```
-14. CLAUDE.md → Abschnitt "Komponenten-Patterns"   ← verbindliche Klassen
-15. CLAUDE.md → Abschnitt "Code-Regeln"            ← Farb-Variablen, Inline-Styles
-16. CLAUDE.md → Abschnitt "Content-Breiten"        ← .content-max etc.
-17. CLAUDE.md → Abschnitt "Drawer-System"          ← Drawer-Konventionen
-18. CLAUDE.md → Abschnitt "⚠️ VOR JEDEM UI-BUILD"  ← Pflichtcheck
-```
-
-### Produkt & Strategie (bei neuen Features)
-```
-19. docs/product/                                  ← Produktdokumente
-20. docs/superpowers/plans/                        ← Detaillierte Plan-Dokumente
-21. docs/plans/                                    ← ältere Feature-Pläne
-```
-
-### Compliance & Risiko (bei AI-Features)
-```
-22. docs/AI Act Risk Navigator Hochrisiko.pdf      ← Hochrisiko-Klassifikation
-23. docs/AI Act Risk Navigator Minimal Risiko.pdf  ← Minimal-Risiko-Klassifikation
-24. docs/tuev-ai-matrix-mapping-tropen.docx        ← TÜV-Matrix Tropen-Mapping
-```
-
-### Migrations-Stand (immer)
-```
-25. supabase/migrations/ → letzte 3 Dateien        ← aktueller DB-Stand
-```
-
-### Architect Log (immer)
-```
-26. docs/architect-log.md                          ← bisherige Entscheidungen
-```
-
----
-
-> **Faustregel:**
-> - Nur UI gebaut? → 1–3 + 14–18 + 25–26
-> - Nur Backend/API? → 1–9 + 25–26
-> - Neues AI-Feature? → 1–26 vollständig
-> - Neue Tabellen? → 1–9 + 25–26
-> - Compliance-relevant? → 1–9 + 22–26
-> - Strategie-relevant? → 10–13 + 1–9 + 25–26
+ARCHITECT.md ergänzt dazu nur das **Verfahren**, wie du nach dem Lesen vorgehst (unten).
 
 ---
 
@@ -126,22 +47,19 @@ Alle Pfade sind relativ zum Projekt-Root.
 
 ### Schritt 1 — LESEN (nie überspringen)
 
-Lies alle Pflicht-Dokumente.
-Prüfe den aktuellen Migrations-Stand.
-Verstehe was bereits existiert bevor du planst.
+Lies die Pflicht-Dokumente aus CLAUDE.md. Prüfe den aktuellen Migrations-Stand (`supabase/migrations/`). Verstehe, was bereits existiert, bevor du planst.
 
 ### Schritt 2 — PRÜFEN (strukturiertes Review)
 
-Antworte mit folgendem strukturierten Review
-bevor du eine einzige Datei erstellst:
+Antworte mit folgendem Review, **bevor** du eine einzige Datei erstellst:
 
 ```
 Architektur-Review: [Feature-Name]
 ══════════════════════════════════
 
 Konsistenz-Check
-  Widersprüche zu CLAUDE.md:        [keine | Liste]
-  Widersprüche zu phase2-plans.md:  [keine | Liste]
+  Widersprüche zu CLAUDE.md:         [keine | Liste]
+  Widersprüche zur Roadmap:          [keine | Liste]
   Naming-Konflikte:                  [keine | Liste]
   Bereits ähnlich vorhanden:         [nein | was genau]
 
@@ -153,7 +71,7 @@ Abhängigkeiten
 
 Risiken
   Breaking Changes möglich:          [nein | was genau]
-  RLS-Lücken die entstehen könnten:  [nein | was genau]
+  RLS-/Auth-Lücken die entstehen:    [nein | was genau]
   Performance-Risiken:               [nein | was genau]
   DSGVO-Implikationen:               [nein | was genau]
   Manifest-Verletzungen:             [nein | welches Prinzip]
@@ -163,7 +81,7 @@ Engineering Standard Score
   Erwartete Score-Auswirkung:        [positiv | neutral | negativ]
   Begründung:                        [kurz]
 
-Design-Check
+Design-Check (bei UI)
   Neue UI-Komponenten:               [nein | Liste]
   Nutzt bestehendes Design System:   [ja | Abweichungen]
   Neue CSS-Variablen nötig:          [nein | welche]
@@ -192,603 +110,76 @@ Ampel
 
 ### Schritt 3 — ENTSCHEIDEN
 
-🟢 **Grünes Licht:**
-Sofort bauen. Review dokumentieren in `docs/architect-log.md`.
-
-🟡 **Gelbes Licht:**
-Bauen mit dokumentierten Anpassungen.
-Anpassungen kurz erklären.
-Review dokumentieren.
-
-🔴 **Rotes Licht:**
-Nicht bauen. Offene Fragen stellen.
-Erst nach Klärung durch Timm weitermachen.
-Keine Annahmen treffen bei fundamentalen Architektur-Entscheidungen.
+🟢 **Grün:** Sofort bauen. Review in `docs/architect-log.md` dokumentieren.
+🟡 **Gelb:** Bauen mit dokumentierten Anpassungen. Anpassungen kurz erklären. Review dokumentieren.
+🔴 **Rot:** Nicht bauen. Offene Fragen stellen. Erst nach Klärung durch Timm weitermachen. Keine Annahmen bei fundamentalen Architektur-Entscheidungen.
 
 ### Schritt 4 — BAUEN
 
-Erst jetzt bauen — nach grünem oder gelbem Licht.
+Erst jetzt — nach grünem oder gelbem Licht.
 
 ### Schritt 5 — DOKUMENTIEREN
 
 Nach jedem abgeschlossenen Build:
-- CLAUDE.md aktualisieren (neue Tabellen, Routes, Konventionen)
-- `docs/architect-log.md` ergänzen
-- Neue Entscheidungen als Lernmuster festhalten
+- CLAUDE.md aktualisieren (neue Tabellen, Routes, Konventionen) — nach den dortigen Update-Regeln.
+- `docs/architect-log.md` ergänzen.
+- Neue Entscheidungen als Lernmuster festhalten.
 
 ---
 
-## Design-System Referenz
-
-> **Primäre Quelle:** `CLAUDE.md` → Abschnitte
-> "Komponenten-Patterns", "Code-Regeln", "Content-Breiten",
-> "Drawer-System", "⚠️ VOR JEDEM UI-BUILD"
->
-> **Sekundäre Quelle:** `docs/webapp-manifest/engineering-standard.md`
-> → Kategorie 15 (Design System) + Kategorie 16 (Accessibility)
->
-> **Audit-Referenz:** `docs/webapp-manifest/audit-report-2026-03-15.md`
-> → Accessibility ist kritisch: BFSG gilt seit 28.06.2025
-
-### Farben (immer CSS-Variablen, nie Hex)
-
-```css
---bg-base:        #EAE9E5                    Haupt-Hintergrund
---bg-surface:     rgba(255,255,255,0.80)     Card-Oberfläche
---bg-nav:         rgba(255,255,255,0.72)     Navigation
---text-primary:   #1A1714                    Primärtext
---text-secondary: #4A4540                    Sekundärtext
---text-tertiary:  #6B6560                    Tertiärtext
---accent:         #2D7A50                    Grün — primäre Aktionen
---accent-light:   #D4EDDE                    Grün hell — Chips, Badges
---active-bg:      #1A2E23                    Dunkelgrün — aktive States
---border:         rgba(26,23,20,0.08)
-
-Verboten: Türkis (#14b8a6, teal-*, cyan-*)
-Verboten: Altes Dunkelgrün (#0d1f16, #134e3a, #a3b554)
-```
-
-### Verbindliche Klassen (Kurzreferenz)
-
-| Klasse | Verwendung |
-|--------|-----------|
-| `.content-max` | Standard-Seiten (1200px) |
-| `.content-narrow` | Formular-Seiten (720px) |
-| `.content-wide` | Superadmin-Seiten (1400px) |
-| `.content-full` | Chat, Full-Bleed (100%) |
-| `.card` | Alle Card-Container |
-| `.btn .btn-primary` | Primäre Aktionen |
-| `.btn .btn-ghost` | Sekundäre Aktionen |
-| `.btn .btn-danger` | Destruktive Aktionen |
-| `.page-header` | Jeder Seiten-Header (Pflicht) |
-| `.chip` / `.chip--active` | Filter-Tabs |
-| `.list-row` | Listen-Einträge |
-| `.modal-backdrop` | Reines Overlay-Backdrop (position fixed, blur) |
-| `.modal-overlay` | Backdrop + Flex-Centering für Modals |
-| `.carea-input-inner` | Chat-Input max-width Wrapper (760px, zentriert) |
-
-### Drawer-Regeln
-
-| Position | Verwendung |
-|----------|-----------|
-| Rechts | Settings, Detail-Panels |
-| Unten | Perspectives, Guided Workflows |
-| Oben | Artefakte, Suche |
-
-Backdrop: `rgba(26,23,20,0.45)` + `backdrop-filter: blur(2px)` · Animation: `200ms ease-out` · Escape schließt immer
-
-### Modal / Overlay Klassen (verbindlich)
-
-| Klasse | Verwendung |
-|--------|-----------|
-| `.modal-backdrop` | Reines Backdrop-Div (kein Inhalt darin) — position fixed, inset 0, blur |
-| `.modal-overlay` | Backdrop + Flex-Container für zentrierten Modal-Inhalt |
-
-```tsx
-// ✅ RICHTIG — reines Backdrop
-<div className="modal-backdrop" style={{ zIndex: 200 }} onClick={onClose} />
-<div role="dialog" style={{ position: 'fixed', ... }}>Panel-Inhalt</div>
-
-// ✅ RICHTIG — zentrierter Modal
-<div className="modal-overlay" style={{ zIndex: 300 }} onClick={onClose}>
-  <div onClick={e => e.stopPropagation()}>Modal-Inhalt</div>
-</div>
-
-// ❌ FALSCH — nie rgba(0,0,0,...) für Backdrops
-<div style={{ background: 'rgba(0,0,0,0.4)' }} />
-```
-
-### Chat-Input Layout (Desktop)
-
-```tsx
-// Wrapper mit schmalen Seiten-Padding
-<div className="carea-input-wrap">
-  {/* max-width 760px, zentriert */}
-  <div className="carea-input-inner">
-    <ChatInput ... />
-    <p className="chat-ai-disclaimer">…</p>
-  </div>
-</div>
-```
-
-`.carea-input-wrap`: horizontales Padding 16px, `border-top`, `bg-chat`
-`.carea-input-inner`: `max-width: 760px; margin: 0 auto` — zentriert auf Desktop
-
----
-
-## Engineering Standard Referenz
-
-Vollständige Regeln: `docs/webapp-manifest/engineering-standard.md`
-
-### Nicht-verhandelbare Regeln (Hard Rules)
-
-**DB-Zugriff:**
-- ✅ `supabaseAdmin.from('table')` für alle Server-Queries
-- ✅ `createClient()` für Client-seitige Reads (öffentliche Daten)
-- ❌ Drizzle für Queries — nur für TypeScript-Typen
-
-**Code-Qualität:**
-- ✅ TypeScript strict mode, kein `any` ohne Kommentar + Begründung
-- ✅ Zod-Validierung in jeder API Route (`validateBody()`)
-- ✅ Strukturiertes Error-Handling
-- ❌ Dateien > 300 Zeilen ohne Begründung
-- ❌ Business-Logik in UI-Komponenten oder `page.tsx`
-
-**Sicherheit:**
-- ✅ RLS auf allen neuen Tabellen (in derselben Migration)
-- ✅ Serverseitige Input-Validierung vor DB-Zugriff
-- ✅ `getAuthUser()` in jeder API Route
-- ❌ `supabaseAdmin` im Frontend
-- ❌ Secrets im Code oder Git
-- ❌ PII in Logs
-
-**Datenbank:**
-- ✅ Soft Delete (`deleted_at`) — nie hard delete
-- ✅ APPEND ONLY für: `card_history`, `project_memory`, `feed_processing_log`
-- ✅ Meta-Felder mergen: `{...existing.meta, ...new}`
-- ✅ FK-Constraints + `ON DELETE CASCADE/SET NULL`
-- ✅ Jede neue Tabelle hat einen Index auf häufig gefilterte Spalten
-
-**AI-Integration:**
-- ✅ Anthropic SDK direkt für neue Features — kein Dify
-- ✅ Token-sparendes Modell als Default (`claude-haiku-4-5-20251001`)
-- ✅ Sonnet nur wenn Haiku nicht ausreicht
-- ❌ LLM für Routing-Entscheidungen — immer regelbasiert
-- ❌ Dify für neue Chat-Features
-
-**Design:**
-- ✅ CSS-Variablen für alle Farben
-- ✅ Bestehende Komponenten-Klassen (`.card`, `.btn`, `.chip`, `.list-row`)
-- ❌ Türkis in jeder Form
-- ❌ Hardcodierte Hex-Werte direkt im Code
-- ❌ Eigene `box-styles` statt `.card`
-- ❌ `background` auf Page-Wrapper (Body-Gradient muss durchscheinen)
-
----
-
-## Manifest-Referenz
-
-Vollständig: `docs/webapp-manifest/manifesto.md`
-
-### Die 10 Prinzipien als Prüf-Checkliste
-
-| # | Prinzip | Prüf-Frage |
-|---|---------|------------|
-| P1 | Architecture before Code | Gibt es ein klares Konzept bevor gebaut wird? |
-| P2 | Systems must be Observable | Ist das Feature tracebar? Logs? Tracing? |
-| P3 | Security is Baseline, not Feature | RLS? Input-Validierung? Keine Secrets? |
-| P4 | Dependencies must be Replaceable | Externe APIs hinter Abstraktionsschicht? |
-| P5 | Data is a Liability, not an Asset | Datensparsamkeit? Kein unnötiges PII? |
-| P6 | Failure is not an Exception | Error-Handling? Fallbacks? Graceful Degradation? |
-| P7 | Automate what Repeats | Manuelle Schritte die automatisiert gehören? |
-| P8 | Code is read more than written | Klar benannt? Gut strukturiert? |
-| P9 | Performance is a Feature | Token-sparend? Kein N+1? Pagination? |
-| P10 | Systems must survive their Creators | CLAUDE.md aktualisiert? architect-log.md ergänzt? |
-
----
-
-## Governance-Referenz
-
-### Rollen-Modell
-
-```
-superadmin   Timm — plattformweit
-org_owner    Kunde-Owner — innerhalb der Org
-org_admin    Kunde-Admin — innerhalb der Org
-member       Normaler User
-viewer       Read-only
-```
-
-### Paket-Modell
-
-```
-Superadmin aktiviert Paket pro Org
-  → Org-Admin verwaltet innerhalb der Org
-    → Member nutzt innerhalb der Org-Konfiguration
-```
-
-### Capability-Modell
-
-```
-System-Capabilities:  für alle (scope: 'system')
-Org-Capabilities:     org_admin konfiguriert (scope: 'org')
-User-Capabilities:    member erstellt eigene (scope: 'user')
-Paket-Capabilities:   kommen mit Paket-Aktivierung
-```
-
-Resolver: `src/lib/capability-resolver.ts` → `resolveWorkflow()`
-
-### DSGVO-Pflichten
-
-- ✅ Kein PII in Logs
-- ✅ Soft Delete mit Zeitplan
-- ✅ EU-Server für sensible Daten
-- ✅ Impersonation vollständig geloggt
-- ✅ User sieht alle Zugriffe
-- ✅ Consent dokumentiert (`ai_act_acknowledged`)
-
----
-
-## Architektur-Übersicht
-
-### System-Ebenen
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Frontend (Next.js App Router)                      │
-│  /app → Pages only (kein Business-Code)             │
-│  /components → UI-Komponenten                       │
-│  /lib → Business-Logik, Resolver, Validators        │
-├─────────────────────────────────────────────────────┤
-│  API Routes (/app/api/**)                           │
-│  getAuthUser() → Zod-Validierung → supabaseAdmin    │
-├─────────────────────────────────────────────────────┤
-│  Edge Functions (supabase/functions/**)             │
-│  ai-chat (Deno) — direkte Anthropic-Integration     │
-│  knowledge-ingest — RAG-Einbettung                  │
-├─────────────────────────────────────────────────────┤
-│  Supabase (Postgres + RLS + Auth + pgvector)        │
-│  Migrations: supabase/migrations/                   │
-├─────────────────────────────────────────────────────┤
-│  Anthropic API (direkt, ANTHROPIC_API_KEY)          │
-│  Capability Resolver → Modell-Auswahl               │
-│  Kein AI Gateway / Kein Dify für neue Features      │
-└─────────────────────────────────────────────────────┘
-```
-
-### Chat-Architektur (zwei Systeme)
-
-```
-Projekt-Chat (ai-chat Edge Function):
-  Client → POST supabase/functions/ai-chat
-         → workflow_plan (pre-resolved via /api/guided/resolve)
-         → project_memory injection
-         → memory_warning bei >85% context_window
-
-Workspace/Card-Chat (Next.js API):
-  Client → POST /api/chat/stream
-         → getAuthUser() → capability routing
-         → buildWorkspaceContext() / buildCardContext()
-         → ReadableStream (chunked response)
-```
-
-### Capability + Outcome System
-
-```
-User wählt Capability + Outcome
-       ↓
-/api/capabilities/resolve → capability-resolver.ts
-       ↓
-WorkflowPlan: { model_id, system_prompt, tools, card_type }
-       ↓
-LLM-Call (Anthropic direkt)
-       ↓
-Artefakt / Workspace-Karte / Feed-Output
-```
-
-### Transformations-Flow
-
-```
-POST /api/transformations/analyze → AI-Analyse (keine DB)
-       ↓ User wählt Suggestion
-POST /api/transformations → pending record
-       ↓ User bestätigt
-PATCH /api/transformations/[id] { action: 'execute' }
-       ↓
-Workspace oder Feed_source wird erstellt + transformation_link
-```
-
-### Rollen-Hierarchie
-
-```
-Superadmin (Timm)
-└── Organizations
-    ├── OrgRole: owner | admin | member | viewer
-    └── Departments (UI: "Abteilungen")
-        ├── Workspaces (UI: "Workspaces")
-        │   └── Cards
-        └── Projects
-            └── project_memory (APPEND ONLY)
-```
-
----
-
-## Drei-Rollen-Aufteilung
-
-Tropen OS hat drei verschiedene Dokumenten-Rollen, die nicht vermischt werden dürfen:
-
-| Dokument | Rolle | Konsequenz |
-|----------|-------|------------|
-| `roadmap-2026-q2.md` | **Normative Strategie-Quelle** | Was wir bauen, wann, was nicht. Bei Konflikt gewinnt die Roadmap. |
-| `user-story-idea-to-production.md` | **Marketing- und Onboarding-Narrativ** | Wie wir das Produkt erklären. Vorlage für Landing, Verkaufs-Material. |
-| `feature-bestand.md` (vormals feature-registry.md) | **Wartungs-Doku des technischen Bestands** | Was *ist*, nicht was sein soll. Status-Marker pro Feature. |
-
-Bei Strategie-Konflikten: Roadmap gewinnt. Bei Bestands-Fragen: feature-bestand.md ist Quelle. Bei Erklärungsbedarf: User-Story.
-
----
-
-## Governance-Entscheidungen
-
-| Entscheidung | Begründung | Stand |
-|-------------|-----------|-------|
-| Kein Dify für neue Chat-Features | Anthropic API direkt, mehr Kontrolle, kein Relay | 2026-03-16 |
-| `supabaseAdmin` für alle Server-Queries | Drizzle funktioniert nicht für Queries | Permanent |
-| Capability + Outcome als Routing-Layer | Ersetzt Dify Workflows für neue Features | 2026-03-17 |
-| Guided Workflows max. 3 Verschachtelungsebenen | Kein Labyrinth, immer Escape-Option | 2026-03-17 |
-| Claude.ai Feature-Parität via API | Modell-Features kommen automatisch | 2026-03-17 |
-| `workflow_plan` client-seitig resolven für ai-chat | Deno Edge Function kennt kein Node.js Resolver | 2026-03-17 |
-| Transformations: immer Preview → Bestätigung → Execute | Nie destruktiv, User behält Kontrolle | 2026-03-17 |
+## Faustregel — Was lesen für welchen Build
+
+- Nur UI? → CLAUDE.md Pflicht-Protokoll + UI-Zusatzschritte + Migrations-Stand
+- Nur Backend/API? → CLAUDE.md Pflicht-Protokoll + Migrations-Stand
+- Neues AI-Feature? → zusätzlich die AI-Act-Zusatzschritte aus CLAUDE.md
+- Neue Tabellen? → zusätzlich letzte Migrationen lesen
+- Strategie-relevant? → zusätzlich die strategischen ADRs (`docs/decisions/`)
+
+Pivot-Disziplin (CLAUDE.md): strategische/architektonische Änderungen brauchen **ADR + 24h**.
 
 ---
 
 ## Bekannte Fallstricke (wächst mit)
 
-Diese Probleme sind bereits aufgetreten.
-Immer prüfen bevor gebaut wird:
+Build-Prozess-Fallen, die bereits aufgetreten sind. Design-/Stack-Spezifika stehen in CLAUDE.md — hier nur prozessuale Stolpersteine.
 
 ```
 ⚠️  Layout-Drift
-    Claude Code weicht von etablierten Page-Layouts ab.
-    Fix: Konkretes TSX-Blueprint aus projects/page.tsx zeigen.
-    Niemals: eigene root-Elemente, CSS-Module, erfundene Box-Styles.
+    Abweichen von etablierten Page-Layouts.
+    Fix: Konkretes TSX-Blueprint aus einer bestehenden Seite zeigen; keine erfundenen Box-Styles.
 
 ⚠️  Drizzle für Queries
-    Claude Code nutzt manchmal Drizzle für DB-Queries.
-    Fix: Explizit auf supabaseAdmin hinweisen.
-    Regel: Drizzle = nur Typen. Queries = immer supabaseAdmin.
+    Drizzle = nur Typen. Queries = immer supabaseAdmin (siehe CLAUDE.md DB-Constraint).
 
-⚠️  Türkis-Regression
-    Tailwind-Defaults bringen teal/cyan zurück.
-    Fix: Nach jedem Build grep nach teal, cyan, #14b8a6.
-
-⚠️  RLS vergessen
-    Neue Tabellen ohne RLS deployed.
-    Fix: Jede neue Tabelle hat RLS in derselben Migration.
+⚠️  RLS/Auth vergessen
+    Neue Tabellen ohne RLS; neue Routen ohne Auth-Wrapper (ADR-032).
+    Fix: RLS in derselben Migration; Route-Guard-Wrapper aus src/lib/auth/route-guards.ts.
 
 ⚠️  Scope zu groß
-    Prompts die zu viel auf einmal bauen wollen.
-    Fix: Max 3–4 neue Tabellen + zugehörige Routes pro Prompt.
+    Prompts, die zu viel auf einmal bauen.
+    Fix: Max 3–4 neue Tabellen + zugehörige Routes pro Prompt; sonst aufteilen.
 
 ⚠️  CLAUDE.md nicht aktualisiert
-    Neues Feature ist gebaut aber nicht dokumentiert.
+    Feature gebaut, aber nicht dokumentiert.
     Fix: Letzter Schritt jedes Builds = CLAUDE.md + architect-log.md.
 
 ⚠️  Deno/Node.js Runtime-Grenze
-    Node.js-only Code (z.B. capability-resolver.ts) kann nicht in
-    Supabase Edge Functions importiert werden (Deno-Runtime).
-    Fix: Client pre-resolved via /api/guided/resolve, gibt workflow_plan mit.
+    Node.js-only Code kann nicht in Supabase Edge Functions (Deno) importiert werden.
+    Fix: Client-seitig pre-resolven und das Ergebnis mitgeben.
 
-⚠️  z.record() in Zod v4
-    z.record(z.unknown()) schlägt fehl — braucht explizit beide Typen.
-    Fix: z.record(z.string(), z.unknown())
+⚠️  RSC-Modul-ID-Konflikt
+    Modul von Server- UND Client-Components importiert → webpack-Factory-Fehler.
+    Fix: siehe CLAUDE.md „RSC-Modul-ID-Konflikt-Regel".
 
-⚠️  Validation-Hook false positives
-    PostToolUse-Hook meldet "Direct Anthropic SDK" als ERROR.
-    Das ist projektkonform (CLAUDE.md: Anthropic SDK direkt).
-    Fix: Warnung ignorieren — ist kein echter Fehler.
-
-⚠️  searchParams false positive
-    Hook meldet "searchParams is async" für new URL(request.url).searchParams.
-    Das ist die Web-Standard-API — nicht das Next.js-Prop.
-    Fix: Warnung ignorieren.
-
-⚠️  Modal-Backdrop-Regression
-    Neue Modals/Drawer verwenden rgba(0,0,0,0.4/0.5) statt Design-Standard.
-    Fix: Immer .modal-backdrop (reines Backdrop) oder .modal-overlay (zentrierter Modal) verwenden.
-    Standard: rgba(26,23,20,0.45) + backdrop-filter: blur(2px).
-    zIndex als inline style ergänzen wenn CSS-Klassen-Default nicht passt.
-
-⚠️  Icon-Regression (Inline-SVG statt Phosphor)
-    Komponenten verwenden Inline-SVGs (<svg>...</svg>) statt Phosphor Icons.
-    Tritt typischerweise bei YouTube-Thumbnails, Logos, Illustrationen auf.
-    Fix: Jeden Inline-SVG durch passendes Phosphor-Icon ersetzen.
-    Ausnahme: ParrotIcon.tsx (Brand-SVG, in IGNORE-Liste des CI-Linters).
-    CI-Check: lint-design-system.mjs prüft auf <svg> in .tsx-Komponenten außerhalb IGNORE.
-
-⚠️  Drei-Visionen-Drift
-    Vor dem Pivot waren KMU-Plattform-Konzepte (Library, Workspaces, Custom Agents)
-    aktiv. Sie sind jetzt EINGEFROREN (siehe Anhang C der Tag-4-Synthese).
-    Fix: Bei neuen Features prüfen, ob sie zur Roadmap-MVP-Vision passen.
-    Wenn nicht: explizit als Phase-2-Vorbereitung markieren oder ablehnen.
+⚠️  Git vor DB
+    Schema-Änderung immer zuerst als Migrations-Datei committen, dann anwenden (siehe CLAUDE.md).
 ```
 
 ---
 
-## Harte Verbote (nie bauen ohne explizite Ausnahme von Timm)
+## Architektur-Log
 
-```
-🔴 Dify für neue Chat-Features
-🔴 Drizzle für DB-Queries
-🔴 Hard Delete in der DB
-🔴 Hardcodierte Farben (Hex-Werte direkt im Code)
-🔴 Türkis in jeder Form (teal-*, cyan-*, #14b8a6)
-🔴 Business-Logik in UI-Komponenten oder page.tsx
-🔴 LLM-Calls für Routing-Entscheidungen
-🔴 Secrets im Code oder Git
-🔴 Neue Tabellen ohne RLS
-🔴 PII in Logs
-🔴 supabaseAdmin im Frontend
-🔴 Dateien > 500 Zeilen ohne Begründung
-🔴 background auf Page-Wrapper
-🔴 rgba(0,0,0,...) für Modal-Backdrops — immer .modal-backdrop / .modal-overlay
-🔴 Eigene Box-Styles statt .card
-```
-
----
-
-## Aktueller Bauplan (Stand 2026-04-27)
-
-### ✅ Abgeschlossen
-
-```
-Migrations 001–033       DB-Fundament
-Chat-System (Dify)       → durch Anthropic direkt ersetzt
-Projekte CRUD + Gedächtnis
-Superadmin Tool
-Marketing-Paket (Agenten + Chips)
-Wissenbasis + RAG (pgvector)
-Artefakte + Merkliste
-Rate Limiting (proxy.ts)
-Feeds v2 (3-stufige Pipeline, Cron, SourcesView UI)
-Wissensbasis RAG-Fix (knowledge-ingest, ai-chat direkt)
-Multi-Provider LLM-Routing (Anthropic + OpenAI)
-CodeQL Security-Fix + CI-Failures
-Plan 1:  Capability + Outcome System + Guided Workflows (Migrationen 039–041)
-Plan D:  Chat & Context Integration (ai-chat workflow_plan, project-context, chat/stream Auth-Fix)
-Plan E:  Transformations-Engine (analyze → preview → execute)
-Plan F:  UI — Projekte Memory-Badge+Tab, Workspaces-Liste
-Tag-4-Inventur (2026-04-27)    → docs/synthese/tag4-master-synthese.md
-                                  + Anhänge A (Roadmap), B (Migrations), C (Kill+Einfrier)
-```
-
-### ⬜ Nächste Pläne (Sprint-Sequenz aus Anhang A)
-
-```
-Tag 4.5: Hygiene + Validierung      🔴 LÄUFT
-Sprint 1: Audit-Tier-Umbau          → Anhang A
-Sprint 2: Landing + Audit-Polish    → Anhang A
-Sprint 3: Inbox + Templates         → Anhang A
-Sprint 4: Veredler + Onboarding     → Anhang A
-Sprint 5: Distribution              → Anhang A
-```
-
----
-
-## Offene Architektur-Fragen (Stand 2026-04-27)
-
-```
-✅ Dify vollständig abgelöst (2026-03-17)
-   jungle-order läuft auf Anthropic direkt (claude-haiku-4-5-20251001).
-   DIFY_API_KEY und DIFY_API_URL können aus Supabase Edge Function Secrets entfernt werden.
-
-✅ Drei-Visionen-Spannung aufgelöst (2026-04-27)
-   Roadmap normativ, User-Story Marketing, Feature-Bestand technisch.
-   Siehe Drei-Rollen-Aufteilung oben.
-
-✅ A17 Findings-Tier-Modell entschieden (2026-04-27)
-   Drei Tiers strikt getrennt: Code-Finding / Metrik / Compliance
-   Implementierung: Sprint 0 (Klassifizierung) + Sprint 1 (UI-Umbau)
-
-❓ A19 Prompt-Qualität pro Rule
-   Status: erkannt als Multiplikator-Aufgabe
-   Frage: Reihenfolge der ~70 Rules — nach Häufigkeit oder nach Severity?
-   Entscheidung: vor Sprint 2
-
-❓ Multi-Modell-Review im MVP oder Premium?
-   Status: aktuell EINGEFROREN als Premium-Kandidat
-   Entscheidung: vor Sprint 4
-
-❓ Geteilte Chats (Plan K)
-   Status: geplant, noch nicht gestartet
-   Frage: read-only public URL oder Team-Antwort-Modus?
-
-❓ Agenten-System (Plan J2 — Spec fertig)
-   Status: Spec fertig in docs/plans/agents-spec.md
-   Offene Entscheidungen (aus Architect Review 2026-03-17):
-   J1: Skills vs. Capabilities → Empfehlung Option C (eigenständig, kein Risiko)
-   J3: Cron-Runner → Empfehlung Supabase pg_cron
-   J4: Marketing-Agents scope='package' → Empfehlung Ja
-   J5: Toro-Vorschlag opt-in DEFAULT false → Empfehlung Ja
-```
-
----
-
-## Datei-Index (Stand 2026-03-17)
-
-Vollständiger Index aller relevanten Projektdateien:
-
-### Root
-```
-ARCHITECT.md          ← System-Architekt (dieses Dokument)
-CLAUDE.md             ← Hauptreferenz für Claude Code
-```
-
-### docs/
-```
-architect-log.md           ← Entscheidungsprotokoll (neu)
-phase2-plans.md            ← Build-Reihenfolge Plan C–J (alle aktuell)
-project-state.md           ← Projektstatus
-tropen-os-architektur.md   ← SUPERSEDED → docs/_archive/2026-04-pre-pivot/
-email-setup.md             ← E-Mail / Resend Setup
-dify-jungle-order-setup.md ← Dify Jungle Order
-github-secrets.md          ← GitHub Secrets Dokumentation
-```
-
-### docs/webapp-manifest/
-```
-manifesto.md               ← 10 Prinzipien
-engineering-standard.md    ← 25 Kategorien mit Regeln
-audit-system.md            ← Scoring-Modell
-audit-report-2026-03-13.md ← Audit-Stand (45.7% → Prototype)
-audit-report-2026-03-15.md ← Neuester Audit-Stand
-audit-report-template.md   ← Template für nächsten Audit
-```
-
-### docs/superpowers/plans/
-```
-2026-03-17-capability-outcome-system.md ← Plan 1
-2026-03-17-guided-workflows.md          ← Plan 1b
-2026-03-17-plan-d-chat-context.md       ← Plan D
-2026-03-17-plan-e-transformations.md    ← Plan E
-2026-03-17-plan-f-ui.md                 ← Plan F
-```
-
-### docs/product/
-```
-architecture.md            ← Phase-2-Architektur, DB-Hierarchie
-roadmap-2026-q2.md         ← Normative Roadmap (Single Source of Truth)
-migrations.md              ← Vollständige Migrations-Übersicht
-rag-architecture.md        ← RAG, pgvector, Wissensbasis-Schema
-onboarding.md              ← Onboarding-Schritte, AI Act, Email-Templates
-superadmin.md              ← Superadmin-Tool, Status-Tabelle
-jungle-order.md            ← Jungle Order Edge Function
-```
-
-### docs/adr/
-```
-← Architecture Decision Records (noch anzulegen)
-```
-
-### Compliance
-```
-docs/AI Act Risk Navigator Hochrisiko.pdf
-docs/AI Act Risk Navigator Minimal Risiko.pdf
-docs/tuev-ai-matrix-mapping-tropen.docx
-```
-
-### supabase/migrations/
-```
-001–033     ← deployed und live
-034–041     ← deployed (Plan 1, D, E-Vorbereitung)
-Vollständige Übersicht: CLAUDE.md → Migrations-Übersicht
-```
-
----
-
-## Architektur-Log Referenz
-
-Alle Entscheidungen werden protokolliert in:
-`docs/architect-log.md`
+Alle Review-Entscheidungen werden protokolliert in `docs/architect-log.md`.
 
 Format pro Eintrag:
 
@@ -804,27 +195,4 @@ Format pro Eintrag:
 
 ---
 
-## Build-Check-Konfiguration (Stand 2026-05-04)
-
-**Timeout:** 300s (`cat-3-rule-build`, `cli-checker.ts:checkProductionBuild`).
-Begründung: Tropen OS Build dauert ~210s. Margin-of-safety 90s.
-Bei Build-Zeit-Anstieg: Timeout neu evaluieren oder Build-Optimierung-Sprint.
-
----
-
-## Compliance-Resolver-Architektur (2026-05-06)
-
-**Komitee-Entscheidung:** 4 Modelle + Opus-Judge, Report `docs/audit-reports/compliance-resolver-komitee-2026-05-06.md`.
-
-**Neue Datei:** `src/lib/audit/compliance-resolver.ts`
-- Stufe 1: 3 Checks aktiv — `has_privacy_policy`, `has_deletion_process`, `data_location`
-- Status-Typen: `confirmed` / `needs-attention` / `input-needed` / `not-applicable` — **kein** `fulfilled`
-- User-Vorrang total: Code-Signals sind Hinweise, nie Beweise
-- Exports: `runComplianceResolver(ctx)`, `complianceResultsToFindings(results)`, `filterFindingsByComplianceAnswers(findings, answers)`
-
-**AuditContext-Erweiterung:** `complianceAnswers?: ComplianceAnswers` (types.ts) + `AuditOptions.complianceAnswers`
-**Pipeline:** `buildAuditContext()` → `runAudit()` → Compliance-Resolver after Code-Checks → Synthetic RuleResult in cat-4
-**Trigger-Route:** Lädt `project_compliance_data` aus DB wenn `scanProjectId` vorhanden; intern = undefined
-**Stufe 2 (Roadmap):** AVV-Fragen + KI-Act (6 weitere Checks) — wartet auf Stufe-1-Feedback
-
-**cross-env:** `package.json` build-Script nutzt `cross-env NODE_OPTIONS=...` (Windows-kompatibel).
+> **Hinweis zur Versionsgeschichte:** Diese Datei enthielt bis Juni 2026 umfangreiche Design-, Stack-, Governance- und Datei-Index-Abschnitte aus der KMU-/Pre-Pivot-Ära. Diese waren teils veraltet und widersprachen dem aktuellen Design-System (u. a. Farb-Palette, Auth-Wrapper, AI-Gateway). Sie wurden entfernt; maßgeblich ist **CLAUDE.md**. ARCHITECT.md beschränkt sich bewusst auf das Bauleiter-Review-Verfahren.

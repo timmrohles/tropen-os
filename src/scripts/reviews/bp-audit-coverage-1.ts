@@ -3,7 +3,7 @@ import type { CommitteeReviewConfig } from '../committee-review'
 export const config: CommitteeReviewConfig = {
   name: 'bp-audit-coverage-1',
   contextFiles: [
-    'docs/checker-design-patterns.md',
+    'docs/active/checker-design-patterns.md',
     'src/lib/audit/checkers/repo-map-checker.ts',
     'src/lib/audit/checkers/ast-quality-checker.ts',
     'src/lib/audit/checkers/file-system-checker.ts',

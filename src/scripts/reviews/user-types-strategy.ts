@@ -8,8 +8,8 @@ export const config: CommitteeReviewConfig = {
   name: 'user-types-strategy',
 
   contextFiles: [
-    'docs/product/user-story-idea-to-production.md',
-    'docs/product/user-types-hobby-business-enterprise.md',
+    'docs/archive/2026-05/user-story-idea-to-production.md',
+    'docs/archive/2026-05/user-types.md',
   ],
 
   systemPrompt: `Du bist ein erfahrener Product Strategist und CTO der Produkte für Developer Tools und KI-gestützte Plattformen bewertet. Du denkst aus Sicht von Nutzern, Investoren und dem Engineering-Team.
@@ -28,8 +28,8 @@ Bewerte kritisch und konstruktiv. Sei konkret — keine generischen Empfehlungen
 
   userPrompt: `Hier sind die zwei Kontextdokumente:
 
-[Inhalt von docs/product/user-story-idea-to-production.md wird automatisch eingefügt]
-[Inhalt von docs/product/user-types-hobby-business-enterprise.md wird automatisch eingefügt]
+[Inhalt von docs/archive/2026-05/user-story-idea-to-production.md wird automatisch eingefügt]
+[Inhalt von docs/archive/2026-05/user-types.md wird automatisch eingefügt]
 
 ---
 

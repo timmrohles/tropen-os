@@ -5,14 +5,14 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/audit-reports/dogfood-2026-05-04.md',
-    'docs/webapp-manifest/audit-system.md',
-    'docs/checker-design-patterns.md',
+    'docs/active/audit-system.md',
+    'docs/active/checker-design-patterns.md',
   ],
 
   contextTransforms: {
-    'docs/webapp-manifest/audit-system.md': (c) =>
+    'docs/active/audit-system.md': (c) =>
       c.split('\n').slice(0, 80).join('\n') + '\n... (gekürzt)',
-    'docs/checker-design-patterns.md': (c) =>
+    'docs/active/checker-design-patterns.md': (c) =>
       c.split('\n').slice(0, 60).join('\n') + '\n... (gekürzt)',
   },
 

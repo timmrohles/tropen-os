@@ -5,11 +5,11 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-fix-engine-strategy.md',
-    'docs/webapp-manifest/manifesto.md',
+    'docs/active/manifesto.md',
   ],
 
   contextTransforms: {
-    'docs/webapp-manifest/manifesto.md': (c) => c.split('\n').slice(0, 80).join('\n'),
+    'docs/active/manifesto.md': (c) => c.split('\n').slice(0, 80).join('\n'),
   },
 
   systemPrompt: `Du bist ein erfahrener Developer Tools Architect und Product Strategist. Du bewertest die Fix-Strategie einer Code-Quality-Plattform für Vibe-Coders (Entwickler die mit KI-Tools wie Cursor, Claude Code, Lovable Code generieren).

@@ -5,11 +5,11 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-batch-fix-strategy.md',
-    'docs/webapp-manifest/manifesto.md',
+    'docs/active/manifesto.md',
   ],
 
   contextTransforms: {
-    'docs/webapp-manifest/manifesto.md': (c) => c.split('\n').slice(0, 60).join('\n'),
+    'docs/active/manifesto.md': (c) => c.split('\n').slice(0, 60).join('\n'),
   },
 
   systemPrompt: `Du bist ein erfahrener Product Strategist und UX Expert für Developer Tools.
@@ -31,7 +31,7 @@ Vollständiges Briefing:
 {{docs/committee-reviews/input-batch-fix-strategy.md}}
 
 Produkt-Manifest (Auszug):
-{{docs/webapp-manifest/manifesto.md}}
+{{docs/active/manifesto.md}}
 
 ---
 

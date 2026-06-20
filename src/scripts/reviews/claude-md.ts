@@ -5,10 +5,10 @@ export const config: CommitteeReviewConfig = {
   contextFiles: [
     'CLAUDE.md',
     'ARCHITECT.md',
-    'docs/webapp-manifest/engineering-standard.md',
+    'docs/active/engineering-standard.md',
   ],
   contextTransforms: {
-    'docs/webapp-manifest/engineering-standard.md': (content) =>
+    'docs/active/engineering-standard.md': (content) =>
       content.split('\n').slice(0, 200).join('\n') + '\n... (gekürzt)',
   },
   systemPrompt: `Du bist ein Senior Engineering Manager der Projektdokumentation für KI-gestütztes Entwickeln bewertet.

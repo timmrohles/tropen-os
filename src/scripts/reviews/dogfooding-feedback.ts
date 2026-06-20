@@ -5,14 +5,14 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-dogfooding-feedback-loop.md',
-    'docs/product/roadmap-2026-q2.md',
-    'docs/webapp-manifest/audit-system.md',
+    'docs/active/roadmap.md',
+    'docs/active/audit-system.md',
   ],
 
   contextTransforms: {
-    'docs/product/roadmap-2026-q2.md': (c) =>
+    'docs/active/roadmap.md': (c) =>
       c.split('\n').slice(0, 120).join('\n') + '\n... (gekürzt)',
-    'docs/webapp-manifest/audit-system.md': (c) =>
+    'docs/active/audit-system.md': (c) =>
       c.split('\n').slice(0, 80).join('\n') + '\n... (gekürzt)',
   },
 
@@ -43,7 +43,7 @@ Bewerte jede Frage konkret und pragmatisch. Keine generischen Empfehlungen — E
    Aktuell: Finding fällt auf → wir fixen den Checker ad-hoc. Kein Log, kein Tracking, kein Lerneffekt über Zeit.
 
    Optionen:
-   A) Einfaches Markdown-Log (docs/checker-feedback.md): Datum, Regel-ID, Kategorie (echt/false-positive/ausnahme), was geändert wurde
+   A) Einfaches Markdown-Log (docs/active/checker-feedback.md): Datum, Regel-ID, Kategorie (echt/false-positive/ausnahme), was geändert wurde
    B) DB-Tabelle die False Positives pro Regel zählt: Wenn eine Regel >X% false positive Rate hat, wird sie automatisch geflagt
    C) GitHub Issues mit Label "checker-quality": Standard-Workflow, keine eigene Infrastruktur
    D) Im Produkt selbst: "Finding falsch?"-Button der Feedback direkt sammelt

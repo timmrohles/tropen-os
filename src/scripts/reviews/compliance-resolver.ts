@@ -4,13 +4,13 @@ export const config: CommitteeReviewConfig = {
   name: 'compliance-resolver',
 
   contextFiles: [
-    'docs/checker-feedback.md',
+    'docs/active/checker-feedback.md',
     'docs/active/brand-brief.md',
     'CLAUDE.md',
   ],
 
   contextTransforms: {
-    'docs/checker-feedback.md': (c) => {
+    'docs/active/checker-feedback.md': (c) => {
       // Nur die Compliance-Diagnose-Sektion (erster relevanter Block)
       const lines = c.split('\n')
       const start = lines.findIndex(l => l.includes('Diagnose: Compliance-Antworten-Konsumption'))

@@ -83,7 +83,7 @@ export const config: CommitteeReviewConfig = {
   name: 'compliance-domains-komitee',
 
   contextFiles: [
-    'docs/adr/027-killer-kriterien-score-pivot.md',
+    'docs/decisions/027-killer-criteria-score-pivot.md',
     'docs/active/brand-brief.md',
   ],
 
@@ -96,7 +96,7 @@ export const config: CommitteeReviewConfig = {
       const slice = end === -1 ? lines.slice(start) : lines.slice(start, end)
       return slice.join('\n') + '\n\n[Marken-Brief: nur Section 28 geladen — Coach-Position zweiter Ordnung]'
     },
-    'docs/adr/027-killer-kriterien-score-pivot.md': (c) =>
+    'docs/decisions/027-killer-criteria-score-pivot.md': (c) =>
       c.split('\n').slice(0, 120).join('\n') + '\n... (Schritt 5+ ab Zeile 120 nicht geladen)',
   },
 
