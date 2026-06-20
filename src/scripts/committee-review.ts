@@ -19,7 +19,6 @@ import { pathToFileURL } from 'url'
 import {
   COMMITTEE_REVIEWERS, COMMITTEE_JUDGE,
   callCommitteeModel, estimateCost, requireGatewayAuth,
-  type CallResult,
 } from './lib/committee'
 
 // ── Types ──────────────────────────────────────────────────────────────────────

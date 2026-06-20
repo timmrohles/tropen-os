@@ -77,11 +77,10 @@ Your task:
 Output ONLY the consolidated JSON array. No commentary, no Markdown headings.`
 }
 
-function buildJudgeUserPrompt(packName: string, drafts: string[]): string {
-  const labels = ['Claude Sonnet', 'GPT-4o', 'Gemini 2.5 Pro', 'Grok 4']
+function buildJudgeUserPrompt(packName: string, drafts: { label: string; text: string }[]): string {
   const draftSections = drafts.map((d, i) => `
-=== DRAFT ${i + 1}: ${labels[i] ?? `Model ${i + 1}`} ===
-${d}
+=== DRAFT ${i + 1}: ${d.label} ===
+${d.text}
 `).join('\n')
 
   return `Consolidate the best ConventionRule JSON array for the "${packName}" pack from these ${drafts.length} independent drafts:
@@ -113,7 +112,7 @@ async function generateForPack(pack: PackSource, seedSummary: string): Promise<C
     })),
   )
 
-  const drafts = reviewerResults.map((r) => r.text).filter(Boolean)
+  const drafts = reviewerResults.filter((r) => Boolean(r.text))
   if (drafts.length === 0) {
     console.warn(`  ✗ All providers failed for ${pack.name} — skipping`)
     return []
@@ -123,7 +122,7 @@ async function generateForPack(pack: PackSource, seedSummary: string): Promise<C
   // 2. Judge consolidates
   let judgeText: string
   if (drafts.length === 1) {
-    judgeText = drafts[0]
+    judgeText = drafts[0].text
     console.log('  ℹ Only 1 draft — using directly (no judge)')
   } else {
     console.log('  Judging…')
@@ -131,7 +130,7 @@ async function generateForPack(pack: PackSource, seedSummary: string): Promise<C
     judgeText = judgeResult.text
     if (!judgeText) {
       console.warn('  ⚠ Judge failed — using first draft')
-      judgeText = drafts[0]
+      judgeText = drafts[0].text
     }
   }
 

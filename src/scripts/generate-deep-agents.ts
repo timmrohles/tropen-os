@@ -334,7 +334,7 @@ async function generateDeepAgent(agent: DeepAgentDef): Promise<boolean> {
     })),
   )
 
-  const drafts = reviewerResults.map((r) => r.text).filter(Boolean)
+  const drafts = reviewerResults.filter((r) => Boolean(r.text))
   if (drafts.length === 0) {
     console.error(`  ✗ All providers failed for ${agent.id}`)
     return false
@@ -342,10 +342,9 @@ async function generateDeepAgent(agent: DeepAgentDef): Promise<boolean> {
   console.log(`  ✓ Got ${drafts.length}/4 drafts`)
 
   // 2. Judge synthesizes
-  const labels = ['Claude Sonnet', 'GPT-4o', 'Gemini 2.5', 'Grok 4']
   const judgePrompt = `Synthetisiere den besten ${agent.id}_AGENT aus diesen ${drafts.length} unabhängigen Entwürfen.
 
-${drafts.map((d, i) => `=== ENTWURF ${i + 1}: ${labels[i] ?? `Modell ${i + 1}`} ===\n${d}`).join('\n\n')}
+${drafts.map((d, i) => `=== ENTWURF ${i + 1}: ${d.label} ===\n${d.text}`).join('\n\n')}
 
 Erstelle das finale, definitive ${agent.id}_AGENT Dokument:
 - Wähle die besten Regeln aus allen Entwürfen (können aus verschiedenen Modellen kommen)
@@ -361,7 +360,7 @@ Output NUR das finale Agent-Dokument.`
 
   if (!finalContent) {
     console.warn('  ⚠ Judge failed — using best draft')
-    finalContent = drafts[0]
+    finalContent = drafts[0].text
   }
 
   // 3. Validate minimum requirements

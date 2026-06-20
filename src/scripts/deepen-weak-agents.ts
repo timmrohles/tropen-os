@@ -144,7 +144,7 @@ async function deepenAgent(agentId: string, gaps: string): Promise<boolean> {
     })),
   )
 
-  const drafts = reviewerResults.map((r) => r.text).filter(Boolean)
+  const drafts = reviewerResults.filter((r) => Boolean(r.text))
   if (drafts.length === 0) {
     console.error(`  ✗ All providers failed`)
     return false
@@ -152,12 +152,11 @@ async function deepenAgent(agentId: string, gaps: string): Promise<boolean> {
   console.log(`  ✓ Got ${drafts.length}/4 drafts`)
 
   // Judge: wählt die beste Version (meiste + qualitativ hochwertigste neue Regeln)
-  const labels = ['Claude Sonnet', 'GPT-4o', 'Gemini 2.5', 'Grok 4']
   const judgePrompt = `Du bist der Judge für die Vertiefung des ${agentId}_AGENT.
 
 Vier Modelle haben den Agenten erweitert. Jedes hat neue Regeln hinzugefügt.
 
-${drafts.map((d, i) => `=== Entwurf ${i + 1}: ${labels[i] ?? `Modell ${i+1}`} ===\n${d}`).join('\n\n')}
+${drafts.map((d, i) => `=== Entwurf ${i + 1}: ${d.label} ===\n${d.text}`).join('\n\n')}
 
 Deine Aufgabe:
 1. Wähle für jede mögliche neue Regel die beste Formulierung quer durch alle Entwürfe
@@ -173,7 +172,7 @@ Output: Das vollständige, finale ${agentId}_AGENT Dokument.`
 
   if (!finalContent) {
     console.warn('  ⚠ Judge failed — using best draft')
-    finalContent = drafts[0]
+    finalContent = drafts[0].text
   }
 
   const newRules = (finalContent.match(/^### R\d+/gm) ?? []).length
