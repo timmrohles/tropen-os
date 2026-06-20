@@ -8,46 +8,10 @@
 
 import { writeFileSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { COMMITTEE_REVIEWERS, COMMITTEE_JUDGE, callCommitteeModel, requireGatewayAuth } from './lib/committee'
 import { AGENTS_TO_GENERATE, type AgentGenDef } from './agent-gen-defs'
 
-// ── Provider setup ────────────────────────────────────────────────────────────
-// Direct provider keys are intentional for this script.
-// Vercel AI Gateway requires billing/OIDC setup that is not available in this project
-// (same decision as judge.ts — see: GatewayInternalServerError when gateway unconfigured).
-
 const ROOT = resolve(process.cwd())
-
-function getAnthropicModel(modelId: string) {
-  // noinspection JSIgnoredPromiseFromCall — direct Anthropic key, intentional (gateway not configured)
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
-  return sdk(modelId)
-}
-
-function getOpenAIModel() {
-  // noinspection JSIgnoredPromiseFromCall — direct OpenAI key, intentional (gateway not configured)
-  const sdk = createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
-  return sdk('gpt-4o')
-}
-
-function getGeminiModel() {
-  // noinspection JSIgnoredPromiseFromCall — direct Google key, intentional (gateway not configured)
-  const sdk = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '' })
-  return sdk('gemini-2.5-pro')
-}
-
-function getGrokModel() {
-  // noinspection JSIgnoredPromiseFromCall — direct xAI key, intentional (gateway not configured)
-  const sdk = createOpenAI({ apiKey: process.env.XAI_API_KEY ?? '', baseURL: 'https://api.x.ai/v1' })
-  return sdk('grok-4')
-}
-
-// Model IDs split to prevent gateway-slug static analysers from misreading date suffixes as versions
-const REVIEWER_MODEL = 'claude-sonnet-4-6'
-const JUDGE_MODEL    = 'claude-opus-4-8'
 
 // ── Format template ───────────────────────────────────────────────────────────
 
@@ -254,27 +218,6 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// ── Provider calls ─────────────────────────────────────────────────────────────
-
-async function callProvider(
-  label: string,
-  modelFn: () => ReturnType<typeof getAnthropicModel | typeof getOpenAIModel | typeof getGeminiModel | typeof getGrokModel>,
-  systemPrompt: string,
-  userPrompt: string,
-): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: modelFn() as Parameters<typeof generateText>[0]['model'],
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxOutputTokens: 4096,
-    })
-    return text.trim()
-  } catch (err) {
-    console.warn(`  ⚠ ${label} failed: ${String(err).slice(0, 120)}`)
-    return ''
-  }
-}
 
 // ── Main generation ────────────────────────────────────────────────────────────
 
@@ -285,15 +228,15 @@ async function generateAgent(agent: AgentGenDef, attempt = 1): Promise<boolean> 
   const systemPrompt = buildSystemPrompt()
   const userPrompt   = buildUserPrompt(agent)
 
-  // 1. Call all 4 providers in parallel
-  const [claudeDraft, gptDraft, geminiDraft, grokDraft] = await Promise.all([
-    callProvider('Claude Sonnet', () => getAnthropicModel(REVIEWER_MODEL), systemPrompt, userPrompt),
-    callProvider('GPT-4o',        getOpenAIModel, systemPrompt, userPrompt),
-    callProvider('Gemini 2.5',    getGeminiModel, systemPrompt, userPrompt),
-    callProvider('Grok 4',        getGrokModel,   systemPrompt, userPrompt),
-  ])
+  // 1. Call all 4 reviewers in parallel
+  const reviewerResults = await Promise.all(
+    COMMITTEE_REVIEWERS.map(async (m) => ({
+      label: m.label,
+      ...(await callCommitteeModel(m, systemPrompt, userPrompt)),
+    })),
+  )
 
-  const drafts = [claudeDraft, gptDraft, geminiDraft, grokDraft].filter(Boolean)
+  const drafts = reviewerResults.map((r) => r.text).filter(Boolean)
   if (drafts.length === 0) {
     console.error(`  ✗ All providers failed for ${agent.name}`)
     return false
@@ -307,12 +250,8 @@ async function generateAgent(agent: AgentGenDef, attempt = 1): Promise<boolean> 
     console.log('  ℹ Only 1 draft — using directly (no judge)')
   } else {
     console.log('  Judging…')
-    finalContent = await callProvider(
-      'Judge (Opus)',
-      () => getAnthropicModel(JUDGE_MODEL),
-      buildJudgeSystemPrompt(),
-      buildJudgeUserPrompt(agent.name, drafts),
-    )
+    const judgeResult = await callCommitteeModel(COMMITTEE_JUDGE, buildJudgeSystemPrompt(), buildJudgeUserPrompt(agent.name, drafts), 4096)
+    finalContent = judgeResult.text
     if (!finalContent) {
       console.warn('  ⚠ Judge failed — using best draft')
       finalContent = drafts[0]
@@ -340,18 +279,7 @@ async function main() {
   console.log(`Agents to generate: ${AGENTS_TO_GENERATE.length}`)
   console.log(`Output directory:   docs/agents/\n`)
 
-  // Verify providers
-  const available = [
-    process.env.ANTHROPIC_API_KEY ? 'Claude' : null,
-    process.env.OPENAI_API_KEY    ? 'GPT-4o' : null,
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ? 'Gemini' : null,
-    process.env.XAI_API_KEY       ? 'Grok 4' : null,
-  ].filter(Boolean)
-  console.log(`Available providers: ${available.join(', ')}`)
-  if (available.length < 2) {
-    console.error('✗ Need at least 2 providers. Set API keys in .env.local')
-    process.exit(1)
-  }
+  requireGatewayAuth()
 
   const results: Record<string, boolean> = {}
   let successCount = 0
