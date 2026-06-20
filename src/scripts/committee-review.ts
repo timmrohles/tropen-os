@@ -4,22 +4,22 @@
 // Schickt eine technische Frage + Kontext an 4 Modelle, Opus destilliert den Konsens.
 //
 // Usage:
-//   pnpm exec tsx src/scripts/committee-review.ts --config reviews/claude-md.ts
-//   pnpm exec tsx src/scripts/committee-review.ts --config reviews/audit-scoring.ts
-//   pnpm exec tsx src/scripts/committee-review.ts --config reviews/fix-engine.ts
-//   pnpm exec tsx src/scripts/committee-review.ts --config reviews/agent-checker-alignment.ts
-//   pnpm exec tsx src/scripts/committee-review.ts --all
+//   pnpm exec tsx --env-file=.env.local src/scripts/committee-review.ts --config reviews/claude-md.ts
+//   pnpm exec tsx --env-file=.env.local src/scripts/committee-review.ts --config reviews/audit-scoring.ts
+//   pnpm exec tsx --env-file=.env.local src/scripts/committee-review.ts --config reviews/fix-engine.ts
+//   pnpm exec tsx --env-file=.env.local src/scripts/committee-review.ts --config reviews/agent-checker-alignment.ts
+//   pnpm exec tsx --env-file=.env.local src/scripts/committee-review.ts --all
 //
 // Output: docs/committee-reviews/[name]-review.md
-// Cost:   ~€0.35–0.50 per review
+// Cost:   ~€0.50–1.00 per review (Frontier-Roster via AI Gateway)
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, resolve } from 'path'
 import { pathToFileURL } from 'url'
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import {
+  COMMITTEE_REVIEWERS, COMMITTEE_JUDGE,
+  callCommitteeModel, estimateCost, requireGatewayAuth,
+} from './lib/committee'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -38,37 +38,10 @@ export interface CommitteeReviewConfig {
   judgePrompt: string
 }
 
-// ── Provider setup ─────────────────────────────────────────────────────────────
-// Direct provider keys — intentional for CLI scripts.
-// AI Gateway requires billing/OIDC setup not available in this project.
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 const ROOT = resolve(process.cwd())
 const OUTPUT_DIR = join(ROOT, 'docs', 'committee-reviews')
-
-// Model IDs — use latest stable aliases
-const REVIEWER_MODEL = 'claude-sonnet-4-6'
-const JUDGE_MODEL    = 'claude-sonnet-4-6'
-
-function getAnthropicModel(modelId: string) {
-  const sdk = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
-    baseURL: 'https://api.anthropic.com/v1',
-  })
-  return sdk(modelId)
-}
-function getOpenAIModel() {
-  const sdk = createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
-  return sdk('gpt-4o')
-}
-function getGeminiModel() {
-  const sdk = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '' })
-  // gemini-2.5-flash: kein Extended Thinking, daher kein Output-Token-Problem bei 2048 Budget
-  return sdk('gemini-2.5-flash')
-}
-function getGrokModel() {
-  const sdk = createOpenAI({ apiKey: process.env.XAI_API_KEY ?? '', baseURL: 'https://api.x.ai/v1' })
-  return sdk('grok-4')
-}
 
 // ── Context loading ────────────────────────────────────────────────────────────
 
@@ -105,58 +78,7 @@ function buildFullPrompt(userPrompt: string, contextFiles: Record<string, string
   return `${contextBlock}\n\n---\n\n${userPrompt}`
 }
 
-// ── Provider call ──────────────────────────────────────────────────────────────
-
-interface CallResult {
-  text: string
-  inputTokens: number
-  outputTokens: number
-}
-
-async function callProvider(
-  label: string,
-  modelFn: () => ReturnType<typeof getAnthropicModel>,
-  systemPrompt: string,
-  userPrompt: string,
-  maxOutputTokens = 2048,
-): Promise<CallResult> {
-  try {
-    const result = await generateText({
-      model: modelFn() as Parameters<typeof generateText>[0]['model'],
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxOutputTokens,
-    })
-    const text = result.text?.trim() ?? ''
-    if (!text) {
-      console.warn(`  ⚠ ${label} returned empty text (finishReason: ${result.finishReason}, tokens: ${result.usage?.inputTokens ?? 0}/${result.usage?.outputTokens ?? 0})`)
-    }
-    return {
-      text,
-      inputTokens: result.usage?.inputTokens ?? 0,
-      outputTokens: result.usage?.outputTokens ?? 0,
-    }
-  } catch (err) {
-    console.warn(`  ⚠ ${label} failed: ${String(err).slice(0, 160)}`)
-    return { text: '', inputTokens: 0, outputTokens: 0 }
-  }
-}
-
-// ── Cost estimation ────────────────────────────────────────────────────────────
-
-const PRICE_TABLE: Record<string, { inPerM: number; outPerM: number }> = {
-  'Claude Sonnet':  { inPerM: 3.0,  outPerM: 15.0 },
-  'GPT-4o':        { inPerM: 2.5,  outPerM: 10.0 },
-  'Gemini 2.5 Pro':{ inPerM: 1.25, outPerM: 10.0 },
-  'Grok 4':        { inPerM: 3.0,  outPerM: 15.0 },
-  'Judge (Opus)':  { inPerM: 15.0, outPerM: 75.0 },
-}
-const USD_TO_EUR = 0.93
-
-function estimateCost(label: string, inputTokens: number, outputTokens: number): number {
-  const p = PRICE_TABLE[label] ?? { inPerM: 3.0, outPerM: 15.0 }
-  return ((inputTokens * p.inPerM + outputTokens * p.outPerM) / 1_000_000) * USD_TO_EUR
-}
+// ── Cost section ───────────────────────────────────────────────────────────────
 
 interface CostRecord { label: string; inputTokens: number; outputTokens: number; costEur: number }
 
@@ -217,25 +139,19 @@ async function runReview(config: CommitteeReviewConfig): Promise<void> {
 
   // 4 reviewers in parallel
   console.log('\nRufe 4 Reviewer parallel auf…')
-  const [r1, r2, r3, r4] = await Promise.all([
-    callProvider('Claude Sonnet',   () => getAnthropicModel(REVIEWER_MODEL) as ReturnType<typeof getAnthropicModel>, config.systemPrompt, fullUserPrompt),
-    callProvider('GPT-4o',          () => getOpenAIModel()                  as ReturnType<typeof getAnthropicModel>, config.systemPrompt, fullUserPrompt),
-    callProvider('Gemini 2.5 Pro',  () => getGeminiModel()                  as ReturnType<typeof getAnthropicModel>, config.systemPrompt, fullUserPrompt),
-    callProvider('Grok 4',          () => getGrokModel()                    as ReturnType<typeof getAnthropicModel>, config.systemPrompt, fullUserPrompt),
-  ])
+  const reviewerResults = await Promise.all(
+    COMMITTEE_REVIEWERS.map(async (m) => ({
+      label: m.label,
+      model: m.model,
+      ...(await callCommitteeModel(m, config.systemPrompt, fullUserPrompt)),
+    })),
+  )
 
-  const reviewerResults = [
-    { label: 'Claude Sonnet',  ...r1 },
-    { label: 'GPT-4o',         ...r2 },
-    { label: 'Gemini 2.5 Pro', ...r3 },
-    { label: 'Grok 4',         ...r4 },
-  ]
-
-  const costs: CostRecord[] = reviewerResults.map(r => ({
+  const costs: CostRecord[] = reviewerResults.map((r) => ({
     label: r.label,
     inputTokens: r.inputTokens,
     outputTokens: r.outputTokens,
-    costEur: estimateCost(r.label, r.inputTokens, r.outputTokens),
+    costEur: estimateCost(r.model, r.inputTokens, r.outputTokens),
   }))
 
   const drafts = reviewerResults.filter(r => r.text)
@@ -251,19 +167,18 @@ async function runReview(config: CommitteeReviewConfig): Promise<void> {
 
   // Judge
   console.log('\nJudge (Opus) destilliert…')
-  const judge = await callProvider(
-    'Judge (Opus)',
-    () => getAnthropicModel(JUDGE_MODEL) as ReturnType<typeof getAnthropicModel>,
+  const judge = await callCommitteeModel(
+    COMMITTEE_JUDGE,
     JUDGE_SYSTEM_PROMPT,
     buildJudgeUserPrompt(config.judgePrompt, drafts),
     4096,
   )
 
   costs.push({
-    label: 'Judge (Opus)',
+    label: COMMITTEE_JUDGE.label,
     inputTokens: judge.inputTokens,
     outputTokens: judge.outputTokens,
-    costEur: estimateCost('Judge (Opus)', judge.inputTokens, judge.outputTokens),
+    costEur: estimateCost(COMMITTEE_JUDGE.model, judge.inputTokens, judge.outputTokens),
   })
 
   const totalCost = costs.reduce((s, c) => s + c.costEur, 0)
@@ -277,9 +192,10 @@ async function runReview(config: CommitteeReviewConfig): Promise<void> {
   // Write output
   mkdirSync(OUTPUT_DIR, { recursive: true })
   const outputPath = join(OUTPUT_DIR, `${config.name}-review.md`)
+  const reviewerLabels = COMMITTEE_REVIEWERS.map(r => r.label).join(', ')
   const report = `# Committee Review: ${config.name}
 
-> Generiert am ${new Date().toISOString().slice(0, 10)} · Reviewer: Claude Sonnet, GPT-4o, Gemini 2.5 Pro, Grok 4 · Judge: Claude Opus
+> Generiert am ${new Date().toISOString().slice(0, 10)} · Reviewer: ${reviewerLabels} · Judge: ${COMMITTEE_JUDGE.label}
 
 ---
 
@@ -292,8 +208,8 @@ ${buildCostSection(costs)}
   writeFileSync(outputPath, report, 'utf-8')
   console.log(`  ✓ Gespeichert: docs/committee-reviews/${config.name}-review.md`)
 
-  if (totalCost > 0.50) {
-    console.warn(`  ⚠ Kosten €${totalCost.toFixed(4)} überschreiten €0.50 Ziel`)
+  if (totalCost > 1.50) {
+    console.warn(`  ⚠ Kosten €${totalCost.toFixed(4)} überschreiten €1.50 Ziel`)
   }
 }
 
@@ -315,10 +231,7 @@ const ALL_CONFIGS = [
 // ── CLI entrypoint ─────────────────────────────────────────────────────────────
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('✗ ANTHROPIC_API_KEY fehlt in .env.local')
-    process.exit(1)
-  }
+  requireGatewayAuth()
 
   const args = process.argv.slice(2)
   const runAll = args.includes('--all')

@@ -12,35 +12,11 @@
 
 import { writeFileSync, readFileSync, readdirSync, existsSync } from 'fs'
 import { join, resolve } from 'path'
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { COMMITTEE_REVIEWERS, COMMITTEE_JUDGE, callCommitteeModel, requireGatewayAuth } from './lib/committee'
 
-// Direct provider keys — intentional for CLI scripts (gateway not configured)
 const ROOT = resolve(process.cwd())
 const AGENTS_DIR = join(ROOT, 'docs', 'agents')
 const REVIEWS_DIR = join(ROOT, 'docs', 'agents', '_reviews')
-
-const REVIEWER_MODEL = 'claude-sonnet-4-6'
-const JUDGE_MODEL    = 'claude-opus-4-8'
-
-function getAnthropic(modelId: string) {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
-  return sdk(modelId)
-}
-function getOpenAI() {
-  const sdk = createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
-  return sdk('gpt-4o')
-}
-function getGemini() {
-  const sdk = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '' })
-  return sdk('gemini-2.5-pro')
-}
-function getGrok() {
-  const sdk = createOpenAI({ apiKey: process.env.XAI_API_KEY ?? '', baseURL: 'https://api.x.ai/v1' })
-  return sdk('grok-4')
-}
 
 // ── Parse Meta-Review to find weak agents ────────────────────────────────────
 
@@ -119,25 +95,6 @@ Ausgabe: Das vollständige, aktualisierte Agent-Dokument.
 NICHT nur die neuen Regeln — das GANZE Dokument mit allen alten + neuen Regeln.`
 }
 
-// ── Committee call ────────────────────────────────────────────────────────────
-
-async function callProvider(
-  label: string,
-  modelFn: () => Parameters<typeof generateText>[0]['model'],
-  prompt: string,
-): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: modelFn(),
-      prompt,
-      maxOutputTokens: 6144,
-    })
-    return text.trim()
-  } catch (err) {
-    console.warn(`  ⚠ ${label} failed: ${String(err).slice(0, 120)}`)
-    return ''
-  }
-}
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms))
@@ -180,14 +137,14 @@ async function deepenAgent(agentId: string, gaps: string): Promise<boolean> {
   const prompt = buildDeepeningPrompt(agentId, currentContent, gaps)
 
   // 4 reviewers in parallel
-  const [claudeDraft, gptDraft, geminiDraft, grokDraft] = await Promise.all([
-    callProvider('Claude Sonnet', () => getAnthropic(REVIEWER_MODEL), prompt),
-    callProvider('GPT-4o',        getOpenAI,  prompt),
-    callProvider('Gemini 2.5',    getGemini,  prompt),
-    callProvider('Grok 4',        getGrok,    prompt),
-  ])
+  const reviewerResults = await Promise.all(
+    COMMITTEE_REVIEWERS.map(async (m) => ({
+      label: m.label,
+      ...(await callCommitteeModel(m, '', prompt)),
+    })),
+  )
 
-  const drafts = [claudeDraft, gptDraft, geminiDraft, grokDraft].filter(Boolean)
+  const drafts = reviewerResults.filter((r) => Boolean(r.text))
   if (drafts.length === 0) {
     console.error(`  ✗ All providers failed`)
     return false
@@ -195,12 +152,11 @@ async function deepenAgent(agentId: string, gaps: string): Promise<boolean> {
   console.log(`  ✓ Got ${drafts.length}/4 drafts`)
 
   // Judge: wählt die beste Version (meiste + qualitativ hochwertigste neue Regeln)
-  const labels = ['Claude Sonnet', 'GPT-4o', 'Gemini 2.5', 'Grok 4']
   const judgePrompt = `Du bist der Judge für die Vertiefung des ${agentId}_AGENT.
 
 Vier Modelle haben den Agenten erweitert. Jedes hat neue Regeln hinzugefügt.
 
-${drafts.map((d, i) => `=== Entwurf ${i + 1}: ${labels[i] ?? `Modell ${i+1}`} ===\n${d}`).join('\n\n')}
+${drafts.map((d, i) => `=== Entwurf ${i + 1}: ${d.label} ===\n${d.text}`).join('\n\n')}
 
 Deine Aufgabe:
 1. Wähle für jede mögliche neue Regel die beste Formulierung quer durch alle Entwürfe
@@ -211,11 +167,12 @@ Deine Aufgabe:
 Output: Das vollständige, finale ${agentId}_AGENT Dokument.`
 
   console.log('  Judging…')
-  let finalContent = await callProvider('Judge (Opus)', () => getAnthropic(JUDGE_MODEL), judgePrompt)
+  const judgeResult = await callCommitteeModel(COMMITTEE_JUDGE, '', judgePrompt, 4096)
+  let finalContent = judgeResult.text
 
   if (!finalContent) {
-    console.warn('  ⚠ Judge failed — using Claude draft')
-    finalContent = claudeDraft || drafts[0]
+    console.warn('  ⚠ Judge failed — using best draft')
+    finalContent = drafts[0].text
   }
 
   const newRules = (finalContent.match(/^### R\d+/gm) ?? []).length
@@ -230,6 +187,8 @@ Output: Das vollständige, finale ${agentId}_AGENT Dokument.`
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 async function main() {
+  requireGatewayAuth()
+
   const targetArg = process.argv[2]?.toUpperCase()
 
   console.log('═══════════════════════════════════════════════════')

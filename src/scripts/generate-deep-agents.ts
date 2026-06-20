@@ -11,36 +11,10 @@
 
 import { writeFileSync } from 'fs'
 import { join, resolve } from 'path'
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { COMMITTEE_REVIEWERS, COMMITTEE_JUDGE, callCommitteeModel, requireGatewayAuth } from './lib/committee'
 
-// Direct provider keys — intentional for CLI scripts.
-// AI Gateway requires billing/OIDC setup not available in this project.
 const ROOT = resolve(process.cwd())
 const AGENTS_DIR = join(ROOT, 'docs', 'agents')
-
-// Model IDs split to prevent gateway-slug static analysers from misreading date suffixes
-const REVIEWER_MODEL = 'claude-sonnet-4-6'
-const JUDGE_MODEL    = 'claude-opus-4-8'
-
-function getAnthropic(modelId: string) {
-  const sdk = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '', baseURL: 'https://api.anthropic.com/v1' })
-  return sdk(modelId)
-}
-function getOpenAI() {
-  const sdk = createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
-  return sdk('gpt-4o')
-}
-function getGemini() {
-  const sdk = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '' })
-  return sdk('gemini-2.5-pro')
-}
-function getGrok() {
-  const sdk = createOpenAI({ apiKey: process.env.XAI_API_KEY ?? '', baseURL: 'https://api.x.ai/v1' })
-  return sdk('grok-4')
-}
 
 // ── Deep Agent format (allows more rules than standard 5–9) ──────────────────
 
@@ -342,24 +316,6 @@ REGELN FÜR REGULATORISCHE AGENTEN:
 - Kein Overlap mit: SECURITY_AGENT (Encryption, Auth), LEGAL_AGENT (PII-Typing), AI_INTEGRATION_AGENT (Prompt Injection)`
 }
 
-async function callProvider(
-  label: string,
-  modelFn: () => Parameters<typeof generateText>[0]['model'],
-  prompt: string,
-): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: modelFn(),
-      system: buildSystemPrompt(),
-      prompt,
-      maxOutputTokens: 6144,
-    })
-    return text.trim()
-  } catch (err) {
-    console.warn(`  ⚠ ${label} failed: ${String(err).slice(0, 120)}`)
-    return ''
-  }
-}
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms))
@@ -370,14 +326,15 @@ async function generateDeepAgent(agent: DeepAgentDef): Promise<boolean> {
   console.log(`\n[${agent.id}_AGENT] Starting…`)
 
   // 1. Four reviewers in parallel
-  const [claudeDraft, gptDraft, geminiDraft, grokDraft] = await Promise.all([
-    callProvider('Claude Sonnet', () => getAnthropic(REVIEWER_MODEL), agent.prompt),
-    callProvider('GPT-4o',        getOpenAI,  agent.prompt),
-    callProvider('Gemini 2.5',    getGemini,  agent.prompt),
-    callProvider('Grok 4',        getGrok,    agent.prompt),
-  ])
+  const systemPrompt = buildSystemPrompt()
+  const reviewerResults = await Promise.all(
+    COMMITTEE_REVIEWERS.map(async (m) => ({
+      label: m.label,
+      ...(await callCommitteeModel(m, systemPrompt, agent.prompt)),
+    })),
+  )
 
-  const drafts = [claudeDraft, gptDraft, geminiDraft, grokDraft].filter(Boolean)
+  const drafts = reviewerResults.filter((r) => Boolean(r.text))
   if (drafts.length === 0) {
     console.error(`  ✗ All providers failed for ${agent.id}`)
     return false
@@ -385,10 +342,9 @@ async function generateDeepAgent(agent: DeepAgentDef): Promise<boolean> {
   console.log(`  ✓ Got ${drafts.length}/4 drafts`)
 
   // 2. Judge synthesizes
-  const labels = ['Claude Sonnet', 'GPT-4o', 'Gemini 2.5', 'Grok 4']
   const judgePrompt = `Synthetisiere den besten ${agent.id}_AGENT aus diesen ${drafts.length} unabhängigen Entwürfen.
 
-${drafts.map((d, i) => `=== ENTWURF ${i + 1}: ${labels[i] ?? `Modell ${i + 1}`} ===\n${d}`).join('\n\n')}
+${drafts.map((d, i) => `=== ENTWURF ${i + 1}: ${d.label} ===\n${d.text}`).join('\n\n')}
 
 Erstelle das finale, definitive ${agent.id}_AGENT Dokument:
 - Wähle die besten Regeln aus allen Entwürfen (können aus verschiedenen Modellen kommen)
@@ -399,11 +355,12 @@ Erstelle das finale, definitive ${agent.id}_AGENT Dokument:
 Output NUR das finale Agent-Dokument.`
 
   console.log('  Judging…')
-  let finalContent = await callProvider('Judge (Opus)', () => getAnthropic(JUDGE_MODEL), judgePrompt)
+  const judgeResult = await callCommitteeModel(COMMITTEE_JUDGE, buildSystemPrompt(), judgePrompt, 4096)
+  let finalContent = judgeResult.text
 
   if (!finalContent) {
     console.warn('  ⚠ Judge failed — using best draft')
-    finalContent = drafts[0]
+    finalContent = drafts[0].text
   }
 
   // 3. Validate minimum requirements
@@ -432,6 +389,8 @@ async function main() {
     console.error(`Unknown agent: ${target}. Use: dsgvo | bfsg | ai-act`)
     process.exit(1)
   }
+
+  requireGatewayAuth()
 
   console.log('══════════════════════════════════════════════════════')
   console.log(' Deep Regulatory Agents — Multi-Model Committee')
