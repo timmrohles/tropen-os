@@ -12,7 +12,7 @@ export const COMMITTEE_REVIEWERS: readonly CommitteeMember[] = [
   { label: 'GPT-5.5',        model: 'openai/gpt-5.5' },
   { label: 'Gemini 3.1 Pro', model: 'google/gemini-3.1-pro-preview' },
   { label: 'Grok 4.3',       model: 'xai/grok-4.3' },
-  { label: 'DeepSeek V3.2',  model: 'deepseek/deepseek-v3.2' }, // Upgrade-Option: 'deepseek/deepseek-v4-pro'
+  { label: 'DeepSeek V4',    model: 'deepseek/deepseek-v4-pro' }, // Fallback: 'deepseek/deepseek-v3.2'
 ] as const
 
 export const COMMITTEE_JUDGE: CommitteeMember = {
@@ -27,7 +27,7 @@ export const PRICE_TABLE: Record<string, { inPerM: number; outPerM: number }> = 
   'openai/gpt-5.5':                  { inPerM: 2.5,  outPerM: 10.0 },
   'google/gemini-3.1-pro-preview':   { inPerM: 1.25, outPerM: 10.0 },
   'xai/grok-4.3':                    { inPerM: 3.0,  outPerM: 15.0 },
-  'deepseek/deepseek-v3.2':          { inPerM: 0.3,  outPerM: 0.5 },
+  'deepseek/deepseek-v4-pro':        { inPerM: 0.5,  outPerM: 1.5 },
   'anthropic/claude-opus-4.8':       { inPerM: 15.0, outPerM: 75.0 },
 }
 const USD_TO_EUR = 0.93
