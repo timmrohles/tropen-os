@@ -5,13 +5,13 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-automated-testbench.md',
-    'docs/product/roadmap-2026-q2.md',
-    'docs/checker-feedback.md',
-    'docs/checker-test-repos.md',
+    'docs/active/roadmap.md',
+    'docs/active/checker-feedback.md',
+    'docs/active/checker-test-repos.md',
   ],
 
   contextTransforms: {
-    'docs/product/roadmap-2026-q2.md': (c) =>
+    'docs/active/roadmap.md': (c) =>
       c.split('\n').slice(0, 100).join('\n') + '\n... (gekuerzt)',
   },
 

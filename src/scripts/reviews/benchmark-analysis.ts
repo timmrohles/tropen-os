@@ -5,14 +5,14 @@ export const config: CommitteeReviewConfig = {
 
   contextFiles: [
     'docs/committee-reviews/input-benchmark-analysis.md',
-    'docs/product/roadmap-2026-q2.md',
-    'docs/webapp-manifest/audit-system.md',
+    'docs/active/roadmap.md',
+    'docs/active/audit-system.md',
   ],
 
   contextTransforms: {
-    'docs/product/roadmap-2026-q2.md': (c) =>
+    'docs/active/roadmap.md': (c) =>
       c.split('\n').slice(0, 80).join('\n') + '\n... (gekuerzt)',
-    'docs/webapp-manifest/audit-system.md': (c) =>
+    'docs/active/audit-system.md': (c) =>
       c.split('\n').slice(0, 60).join('\n') + '\n... (gekuerzt)',
   },
 

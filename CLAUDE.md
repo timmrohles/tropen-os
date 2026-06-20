@@ -286,7 +286,7 @@ Aktueller Stand ist **Feature-zentrisch** (Ziel), aber noch nicht konsistent:
 - ADR-021 (Prompt-Veredler)
 - ADR-022 (Markdown + YAML + Wikilinks)
 - ADR-023 (Interface-Strategie: CLI-First + Pull-MCP)
-- `docs/decisions/025-tab-architektur.md` — Tab-Architektur, Compliance-Strategie, Drittanbieter-Aggregator-Ziel
+- `docs/decisions/025-tab-architecture.md` — Tab-Architektur, Compliance-Strategie, Drittanbieter-Aggregator-Ziel
 
 ### DB-Zugriff — kritische Constraint
 
@@ -1391,11 +1391,11 @@ Dogfooding-Feedback wird ueber GitHub Issues + Markdown-Log getrackt. Entscheidu
 2. Kategorisierung: Echtes Problem / False Positive / Bewusste Ausnahme
 3. Bei False Positive: GitHub Issue erstellen (Template `.github/ISSUE_TEMPLATE/false-positive.yml`)
 4. Checker-Fix implementieren
-5. Eintrag in `docs/checker-feedback.md`
+5. Eintrag in `docs/active/checker-feedback.md`
 
 **Ziel-FP-Rate:** <10% pro Regel (MVP), <5% nach Year 1.
 
-**Test-Repos:** Jeder Checker-Fix wird gegen 5 Open-Source-Benchmark-Repos getestet (siehe `docs/checker-test-repos.md`).
+**Test-Repos:** Jeder Checker-Fix wird gegen 5 Open-Source-Benchmark-Repos getestet (siehe `docs/active/checker-test-repos.md`).
 
 **Automatisierung:** Erst ab 10 Beta-Usern. Dann: "Finding falsch?"-Button im Produkt + Supabase-Tabelle.
 
@@ -1693,12 +1693,12 @@ eslint src/           # keine Fehler
 | `docs/active/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
 | `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/phase-2-vision.md` |
 | `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/phase-2-vision.md` |
-| `docs/product/roadmap-2026-q2.md` | **Normative Roadmap** — Single Source of Truth: Bauphasen, Sprint-Status, strategische Klärungen, Sequenz-Constraints, GTM |
-| `docs/product/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
-| `docs/product/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
-| `docs/product/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
-| `docs/product/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
-| `docs/product/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
+| `docs/active/roadmap.md` | **Normative Roadmap** — Single Source of Truth: Bauphasen, Sprint-Status, strategische Klärungen, Sequenz-Constraints, GTM |
+| `docs/active/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
+| `docs/active/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
+| `docs/active/onboarding.md` | Onboarding-Schritte, AI Act, Email-Templates |
+| `docs/archive/2026-05/superadmin.md` | Superadmin-Tool, Client-Anlage-Ablauf |
+| `docs/archive/2026-05/jungle-order.md` | Jungle Order Edge Function, Soft Delete, Multi-Select |
 | `docs/archive/2026-04/plan-agents-spec.md` | Agenten-System: Definition, Typen, DB-Schema, Agent-Engine, Plan J2 Scope |
 | `docs/decisions/` | Architecture Decision Records (ADR-001 bis ADR-035) — nach Aufräum-Sprint 2026-05-07. ADR-030 = Pre-Flight Prämissen-Modell v2; ADR-031 = Checker-Verbesserungs-Loop/Regel-Lebenszyklus; **ADR-032 = Erzwungene Route-Autorisierung** (withAuth/withOrgAdmin/withProjectAccess/withWorkspaceAccess/withSuperadmin/withCronAuth in `src/lib/auth/route-guards.ts`, Checker cat-3-rule-27, Inventar in `docs/audit/route-authorization-inventory.md`); ADR-033 = Pre-Flight Chat-first (Toro retargeted, KORSETT Schritt 2); ADR-034 = Compliance-Korpus/Copilot; **ADR-035 = Companion liest Repo read-only** (Drift-Erdung, amendiert ADR-028). Companion-Chat-Ziel-Bild: `docs/superpowers/specs/2026-06-15-guided-companion-chat-consolidation-design.md` |
 | `docs/active/brand-brief.md` | **Marken-Brief** — Coach-Position, Schiefer-Limette-Welt, Stimm-Formel, Pflicht-Tags. Normatives Dokument — Änderung nur per ADR. |
@@ -1709,7 +1709,7 @@ eslint src/           # keine Fehler
 | `docs/synthese/anhang-c-kill-und-einfrier-liste.md` | Kill- und Einfrier-Liste mit Wieder-Anschalten-Bedingungen |
 | `docs/phase-2-vision.md` | Phase-2-Backup-Konzept (KMU-Substanz konzentriert) — 5 Pfeiler: Drei-Ebenen-Modell, Kontroll-Spektrum, Karten-Aggregatzustände, Aufbau/Produktion, Wissens-Hierarchie |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
-| `docs/superpowers/n8n-integration-konzept.md` | **SUPERSEDED** — Pre-Pivot n8n-Konzept. Substanz übertragen nach `windmill-integration-konzept.md`. |
+| `docs/archive/2026-03/superpowers/n8n-integration-konzept.md` | **SUPERSEDED** — Pre-Pivot n8n-Konzept. Substanz übertragen nach `windmill-integration-konzept.md`. |
 | `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
 | `docs/agents/` | **21 Agent Rule Packs** — 3 manuell (Sprint 4a) + 18 per Multi-Model-Komitee (Sprint 5): ARCHITECTURE_AGENT_v3.md, SECURITY_AGENT_FINAL.md, OBSERVABILITY_AGENT_v3.md, CODE_STYLE_AGENT.md, ERROR_HANDLING_AGENT.md, DATABASE_AGENT.md, DEPENDENCIES_AGENT.md, GIT_GOVERNANCE_AGENT.md, BACKUP_DR_AGENT.md, TESTING_AGENT.md, PERFORMANCE_AGENT.md, PLATFORM_AGENT.md, API_AGENT.md, COST_AWARENESS_AGENT.md, SCALABILITY_AGENT.md, ACCESSIBILITY_AGENT.md, DESIGN_SYSTEM_AGENT.md, CONTENT_AGENT.md, LEGAL_AGENT.md, AI_INTEGRATION_AGENT.md, ANALYTICS_AGENT.md |
 | `src/lib/agents/agent-catalog.ts` | AgentDefinition-Interface + AGENT_CATALOG mit allen 21 Agenten (id, name, filename, version, categoryIds, themes, ruleCount, status, lastNormalized) — Sprint 5b: alle 18 Komitee-Agenten aktiv |

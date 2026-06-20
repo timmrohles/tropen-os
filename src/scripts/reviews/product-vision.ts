@@ -8,7 +8,7 @@ export const config: CommitteeReviewConfig = {
   name: 'product-vision-guided-building',
 
   contextFiles: [
-    'docs/product/user-story-idea-to-production.md',
+    'docs/archive/2026-05/user-story-idea-to-production.md',
   ],
 
   systemPrompt: `Du bist ein erfahrener Product Strategist und Developer Experience Engineer. Du bewertest ein Produktkonzept für eine Plattform die Vibe-Coders (Entwickler die mit KI-Tools wie Cursor, Claude Code, Lovable, v0 Code generieren) von der Idee bis zum produktionsreifen Launch begleiten will.
@@ -29,7 +29,7 @@ Bewerte das Konzept kritisch und konstruktiv. Sei konkret — keine generischen 
 
   userPrompt: `Hier ist das vollständige Konzept:
 
-[Inhalt von docs/product/user-story-idea-to-production.md wird automatisch eingefügt]
+[Inhalt von docs/archive/2026-05/user-story-idea-to-production.md wird automatisch eingefügt]
 
 ---
 
