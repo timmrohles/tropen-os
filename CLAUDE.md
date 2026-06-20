@@ -319,6 +319,8 @@ Alle Modell-Calls gehen über `src/lib/llm/anthropic.ts` → `generateText()` od
 Multi-Model Review: plain `"provider/model"` Strings → automatisch über Vercel AI Gateway geroutet. Auth: `AI_GATEWAY_API_KEY` oder `VERCEL_OIDC_TOKEN`.
 AI SDK v6 Felder: `maxOutputTokens` (nicht `maxTokens`), `usage.inputTokens` / `usage.outputTokens`.
 
+**CLI-Committee-Roster (Quelle der Wahrheit: `src/scripts/lib/committee.ts`, Stand 2026-06):** Die Committee-CLI-Skripte (`committee-review.ts`, `generate-agents.ts`, `generate-corpus.ts`, `generate-deep-agents.ts`, `deepen-weak-agents.ts`, `create-quality-agent.ts`) ziehen Reviewer + Judge zentral aus diesem Modul — kein hartkodiertes Modell mehr pro Skript. Roster A (4 fremde Reviewer + Anthropic-Judge → kein Selbst-Bias): `openai/gpt-5.5` · `google/gemini-3.1-pro-preview` · `xai/grok-4.3` · `deepseek/deepseek-v3.2` (Reviewer) + `anthropic/claude-opus-4.8` (Judge). Alles über AI Gateway; Reviewer-Output-Budget 8192 (Reasoning-Modelle brauchen Headroom). DeepSeek-Upgrade-Option `deepseek/deepseek-v4-pro` als Kommentar im Modul.
+
 **Veredler-Substanz (im Aufbau, ADR-021):**
 ~1.840 Zeilen existieren bereits in `src/lib/library-resolver.ts`,
 `capability-resolver.ts`, `skill-resolver.ts`, `chat/complexity-detector.ts`,
