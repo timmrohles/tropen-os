@@ -1,26 +1,18 @@
 #!/usr/bin/env node
 // src/scripts/create-quality-agent.ts
 // Generates docs/agents/AGENT_QUALITY_AGENT.md using a multi-model committee + Opus judge.
-// All model calls route through the Vercel AI Gateway via plain "provider/model" strings.
+// All model calls route through the Vercel AI Gateway via the shared committee roster.
 //
 // Run:  npx dotenv -e .env.local -- npx tsx src/scripts/create-quality-agent.ts
 // Auth: requires AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN in .env.local
-// Cost: ~€0.50 (3 reviewers + Opus judge, single agent)
+// Cost: ~€0.60 (4 reviewers + Opus 4.8 judge, single agent)
 
 import { writeFileSync } from 'fs'
 import { join, resolve } from 'path'
-import { generateText } from 'ai'
+import { COMMITTEE_REVIEWERS, COMMITTEE_JUDGE, callCommitteeModel, requireGatewayAuth } from './lib/committee'
 
 const ROOT = resolve(process.cwd())
 const OUTPUT_PATH = join(ROOT, 'docs', 'agents', 'AGENT_QUALITY_AGENT.md')
-
-// All models route through Vercel AI Gateway — plain "provider/model" string format
-// Dots in version numbers are intentional (AI Gateway slug format)
-type ModelString = Parameters<typeof generateText>[0]['model']
-const REVIEWER_CLAUDE = 'anthropic/claude-sonnet-4.6' as ModelString
-const REVIEWER_GPT    = 'openai/gpt-5.4'              as ModelString
-const REVIEWER_GROK   = 'xai/grok-4'                  as ModelString
-const JUDGE_MODEL     = 'anthropic/claude-opus-4.6'   as ModelString
 
 // ── Format template ────────────────────────────────────────────────────────────
 
@@ -147,10 +139,10 @@ Output ONLY the complete AGENT_QUALITY_AGENT document in the exact format above.
 
 function buildJudgeSystemPrompt(): string {
   return `You are the Judge in a multi-model agent generation committee.
-Three AI models have independently created drafts of the AGENT_QUALITY_AGENT document.
+${COMMITTEE_REVIEWERS.length} AI models have independently created drafts of the AGENT_QUALITY_AGENT document.
 
 Your task:
-1. Compare all three drafts
+1. Compare all drafts
 2. Select the best rules across all drafts (rules may come from different models)
 3. Deduplicate: if multiple drafts describe the same rule differently, choose the clearest formulation
 4. Ensure: 5–9 rules total, correct format, three sections (Hard Boundaries / Structural Heuristics / Governance)
@@ -163,11 +155,10 @@ MANDATORY FORMAT:
 ${FORMAT_TEMPLATE}`
 }
 
-function buildJudgeUserPrompt(drafts: string[]): string {
-  const labels = ['Claude Sonnet', 'GPT-5.4', 'Grok 4']
+function buildJudgeUserPrompt(drafts: { label: string; text: string }[]): string {
   const draftSections = drafts.map((d, i) => `
-=== DRAFT ${i + 1}: ${labels[i] ?? `Model ${i + 1}`} ===
-${d}
+=== DRAFT ${i + 1}: ${d.label} ===
+${d.text}
 `).join('\n')
 
   return `Synthesize the best AGENT_QUALITY_AGENT from these ${drafts.length} independent drafts:
@@ -177,19 +168,7 @@ ${draftSections}
 Produce the final, definitive AGENT_QUALITY_AGENT document.`
 }
 
-// ── Provider calls ─────────────────────────────────────────────────────────────
-
-async function callModel(label: string, model: ModelString, system: string, prompt: string): Promise<string> {
-  try {
-    console.log(`  Calling ${label}…`)
-    const { text } = await generateText({ model, system, prompt, maxOutputTokens: 4096 })
-    console.log(`  ✓ ${label} responded (${text.length} chars)`)
-    return text.trim()
-  } catch (err) {
-    console.warn(`  ⚠ ${label} failed: ${String(err).slice(0, 160)}`)
-    return ''
-  }
-}
+// ── Provider calls: delegated to shared committee module ────────────────────────
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -218,23 +197,20 @@ async function main() {
   console.log(' AGENT_QUALITY_AGENT — Multi-Model Committee Generation')
   console.log('═══════════════════════════════════════════════════════')
 
-  const gatewayAvailable = !!(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
-  if (!gatewayAvailable) {
-    console.error('✗ No gateway auth found. Set AI_GATEWAY_API_KEY or run: vercel env pull .env.local')
-    process.exit(1)
-  }
+  requireGatewayAuth()
   console.log(`Gateway auth: ${process.env.AI_GATEWAY_API_KEY ? 'API key' : 'OIDC token'}`)
 
   // Step 1: Call all reviewers in parallel via AI Gateway
-  console.log('\n[Step 1] Calling reviewers in parallel…')
-  const [claudeDraft, gptDraft, grokDraft] = await Promise.all([
-    callModel('Claude Sonnet 4.6', REVIEWER_CLAUDE, SYSTEM_PROMPT, USER_PROMPT),
-    callModel('GPT-5.4',           REVIEWER_GPT,    SYSTEM_PROMPT, USER_PROMPT),
-    callModel('Grok 4',            REVIEWER_GROK,   SYSTEM_PROMPT, USER_PROMPT),
-  ])
+  console.log(`\n[Step 1] Calling ${COMMITTEE_REVIEWERS.length} reviewers in parallel…`)
+  const reviewerResults = await Promise.all(
+    COMMITTEE_REVIEWERS.map(async (m) => ({
+      label: m.label,
+      ...(await callCommitteeModel(m, SYSTEM_PROMPT, USER_PROMPT)),
+    })),
+  )
 
-  const drafts = [claudeDraft, gptDraft, grokDraft].filter(Boolean)
-  console.log(`\n✓ Got ${drafts.length}/3 drafts`)
+  const drafts = reviewerResults.filter((r) => r.text.length > 0)
+  console.log(`\n✓ Got ${drafts.length}/${COMMITTEE_REVIEWERS.length} drafts`)
 
   if (drafts.length === 0) {
     console.error('✗ All reviewers failed — check AI_GATEWAY_API_KEY and gateway availability')
@@ -245,13 +221,14 @@ async function main() {
   let finalContent: string
   if (drafts.length === 1) {
     console.log('\n[Step 2] Only 1 draft — skipping judge')
-    finalContent = drafts[0]
+    finalContent = drafts[0].text
   } else {
-    console.log('\n[Step 2] Running Opus 4.6 judge…')
-    finalContent = await callModel('Claude Opus 4.6 (judge)', JUDGE_MODEL, buildJudgeSystemPrompt(), buildJudgeUserPrompt(drafts))
+    console.log(`\n[Step 2] Running ${COMMITTEE_JUDGE.label}…`)
+    const judgeResult = await callCommitteeModel(COMMITTEE_JUDGE, buildJudgeSystemPrompt(), buildJudgeUserPrompt(drafts), 4096)
+    finalContent = judgeResult.text
     if (!finalContent) {
-      console.warn('⚠ Judge failed — using Claude Sonnet draft')
-      finalContent = drafts[0]
+      console.warn(`⚠ Judge failed — using ${drafts[0].label} draft`)
+      finalContent = drafts[0].text
     }
   }
 
