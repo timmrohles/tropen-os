@@ -55,7 +55,10 @@ export async function callCommitteeModel(
   member: CommitteeMember,
   systemPrompt: string,
   userPrompt: string,
-  maxOutputTokens = 2048,
+  // Reasoning-Modelle (z. B. Gemini 3.1 Pro) verbrauchen Output-Budget für Denk-Tokens
+  // BEVOR sichtbarer Text entsteht — zu knappes Budget → leere Antwort (finishReason 'length').
+  // 8192 lässt Raum für Reasoning + Antwort; Judge übergibt explizit 4096.
+  maxOutputTokens = 8192,
 ): Promise<CallResult> {
   try {
     const result = await generateText({
