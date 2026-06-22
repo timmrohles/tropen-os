@@ -132,7 +132,7 @@ export default function OnboardingPage() {
       }
 
       document.cookie = 'onboarding_done=1; max-age=31536000; path=/'
-      router.push('/audit')
+      router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unbekannter Fehler.')
       setSaving(false)
