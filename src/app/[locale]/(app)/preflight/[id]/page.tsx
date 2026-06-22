@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, use } from 'react'
-import { Compass, ArrowLeft, ArrowsClockwise, Trash, PencilSimple } from '@phosphor-icons/react'
+import { Compass, ArrowLeft, ArrowsClockwise, Trash, PencilSimple, ChatCircle } from '@phosphor-icons/react'
 import { Link, useRouter } from '@/i18n/navigation'
 import type { PreflightProjectDetail } from '@/lib/preflight/types'
 import { PreflightResult } from '../_components/PreflightResult'
@@ -102,6 +102,9 @@ export default function PreflightDetailPage({ params }: { params: Promise<{ id: 
           )}
         </div>
         <div className="page-header-actions">
+          <Link href={`/preflight/${id}/chat`} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+            <ChatCircle size={16} weight="fill" aria-hidden="true" /> Pre-Flight Chat
+          </Link>
           <button className="btn btn-ghost" onClick={() => void reanalyze()} disabled={reanalyzing || !detail?.input}>
             <ArrowsClockwise size={14} weight="bold" aria-hidden="true" /> {reanalyzing ? 'Analysiere …' : 'Neu analysieren'}
           </button>
