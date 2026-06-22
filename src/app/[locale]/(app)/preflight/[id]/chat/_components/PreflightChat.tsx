@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PaperPlaneTilt, ChatCircle, Robot } from '@phosphor-icons/react'
+import { PaperPlaneTilt, Robot } from '@phosphor-icons/react'
 
 type Msg = { role: 'user' | 'assistant'; content: string }
 
@@ -87,13 +87,31 @@ export function PreflightChat({ projectId }: { projectId: string }) {
         aria-label="Chat-Verlauf"
       >
         {isEmpty && (
-          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <ChatCircle size={32} weight="fill" color="var(--text-tertiary)" aria-hidden="true" />
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 6px' }}>
-              Toro ist bereit
+          <div style={{ maxWidth: 580, margin: '0 auto', padding: '40px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <div className="cmsg-avatar-toro" aria-hidden="true">
+                <Robot size={16} weight="fill" color="var(--accent)" />
+              </div>
+              <strong style={{ fontSize: 15, color: 'var(--text-primary)' }}>Toro — dein Pre-Flight-Coach</strong>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65, margin: '0 0 18px' }}>
+              Lass uns dein Fundament klären, <em>bevor</em> die erste Zeile Code entsteht. Ich helfe dir, die Idee
+              zu schärfen — damit Cursor, Claude &amp; Co. ohne Drift bauen: wartbar, erklärbar, sicher.
             </p>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5 }}>
-              Beschreibe deine Idee — Toro hilft dir, die Kernaussage zu schärfen und technische Stolpersteine früh zu erkennen.
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+              Das Ziel — am Ende hast du:
+            </p>
+            <ul style={{ margin: '0 0 18px', paddingLeft: 18, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>ein <strong>tragfähiges Konzept</strong> — was, für wen, Kern-Funktionen, Daten &amp; Geschäftsmodell</li>
+              <li>geklärte <strong>Architektur-Lücken</strong> + ein Entscheidungs-Log</li>
+              <li>dein <strong>Starterpaket</strong>, repo-ready:&nbsp;
+                <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: 'var(--text-primary)' }}>
+                  CLAUDE.md / .cursorrules · DECISIONS.md · .env.example · migration.sql
+                </span>
+              </li>
+            </ul>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.6 }}>
+              Beschreib deine Idee in 1–2 Sätzen — den Rest fragen wir Schritt für Schritt ab.
             </p>
           </div>
         )}
