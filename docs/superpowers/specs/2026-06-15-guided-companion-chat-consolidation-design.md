@@ -150,3 +150,10 @@ strukturierter Zustand (concept + Decision-Log + relevantes project_memory + Dri
 - Schreibender Repo-Zugriff / Push-MCP-Server (ADR-023 vertagt).
 - pgvector / semantisches Retrieval (Phase 2+).
 - Veredler-Vollausbau (ADR-021, eigener Strang).
+
+## 15. Backlog / Künftige Überlegungen (Phase 2+)
+
+Ideen, die zum Companion-Thread-Modell passen, aber bewusst nach dem MVP liegen:
+
+- **Gespräch forken.** Ab einem Punkt abzweigen, um eine Alternative durchzuspielen, ohne den Haupt-Thread zu verlieren (z. B. „Was wäre serverless statt Supabase?"). Skizze: neue `conversation` mit `forked_from_conversation_id` + `fork_from_message_index`; Nachrichten bis zum Fork-Punkt referenziert/kopiert. Passt zum explorativen Charakter des Companions.
+- **Gesprächsteile merken.** Eine Nachricht/Stelle zu dauerhaftem Wissen befördern → `project_memory` (APPEND ONLY) bzw. Decision-Log. Das ist die konkrete Ausprägung des Gedächtnis-Prinzips aus §7 (Chat = vergängliches Transkript, strukturierter Zustand = Gedächtnis). Einfache Variante (Pin → `project_memory`) ist früh möglich; semantischer Abruf (pgvector) bleibt Phase 2.

@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
     }
 
     setSuccess(true)
-    setTimeout(() => router.push('/audit'), 2000)
+    setTimeout(() => router.push('/dashboard'), 2000)
   }
 
   return (

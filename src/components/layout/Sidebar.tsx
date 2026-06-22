@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import ParrotIcon from '@/components/ParrotIcon'
 import {
-  CaretLeft, CaretRight, GearSix, House, ClipboardText, Compass,
+  CaretLeft, CaretRight, GearSix, House, ClipboardText, ChatCircle,
 } from '@phosphor-icons/react'
 
 
@@ -104,7 +104,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   // ── Universal nav ─────────────────────────────────────────────────────────
   const navItems: NavItem[] = [
     { href: '/dashboard', icon: <House size={18} weight="bold" aria-hidden="true" />, label: 'Dashboard', matchPrefix: '/dashboard' },
-    { href: '/preflight', icon: <Compass size={18} weight="bold" aria-hidden="true" />, label: 'Pre-Flight', matchPrefix: '/preflight' },
+    { href: '/preflight', icon: <ChatCircle size={18} weight="bold" aria-hidden="true" />, label: 'Companion', matchPrefix: '/preflight' },
     { href: '/audit',     icon: <ClipboardText size={18} weight="bold" aria-hidden="true" />, label: 'Audit', matchPrefix: '/audit' },
   ]
 
