@@ -2,11 +2,13 @@
 -- Companion MVP Sub-Plan 1: Pre-Flight-Chat lebt in einer conversation (type='preflight'),
 -- verknüpft mit dem preflight_project. B-Recycling: nutzt conversations + messages.
 
--- 1) conversation_type um 'preflight' erweitern (bisher: chat/workspace_briefing/workspace_silo/workspace_card)
+-- 1) conversation_type um 'preflight' erweitern.
+--    Superset der bestehenden Liste (Migration 061: chat/workspace_briefing/workspace_silo/
+--    workspace_card/prompt_builder) + 'preflight' — rein additiv, kein bestehender Wert entfällt.
 ALTER TABLE public.conversations DROP CONSTRAINT IF EXISTS conversations_conversation_type_check;
 ALTER TABLE public.conversations
   ADD CONSTRAINT conversations_conversation_type_check
-  CHECK (conversation_type IN ('chat','workspace_briefing','workspace_silo','workspace_card','preflight'));
+  CHECK (conversation_type IN ('chat','workspace_briefing','workspace_silo','workspace_card','prompt_builder','preflight'));
 
 -- 2) Brücke preflight_project → conversation (der einzige echte Schema-Zusatz, Spec §6)
 ALTER TABLE public.preflight_projects
