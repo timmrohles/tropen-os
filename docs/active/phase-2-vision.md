@@ -357,3 +357,69 @@ Diese Punkte sind aus der KMU-Vision **bewusst entfernt** worden, weil sie nicht
 Wer Phase 2 startet, fängt nicht von null an — aber auch nicht mit fertigen Spezifikationen. Diese fünf Pfeiler sind die **konzeptuelle Schwerkraft** der KMU-Vision. Wenn der Markt zeigt, dass es Zeit ist, ist die Substanz hier auffindbar.
 
 Bis dahin: Solo-Vibe-Coder. Roadmap-MVP. Drei Features. Diszipliniert.
+
+---
+
+## Eingefrorene Feature-Details (aus CLAUDE.md ausgelagert 2026-06-20)
+
+> Operative Details zu eingefrorenen Phase-2-Features. Aus CLAUDE.md hierher verschoben, weil sie im MVP nicht aktiv sind (siehe „Eingefrorene Navigation" in CLAUDE.md). Schema/Backend bleiben teils erhalten — Details unten.
+
+### Toro Extract — Dokumenten-Extraktion (Stand 2026-03-27)
+
+Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extrahiert strukturierte Daten.
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/lib/knowledge/extract/classifier.ts` | `classifyDocument(content, filename)` — Haiku erkennt Typ + Konfidenz |
+| `src/lib/knowledge/extract/schemas.ts` | `EXTRACTION_SCHEMAS` für invoice / contract / offer |
+| `src/lib/knowledge/extract/extractor.ts` | `extractMetadata(content, docType)` — Haiku extrahiert Felder als JSON |
+| `src/lib/knowledge/extract/index.ts` | `processDocument(sourceId, orgId)` — Orchestrierung, schreibt in knowledge_sources |
+| `src/app/api/knowledge/[id]/extract/route.ts` | POST (trigger async) + GET (status + metadata) |
+| `src/app/api/cockpit/expiring-contracts/route.ts` | GET contracts expiring within N days |
+| `src/components/knowledge/ExtractionPreview.tsx` | Inline-Preview nach Upload (nur wenn status='done') |
+| `src/components/cockpit/widgets/ExpiringContractsWidget.tsx` | Cockpit-Widget: ablaufende Verträge (90-Tage-Fenster) |
+
+**Extraktions-Lifecycle:** Upload + Ingest done → POST `/api/knowledge/[sourceId]/extract` (fire-and-forget) → `processDocument` (classify → skip wenn Konfidenz < 0.6 oder type='other' → extract → DB update) → `ExtractionPreview` zeigt Ergebnis bei `extraction_status='done'`. Widget-Katalog: `expiring_contracts` in `src/lib/cockpit/widgetCatalog.ts`.
+
+### Feeds — Distributions + Run-History (Plan J1 — Stand 2026-03-20)
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/app/api/feeds/[id]/distributions/route.ts` | GET list + POST create |
+| `src/app/api/feeds/[id]/distributions/[distId]/route.ts` | DELETE |
+| `src/lib/feeds/distributor.ts` | project target_type implementiert → project_memory |
+| `src/app/feeds/_components/RunHistoryPanel.tsx` | Run-Details mit Kosten + Fehler |
+| `src/app/feeds/_components/DistributionsPanel.tsx` | Outputs konfigurieren (project/workspace/notification) |
+| `src/app/feeds/_components/NotificationBadge.tsx` | Ungelesene Notifications mit Badge + Dropdown |
+
+**Distributions-Regeln:** Nur owner/admin darf Distributions anlegen/löschen · target_type 'notification' (Dummy-UUID, alle Org-Member notifiziert), 'project' (→ project_memory, memory_type='feed_item'), 'workspace' (→ knowledge_entries, entry_type='feed') · min_score (1–10) filtert.
+
+### Library-System (Capability + Outcome + Role + Skill)
+
+> **Status (2026-04-27):** TRANSFORMATION zur Veredler-Vorform. Resolver-Code-Substanz wird in Sprint 4 in den Veredler integriert (ADR-021). UI-Verwaltung EINGEFROREN für Phase 2. Schema bleibt erhalten.
+
+Besteht aus: `capabilities`, `outcomes`, `roles`, `skills`, `agent_skills` + Resolver (`capability-resolver.ts`, `skill-resolver.ts`, `library-resolver.ts`). API-Routes für library/role-CRUD bleiben aktiv für Veredler-Integration. Die Library-UI (`/library/*`) wird in Sprint 4 Feature-Flag-deaktiviert; Backend-Routes bleiben aktiv.
+
+### Perspectives — Parallele KI-Perspektiven (Stand 2026-03-23)
+
+| Datei | Inhalt |
+|-------|--------|
+| `supabase/migrations/20260322000065_perspectives.sql` | perspective_avatars + perspective_user_settings, RLS, 5 System-Seeds |
+| `src/app/api/perspectives/avatars/route.ts` | GET (mit pin-settings) + POST (user/org-scope) |
+| `src/app/api/perspectives/avatars/[id]/route.ts` | PATCH + DELETE (soft) — nur eigene user-scoped Avatare |
+| `src/app/api/perspectives/avatars/[id]/copy/route.ts` | POST — kopiert als scope='user' |
+| `src/app/api/perspectives/settings/route.ts` | GET + PATCH — pin/sort pro User |
+| `src/app/api/perspectives/query/route.ts` | POST — paralleles SSE-Streaming (Promise.all), Tabula-Rasa-Guard |
+| `src/app/api/perspectives/post-to-chat/route.ts` | POST — Perspectives-Antwort als assistant-Nachricht einfügen |
+| `src/components/workspace/PerspectivesStrip.tsx` | Strip über ChatInput: Avatar-Pills, Info-Popover, Befragen-Button |
+| `src/components/workspace/PerspectivesBottomSheet.tsx` | Bottom-Sheet: SSE-Stream, Kopieren, In-Chat-Posten, 60vh/92vh |
+| `src/app/perspectives/page.tsx` | Verwaltungsseite: Tabs System/Org/Meine, Avatar-Grid, CRUD |
+| `src/app/perspectives/_components/AvatarFormDrawer.tsx` | Drawer für eigene Avatare erstellen/bearbeiten |
+
+**Perspectives-Regeln:** `is_tabula_rasa=true` → Avatar bekommt nur den letzten User-Turn (server-seitig erzwungen) · SSE-Events `{ avatarId, delta }` / `{ avatarId, done, tokensUsed }` / `{ done: true }` · Budget-Check via `check_and_reserve_budget` RPC · Scope: system → org → user (system read-only).
+
+**Kurzreferenz (eingefrorene Features):**
+- Guided Workflows: `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
+- Vor jedem LLM-Call: `POST /api/library/resolve { capabilityId, outcomeId, roleId?, skillId? }`
+- Agenten: Max 1 gleichzeitiger Run pro Agent, agent_runs ist APPEND ONLY
+- Scope-Hierarchie (alle Entitäten): system → package → org → user → public
