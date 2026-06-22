@@ -772,7 +772,11 @@ Bekannte Fälle: `trend.ts` (formatRelativeDate → inline in IslandsRow), `Sect
 ### Code-Regel: Domain-Pflichtfeld auf Rules
 
 ```typescript
-type AuditDomain = 'code-quality' | 'performance' | 'security' | 'accessibility' | 'dsgvo' | 'ki-act'
+type AuditDomain =
+  | 'code-quality' | 'performance' | 'security' | 'accessibility' | 'dsgvo' | 'ki-act'
+  | 'documentation'                                  // README/ADR/Changelog/KI-Kontext (ADR-026)
+  | 'oss' | 'marketing' | 'platform' | 'infrastructure'  // ADR-027 Schritt 9 — Domain-Detektoren
+// Quelle der Wahrheit: src/lib/audit/types.ts
 ```
 
 - Mapping-Tabelle: `docs/audit/domain-mapping.md`
@@ -1155,71 +1159,6 @@ Letzter Deploy: 2026-03-25 (toro_address + language_style ins System-Prompt; Mig
 Letzte relevante Migrationen:
 | Datei | Inhalt |
 |-------|--------|
-| 030_projects_schema.sql | projects, project_memory (APPEND ONLY) |
-| 031_workspaces_schema.sql | workspaces, cards, card_history (APPEND ONLY) |
-| 032_support_tables.sql | dept_settings, transformations, templates |
-| 033_feed_tables.sql | feed_sources, feed_items, feed_processing_log (APPEND ONLY) |
-| 20260314000036_feeds_v2.sql | Feeds v2-Schema mit keywords, min_score, content_hash UNIQUE |
-| 20260317000039_capability_outcome_system.sql | capabilities, outcomes, capability_outcomes, org/user settings, guided_workflows Schema |
-| 20260317000040_cards_capability.sql | cards Extension: capability_id, outcome_id, sources, last_run_at, next_run_at |
-| 20260317000041_guided_workflows_seed.sql | Guided Workflows: 7 System-Workflows + Marketing-Paket geseedet; capability_org_settings um guided_workflows_enabled + allowed_workflow_ids erweitert |
-| 20260317000042_feed_dismissed.sql | feed_items: dismissed_at + dismissed_by Spalten für Soft-Hide |
-| 20260317000043_feed_topics.sql | feed_topics + feed_topic_sources Tabellen mit RLS |
-| 20260317000044_feed_data_sources.sql | feed_data_sources + feed_data_records Tabellen (Daten-Tab) mit RLS |
-| 20260318000046_feed_runs.sql | feed_sources: status/paused_at/paused_by/pause_reason; feed_runs (APPEND ONLY); feed_notifications; feed_distributions.target_type += 'notification' |
-| 20260318000047_skills.sql | skills + agent_skills Tabellen mit RLS; 6 System-Skills geseedet (Tiefenanalyse, Zusammenfassung, Marktbeobachtung, Wissensextraktion, Berichterstellung, Social-Media) |
-| 20260318000048_agents_v2.sql | agents ALTER: scope (visibility migriert), neue Spalten (trigger_type, trigger_config, capability_steps, etc.); agent_runs (APPEND ONLY); 5 Marketing-Paket-Agenten als scope='package' geseedet |
-| 20260318000049_conversations_workspace.sql | conversations: workspace_id, card_id, conversation_type Spalten; Index idx_conversations_workspace + idx_conversations_card |
-| 20260319000050_shared_chats.sql | conversations: share_token, shared_at, share_scope, shared_from_id + Indexes |
-| 20260319000052_library_extend_existing.sql | ALTER capabilities/outcomes/skills: name, scope, icon, source_id etc. |
-| 20260319000053_library_new_tables.sql | CREATE roles/library_versions/org_library_settings/user_library_settings |
-| 20260319000054_library_new_tables_fix.sql | Fix: roles_insert policy, idx_roles_name_active, idx_lib_versions_org |
-| 20260319000055_library_cards.sql | cards: role_id UUID + skill_id UUID |
-| 20260319000056_library_seed.sql | 7 system+package roles geseedet; package_agents → roles migriert |
-| 20260319000059_memory_extraction_log.sql | memory_extraction_log (APPEND ONLY): KI-Gedächtnis-Extraktion aus Konversationen |
-| 20260320000060_project_memory_feeds.sql | project_memory: organization_id, memory_type, source_url, metadata; DROP NOT NULL on type |
-| 20260320000061_chat_prompt_builder.sql | conversations: 'prompt_builder' added to conversation_type CHECK |
-| 20260320000062_intention_system.sql | conversations: intention, current_project_id, drift_detected, focus_since_message; focus_log (APPEND ONLY) |
-| 20260320000063_artifacts_react_type.sql | artifacts: type CHECK erweitert um 'react', 'data', 'image', 'other' |
-| 20260320000064_workspace_cards_extend.sql | workspaces: project_id UUID FK; cards: source ('manual'/'chat_artifact'), source_conversation_id UUID FK |
-| 20260322000065_perspectives.sql | perspective_avatars (scope/org/user/system, is_tabula_rasa, RLS), perspective_user_settings (pin/sort), 5 System-Avatare geseedet |
-| 20260324000066_user_prefs_link_previews.sql | user_preferences: link_previews BOOLEAN DEFAULT true |
-| 20260324000067_user_prefs_web_search.sql | user_preferences: web_search_enabled BOOLEAN DEFAULT false |
-| 20260325000070_user_prefs_emoji_style.sql | user_preferences: emoji_style VARCHAR DEFAULT 'minimal', suggestions_enabled BOOLEAN DEFAULT true |
-| 20260325000071_user_prefs_toro_address.sql | user_preferences: toro_address VARCHAR DEFAULT '', language_style TEXT DEFAULT '' |
-| 20260325000072_intention_guided.sql | conversations.intention: 'open' → NULL (migrated), CHECK updated to ('focused', 'guided') |
-| 20260325000073_projects_extend.sql | projects: emoji+context columns, goal+instructions→context migration; project_memory: deleted_at soft-delete + updated RLS; project_documents table + RLS; project-docs storage bucket; projects_with_stats view |
-| 20260325000074_projects_archive_merge.sql | projects: archived_at column; projects_with_stats view refreshed |
-| 20260325000075_workspaces_items.sql | workspaces: description+emoji+item_count columns, department_id nullable; workspace_items table + RLS + item_count trigger |
-| 20260325000076_workspace_members_share.sql | workspaces: share_token+share_role+share_active columns; workspace_members table + RLS |
-| 20260325000077_workspace_comments.sql | workspaces: comment_count column; workspace_comments table + RLS + comment_count trigger |
-| 20260325000078_workspace_comments_item.sql | workspace_comments: item_id UUID FK nullable (per-item comment threads) |
-| 20260325000079_workspaces_archive.sql | workspaces: archived_at TIMESTAMPTZ nullable + index (reversible soft-archive) |
-| 20260325000080_workspace_items_agent.sql | workspace_items: item_type constraint updated — adds 'agent', keeps 'note' for backwards-compat |
-| 20260325000081_org_assistant_image.sql | organization_settings: ai_assistant_image_url TEXT DEFAULT NULL |
-| 20260325000082_dashboard_widgets.sql | dashboard_widgets (user_id, org_id, widget_type, position, size, config, is_visible) + RLS; user_preferences: dashboard_setup_done BOOLEAN |
-| 20260325000083_rename_to_cockpit.sql | dashboard_widgets → cockpit_widgets; dashboard_setup_done → cockpit_setup_done; RLS policy recreated as cockpit_widgets_own |
-| 20260327000084_feature_flags.sql | organization_settings: features JSONB DEFAULT (feeds/workspaces/agents/perspectives=true, rest=false) |
-| 20260327000085_llm_governance.sql | model_catalog: governance fields (display_name, flag, is_eu_hosted, is_open_source, suitable_levels, cost_input_per_m, etc.); org_model_config + user_model_preferences + RLS; Mistral model seeds |
-| 20260327000086_extract.sql | knowledge_sources: extraction columns (applied via repair — rolled back) |
-| 20260327000087_extract_index.sql | placeholder (repair-applied, superseded by 088) |
-| 20260327000088_extract_full.sql | knowledge_sources: document_type, extracted_metadata, extraction_status/confidence/model/error, user_confirmed, extracted_at; idx_knowledge_contracts |
-| 20260327000089_workflow_adapter.sql | organization_settings: workflow_provider (windmill/n8n/none), workflow_base_url, workflow_api_key_enc |
-| 20260327000090_tenant_isolation_fixes.sql | transformation_links RLS: USING(TRUE) → org-scoped via source workspace/project |
-| 20260327000091_deactivate_mistral.sql | model_catalog: Mistral-Modelle is_active=false (Provider nicht in Edge Function unterstützt) |
-| 20260330000092_bookmarks_full_content.sql | bookmarks: full_content TEXT Spalte für vollständigen Nachrichtentext |
-| 20260330000093_conversations_intention_default.sql | conversations.intention: DEFAULT NULL gesetzt |
-| 20260330000094_model_catalog_capabilities.sql | model_catalog: capabilities JSONB DEFAULT '["general"]'; GIN-Index; Seeds für Anthropic/GPT/Mistral |
-| 20260408000095_audit_tables.sql | audit_runs (APPEND ONLY), audit_category_scores (APPEND ONLY), audit_findings (status updatable); RLS via get_my_organization_id() |
-| 20260408000096_audit_agent_source.sql | audit_findings: agent_source CHECK('core'/'architecture'/'security'/'observability') DEFAULT 'core', agent_rule_id TEXT, enforcement TEXT |
-| 20260408000097_audit_review_fields.sql | audit_runs: review_type, models_used, judge_model, review_cost_eur, quorum_met; audit_findings: consensus_level, models_flagged, avg_confidence |
-| 20260409000101_audit_fixes_consensus.sql | audit_fixes: fix_mode ('quick'/'consensus'), risk_level ('safe'/'moderate'/'critical'), risk_details JSONB, drafts JSONB DEFAULT '[]', judge_explanation TEXT |
-| 20260409000102_audit_findings_affected_files.sql | audit_findings: affected_files TEXT[] + fix_hint TEXT — multi-file finding support |
-| 20260409000103_scan_projects.sql | scan_projects Tabelle (id, org_id, name, source, file_count, total_size_bytes, last_scan_at, last_score, detected_stack) + audit_runs.scan_project_id FK |
-| 20260409000105_audit_agent_source_security_scan.sql | audit_findings: agent_source CHECK erweitert um 'security-scan' (Sprint 7) |
-| 20260409000106_project_profile.sql | scan_projects: profile JSONB, is_public, live_url, is_live, audience, compliance_requirements, not_applicable_categories |
-| 20260410000107_audit_agent_source_regulatory.sql | audit_findings: agent_source CHECK erweitert um 'dsgvo', 'bfsg', 'ai-act' |
-| 20260410000108_audit_tasks.sql | audit_tasks: finding_id FK, title/severity/rule_id/file_path snapshot, completed + completed_at, RLS via get_my_organization_id() |
 | 20260415000112_audit_findings_not_relevant_reason.sql | audit_findings: not_relevant_reason TEXT Spalte fuer "Nicht relevant"-Begruendungen |
 | 20260417000113_beta_tables.sql | beta_waitlist (email/platform/message, RLS public insert + superadmin read) + beta_feedback (user_id/audit_run_id/ratings/message/platform) + user_preferences: beta_onboarding_done + is_beta_user |
 | 20260505000116_scan_project_profiles.sql | scan_project_profiles: profile_type_enum + geo_scope_enum + 5 Felder (profile_type, geo_scope, has_user_data, has_ai nullable, has_ecommerce nullable) + RLS org-scoped. ADR-027 Schritt 5. |
@@ -1644,42 +1583,11 @@ Konsequenz: Positionierungsfragen immer mit echten Benchmark-Daten beantworten, 
 ## Pending UI/Chat Tasks (nicht in phase2-plans.md)
 
 Kleine Verbesserungen, die beim Testen aufgefallen sind — noch kein eigener Plan.
-Details: `memory/project_pending_ui_tasks.md`
+Erledigte Einträge archiviert 2026-06-20 (vollständige Historie: `memory/project_pending_ui_tasks.md`). Offen:
 
 | Task | Status | Notiz |
 |------|--------|-------|
-| Artifacts-Seite Redesign | ✅ gebaut | ArtifactMenu (DotsThree+Umbenennen+Löschen), alle 8 Typen, hover-actions, inline rename, empty-state mit ChatCircle-CTA (2026-03-25) |
-| Artefakte Vorschau Modal | ✅ gebaut | Klick auf Karte → ArtifactPreviewModal (ArtifactRenderer, Escape+Backdrop schließen, "Im Chat öffnen"), Mobile Fullscreen (2026-03-25). TODO: /artefakte/[id] eigene Seite wenn Sharing-Feature kommt |
-| Markdown-Rendering im Chat | ✅ bereits vorhanden | `react-markdown` + `remarkGfm` in `ChatMessage.tsx` — war fälschlich als offen notiert |
-| Artifact iframe-Höhe | ✅ gebaut | ResizeObserver + postMessage `iframe-resize` in `ArtifactRenderer.tsx`, max 800px (2026-03-23) |
-| Session-Panel Warnungen | ✅ gebaut | 5px-Dot + 11px-Text statt Warn-Boxen — `.sp-warning-badge` in `globals.css` (2026-03-23) |
-| Rechtes Panel Redesign | ✅ gebaut | `right-panel-*` CSS-Klassen, custom `PanelSelect` Komponente (`.dropdown`-System), Section-Icons (MapPin/Bird/Layout), Sidebar-Collapse-Button im Header, "Einklappen"-Text entfernt (2026-03-25) |
-| Voice-to-Text | ✅ gebaut | Web Speech API, Mic-Button im ChatInput (2026-03-20) — Hydration-Fix: `hasSpeech` via `useEffect` (2026-03-23) |
-| Dokument-Upload im Chat | ✅ gebaut | PDF/Bild Base64 via `attachmentRef` → Anthropic `document`/`image` content block (2026-03-23) |
-| PowerPoint-Export | ✅ gebaut | `pptxgenjs`, `/api/artifacts/export-pptx`, Button in `ArtifactRenderer.tsx` für Präsentations-Artifacts (2026-03-23) |
-| Text-to-Speech | ✅ gebaut | `useTTS` Hook, `/api/tts` (OpenAI tts-1, voice=nova), [🔊] Button in `MessageActions.tsx` (2026-03-25) |
-| Action Layer Hotfix | ✅ gebaut | ToroBadge außen rechts, DotsThree entfernt, neue Actions (Kürzen/E-Mail/Übersetzen/Bild/Perspektive), Mobile Bottom Sheet, `useMediaQuery` (2026-03-25) |
-| Parallel Tabs | ✅ gebaut | `detect-parallel-intent.ts` (Keyword-Erkennung); Confirmation-Bubble in ChatArea (Lightbulb + accent-light); `openNewTabWithConversation` in useChatTabs; POST /api/conversations/create; WorkspaceLayout `handleOpenParallelTabs` (2026-03-30) |
-| Modell-Vergleich-Tabs (Plan M) | ✅ gebaut | `ModelComparePopover.tsx` + `Modal.tsx`; Scales-Icon; 2–4 Checkboxen; `handleModelCompare` in ChatArea; `overrideClientPrefs` in sendDirectToNewConv; capabilities JSONB in model_catalog (Mig 094); `detectTaskCategory()` in detect-parallel-intent.ts; capability-basierte Vorauswahl + "Empfohlen"-Badge im Modal (2026-03-30) |
 | Voice Input Flag (TTS Aufgabe 4) | ⬜ TODO | `onSendMessage`-Prop-Kette refactorn — `wasVoiceInput` Ref in ChatArea, `onVoiceInput` Callback in ChatInput, Flag im API-Body, Edge Function: kürzere Antwort bei voiceInput=true |
-| Redirect Chain (multiple redirects) | ✅ behoben | `middleware.ts`: Auth-Check bei `pathname === '/'` → authentifizierte User direkt zu `/{locale}/dashboard` (1 statt 2 Hops); `NEXT_LOCALE`-Cookie für Locale-Detection (2026-04-23) |
-| Not-Found Links ohne Locale | ✅ behoben | `app/[locale]/not-found.tsx` (neu, locale-aware Link via `@/i18n/navigation`) fängt locale-Pfad-404s ab; root `app/not-found.tsx` auf `'use client'` + `usePathname()` für locale-korrekten Link (2026-04-23) |
-| Bundle-Optimierung (TTI) | ✅ behoben | `react-syntax-highlighter` (~170kB) lazy via `CodeBlock.tsx` + `dynamic()`; `@tremor/react` AreaChart lazy via `dynamic()` in audit/page + settings; Build-OOM gefixt: `NODE_OPTIONS=--max-old-space-size=4096` in package.json build-script (2026-04-23) |
-| Sentry Browser Tracing Bundle | ✅ behoben | `tracesSampleRate: 0` in `src/instrumentation-client.ts` gesetzt — spart ~124kB gz im shared bundle. Re-enable auf `0.1` wenn Sentry Performance-Tab aktiv genutzt wird. (2026-04-23) |
-| Hydration-Fehler (ChatInput, RecentlyUsed, AppFooter) | ✅ behoben | `hasSpeech` → useEffect; `suppressHydrationWarning` auf Zeit-/Jahr-Spans (2026-03-23) |
-| Hydration-Fehler TopBar + ChatHeaderStrip | ✅ behoben | TopBar `mounted` guard (kein SSR); Bell+Account als CSS-Klassen; ChatHeaderStrip portalt in `#topbar-chat-slot` statt fixed overlay (2026-03-26) |
-| Chat Auto-Scroll während Streaming | ✅ gebaut | `lastMsgContent`-Effect in `useWorkspaceState.ts` mit `behavior: 'instant'` — scrollt bei jedem Streaming-Chunk (2026-03-26) |
-| Chat-Menü Dropdown weiß | ✅ gebaut | `.wl-conv-menu` auf `#ffffff` + `var(--border)` + `var(--text-secondary)` — Löschen in Rot lesbar (2026-03-26) |
-| Chat-Menü: Zusammenfassung | ✅ gebaut | Menü-Eintrag sendet Prompt an Toro: Chat als teilbares Dokument-Artefakt zusammenfassen (2026-03-26) |
-| Chat-Menü: Übersicht Artefakte | ✅ gebaut | `artifactsView` State in ChatArea; ersetzt Chat-Nachrichten durch alle Artefakte via ArtifactRenderer; "← Zurück"-Button (2026-03-26) |
-| React-Artifacts TypeScript-Support | ✅ gebaut | sucrase-Transform `['jsx', 'typescript']` in `/api/artifacts/transform/route.ts` (2026-03-23) |
-| Workspaces Redesign (Prompt A–C) | ✅ gebaut | workspace_items+members+comments (Mig 075–077); neue /workspaces page (client, grid+search+create); /workspaces/[id] Detail-Page (Tabs: Inhalte/Mitglieder/Kommentare/Einstellungen); /shared/[token] öffentliche Freigabe-Seite; workspace_items/members/comments/share API-Routes (2026-03-25) |
-| Horizontaler Scroll | ✅ behoben | `html`/`body { overflow-x: hidden }`, `.pbi-wrapper/.pbi-expansion { min-width: 0; overflow: hidden }`, layout-wrapper `overflow: hidden` in chat/layout.tsx + chat/[id]/layout.tsx (2026-03-29) |
-| SessionPanel Toggle umbenennen | ✅ gebaut | "Geteilter Bildschirm" → "Artefakt rechts anzeigen"; Hint → "Artefakte öffnen im Seitenpanel" (2026-03-29) |
-| Links-Toggle abhängig von Live-Suche | ✅ gebaut | `updatePref` auto-disables `link_previews` bei `web_search_enabled=false`; Toggle visuell deaktiviert (opacity 0.4, pointer-events none) (2026-03-29) |
-| Quick-Chips in Toro-Bubble | ✅ gebaut | Externes `.suggestion-pills`-Block entfernt; `.cmsg-chips` innerhalb `.cmsg-bubble--assistant` nach `pending`-Cursor, vor `showActions`; CSS: border-top-divider + "Vorschläge:"-Label + link-style buttons (2026-03-29) |
-| TopBar Race Condition (Tabs/ChatName fehlen) | ✅ behoben | Slot-Divs `#topbar-tabs-slot` + `#topbar-chat-slot` in `!mounted`-Branch ergänzt → DOM-Elemente ab erstem Render vorhanden, WorkspaceLayout-useEffect findet sie sofort (2026-03-29) |
-| Lesezeichen-Feature | ✅ gebaut | `/lesezeichen` Seite mit Multi-Select, Neuer-Chat, Kombinieren, Löschen; `BookmarkSimple` in Member-Sidebar; "Gespeichert"-Chip auf /artifacts; `full_content TEXT` in bookmarks (Migration 092); Prefill via sessionStorage in SingleChatClient (2026-03-30) |
 
 ---
 
