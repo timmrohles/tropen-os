@@ -1,14 +1,11 @@
 // src/app/api/preflight/projects/route.ts
-import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextRequest, NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-error'
 import type { PreflightProjectListItem } from '@/lib/preflight/types'
 
-export async function GET() {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_req: NextRequest, { auth: me }) => {
   const { data, error } = await supabaseAdmin
     .from('preflight_projects')
     .select('id, name, pivots, red_count, updated_at')
@@ -26,4 +23,4 @@ export async function GET() {
     updatedAt: r.updated_at,
   }))
   return NextResponse.json({ data: items })
-}
+})

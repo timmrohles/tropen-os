@@ -1,6 +1,6 @@
 // src/app/api/preflight/concept/suggest/route.ts
-import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { NextRequest, NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { conceptSuggestBody } from '@/lib/validators/preflight'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
@@ -10,10 +10,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api:preflight:concept:suggest')
 
-export async function POST(req: Request) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, { auth: me }) => {
   const { data, error: validationError } = await validateBody(req, conceptSuggestBody)
   if (validationError) return validationError
 
@@ -35,4 +32,4 @@ export async function POST(req: Request) {
     logger.warn('concept suggest LLM failed', { message: err instanceof Error ? err.message : 'unknown' })
   }
   return NextResponse.json({ suggestions })
-}
+})

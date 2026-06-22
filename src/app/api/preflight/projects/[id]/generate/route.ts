@@ -1,7 +1,6 @@
 // src/app/api/preflight/projects/[id]/generate/route.ts
-import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
-import { getPreflightProjectForUser } from '@/lib/api/preflight'
+import { NextRequest, NextResponse } from 'next/server'
+import { withPreflightProjectAccess } from '@/lib/auth/route-guards'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateStartpaket } from '@/lib/preflight/generate'
@@ -12,13 +11,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api:preflight:generate')
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
-
-  const project = await getPreflightProjectForUser(id, me)
-  if (!project) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+export const POST = withPreflightProjectAccess(async (_req: NextRequest, { auth: me, preflightProject: project }) => {
   if (!project.latest_run_id) return NextResponse.json({ error: 'Noch keine Analyse' }, { status: 409 })
 
   const { data: run, error: runErr } = await supabaseAdmin
@@ -44,8 +37,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   const { error: updErr } = await supabaseAdmin
-    .from('preflight_projects').update({ startpaket, updated_at: new Date().toISOString() }).eq('id', id)
+    .from('preflight_projects').update({ startpaket, updated_at: new Date().toISOString() }).eq('id', project.id)
   if (updErr) return apiError(updErr)
 
   return NextResponse.json({ startpaket })
-}
+})

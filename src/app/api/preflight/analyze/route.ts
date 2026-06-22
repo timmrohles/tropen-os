@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
+import { withAuth } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { preflightBody } from '@/lib/validators/preflight'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
@@ -9,10 +9,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api:preflight:analyze')
 
-export async function POST(req: NextRequest) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, { auth: me }) => {
   const { data, error: validationError } = await validateBody(req, preflightBody)
   if (validationError) return validationError
 
@@ -78,4 +75,4 @@ export async function POST(req: NextRequest) {
     logger.error('preflight analyze error', { err })
     return NextResponse.json({ error: 'Ein Fehler ist aufgetreten', code: 'INTERNAL_ERROR' }, { status: 500 })
   }
-}
+})

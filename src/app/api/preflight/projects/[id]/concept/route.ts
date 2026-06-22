@@ -1,7 +1,6 @@
 // src/app/api/preflight/projects/[id]/concept/route.ts
-import { NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/api/projects'
-import { getPreflightProjectForUser } from '@/lib/api/preflight'
+import { NextRequest, NextResponse } from 'next/server'
+import { withPreflightProjectAccess } from '@/lib/auth/route-guards'
 import { validateBody } from '@/lib/validators'
 import { conceptBody } from '@/lib/validators/preflight'
 import { checkBudget, budgetExhaustedResponse } from '@/lib/budget'
@@ -13,14 +12,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api:preflight:concept')
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const me = await getAuthUser()
-  if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
-
-  const project = await getPreflightProjectForUser(id, me)
-  if (!project) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-
+export const PATCH = withPreflightProjectAccess(async (req: NextRequest, { auth: me, preflightProject: project }) => {
   const { data: concept, error: validationError } = await validateBody(req, conceptBody)
   if (validationError) return validationError
 
@@ -70,4 +62,4 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (upErr) logger.warn('project update after concept failed', { error: upErr.message, projectId: project.id })
 
   return NextResponse.json({ result })
-}
+})

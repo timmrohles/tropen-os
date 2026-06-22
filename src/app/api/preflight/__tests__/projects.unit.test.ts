@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 vi.mock('@/lib/api/projects', () => ({ getAuthUser: vi.fn() }))
 vi.mock('@/lib/supabase-admin', () => ({ supabaseAdmin: { from: vi.fn() } }))
 
@@ -18,12 +19,14 @@ function mockList(rows: unknown[]) {
   mockAdmin.from = vi.fn().mockReturnValue({ select }) as unknown as typeof mockAdmin.from
 }
 
+const makeReq = () => new NextRequest('http://localhost/api/preflight/projects')
+
 describe('GET /api/preflight/projects', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('401 ohne Auth', async () => {
     mockAuth.mockResolvedValue(null)
-    const res = await GET()
+    const res = await GET(makeReq(), {} as never)
     expect(res.status).toBe(401)
   })
 
@@ -32,7 +35,7 @@ describe('GET /api/preflight/projects', () => {
     mockList([
       { id: 'p1', name: 'LMS', pivots: { stack: 'Next.js' }, red_count: 17, updated_at: '2026-06-06T10:00:00Z' },
     ])
-    const res = await GET()
+    const res = await GET(makeReq(), {} as never)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data[0]).toEqual({ id: 'p1', name: 'LMS', stack: 'Next.js', redCount: 17, updatedAt: '2026-06-06T10:00:00Z' })

@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser, verifyProjectAccess } from '@/lib/api/projects'
 import { canReadWorkspace, canWriteWorkspace } from '@/lib/api/workspaces'
+import { getPreflightProjectForUser } from '@/lib/api/preflight'
 
 export type AuthUser = { id: string; organization_id: string; role: string }
 
@@ -25,6 +26,9 @@ type NextContext<P> = { params: Promise<P> }
 export type AuthedContext<P> = { params: P; auth: AuthUser }
 export type ProjectContext<P> = AuthedContext<P> & { projectId: string }
 export type WorkspaceContext<P> = AuthedContext<P> & { workspaceId: string }
+/** Verifiziertes Preflight-Projekt (org/owner-gescoped via getPreflightProjectForUser). */
+export type PreflightProject = NonNullable<Awaited<ReturnType<typeof getPreflightProjectForUser>>>
+export type PreflightProjectContext<P> = AuthedContext<P> & { preflightProject: PreflightProject }
 
 type Params = Record<string, string>
 type RouteResult = Promise<Response> | Response
@@ -101,6 +105,27 @@ export function withProjectAccess<P extends Params = Params>(
     const allowed = await verifyProjectAccess(projectId, ctx.auth)
     if (!allowed) return notFound()
     return handler(req, { ...ctx, projectId })
+  })
+}
+
+/**
+ * Wie withAuth, zusätzlich Ownership-Prüfung auf ein Preflight-Projekt.
+ * Die ID wird aus den Route-Params gelesen (default-Key: 'id').
+ * 401 wenn nicht eingeloggt, 404 wenn Projekt fehlt oder kein Zugriff
+ * (getPreflightProjectForUser ist org/owner-gescoped, superadmin sieht alles).
+ * Injiziert das geladene `preflightProject` — kein Doppel-Fetch im Handler.
+ */
+export function withPreflightProjectAccess<P extends Params = Params>(
+  handler: (req: NextRequest, ctx: PreflightProjectContext<P>) => RouteResult,
+  opts?: { paramKey?: string },
+) {
+  const key = opts?.paramKey ?? 'id'
+  return withAuth<P>(async (req, ctx) => {
+    const id = ctx.params[key]
+    if (!id) return notFound()
+    const preflightProject = await getPreflightProjectForUser(id, ctx.auth)
+    if (!preflightProject) return notFound()
+    return handler(req, { ...ctx, preflightProject })
   })
 }
 
