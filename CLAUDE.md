@@ -78,7 +78,7 @@ Sie sind nicht widersprüchlich, sondern ergänzen sich:
 
 Wenn ein neues Feature vorgeschlagen wird, erste Frage: passt es zur Roadmap-MVP-Vision?
 - Ja → bauen
-- Nein, aber zur Phase-2-Vision (siehe `docs/phase-2-vision.md`) → ablehnen mit Verweis "Phase 2"
+- Nein, aber zur Phase-2-Vision (siehe `docs/active/phase-2-vision.md`) → ablehnen mit Verweis "Phase 2"
 - Nein → ablehnen
 
 ---
@@ -1379,48 +1379,9 @@ Org-Admins steuern welche Modelle genutzt werden. User können (wenn erlaubt) si
 
 **Mistral-Provider:** `MISTRAL_API_KEY` in `.env` — bei fehlendem Key automatischer Anthropic-Fallback (kein Crash).
 
-### Toro Extract — Dokumenten-Extraktion (Stand 2026-03-27)
+### Eingefrorene Feature-Details (Phase 2)
 
-Automatische Metadaten-Extraktion nach Dokument-Upload. Toro erkennt Typ + extrahiert strukturierte Daten.
-
-| Datei | Inhalt |
-|-------|--------|
-| `src/lib/knowledge/extract/classifier.ts` | `classifyDocument(content, filename)` — Haiku erkennt Typ + Konfidenz |
-| `src/lib/knowledge/extract/schemas.ts` | `EXTRACTION_SCHEMAS` für invoice / contract / offer |
-| `src/lib/knowledge/extract/extractor.ts` | `extractMetadata(content, docType)` — Haiku extrahiert Felder als JSON |
-| `src/lib/knowledge/extract/index.ts` | `processDocument(sourceId, orgId)` — Orchestrierung, schreibt in knowledge_sources |
-| `src/app/api/knowledge/[id]/extract/route.ts` | POST (trigger async) + GET (status + metadata) |
-| `src/app/api/cockpit/expiring-contracts/route.ts` | GET contracts expiring within N days |
-| `src/components/knowledge/ExtractionPreview.tsx` | Inline-Preview nach Upload (nur wenn status='done') |
-| `src/components/cockpit/widgets/ExpiringContractsWidget.tsx` | Cockpit-Widget: ablaufende Verträge (90-Tage-Fenster) |
-
-**Extraktions-Lifecycle:**
-1. Upload abgeschlossen + Ingest done → POST `/api/knowledge/[sourceId]/extract` (fire-and-forget)
-2. `processDocument`: classify → skip wenn Konfidenz < 0.6 oder type='other' → extract → DB update
-3. `ExtractionPreview` zeigt Ergebnis sobald `extraction_status = 'done'` (nur für docs mit status='ready')
-4. Cockpit-Widget liest direkt aus `knowledge_sources` über API
-
-**Widget-Katalog:** `expiring_contracts` in `src/lib/cockpit/widgetCatalog.ts` hinzugefügt (size: medium, adminOnly: false)
-
-**Folge-Prompts:** Stufe 2 (Admin-Extraktionsregeln), komplexe Typen, Mistral OCR, Toro Erinnerungen
-
-### Feeds — Distributions + Run-History (Plan J1 — Stand 2026-03-20)
-
-| Datei | Inhalt |
-|-------|--------|
-| `src/app/api/feeds/[id]/distributions/route.ts` | GET list + POST create |
-| `src/app/api/feeds/[id]/distributions/[distId]/route.ts` | DELETE |
-| `src/lib/feeds/distributor.ts` | project target_type implementiert → project_memory |
-| `src/app/feeds/_components/RunHistoryPanel.tsx` | Run-Details mit Kosten + Fehler |
-| `src/app/feeds/_components/DistributionsPanel.tsx` | Outputs konfigurieren (project/workspace/notification) |
-| `src/app/feeds/_components/NotificationBadge.tsx` | Ungelesene Notifications mit Badge + Dropdown |
-
-**Distributions-Regeln:**
-- Nur owner/admin darf Distributions anlegen/löschen
-- target_type 'notification': target_id ist Dummy-UUID (alle Org-Member werden notifiziert)
-- target_type 'project': Items landen in project_memory (memory_type='feed_item')
-- target_type 'workspace': Items landen in knowledge_entries (entry_type='feed')
-- min_score (1–10) filtert: Items unter dem Score werden nicht weitergeleitet
+> Operative Details zu eingefrorenen Phase-2-Features — **Toro Extract, Feeds-Distributions, Library-System, Perspectives** — liegen in `docs/active/phase-2-vision.md` → Abschnitt „Eingefrorene Feature-Details". Hierher ausgelagert 2026-06-20, weil sie im MVP nicht aktiv sind (siehe „Eingefrorene Navigation"). Schema/Backend bleiben teils erhalten — Details im Vision-Dokument.
 
 ### Feature-Dokumentation
 
@@ -1428,48 +1389,6 @@ Detaillierte Dokumentation aller implementierten Features ist ausgelagert in:
 → **`docs/active/feature-inventory.md`** (umbenannt von feature-registry.md — mit Status-Markern pro Feature)
 
 Enthält: Guided Workflows, Projekte + Workspaces (Plan F), AccountSwitcher, Transformations-Engine (Plan E), Chat & Context (Plan D), Skills-System (Plan J2a), Agenten-System (Plan J2b+J2c), Library-System (Capability + Outcome + Role + Skill), Feeds-Distributions (Plan J1), Perspectives (Plan L).
-
-### Library-System (Capability + Outcome + Role + Skill)
-
-> **Status (2026-04-27):** TRANSFORMATION zur Veredler-Vorform.
-> Die Resolver-Code-Substanz wird in Sprint 4 in den Veredler integriert (ADR-021).
-> UI-Verwaltung ist EINGEFROREN für Phase 2.
-> Schema bleibt erhalten.
-
-Die Library besteht aus: `capabilities`, `outcomes`, `roles`, `skills`, `agent_skills` + Resolver-Code in `src/lib/`.
-Resolver: `capability-resolver.ts`, `skill-resolver.ts`, `library-resolver.ts`.
-API-Routes für library/role-CRUD bleiben aktiv für Veredler-Integration.
-
-**Hinweis:** Die Library-UI (`/library/*`) wird in Sprint 4 Feature-Flag-deaktiviert.
-Backend-Routes bleiben aktiv für Veredler-Integration.
-
-### Perspectives — Parallele KI-Perspektiven (Stand 2026-03-23)
-
-| Datei | Inhalt |
-|-------|--------|
-| `supabase/migrations/20260322000065_perspectives.sql` | perspective_avatars + perspective_user_settings, RLS, 5 System-Seeds |
-| `src/app/api/perspectives/avatars/route.ts` | GET (mit pin-settings) + POST (user/org-scope) |
-| `src/app/api/perspectives/avatars/[id]/route.ts` | PATCH + DELETE (soft) — nur eigene user-scoped Avatare |
-| `src/app/api/perspectives/avatars/[id]/copy/route.ts` | POST — kopiert als scope='user' |
-| `src/app/api/perspectives/settings/route.ts` | GET + PATCH — pin/sort pro User |
-| `src/app/api/perspectives/query/route.ts` | POST — paralleles SSE-Streaming (Promise.all), Tabula-Rasa-Guard |
-| `src/app/api/perspectives/post-to-chat/route.ts` | POST — Perspectives-Antwort als assistant-Nachricht einfügen |
-| `src/components/workspace/PerspectivesStrip.tsx` | Strip über ChatInput: Avatar-Pills, Info-Popover, Befragen-Button |
-| `src/components/workspace/PerspectivesBottomSheet.tsx` | Bottom-Sheet: SSE-Stream, Kopieren, In-Chat-Posten, 60vh/92vh |
-| `src/app/perspectives/page.tsx` | Verwaltungsseite: Tabs System/Org/Meine, Avatar-Grid, CRUD |
-| `src/app/perspectives/_components/AvatarFormDrawer.tsx` | Drawer für eigene Avatare erstellen/bearbeiten |
-
-**Perspectives-Regeln:**
-- `is_tabula_rasa=true` → Avatar bekommt **nur den letzten User-Turn** (kein Projektkontext) — server-seitig erzwungen
-- SSE-Events: `{ avatarId, delta }` pro Chunk · `{ avatarId, done, tokensUsed }` pro Avatar · `{ done: true }` am Ende
-- Budget-Check via `check_and_reserve_budget` RPC vor jedem Query
-- Scope-Hierarchie: system → org → user; system-Avatare sind read-only + nicht löschbar
-
-**Kurzreferenz für häufig benötigte Regeln:**
-- Guided Workflows: `detectWorkflow()` macht **keinen** LLM-Call — reine Keyword-Logik
-- Vor jedem LLM-Call: `POST /api/library/resolve { capabilityId, outcomeId, roleId?, skillId? }`
-- Agenten: Max 1 gleichzeitiger Run pro Agent, agent_runs ist APPEND ONLY
-- Scope-Hierarchie (alle Entitäten): system → package → org → user → public
 
 ### Checker-Feedback-Prozess (Stand 2026-04-14)
 
@@ -1780,8 +1699,8 @@ eslint src/           # keine Fehler
 |----------|--------|
 | `docs/active/engineering-standard.md` | 25 Kategorien, Regeln, Warnsignale |
 | `docs/active/audit-system.md` | Scoring, Gewichtung, Auto-Checks |
-| `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/phase-2-vision.md` |
-| `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/phase-2-vision.md` |
+| `docs/_archive/2026-04-pre-pivot/architecture.md` | **SUPERSEDED** — Pre-Pivot KMU-Architektur. KMU-Substanz in `docs/active/phase-2-vision.md` |
+| `docs/_archive/2026-04-pre-pivot/architecture-navigation.md` | **SUPERSEDED** — Pre-Pivot Hub-Konzept. KMU-Substanz in `docs/active/phase-2-vision.md` |
 | `docs/active/roadmap.md` | **Normative Roadmap** — Single Source of Truth: Bauphasen, Sprint-Status, strategische Klärungen, Sequenz-Constraints, GTM |
 | `docs/active/migrations.md` | Vollständige Migrations-Übersicht 001–aktuell |
 | `docs/active/rag-architecture.md` | RAG, pgvector, Wissensbasis-Schema |
@@ -1796,7 +1715,7 @@ eslint src/           # keine Fehler
 | `docs/synthese/anhang-a-roadmap.md` | Sprint-Plan mit Aufwand-Schätzung |
 | `docs/synthese/anhang-b-migrations.md` | DB-Migrations-Block für Sprint 1+ |
 | `docs/synthese/anhang-c-kill-und-einfrier-liste.md` | Kill- und Einfrier-Liste mit Wieder-Anschalten-Bedingungen |
-| `docs/phase-2-vision.md` | Phase-2-Backup-Konzept (KMU-Substanz konzentriert) — 5 Pfeiler: Drei-Ebenen-Modell, Kontroll-Spektrum, Karten-Aggregatzustände, Aufbau/Produktion, Wissens-Hierarchie |
+| `docs/active/phase-2-vision.md` | Phase-2-Backup-Konzept (KMU-Substanz konzentriert) — 5 Pfeiler: Drei-Ebenen-Modell, Kontroll-Spektrum, Karten-Aggregatzustände, Aufbau/Produktion, Wissens-Hierarchie |
 | `docs/screenshots/` | UI-Screenshots (Design-Audit, Superadmin, Workspace, Canvas) |
 | `docs/archive/2026-03/superpowers/n8n-integration-konzept.md` | **SUPERSEDED** — Pre-Pivot n8n-Konzept. Substanz übertragen nach `windmill-integration-konzept.md`. |
 | `docs/repo-map/` | Repo Map Output: tropen-os-map.json/txt/stats.json (generiert von generate-repo-map.ts) |
