@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 vi.mock('@/lib/api/projects', () => ({ getAuthUser: vi.fn() }))
 vi.mock('@/lib/api/preflight', () => ({ getPreflightProjectForUser: vi.fn() }))
 vi.mock('@/lib/supabase-admin', () => ({ supabaseAdmin: { from: vi.fn() } }))
@@ -13,7 +14,7 @@ const mockAccess = vi.mocked(getPreflightProjectForUser)
 const mockAdmin = vi.mocked(supabaseAdmin)
 const USER = { id: 'u1', organization_id: 'org1', role: 'member' }
 const ctx = { params: Promise.resolve({ id: 'p1' }) }
-const req = (b: unknown) => new Request('http://x/api/preflight/projects/p1/decisions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
+const req = (b: unknown) => new NextRequest('http://x/api/preflight/projects/p1/decisions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
 
 describe('PATCH decisions', () => {
   beforeEach(() => vi.clearAllMocks())

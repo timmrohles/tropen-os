@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 vi.mock('@/lib/api/projects', () => ({ getAuthUser: vi.fn() }))
 vi.mock('@/lib/api/preflight', () => ({ getPreflightProjectForUser: vi.fn() }))
 vi.mock('@/lib/supabase-admin', () => ({ supabaseAdmin: { from: vi.fn() } }))
@@ -16,7 +17,7 @@ const PROJECT = { id: 'p1', organization_id: 'org1', name: 'LMS', pivots: { stac
 const ctx = (id: string) => ({ params: Promise.resolve({ id }) })
 
 function req(body?: unknown) {
-  return new Request('http://localhost/api/preflight/projects/p1', {
+  return new NextRequest('http://localhost/api/preflight/projects/p1', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,

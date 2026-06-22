@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 vi.mock('@/lib/api/projects', () => ({ getAuthUser: vi.fn() }))
 vi.mock('@/lib/api/preflight', () => ({ getPreflightProjectForUser: vi.fn() }))
 vi.mock('@/lib/budget', () => ({ checkBudget: vi.fn(), budgetExhaustedResponse: vi.fn(() => new Response('{}', { status: 402 })) }))
@@ -15,7 +16,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 const mAuth = vi.mocked(getAuthUser), mAccess = vi.mocked(getPreflightProjectForUser), mBudget = vi.mocked(checkBudget), mGen = vi.mocked(generateStartpaket), mAdmin = vi.mocked(supabaseAdmin)
 const USER = { id: 'u1', organization_id: 'org1', role: 'member' }
 const ctx = { params: Promise.resolve({ id: 'p1' }) }
-const req = () => new Request('http://x', { method: 'POST' })
+const req = () => new NextRequest('http://x', { method: 'POST' })
 
 function wire(decisions: unknown, redIds: string[]) {
   mAccess.mockResolvedValue({ id: 'p1', organization_id: 'org1', latest_run_id: 'r1', pivots: { buildTool: 'cursor' }, decisions } as never)

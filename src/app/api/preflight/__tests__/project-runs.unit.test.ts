@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 vi.mock('@/lib/api/projects', () => ({ getAuthUser: vi.fn() }))
 vi.mock('@/lib/api/preflight', () => ({ getPreflightProjectForUser: vi.fn() }))
 vi.mock('@/lib/budget', () => ({
@@ -25,7 +26,7 @@ const PROJECT = { id: 'p1', organization_id: 'org1', name: 'LMS', pivots: {}, la
 const PIVOTS = { buildTool: 'cursor', businessModel: 'b2c', audienceRegion: 'eu', hosting: 'eu', stack: 'Next.js' } as const
 const RESULT = { summary: { projectLabel: 'LMS', headline: 'x' }, gaps: { red: [], yellow: [], decidedCount: 0, naCount: 0 }, nodes: [] }
 const ctx = { params: Promise.resolve({ id: 'p1' }) }
-const req = (b: unknown) => new Request('http://localhost/api/preflight/projects/p1/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
+const req = (b: unknown) => new NextRequest('http://localhost/api/preflight/projects/p1/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
 
 describe('POST project runs', () => {
   beforeEach(() => vi.clearAllMocks())

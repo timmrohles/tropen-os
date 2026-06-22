@@ -95,10 +95,10 @@ describe('POST /api/preflight/analyze', () => {
   it('returns 401 when getAuthUser returns null', async () => {
     mockGetAuthUser.mockResolvedValue(null)
 
-    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }))
+    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }), {} as never)
     expect(res.status).toBe(401)
     const body = await res.json()
-    expect(body).toHaveProperty('error', 'Unauthorized')
+    expect(body).toHaveProperty('error')
   })
 
   // ------------------------------------------------------------------
@@ -108,7 +108,7 @@ describe('POST /api/preflight/analyze', () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: false, reason: 'Budget aufgebraucht' })
 
-    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }))
+    const res = await POST(makeRequest({ input: 'some design doc text here', pivots: FAKE_PIVOTS }), {} as never)
     expect(res.status).toBe(402)
     const body = await res.json()
     expect(body).toHaveProperty('code', 'BUDGET_EXHAUSTED')
@@ -121,7 +121,7 @@ describe('POST /api/preflight/analyze', () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
 
-    const res = await POST(makeRequest({}))
+    const res = await POST(makeRequest({}), {} as never)
     expect(res.status).toBe(400)
     const body = await res.json()
     expect(body).toHaveProperty('error')
@@ -131,7 +131,7 @@ describe('POST /api/preflight/analyze', () => {
     mockGetAuthUser.mockResolvedValue(FAKE_USER)
     mockCheckBudget.mockResolvedValue({ allowed: true })
 
-    const res = await POST(makeRequest({ input: '' }))
+    const res = await POST(makeRequest({ input: '' }), {} as never)
     expect(res.status).toBe(400)
   })
 
@@ -145,7 +145,7 @@ describe('POST /api/preflight/analyze', () => {
       new Error('Input zu kurz — gib mehr Detail (mind. ein paar Sätze oder ein Schema).')
     )
 
-    const res = await POST(makeRequest({ input: 'too short', pivots: FAKE_PIVOTS }))
+    const res = await POST(makeRequest({ input: 'too short', pivots: FAKE_PIVOTS }), {} as never)
     expect(res.status).toBe(400)
     const body = await res.json()
     expect(body.error).toMatch(/zu kurz/i)
@@ -160,7 +160,7 @@ describe('POST /api/preflight/analyze', () => {
     mockAnalyzePreflight.mockResolvedValue(FAKE_RESULT)
     buildProjectRunMocks('proj-9', 'run-9')
 
-    const res = await POST(makeRequest({ input: 'This is a sufficiently long design document', pivots: FAKE_PIVOTS }))
+    const res = await POST(makeRequest({ input: 'This is a sufficiently long design document', pivots: FAKE_PIVOTS }), {} as never)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body).toHaveProperty('projectId', 'proj-9')
@@ -174,7 +174,7 @@ describe('POST /api/preflight/analyze', () => {
     mockCheckBudget.mockResolvedValue({ allowed: true })
     mockAnalyzePreflight.mockResolvedValue(FAKE_RESULT)
     buildProjectRunMocks()
-    const res = await POST(makeRequest({ input: 'A design doc with meaningful content here', pivots: FAKE_PIVOTS }))
+    const res = await POST(makeRequest({ input: 'A design doc with meaningful content here', pivots: FAKE_PIVOTS }), {} as never)
     expect(res.status).toBe(200)
   })
 })
