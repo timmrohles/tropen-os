@@ -15,7 +15,8 @@ jobs:
   lighthouse:
     name: Lighthouse Audit
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # workflow_run: nur nach erfolgreichem CI. workflow_dispatch: immer (manueller Test).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout
@@ -27,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -35,17 +36,10 @@ jobs:
 
       - name: Run Lighthouse CI
         id: lhci
+        env:
+          LHCI_URL: ${{ secrets.VERCEL_PRODUCTION_URL }}
         run: |
-          pnpm dlx @lhci/cli@0.14 autorun \
-            --collect.url="${{ secrets.VERCEL_PRODUCTION_URL }}" \
-            --collect.numberOfRuns=1 \
-            --upload.target=temporary-public-storage \
-            --assert.preset=lighthouse:no-pwa \
-            --assert.assertions.categories:performance.minScore=0.8 \
-            --assert.assertions.categories:accessibility.minScore=0.9 \
-            --assert.assertions.categories:best-practices.minScore=0.8 \
-            --assert.assertions.categories:seo.minScore=0.8 \
-            2>&1 | tee lhci-output.txt || true
+          pnpm dlx @lhci/cli@0.14 autorun --config=./lighthouserc.cjs 2>&1 | tee lhci-output.txt || true
 
       - name: Parse and save Lighthouse results
         if: always()
