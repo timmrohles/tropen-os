@@ -4,8 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from '@/i18n/navigation'
 import {
-  ChartBar, ChatCircle, FolderSimple, DotsThreeCircle,
-  Sparkle, ShareNetwork, RssSimple, Robot, GearSix, X,
+  ChartBar, ChatCircle, ClipboardText, DotsThreeCircle, GearSix, X,
 } from '@phosphor-icons/react'
 import type { Icon as PhosphorIconType } from '@phosphor-icons/react'
 
@@ -18,16 +17,13 @@ interface NavItem {
 
 const PRIMARY_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: ChartBar,      matchPrefix: '/dashboard' },
-  { href: '/chat',      label: 'Chat',      Icon: ChatCircle,    matchPrefix: '/chat'      },
-  { href: '/projects',  label: 'Projekte',  Icon: FolderSimple,  matchPrefix: '/projects'  },
+  { href: '/preflight', label: 'Companion', Icon: ChatCircle,    matchPrefix: '/preflight' },
+  { href: '/audit',     label: 'Audit',     Icon: ClipboardText, matchPrefix: '/audit'     },
 ]
 
-const MORE_NAV: NavItem[] = [
-  { href: '/artefakte',  label: 'Artefakte',  Icon: Sparkle,       matchPrefix: '/artefakte'  },
-  { href: '/workspaces', label: 'Workspaces', Icon: ShareNetwork,  matchPrefix: '/workspaces' },
-  { href: '/feeds',      label: 'Feeds',      Icon: RssSimple,     matchPrefix: '/feeds'      },
-  { href: '/agenten',    label: 'Agenten',    Icon: Robot,         matchPrefix: '/agenten'    },
-]
+// Eingefrorene Pre-Pivot-Routen (Chat/Projekte/Artefakte/Workspaces/Feeds/Agenten) entfernt —
+// konsistent mit der Desktop-Sidebar (MVP-Nav). "Mehr"-Sheet trägt nur noch Einstellungen.
+const MORE_NAV: NavItem[] = []
 
 export default function BottomNav() {
   const pathname = usePathname()
