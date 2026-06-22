@@ -24,3 +24,15 @@ export const GET = withAuth(async (_req: NextRequest, { auth: me }) => {
   }))
   return NextResponse.json({ data: items })
 })
+
+// POST — leeres "Entwurf"-Projekt anlegen für den chat-first Einstieg
+// (User ohne Specs → direkt ins Gespräch). Toro/Concept-Extractor benennt es später.
+export const POST = withAuth(async (_req: NextRequest, { auth: me }) => {
+  const { data, error } = await supabaseAdmin
+    .from('preflight_projects')
+    .insert({ organization_id: me.organization_id, user_id: me.id, name: 'Entwurf', pivots: {}, red_count: 0 })
+    .select('id')
+    .single()
+  if (error || !data) return apiError(error ?? new Error('insert failed'))
+  return NextResponse.json({ projectId: data.id })
+})
