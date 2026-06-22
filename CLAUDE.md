@@ -1004,6 +1004,95 @@ Nicht ohne explizite Anweisung:
 
 ---
 
+## Build-Templates (Kopiervorlagen für neue Bausteine)
+
+> Für „Wie baue ich etwas Neues?" — Struktur exakt kopieren, nur Inhalte anpassen.
+
+### Neue API-Route
+
+```tsx
+// src/app/api/<resource>/route.ts
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-error'
+import { validateBody } from '@/lib/validators'
+import { withProjectAccess } from '@/lib/auth/route-guards'
+// Wrapper-Wahl (ADR-032): withAuth | withOrgAdmin | withProjectAccess | withWorkspaceAccess | withSuperadmin | withCronAuth
+
+const CreateSchema = z.object({ title: z.string().min(1) })
+
+export const POST = withProjectAccess<{ id: string }>(async (req, { projectId, auth }) => {
+  const { data: body, error } = await validateBody(req, CreateSchema)
+  if (error) return error                                   // 400 mit Zod-Details
+  const { data, error: dbErr } = await supabaseAdmin
+    .from('table')
+    .insert({ project_id: projectId, organization_id: auth.organization_id, title: body.title, created_by: auth.id })
+    .select()
+    .single()
+  if (dbErr) return apiError(dbErr)
+  return NextResponse.json(data)                            // Erfolg: { ...data } bzw. NextResponse.json(data ?? [])
+})
+```
+
+**Regeln:** Auth-Wrapper aus `src/lib/auth/route-guards.ts` (nie `getAuthUser()` direkt — ADR-032) · `validateBody` vor jeder Logik · `supabaseAdmin` nur server-seitig, immer `organization_id`/`project_id`-scoped · DB-Fehler über `apiError(err)` · kein Business-Code in der Route, nur Orchestrierung.
+
+### Neuer Audit-Checker (Kernprodukt)
+
+**Pflichtlektüre vorher:** `docs/active/checker-design-patterns.md` (P1–P18 — strukturelle Fehlertypen).
+
+```ts
+// src/lib/audit/checkers/<topic>-checker.ts
+import type { AuditContext, RuleResult, Finding } from '../types'
+
+function pass(id: string, score: number, reason: string): RuleResult {
+  return { ruleId: id, score, reason, findings: [], automated: true }
+}
+function fail(id: string, score: number, reason: string, findings: Finding[]): RuleResult {
+  return { ruleId: id, score, reason, findings, automated: true }
+}
+
+export async function checkXyz(ctx: AuditContext): Promise<RuleResult> {
+  // Quelle: ctx.fileContents (in-memory, benchmark-safe) ODER ctx.repoMap / ctx.filePaths
+  // NIE direkt von Disk lesen, wenn ctx.fileContents existiert (P1).
+  const ok = /* … Analyse … */ true
+  if (ok) return pass('cat-N-rule-M', 5, 'kurzer Grund')
+  return fail('cat-N-rule-M', 2, 'kurzer Grund', [{
+    severity: 'medium',                                     // critical | high | medium | low | info
+    message: 'Konkretes Problem (was, wo)',
+    suggestion: "Cursor-Prompt: '…umsetzbarer Fix-Prompt…'",
+    agentSource: 'core',
+  }])
+}
+```
+
+Registrieren in `src/lib/audit/rule-registry.ts` (Import oben + Eintrag im Array):
+
+```ts
+{ id: 'cat-N-rule-M', categoryId: N, name: 'Kurzname', weight: 2, checkMode: 'repo-map',
+  automatable: true, check: checkXyz, fixType: 'code-gen', tier: 'code', domain: 'code-quality' },
+```
+
+**Regeln:** `score` 0–5 (5 = erfüllt) · `weight` 1–3 · `checkMode` ∈ `file-system|cli|repo-map|documentation|manual|external-tool` · `fixType` ∈ `code-fix|code-gen|refactoring|manual` · `domain` bestimmt den Audit-Tab (ADR-025) · `Finding.suggestion` ist ein **kopierbarer Cursor-Prompt**, kein Fließtext · Test in `src/lib/audit/__tests__/` ergänzen.
+
+### Neuer Test
+
+```ts
+// test/<bereich>/<name>.unit.test.ts  (bzw. src/lib/audit/__tests__/ für Audit)
+import { describe, it, expect } from 'vitest'
+import { funktion } from '../../src/pfad/zur/funktion'
+
+describe('funktion', () => {
+  it('verhält sich erwartungsgemäß', () => {
+    expect(funktion(eingabe)).toEqual(erwartet)
+  })
+})
+```
+
+Lauf: `pnpm exec vitest run <pfad>`. Tests verifizieren **Verhalten**, nicht Mock-Interna. Jedes neue Feature braucht Tests (Code-Regel).
+
+---
+
 ## Engineering Standards
 
 ### Claude.ai Feature-Parität
@@ -1476,7 +1565,7 @@ Sprint 11: +5 Regeln cat-26 (SLOP_DETECTION_AGENT) + +4 Regeln cat-18 (SPEC_AGEN
 Kleine Projekte (<50 Dateien) bekommen Score-Penalty: `log10(fileCount) / log10(100)`. 10 Dateien = Faktor 0.5, 100 Dateien = 1.0.
 
 **fixType-System:**
-- `getFixType()` aus `src/lib/audit/checkers/rule-registry.ts` — Node.js only, nie in Client-Komponenten importieren
+- `getFixType()` aus `src/lib/audit/rule-registry.ts` — Node.js only, nie in Client-Komponenten importieren
 - `AuditContext.fileContents` Map ermoeglicht In-Memory-Scanning fuer Benchmarks (kein Disk-Zugriff)
 - `AuditOptions.excludeRuleIds` fuer Profil-basiertes Compliance-Filtering
 - `AuditOptions.tier` fuer Maturity-Level-Filtering (starter/production/enterprise)
