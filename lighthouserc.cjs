@@ -8,8 +8,9 @@ module.exports = {
       numberOfRuns: 1,
     },
     assert: {
-      preset: 'lighthouse:no-pwa',
-      // 'warn' statt 'error' → Schwellen sind Signal, kein Job-Gate.
+      // Kein Preset — das brächte ~40 Einzel-Audit-Assertions auf 'error' (color-contrast,
+      // bf-cache, unused-css …) und spammt rote Fehler. Wir wollen nur die 4 Kategorie-Scores
+      // als Signal (das ist auch, was als Telemetrie gespeichert wird), alles 'warn' = kein Gate.
       assertions: {
         'categories:performance': ['warn', { minScore: 0.8 }],
         'categories:accessibility': ['warn', { minScore: 0.9 }],
